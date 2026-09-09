@@ -407,8 +407,7 @@ export function FileBrowser({
   const moveFolder = useFileExplorerStore((state) => state.moveFolder)
   const customOrders = useFileExplorerCustomOrder((state) => state.orders)
   const setCustomOrder = useFileExplorerCustomOrder((state) => state.setOrder)
-  const viewMode = useFileExplorerSettings((state) => state.viewMode)
-  const { sortField, sortDir, setSortFieldAndDir, setSortDir, groupMode, groupSortDir } =
+  const { viewMode, sortField, sortDir, setSortFieldAndDir, setSortDir, groupMode, groupSortDir } =
     useCurrentFolderDisplay()
   const colWidths = useFileExplorerSettings((state) => state.colWidths)
   const setColWidths = useFileExplorerSettings((state) => state.setColWidths)

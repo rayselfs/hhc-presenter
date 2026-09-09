@@ -21,6 +21,7 @@ export type SortField = 'name' | 'createdAt' | 'size' | 'kind'
 export type SortDir = 'asc' | 'desc' | 'none'
 export type GroupMode = 'none' | 'date'
 export interface FolderDisplayPreference {
+  viewMode: FileExplorerViewMode
   sortField: SortField
   sortDir: SortDir
   groupMode: GroupMode
@@ -51,7 +52,7 @@ type FileExplorerSettingsStore = UseBoundStore<
 >
 
 const CREATED_COLUMN_WIDTH = 160
-const EXPLORER_SETTINGS_VERSION = 4
+const EXPLORER_SETTINGS_VERSION = 5
 
 function migrateExplorerSettings(state: unknown): unknown {
   if (!state || typeof state !== 'object') return state
@@ -304,7 +305,7 @@ export async function purgeExpiredTrashFromStore(retentionMs: number): Promise<v
 export function resolveFolderDisplay(
   folderId: string,
   folders: Record<string, FolderRecord>,
-  defaults: Pick<FolderDisplayPreference, 'sortField' | 'sortDir'>,
+  defaults: Pick<FolderDisplayPreference, 'viewMode' | 'sortField' | 'sortDir'>,
   override?: Partial<FolderDisplayPreference>
 ): FolderDisplayPreference {
   let folder = folders[folderId]
@@ -331,16 +332,22 @@ export function resolveFolderDisplay(
 }
 
 export function useCurrentFolderDisplay(): FolderDisplayPreference & {
+  setViewMode: (mode: FileExplorerViewMode) => void
   setSortFieldAndDir: (field: SortField, dir: SortDir) => void
   setSortDir: (dir: SortDir) => void
   setGroupMode: (mode: GroupMode) => void
 } {
   const folderId = useFileExplorerStore((state) => state.currentFolderId)
   const folders = useFileExplorerStore((state) => state.folders)
+  const viewMode = useFileExplorerSettings((state) => state.viewMode)
   const sortField = useFileExplorerSettings((state) => state.sortField)
   const sortDir = useFileExplorerSettings((state) => state.sortDir)
   const override = useFileExplorerSettings((state) => state.folderDisplay[folderId])
   const setDisplay = useFileExplorerSettings((state) => state.setFolderDisplay)
+  const setViewMode = useCallback(
+    (mode: FileExplorerViewMode) => setDisplay(folderId, { viewMode: mode }),
+    [folderId, setDisplay]
+  )
   const setSortFieldAndDir = useCallback(
     (field: SortField, dir: SortDir) => setDisplay(folderId, { sortField: field, sortDir: dir }),
     [folderId, setDisplay]
@@ -354,7 +361,8 @@ export function useCurrentFolderDisplay(): FolderDisplayPreference & {
     [folderId, setDisplay]
   )
   return {
-    ...resolveFolderDisplay(folderId, folders, { sortField, sortDir }, override),
+    ...resolveFolderDisplay(folderId, folders, { viewMode, sortField, sortDir }, override),
+    setViewMode,
     setSortFieldAndDir,
     setSortDir,
     setGroupMode

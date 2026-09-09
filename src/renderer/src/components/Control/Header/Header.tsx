@@ -29,7 +29,6 @@ import { useTimerStore } from '@renderer/stores/timer'
 import {
   useFileExplorerCustomOrder,
   useFileExplorerStore,
-  useFileExplorerSettings,
   useFavoritesExplorerSettings,
   useTrashExplorerSettings
 } from '@renderer/stores/file-explorer'
@@ -60,10 +59,8 @@ export default function Header(): React.JSX.Element {
   const getFolderPath = useFileExplorerStore((state) => state.getFolderPath)
   const navigateToFolder = useFileExplorerStore((state) => state.navigateToFolder)
   const navigateToRoot = useFileExplorerStore((state) => state.navigateToRoot)
-  const viewMode = useFileExplorerSettings((state) => state.viewMode)
-  const { sortField, sortDir, setSortFieldAndDir, groupMode, setGroupMode } =
+  const { viewMode, setViewMode, sortField, sortDir, setSortFieldAndDir, groupMode, setGroupMode } =
     useCurrentFolderDisplay()
-  const setViewMode = useFileExplorerSettings((state) => state.setViewMode)
 
   const favViewMode = useFavoritesExplorerSettings((state) => state.viewMode)
   const favSetViewMode = useFavoritesExplorerSettings((state) => state.setViewMode)
@@ -219,7 +216,6 @@ export default function Header(): React.JSX.Element {
                 ? getFolderPath(currentFolderId).find((folder) => folder.personalOwnerId)?.id
                 : undefined
             }
-            rootLabel={location.pathname === '/cloud-files' ? t('nav.cloudFiles') : undefined}
             currentFolderId={currentFolderId}
             getFolderPath={getFolderPath}
             onNavigate={handleBreadcrumbNavigate}

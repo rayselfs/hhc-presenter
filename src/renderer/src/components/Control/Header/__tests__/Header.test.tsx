@@ -100,6 +100,7 @@ function renderWithRouter(initialEntries: string[] = ['/']): ReturnType<typeof r
       { path: '/timer', element },
       { path: '/bible', element },
       { path: '/files', element },
+      { path: '/cloud-files', element },
       { path: '/media', element: <div data-testid="media-workspace" /> }
     ],
     { initialEntries }
@@ -122,6 +123,32 @@ describe('Header', () => {
     await mockProjectionContext()
     renderWithRouter(['/'])
     expect(document.querySelector('header')).toBeInTheDocument()
+  })
+
+  it('labels the cloud root breadcrumb as Home', async () => {
+    await i18n.changeLanguage('en')
+    await mockProjectionContext()
+    useFileExplorerStore.setState({
+      currentFolderId: 'personal-root',
+      folders: {
+        'personal-root': {
+          id: 'personal-root',
+          personalOwnerId: 'alice',
+          name: 'Cloud documents',
+          parentId: 'file-root',
+          sortIndex: 0,
+          createdAt: 1,
+          expiresAt: null
+        }
+      }
+    })
+
+    renderWithRouter(['/cloud-files'])
+
+    expect(screen.getByRole('navigation', { name: 'Folder path' })).toHaveTextContent('Home')
+    expect(screen.getByRole('navigation', { name: 'Folder path' })).not.toHaveTextContent(
+      'Cloud documents'
+    )
   })
 
   it('starts timer projection from the timer route', async () => {

@@ -41,12 +41,17 @@ describe('media date groups and folder preferences', () => {
     }
     const child = { ...root, id: 'child', parentId: 'line', syncLink: undefined }
     const folders = { line: root, child }
-    const defaults = { sortField: 'name' as const, sortDir: 'asc' as const }
+    const defaults = {
+      viewMode: 'medium-icon' as const,
+      sortField: 'name' as const,
+      sortDir: 'asc' as const
+    }
     expect(resolveFolderDisplay('child', folders, defaults)).toEqual({
       sortField: 'createdAt',
       sortDir: 'desc',
       groupMode: 'date',
-      groupSortDir: 'desc'
+      groupSortDir: 'desc',
+      viewMode: 'medium-icon'
     })
     expect(resolveFolderDisplay('child', folders, defaults, { groupMode: 'none' }).groupMode).toBe(
       'none'
@@ -62,6 +67,6 @@ describe('media date groups and folder preferences', () => {
       groupMode: 'none',
       sortDir: 'asc'
     })
-    expect(useFileExplorerSettings.persist.getOptions().version).toBe(4)
+    expect(useFileExplorerSettings.persist.getOptions().version).toBe(5)
   })
 })
