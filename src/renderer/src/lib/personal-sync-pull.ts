@@ -10,6 +10,8 @@ import { assertPersonalSyncLease, type PersonalSyncNode } from './personal-sync-
 import { createResourceCleanupRecord } from './resource-cleanup-journal'
 import { getBlobId } from './blob-identity'
 import { isElectron } from './env'
+import { refreshImportedMediaAssets } from './local-sync-import'
+import { usePersonalSyncStore } from '../stores/personal-sync'
 
 type Download = FileBlobRecord & { mimeType: string; cleanupId?: string }
 
@@ -92,6 +94,32 @@ export async function pullPersonalChanges(
     })
   }
   await stage(0)
+  for (const remote of pending) {
+    const download = downloads.get(remote.id)
+    if (!download) continue
+    const id = personalLocalNodeId(state.collectionId, remote.id)
+    const item = await db.get('folder-items', id)
+    if (item?.type !== 'file' || item.url !== `blob:${download.id}`) continue
+    void refreshImportedMediaAssets([item], async () => {
+      if (usePersonalSyncStore.getState().activeOwnerId !== ownerId) return false
+      const currentDb = await openFileExplorerDB()
+      const [currentState, currentNode, currentItem] = await Promise.all([
+        currentDb.get('personal-sync-state', ownerId),
+        currentDb.get('personal-sync-nodes', id),
+        currentDb.get('folder-items', id)
+      ])
+      return Boolean(
+        currentState?.collectionId === page.collection.id &&
+          currentNode?.ownerId === ownerId &&
+          currentNode.remoteId === remote.id &&
+          currentNode.remoteRevision === remote.revision &&
+          currentNode.remoteAssetId === remote.assetId &&
+          currentItem?.type === 'file' &&
+          currentItem.personalOwnerId === ownerId &&
+          currentItem.url === `blob:${download.id}`
+      )
+    })
+  }
   return page.hasMore
 }
 

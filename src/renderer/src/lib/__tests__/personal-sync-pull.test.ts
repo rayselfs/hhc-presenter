@@ -1,8 +1,29 @@
-import { beforeEach, expect, it } from 'vitest'
+import { waitFor } from '@testing-library/react'
+import { beforeEach, expect, it, vi } from 'vitest'
 import type { PersonalChangePage } from '@shared/personal-cloud'
+import type { PersonalCloudProvider } from '../personal-cloud-provider'
 import { openFileExplorerDB, resetFileExplorerDBForTests } from '../file-explorer-db'
+import { getDerivedAsset, resetMediaWorkDBForTests } from '../media-work-db'
 import { acquirePersonalSyncLease, commitPersonalLocalMutation } from '../personal-sync-db'
-import { commitPersonalChangePage, personalLocalNodeId } from '../personal-sync-pull'
+import {
+  commitPersonalChangePage,
+  personalLocalNodeId,
+  pullPersonalChanges
+} from '../personal-sync-pull'
+import { usePersonalSyncStore } from '../../stores/personal-sync'
+
+const { mockEnsureSourceMediaMetadata, mockGenerateThumbnail } = vi.hoisted(() => ({
+  mockEnsureSourceMediaMetadata: vi.fn(),
+  mockGenerateThumbnail: vi.fn()
+}))
+
+vi.mock('../media-metadata', () => ({
+  ensureSourceMediaMetadata: mockEnsureSourceMediaMetadata
+}))
+
+vi.mock('../thumbnail-generator', () => ({
+  generateThumbnail: mockGenerateThumbnail
+}))
 
 const page: PersonalChangePage = {
   collection: { id: 'space', revision: 100 },
@@ -22,7 +43,24 @@ const page: PersonalChangePage = {
 }
 const signal = (): AbortSignal => new AbortController().signal
 beforeEach(async () => {
-  await resetFileExplorerDBForTests()
+  vi.clearAllMocks()
+  await Promise.all([resetFileExplorerDBForTests(), resetMediaWorkDBForTests()])
+  Object.defineProperty(window, 'api', { configurable: true, value: undefined })
+  Object.defineProperty(URL, 'createObjectURL', {
+    configurable: true,
+    value: vi.fn(() => 'blob:test-source')
+  })
+  Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() })
+  globalThis.fetch = vi.fn(
+    async () =>
+      new Response(new Uint8Array([112, 110, 103]), {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' }
+      })
+  )
+  mockEnsureSourceMediaMetadata.mockResolvedValue(null)
+  mockGenerateThumbnail.mockResolvedValue('data:image/jpeg;base64,dGh1bWI=')
+  usePersonalSyncStore.setState({ activeOwnerId: 'alice' })
   const db = await openFileExplorerDB()
   await db.put('personal-sync-state', {
     ownerId: 'alice',
@@ -32,6 +70,43 @@ beforeEach(async () => {
     sequence: 0
   })
   await acquirePersonalSyncLease('alice', 'worker')
+})
+
+it('prepares a thumbnail after a downloaded personal snapshot commits', async () => {
+  const api = {
+    ensureSpace: vi.fn(async () => page.collection),
+    getChanges: vi.fn(async () => page),
+    createUpload: vi.fn(async () => {
+      throw new Error('unused')
+    }),
+    getUpload: vi.fn(async () => {
+      throw new Error('unused')
+    }),
+    completeUpload: vi.fn(async () => {
+      throw new Error('unused')
+    }),
+    mutate: vi.fn(async () => {
+      throw new Error('unused')
+    }),
+    uploadSnapshot: vi.fn(async () => undefined),
+    downloadSnapshot: vi.fn(async () => ({
+      id: 'snapshot',
+      blob: new Blob(['one'], { type: 'image/png' }),
+      storage: 'indexed-db' as const,
+      size: 3,
+      mimeType: 'image/png'
+    }))
+  } satisfies PersonalCloudProvider
+
+  await pullPersonalChanges('alice', 'worker', api, signal())
+
+  await waitFor(async () => {
+    expect(await getDerivedAsset('snapshot', 'cover-thumbnail')).toMatchObject({
+      status: 'ready',
+      mimeType: 'image/jpeg'
+    })
+  })
+  expect(await (await openFileExplorerDB()).get('folder-items', 'personal:space:remote')).toBeDefined()
 })
 
 it('commits a page with its snapshot and advances only to revisions actually observed', async () => {
