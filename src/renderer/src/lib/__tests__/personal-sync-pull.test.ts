@@ -106,7 +106,9 @@ it('prepares a thumbnail after a downloaded personal snapshot commits', async ()
       mimeType: 'image/jpeg'
     })
   })
-  expect(await (await openFileExplorerDB()).get('folder-items', 'personal:space:remote')).toBeDefined()
+  expect(
+    await (await openFileExplorerDB()).get('folder-items', 'personal:space:remote')
+  ).toBeDefined()
 })
 
 it('commits a page with its snapshot and advances only to revisions actually observed', async () => {

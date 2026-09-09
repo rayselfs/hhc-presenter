@@ -223,9 +223,7 @@ describe('FilesPage HHC LINE role resolution', () => {
 
   it('disables after the only eligible collection is imported and re-enables for a new one', async () => {
     mocks.listFolders
-      .mockResolvedValueOnce([
-        { remoteItemId: 'only', name: 'Only', parentRemoteItemId: null }
-      ])
+      .mockResolvedValueOnce([{ remoteItemId: 'only', name: 'Only', parentRemoteItemId: null }])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{ remoteItemId: 'new', name: 'New', parentRemoteItemId: null }])
     render(<FilesPage />)

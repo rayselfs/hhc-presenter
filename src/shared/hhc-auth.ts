@@ -46,10 +46,7 @@ export function hasHhcPermission(
   )
 }
 
-const PRESENTER_CLOUD_PERMISSIONS = [
-  'presenter:cloud:manage',
-  'presenter:cloud:use'
-] as const
+const PRESENTER_CLOUD_PERMISSIONS = ['presenter:cloud:manage', 'presenter:cloud:use'] as const
 
 export function hasPresenterCloudAccess(permissions: readonly string[] | undefined): boolean {
   return PRESENTER_CLOUD_PERMISSIONS.some((permission) => hasHhcPermission(permissions, permission))

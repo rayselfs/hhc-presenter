@@ -110,13 +110,13 @@ export async function pullPersonalChanges(
       ])
       return Boolean(
         currentState?.collectionId === page.collection.id &&
-          currentNode?.ownerId === ownerId &&
-          currentNode.remoteId === remote.id &&
-          currentNode.remoteRevision === remote.revision &&
-          currentNode.remoteAssetId === remote.assetId &&
-          currentItem?.type === 'file' &&
-          currentItem.personalOwnerId === ownerId &&
-          currentItem.url === `blob:${download.id}`
+        currentNode?.ownerId === ownerId &&
+        currentNode.remoteId === remote.id &&
+        currentNode.remoteRevision === remote.revision &&
+        currentNode.remoteAssetId === remote.assetId &&
+        currentItem?.type === 'file' &&
+        currentItem.personalOwnerId === ownerId &&
+        currentItem.url === `blob:${download.id}`
       )
     })
   }
