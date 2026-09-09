@@ -33,7 +33,7 @@ test('two clients preserve an offline rename conflict and replay a lost commit r
       const json = path.endsWith('/session')
         ? {
             authenticated: true,
-            user: { id: 'qa-owner', display_name: 'Cloud QA', permissions: ['presenter:cloud:use'] }
+            user: { id: 'qa-owner', display_name: 'Cloud QA', permissions: ['presenter:cloud:manage'] }
           }
         : path.endsWith('/csrf-token')
           ? { csrf_token: 'qa-csrf' }

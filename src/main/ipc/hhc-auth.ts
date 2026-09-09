@@ -15,7 +15,7 @@ import { isMainWindow } from './validate'
 
 const CLIENT_ID = 'hhc-desktop'
 const REDIRECT_URI = 'hhc-presenter://auth/account'
-const SCOPE = 'openid profile presenter:cloud:use'
+const SCOPE = 'openid profile presenter:cloud:manage'
 const REVOKE_TIMEOUT_MS = 5000
 
 type AccountAuthAction = Extract<HhcPresenterProtocolAction, { kind: 'account-auth' }>

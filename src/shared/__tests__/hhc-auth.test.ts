@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canAccessHhcAdmin } from '../hhc-auth'
+import { canAccessHhcAdmin, hasPresenterCloudAccess } from '../hhc-auth'
 
 describe('canAccessHhcAdmin', () => {
   it.each([
@@ -8,6 +8,7 @@ describe('canAccessHhcAdmin', () => {
     'campaigns:read',
     'users:read',
     'rbac:read',
+    'presenter:line:manage',
     'media-sync:manage',
     'dsr:read',
     'users:manage',
@@ -19,9 +20,20 @@ describe('canAccessHhcAdmin', () => {
 
   it.each([
     { permissions: [] },
+    { permissions: ['presenter:cloud:manage'] },
     { permissions: ['presenter:cloud:use'] },
     { permissions: ['cms:write'] }
   ])('denies $permissions', ({ permissions }) => {
     expect(canAccessHhcAdmin(permissions)).toBe(false)
+  })
+})
+
+describe('hasPresenterCloudAccess', () => {
+  it.each(['*', 'presenter:cloud:manage', 'presenter:cloud:use'])('allows %s', (permission) => {
+    expect(hasPresenterCloudAccess([permission])).toBe(true)
+  })
+
+  it.each([undefined, [], ['presenter:line:manage']])('denies %j', (permissions) => {
+    expect(hasPresenterCloudAccess(permissions)).toBe(false)
   })
 })

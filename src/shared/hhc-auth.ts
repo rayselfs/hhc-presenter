@@ -46,12 +46,21 @@ export function hasHhcPermission(
   )
 }
 
+const PRESENTER_CLOUD_PERMISSIONS = [
+  'presenter:cloud:manage',
+  'presenter:cloud:use'
+] as const
+
+export function hasPresenterCloudAccess(permissions: readonly string[] | undefined): boolean {
+  return PRESENTER_CLOUD_PERMISSIONS.some((permission) => hasHhcPermission(permissions, permission))
+}
+
 const hhcAdminCapabilities = [
   'cms:read',
   'campaigns:read',
   'users:read',
   'rbac:read',
-  'media-sync:manage',
+  'presenter:line:manage',
   'dsr:read'
 ] as const
 type HhcAdminCapability = (typeof hhcAdminCapabilities)[number]
@@ -60,7 +69,8 @@ const hhcAdminLegacyPermissions: Partial<Record<HhcAdminCapability, string>> = {
   'campaigns:read': 'cms:read',
   'users:read': 'users:manage',
   'rbac:read': 'rbac:manage',
-  'dsr:read': 'dsr:manage'
+  'dsr:read': 'dsr:manage',
+  'presenter:line:manage': 'media-sync:manage'
 } as const
 
 export function canAccessHhcAdmin(permissions: readonly string[] | undefined): boolean {
