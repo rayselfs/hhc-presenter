@@ -143,12 +143,29 @@ export async function saveWebHhcDownloadedContent(
   return saveWebDownloadedContent(request, response, metadata, canCommit, HHC_MAX_FILE_SIZE_WEB)
 }
 
+export async function saveWebSharedDownloadedContent(
+  request: SyncDownloadRequest,
+  response: Response,
+  metadata: RemoteSyncItem,
+  canCommit: SyncDownloadCommitGuard = alwaysCanCommit
+): Promise<SyncDownloadResult> {
+  return saveWebDownloadedContent(
+    request,
+    response,
+    metadata,
+    canCommit,
+    HHC_MAX_FILE_SIZE_WEB,
+    false
+  )
+}
+
 async function saveWebDownloadedContent(
   request: SyncDownloadRequest,
   response: Response,
   metadata: RemoteSyncItem,
   canCommit: SyncDownloadCommitGuard,
-  maxFileSize = MAX_FILE_SIZE_WEB
+  maxFileSize = MAX_FILE_SIZE_WEB,
+  recordHhcReceipt = maxFileSize === HHC_MAX_FILE_SIZE_WEB
 ): Promise<SyncDownloadResult> {
   if (isElectron()) {
     throw new Error('Electron OneDrive downloads must use native streaming storage')
@@ -199,10 +216,7 @@ async function saveWebDownloadedContent(
         etag: metadata.etag,
         contentHash: metadata.contentHash,
         status: 'available-offline',
-        syncReceipt:
-          maxFileSize === HHC_MAX_FILE_SIZE_WEB
-            ? pendingHhcSyncReceipt(request, metadata)
-            : undefined,
+        syncReceipt: recordHhcReceipt ? pendingHhcSyncReceipt(request, metadata) : undefined,
         downloadedBytes: blob.size,
         downloadTotalBytes: blob.size
       })

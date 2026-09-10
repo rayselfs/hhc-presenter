@@ -5,6 +5,7 @@
   },
   "nav": {
     "cloudFiles": "云端文件",
+    "sharedFiles": "与我分享",
     "timer": "计时器",
     "bible": "圣经",
     "service": "流程",
@@ -615,6 +616,7 @@
     },
     "provider": {
       "hhc-line": "LINE",
+      "hhc-share": "与我分享",
       "onedrive": "OneDrive",
       "local-fs": "本地同步"
     }
@@ -961,7 +963,7 @@
         "lanRemote": "LAN 遥控"
       },
       "defaultOfflinePolicy": "离线策略",
-      "defaultOfflinePolicyDesc": "应用于 HHC LINE 与 OneDrive 文件夹。",
+      "defaultOfflinePolicyDesc": "应用于 HHC LINE、OneDrive 与“与我分享”文件夹。",
       "offlinePolicies": {
         "online-only": "仅在线",
         "on-demand": "需要时下载",
@@ -1277,6 +1279,19 @@
       "connection": "投影连接失败，请重试。",
       "playback": "影像无法播放，请重新选择来源。"
     }
+  },
+  "personalShare": {
+    "title": "分享 {{name}}",
+    "share": "分享文件夹",
+    "email": "HHC 帐号 Email",
+    "find": "查询",
+    "confirm": "确认分享",
+    "account": "HHC 帐号",
+    "revoke": "取消分享",
+    "notFound": "找不到可分享的 HHC 帐号",
+    "failed": "分享操作失败",
+    "leave": "取消接受分享",
+    "leaveConfirm": "要从与我分享移除这个文件夹吗？已下载的本地副本也会清除。"
   },
   "personalCloud": {
     "title": "云端文件夹",

@@ -5,6 +5,7 @@
   },
   "nav": {
     "cloudFiles": "雲端文件",
+    "sharedFiles": "與我分享",
     "timer": "計時器",
     "bible": "聖經",
     "service": "流程",
@@ -615,6 +616,7 @@
     },
     "provider": {
       "hhc-line": "LINE",
+      "hhc-share": "與我分享",
       "onedrive": "OneDrive",
       "local-fs": "本地同步"
     }
@@ -961,7 +963,7 @@
         "lanRemote": "LAN 遙控"
       },
       "defaultOfflinePolicy": "離線策略",
-      "defaultOfflinePolicyDesc": "套用至 HHC LINE 與 OneDrive 資料夾。",
+      "defaultOfflinePolicyDesc": "套用至 HHC LINE、OneDrive 與「與我分享」資料夾。",
       "offlinePolicies": {
         "online-only": "僅線上",
         "on-demand": "需要時下載",
@@ -1277,6 +1279,19 @@
       "connection": "投影連線失敗，請重試。",
       "playback": "影像無法播放，請重新選擇來源。"
     }
+  },
+  "personalShare": {
+    "title": "分享 {{name}}",
+    "share": "分享資料夾",
+    "email": "HHC 帳號 Email",
+    "find": "查詢",
+    "confirm": "確認分享",
+    "account": "HHC 帳號",
+    "revoke": "取消分享",
+    "notFound": "找不到可分享的 HHC 帳號",
+    "failed": "分享操作失敗",
+    "leave": "取消接受分享",
+    "leaveConfirm": "要從與我分享移除這個資料夾嗎？已下載的本機副本也會清除。"
   },
   "personalCloud": {
     "title": "雲端資料夾",

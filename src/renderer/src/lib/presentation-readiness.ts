@@ -173,7 +173,10 @@ async function analyzePresentationItem(
   const syncEntry = await getSyncEntryByLocalItem(item.id)
   if (syncEntry && syncEntry.status !== 'available-offline') {
     const connection = await getProviderConnection(syncEntry.providerConnectionId)
-    if (connection?.providerType === 'hhc-line' && syncEntry.status === 'remote-only') {
+    if (
+      (connection?.providerType === 'hhc-line' || connection?.providerType === 'hhc-share') &&
+      syncEntry.status === 'remote-only'
+    ) {
       const capability = resolveMediaCapability({ mimeType: item.mimeType, fileName: item.name })
       if (!capability) {
         return {

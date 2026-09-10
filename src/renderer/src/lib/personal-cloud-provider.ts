@@ -1,4 +1,4 @@
-import type { HhcAuthAdapter } from '@shared/hhc-auth'
+import type { HhcSession } from '@shared/hhc-auth'
 import {
   createAuthenticatedPersonalCloudApi,
   PersonalCloudHttpError,
@@ -14,7 +14,16 @@ import { isElectron } from './env'
 
 export type PersonalCloudProvider = Omit<
   PersonalCloudHttpApi,
-  'putUpload' | 'downloadContent' | 'completeUpload'
+  | 'putUpload'
+  | 'downloadContent'
+  | 'downloadSharedContent'
+  | 'completeUpload'
+  | 'listFolderShares'
+  | 'createFolderShare'
+  | 'revokeFolderShare'
+  | 'listSharedFolders'
+  | 'getSharedFolderSnapshot'
+  | 'leaveSharedFolder'
 > & {
   completeUpload(
     uploadId: string,
@@ -28,13 +37,76 @@ export type PersonalCloudProvider = Omit<
     revision: number,
     blobId: string,
     signal: AbortSignal
-  ): Promise<FileBlobRecord & { mimeType: string }>
+  ): Promise<FileBlobRecord & { mimeType: string; size: number }>
+}
+
+export type PersonalSharingProvider = PersonalCloudProvider &
+  Pick<
+    PersonalCloudHttpApi,
+    | 'listFolderShares'
+    | 'createFolderShare'
+    | 'revokeFolderShare'
+    | 'listSharedFolders'
+    | 'getSharedFolderSnapshot'
+    | 'leaveSharedFolder'
+  > & {
+    downloadSharedSnapshot(
+      grantId: string,
+      itemId: string,
+      blobId: string,
+      signal: AbortSignal
+    ): Promise<FileBlobRecord & { mimeType: string; size: number }>
+  }
+
+async function readWebSnapshot(
+  response: Response,
+  blobId: string,
+  signal: AbortSignal
+): Promise<FileBlobRecord & { mimeType: string; size: number }> {
+  const length = response.headers.get('content-length')
+  const declared = length === null ? undefined : Number(length)
+  if (
+    !response.body ||
+    (declared !== undefined &&
+      (!Number.isSafeInteger(declared) || declared <= 0 || declared > PERSONAL_MAX_FILE_BYTES))
+  ) {
+    await response.body?.cancel().catch(() => undefined)
+    throw new PersonalCloudHttpError(0, 'invalid-content')
+  }
+  const reader = response.body.getReader()
+  const chunks: BlobPart[] = []
+  let size = 0
+  try {
+    for (;;) {
+      signal.throwIfAborted()
+      const part = await reader.read()
+      signal.throwIfAborted()
+      if (part.done) break
+      size += part.value.byteLength
+      if (size > PERSONAL_MAX_FILE_BYTES) throw new PersonalCloudHttpError(0, 'file-too-large')
+      chunks.push(new Uint8Array(part.value))
+    }
+    if (size === 0 || (declared !== undefined && size !== declared)) {
+      throw new PersonalCloudHttpError(0, 'incomplete-content')
+    }
+    const blob = new Blob(chunks, {
+      type: response.headers.get('content-type') ?? 'application/octet-stream'
+    })
+    return { id: blobId, storage: 'indexed-db', size, blob, mimeType: blob.type }
+  } finally {
+    await reader.cancel().catch(() => undefined)
+    reader.releaseLock()
+  }
 }
 
 export function createPersonalCloudProvider(
-  auth: Pick<HhcAuthAdapter, 'getSession' | 'getAccessToken' | 'refreshAccessToken'>,
+  auth: {
+    getSession(): HhcSession | null | Promise<HhcSession | null>
+    getAccessToken(): Promise<string | null>
+    refreshAccessToken(): Promise<string | null>
+  },
   ownerId: string
-): PersonalCloudProvider {
+): PersonalSharingProvider {
   if (isElectron()) {
     const native = window.api.personalCloud
     const invoke = async <T>(
@@ -89,6 +161,36 @@ export function createPersonalCloudProvider(
           size: result.size,
           mimeType: result.mimeType
         }
+      },
+      listFolderShares: (itemId, signal) =>
+        invoke((request) => native.listFolderShares({ ...request, itemId }), signal),
+      createFolderShare: (itemId, granteeUserId, signal) =>
+        invoke(
+          (request) => native.createFolderShare({ ...request, itemId, granteeUserId }),
+          signal
+        ),
+      revokeFolderShare: (itemId, grantId, signal) =>
+        invoke((request) => native.revokeFolderShare({ ...request, itemId, grantId }), signal),
+      listSharedFolders: (signal) => invoke((request) => native.listSharedFolders(request), signal),
+      getSharedFolderSnapshot: (grantId, cursor, signal) =>
+        invoke(
+          (request) =>
+            native.getSharedFolderSnapshot({ ...request, grantId, ...(cursor ? { cursor } : {}) }),
+          signal
+        ),
+      leaveSharedFolder: (grantId, signal) =>
+        invoke((request) => native.leaveSharedFolder({ ...request, grantId }), signal),
+      downloadSharedSnapshot: async (grantId, itemId, blobId, signal) => {
+        const result = await invoke(
+          (request) => native.downloadSharedSnapshot({ ...request, grantId, itemId, blobId }),
+          signal
+        )
+        return {
+          id: result.fileId,
+          storage: 'native-fs',
+          size: result.size,
+          mimeType: result.mimeType
+        }
       }
     }
   }
@@ -119,6 +221,12 @@ export function createPersonalCloudProvider(
     },
     mutate: api.mutate,
     purgeTrash: api.purgeTrash,
+    listFolderShares: api.listFolderShares,
+    createFolderShare: api.createFolderShare,
+    revokeFolderShare: api.revokeFolderShare,
+    listSharedFolders: api.listSharedFolders,
+    getSharedFolderSnapshot: api.getSharedFolderSnapshot,
+    leaveSharedFolder: api.leaveSharedFolder,
     uploadSnapshot: async (uploadId, blobId, signal) => {
       signal.throwIfAborted()
       const record = await getFileBlobRecord(blobId)
@@ -127,40 +235,11 @@ export function createPersonalCloudProvider(
     },
     downloadSnapshot: async (itemId, revision, blobId, signal) => {
       const response = await api.downloadContent(itemId, revision, signal)
-      const length = response.headers.get('content-length')
-      const declared = length === null ? undefined : Number(length)
-      if (
-        !response.body ||
-        (declared !== undefined &&
-          (!Number.isSafeInteger(declared) || declared <= 0 || declared > PERSONAL_MAX_FILE_BYTES))
-      ) {
-        await response.body?.cancel().catch(() => undefined)
-        throw new PersonalCloudHttpError(0, 'invalid-content')
-      }
-      const reader = response.body.getReader()
-      const chunks: BlobPart[] = []
-      let size = 0
-      try {
-        for (;;) {
-          signal.throwIfAborted()
-          const part = await reader.read()
-          signal.throwIfAborted()
-          if (part.done) break
-          size += part.value.byteLength
-          if (size > PERSONAL_MAX_FILE_BYTES) throw new PersonalCloudHttpError(0, 'file-too-large')
-          chunks.push(new Uint8Array(part.value))
-        }
-        if (size === 0 || (declared !== undefined && size !== declared)) {
-          throw new PersonalCloudHttpError(0, 'incomplete-content')
-        }
-        const blob = new Blob(chunks, {
-          type: response.headers.get('content-type') ?? 'application/octet-stream'
-        })
-        return { id: blobId, storage: 'indexed-db', size, blob, mimeType: blob.type }
-      } finally {
-        await reader.cancel().catch(() => undefined)
-        reader.releaseLock()
-      }
+      return readWebSnapshot(response, blobId, signal)
+    },
+    downloadSharedSnapshot: async (grantId, itemId, blobId, signal) => {
+      const response = await api.downloadSharedContent(grantId, itemId, signal)
+      return readWebSnapshot(response, blobId, signal)
     }
   }
 }

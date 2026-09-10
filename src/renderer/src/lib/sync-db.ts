@@ -95,9 +95,21 @@ export interface SyncTombstoneRecord {
   createdAt: number
 }
 
+export interface PendingShareLeaveRecord {
+  id: string
+  recipientId: string
+  grantId: string
+  createdAt: number
+}
+
 export const SYNC_CONNECTION_UNLINK_MARKER = '\0connection-unlink'
 
 interface SyncDBSchema extends DBSchema {
+  'pending-share-leaves': {
+    key: string
+    value: PendingShareLeaveRecord
+    indexes: { 'by-recipient': string }
+  }
   'provider-connections': {
     key: string
     value: ProviderConnectionRecord
@@ -144,7 +156,7 @@ interface SyncDBSchema extends DBSchema {
 }
 
 const DB_NAME = 'hhc-sync'
-export const SYNC_DB_VERSION = 2
+export const SYNC_DB_VERSION = 3
 
 let dbPromise: Promise<IDBPDatabase<SyncDBSchema>> | null = null
 
@@ -186,6 +198,10 @@ function getSyncDB(): Promise<IDBPDatabase<SyncDBSchema>> {
         store.createIndex('by-remote-item', 'remoteLookupKey')
         store.createIndex('by-blob', 'blobId')
       }
+      if (!db.objectStoreNames.contains('pending-share-leaves')) {
+        const store = db.createObjectStore('pending-share-leaves', { keyPath: 'id' })
+        store.createIndex('by-recipient', 'recipientId')
+      }
     }
   })
   return dbPromise
@@ -193,6 +209,27 @@ function getSyncDB(): Promise<IDBPDatabase<SyncDBSchema>> {
 
 export async function openSyncDB(): Promise<IDBPDatabase<SyncDBSchema>> {
   return getSyncDB()
+}
+
+export async function putPendingShareLeave(recipientId: string, grantId: string): Promise<void> {
+  await (
+    await getSyncDB()
+  ).put('pending-share-leaves', {
+    id: `${recipientId}:${grantId}`,
+    recipientId,
+    grantId,
+    createdAt: Date.now()
+  })
+}
+
+export async function listPendingShareLeaves(
+  recipientId: string
+): Promise<PendingShareLeaveRecord[]> {
+  return (await getSyncDB()).getAllFromIndex('pending-share-leaves', 'by-recipient', recipientId)
+}
+
+export async function deletePendingShareLeave(recipientId: string, grantId: string): Promise<void> {
+  await (await getSyncDB()).delete('pending-share-leaves', `${recipientId}:${grantId}`)
 }
 
 export function createHhcLineProviderConnectionId(accountUserId: string): string {
@@ -206,12 +243,18 @@ export async function putProviderConnection(
     updatedAt?: number
   }
 ): Promise<ProviderConnectionRecord> {
-  if (record.providerType === 'hhc-line') {
+  if (record.providerType === 'hhc-line' || record.providerType === 'hhc-share') {
     if (!record.accountUserId) {
       throw new Error('HHC LINE provider connections require an account user ID')
     }
-    if (record.id !== createHhcLineProviderConnectionId(record.accountUserId)) {
-      throw new Error('HHC LINE provider connection ID does not match its account user ID')
+    const expected =
+      record.providerType === 'hhc-line'
+        ? createHhcLineProviderConnectionId(record.accountUserId)
+        : `hhc-share:${record.accountUserId}`
+    if (record.id !== expected) {
+      throw new Error(
+        `${record.providerType === 'hhc-line' ? 'HHC LINE' : 'HHC share'} provider connection ID does not match its account user ID`
+      )
     }
   }
   const db = await getSyncDB()

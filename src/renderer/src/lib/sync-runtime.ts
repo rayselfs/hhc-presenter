@@ -410,6 +410,18 @@ export function startSyncRuntime(options: SyncRuntimeOptions = {}): () => void {
       console.warn('[sync] Failed to enumerate HHC LINE roots')
       return { summaries: [] as CloudRefreshSummary[], retrySoon: true }
     })
+    const hasPersonalShareState = Object.values(useFileExplorerStore.getState().folders).some(
+      (folder) => Boolean(folder.sharedRecipientId)
+    )
+    if (options.hhcAuth?.getSession() && hasPersonalShareState) {
+      try {
+        await (await import('./personal-share-sync')).reconcilePersonalShares(options.hhcAuth)
+      } catch (error) {
+        const classification = classifyHhcError(error)
+        result.retrySoon ||= classification === 'offline' || classification === 'retryable'
+        if (classification === 'fatal') console.warn('[sync] Failed to refresh shared folders')
+      }
+    }
     hhcRunning = false
     if (hhcPending) {
       hhcPending = false

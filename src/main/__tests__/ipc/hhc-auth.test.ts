@@ -1195,6 +1195,12 @@ describe('HHC auth IPC', () => {
       getSession: vi.fn().mockResolvedValue(null),
       signOut: vi.fn().mockResolvedValue(undefined),
       clearLocalData: vi.fn().mockResolvedValue(undefined),
+      resolveShareTarget: vi.fn().mockResolvedValue({
+        userId: '11111111-1111-1111-1111-111111111111',
+        displayName: 'Member',
+        email: 'member@example.com'
+      }),
+      resolveAccountLabels: vi.fn().mockResolvedValue([]),
       subscribe: vi.fn(() => () => undefined)
     }
   }
@@ -1216,6 +1222,8 @@ describe('HHC auth IPC', () => {
         'hhc-auth:get-access-token',
         'hhc-auth:refresh-access-token',
         'hhc-auth:get-session',
+        'hhc-auth:resolve-share-target',
+        'hhc-auth:resolve-account-labels',
         'hhc-auth:sign-out'
       ]) {
         await expect(handlers.get(channel)!(makeEvent())).rejects.toThrow(

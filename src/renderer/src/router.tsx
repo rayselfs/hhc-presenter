@@ -64,7 +64,16 @@ const routes = [
         path: 'cloud-files',
         element: (
           <Suspense fallback={null}>
-            <FilesPage cloud />
+            <FilesPage mode="personal" />
+          </Suspense>
+        ),
+        ErrorBoundary: RouteError
+      },
+      {
+        path: 'shared-files',
+        element: (
+          <Suspense fallback={null}>
+            <FilesPage mode="shared" />
           </Suspense>
         ),
         ErrorBoundary: RouteError

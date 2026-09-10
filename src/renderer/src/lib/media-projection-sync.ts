@@ -190,7 +190,38 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
       const snapshotEntry = state.snapshot?.entries.find((entry) => entry.itemId === item?.id)
       if (item && auth && snapshotEntry?.remoteItem) {
         try {
-          if (snapshotEntry.playbackMode === 'vlc-embedded' && isElectron()) {
+          let sharedAvailable: boolean | null = null
+          if (snapshotEntry.remoteItem.providerConnectionId.startsWith('hhc-share:')) {
+            const { ensurePersonalShareItemAvailableForPresentation } =
+              await import('@renderer/lib/personal-share-sync')
+            sharedAvailable =
+              (await ensurePersonalShareItemAvailableForPresentation(auth, item)) ?? false
+          }
+          if (sharedAvailable !== null) {
+            if (!sharedAvailable) return
+            const latest = useMediaProjectionStore.getState()
+            const latestItem = latest.currentItem()
+            if (sequence !== projectSequenceRef.current || latestItem?.id !== item.id) return
+            useMediaProjectionStore.setState((current) => {
+              const snapshot = current.snapshot
+              if (!snapshot || current.currentItem()?.id !== item.id) return current
+              return {
+                snapshot: {
+                  ...snapshot,
+                  entries: snapshot.entries.map((entry) => {
+                    if (entry.itemId !== item.id) return entry
+                    const {
+                      remoteItem: _remoteItem,
+                      remoteSource: _remoteSource,
+                      ...localEntry
+                    } = entry
+                    return { ...localEntry, sourceUrl: latestItem.url }
+                  })
+                }
+              }
+            })
+            currentState = useMediaProjectionStore.getState()
+          } else if (snapshotEntry.playbackMode === 'vlc-embedded' && isElectron()) {
             const { ensureHhcLineDesktopItemAvailableForPresentation } =
               await import('@renderer/lib/hhc-line-connect')
             const available = await ensureHhcLineDesktopItemAvailableForPresentation(auth, item)

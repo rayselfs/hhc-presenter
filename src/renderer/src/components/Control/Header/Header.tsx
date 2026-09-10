@@ -212,8 +212,11 @@ export default function Header(): React.JSX.Element {
         {showFilesControls && (
           <Breadcrumb
             rootFolderId={
-              location.pathname === '/cloud-files'
-                ? getFolderPath(currentFolderId).find((folder) => folder.personalOwnerId)?.id
+              location.pathname === '/cloud-files' || location.pathname === '/shared-files'
+                ? getFolderPath(currentFolderId).find(
+                    (folder) =>
+                      folder.personalOwnerId || (folder.sharedRecipientId && !folder.syncLink)
+                  )?.id
                 : undefined
             }
             currentFolderId={currentFolderId}

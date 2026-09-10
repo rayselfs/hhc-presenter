@@ -22,7 +22,7 @@ import type {
   TimerTickPayload
 } from './types/timer'
 import type { BibleVersion, BibleBook } from './types/bible'
-import type { HhcPendingSignIn, HhcSession } from './hhc-auth'
+import type { HhcPendingSignIn, HhcSession, PresenterAccountLabel } from './hhc-auth'
 import type {
   HhcAssetCollectionChangePage,
   HhcAssetCollectionItem,
@@ -308,6 +308,8 @@ export interface IpcInvokeMap {
   'hhc-auth:refresh-access-token': { args: []; result: string | null }
   'hhc-auth:get-session': { args: []; result: HhcSession | null }
   'hhc-auth:sign-out': { args: []; result: void }
+  'hhc-auth:resolve-share-target': { args: [string]; result: PresenterAccountLabel }
+  'hhc-auth:resolve-account-labels': { args: [string[]]; result: PresenterAccountLabel[] }
   'personal-cloud:ensureSpace': {
     args: Parameters<PersonalNativeApi['ensureSpace']>
     result: Awaited<ReturnType<PersonalNativeApi['ensureSpace']>>
@@ -347,6 +349,34 @@ export interface IpcInvokeMap {
   'personal-cloud:downloadSnapshot': {
     args: Parameters<PersonalNativeApi['downloadSnapshot']>
     result: Awaited<ReturnType<PersonalNativeApi['downloadSnapshot']>>
+  }
+  'personal-cloud:listFolderShares': {
+    args: Parameters<PersonalNativeApi['listFolderShares']>
+    result: Awaited<ReturnType<PersonalNativeApi['listFolderShares']>>
+  }
+  'personal-cloud:createFolderShare': {
+    args: Parameters<PersonalNativeApi['createFolderShare']>
+    result: Awaited<ReturnType<PersonalNativeApi['createFolderShare']>>
+  }
+  'personal-cloud:revokeFolderShare': {
+    args: Parameters<PersonalNativeApi['revokeFolderShare']>
+    result: Awaited<ReturnType<PersonalNativeApi['revokeFolderShare']>>
+  }
+  'personal-cloud:listSharedFolders': {
+    args: Parameters<PersonalNativeApi['listSharedFolders']>
+    result: Awaited<ReturnType<PersonalNativeApi['listSharedFolders']>>
+  }
+  'personal-cloud:getSharedFolderSnapshot': {
+    args: Parameters<PersonalNativeApi['getSharedFolderSnapshot']>
+    result: Awaited<ReturnType<PersonalNativeApi['getSharedFolderSnapshot']>>
+  }
+  'personal-cloud:leaveSharedFolder': {
+    args: Parameters<PersonalNativeApi['leaveSharedFolder']>
+    result: Awaited<ReturnType<PersonalNativeApi['leaveSharedFolder']>>
+  }
+  'personal-cloud:downloadSharedSnapshot': {
+    args: Parameters<PersonalNativeApi['downloadSharedSnapshot']>
+    result: Awaited<ReturnType<PersonalNativeApi['downloadSharedSnapshot']>>
   }
   'personal-cloud:cancel': {
     args: Parameters<PersonalNativeApi['cancel']>

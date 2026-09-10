@@ -55,7 +55,7 @@ import type {
   TimerTickPayload
 } from '../shared/types/timer'
 import type { BibleVersion, BibleBook } from '../shared/types/bible'
-import type { HhcPendingSignIn, HhcSession } from '../shared/hhc-auth'
+import type { HhcPendingSignIn, HhcSession, PresenterAccountLabel } from '../shared/hhc-auth'
 
 interface ThemeAPI {
   get: () => Promise<{ source: string; shouldUseDarkColors: boolean }>
@@ -179,6 +179,8 @@ interface HhcAuthAPI {
   refreshAccessToken: () => Promise<string | null>
   getSession: () => Promise<HhcSession | null>
   signOut: () => Promise<void>
+  resolveShareTarget: (email: string) => Promise<PresenterAccountLabel>
+  resolveAccountLabels: (userIds: string[]) => Promise<PresenterAccountLabel[]>
   onSessionChanged: (callback: (session: HhcSession | null) => void) => () => void
 }
 

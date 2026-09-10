@@ -39,6 +39,10 @@ export async function refreshSyncFolderOnNavigation(
       if (isElectron()) await refreshLocalSyncConnection(syncLink.providerConnectionId)
       return
     }
+    if (syncLink.providerType === 'hhc-share') {
+      if (hhcAuth) await (await import('./personal-share-sync')).reconcilePersonalShares(hhcAuth)
+      return
+    }
     if (isCloudProviderId(syncLink.providerType)) {
       await getCloudProviderAdapter(syncLink.providerType, hhcAuth).refreshFolder(rootFolderId)
     }

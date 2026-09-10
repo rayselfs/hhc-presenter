@@ -1,4 +1,4 @@
-export type SyncProviderType = 'local-fs' | 'onedrive' | 'hhc-line'
+export type SyncProviderType = 'local-fs' | 'onedrive' | 'hhc-line' | 'hhc-share'
 export type SyncOfflinePolicy = 'online-only' | 'on-demand' | 'always-offline'
 
 export interface FolderSyncLink {
@@ -11,6 +11,7 @@ export interface FolderSyncLink {
 
 export interface FolderRecord {
   personalOwnerId?: string
+  sharedRecipientId?: string
   id: string
   name: string
   parentId: string | null
@@ -25,6 +26,7 @@ export interface FolderRecord {
 
 export interface ItemRecord {
   personalOwnerId?: string
+  sharedRecipientId?: string
   id: string
   parentId: string
   type: 'verse' | 'file'

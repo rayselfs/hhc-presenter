@@ -1,5 +1,5 @@
 import { APP_CONFIG } from './app-config'
-import type { HhcAuthAdapter } from './hhc-auth'
+import type { HhcSession } from './hhc-auth'
 
 export interface PersonalSpace {
   id: string
@@ -36,8 +36,32 @@ export interface PersonalRemoteNode {
   name: string
   assetId?: string
   revision: number
+  mimeType?: string
+  sizeBytes?: number
+  etag?: string
   deletedAt?: string
   purged?: true
+}
+export interface PersonalFolderGrant {
+  id: string
+  folderItemId: string
+  ownerUserId: string
+  granteeUserId: string
+  createdAt: string
+}
+export interface SharedFolderRoot {
+  grantId: string
+  ownerUserId: string
+  root: PersonalRemoteNode
+  collectionRevision: number
+}
+export interface SharedFolderSnapshot {
+  grantId: string
+  collectionRevision: number
+  items: PersonalRemoteNode[]
+  nextCursor: string
+  hasMore: boolean
+  reset: true
 }
 export interface PersonalChangePage {
   collection: Pick<PersonalSpace, 'id' | 'revision'>
@@ -115,6 +139,21 @@ export interface PersonalCloudHttpApi {
     signal?: AbortSignal
   ): Promise<PersonalTrashPurgeResult>
   downloadContent(itemId: string, revision: number, signal?: AbortSignal): Promise<Response>
+  listFolderShares(itemId: string, signal?: AbortSignal): Promise<PersonalFolderGrant[]>
+  createFolderShare(
+    itemId: string,
+    granteeUserId: string,
+    signal?: AbortSignal
+  ): Promise<PersonalFolderGrant>
+  revokeFolderShare(itemId: string, grantId: string, signal?: AbortSignal): Promise<void>
+  listSharedFolders(signal?: AbortSignal): Promise<SharedFolderRoot[]>
+  getSharedFolderSnapshot(
+    grantId: string,
+    cursor?: string,
+    signal?: AbortSignal
+  ): Promise<SharedFolderSnapshot>
+  leaveSharedFolder(grantId: string, signal?: AbortSignal): Promise<void>
+  downloadSharedContent(grantId: string, itemId: string, signal?: AbortSignal): Promise<Response>
 }
 
 const ROOT = '/api/assets/personal-space'
@@ -242,6 +281,74 @@ function changes(value: unknown): PersonalChangePage {
     nextCursor: page.nextCursor,
     hasMore: page.hasMore,
     reset: page.reset
+  }
+}
+
+function remoteNode(value: unknown): PersonalRemoteNode {
+  const item = object(value)
+  requireValid(item.kind === 'folder' || item.kind === 'file')
+  requireValid(
+    typeof item.name === 'string' &&
+      item.name.trim().length > 0 &&
+      Array.from(item.name).length <= 255
+  )
+  requireValid(item.kind !== 'file' || typeof item.assetId === 'string')
+  return {
+    id: id(item.id),
+    collectionId: id(item.collectionId),
+    kind: item.kind,
+    name: item.name,
+    revision: revision(item.revision, 1),
+    ...(item.parentId === undefined ? {} : { parentId: id(item.parentId) }),
+    ...(item.assetId === undefined ? {} : { assetId: id(item.assetId) }),
+    ...(item.mimeType === undefined ? {} : { mimeType: textValue(item.mimeType, 255) }),
+    ...(item.sizeBytes === undefined ? {} : { sizeBytes: bytes(item.sizeBytes) }),
+    ...(item.etag === undefined ? {} : { etag: textValue(item.etag, 512) })
+  }
+}
+
+function textValue(value: unknown, maximum: number): string {
+  requireValid(typeof value === 'string' && value.length > 0 && value.length <= maximum)
+  return value
+}
+
+function grant(value: unknown): PersonalFolderGrant {
+  const item = object(value)
+  const createdAt = textValue(item.createdAt, 64)
+  requireValid(Number.isFinite(Date.parse(createdAt)))
+  return {
+    id: id(item.id),
+    folderItemId: id(item.folderItemId),
+    ownerUserId: id(item.ownerUserId),
+    granteeUserId: id(item.granteeUserId),
+    createdAt
+  }
+}
+
+function sharedRoot(value: unknown): SharedFolderRoot {
+  const item = object(value)
+  const root = remoteNode(item.root)
+  requireValid(root.kind === 'folder')
+  return {
+    grantId: id(item.grantId),
+    ownerUserId: id(item.ownerUserId),
+    root,
+    collectionRevision: revision(item.collectionRevision, 1)
+  }
+}
+
+function sharedSnapshot(value: unknown): SharedFolderSnapshot {
+  const page = object(value)
+  requireValid(Array.isArray(page.items) && page.items.length <= 100)
+  requireValid(typeof page.nextCursor === 'string' && page.nextCursor.length <= 2048)
+  requireValid(typeof page.hasMore === 'boolean' && page.reset === true)
+  return {
+    grantId: id(page.grantId),
+    collectionRevision: revision(page.collectionRevision, 1),
+    items: page.items.map(remoteNode),
+    nextCursor: page.nextCursor,
+    hasMore: page.hasMore,
+    reset: true
   }
 }
 
@@ -373,12 +480,47 @@ export function createPersonalCloudHttpApi(
       return { purgedItemIds: result.purgedItemIds.map(id) }
     },
     downloadContent: (itemId, version, signal) =>
-      request(`${ROOT}/items/${id(itemId)}/content?revision=${revision(version, 1)}`, { signal })
+      request(`${ROOT}/items/${id(itemId)}/content?revision=${revision(version, 1)}`, { signal }),
+    listFolderShares: async (itemId, signal) => {
+      const result = object(await json(`${ROOT}/items/${id(itemId)}/shares`, { signal }))
+      requireValid(Array.isArray(result.shares) && result.shares.length <= 100)
+      return result.shares.map(grant)
+    },
+    createFolderShare: (itemId, granteeUserId, signal) =>
+      json(
+        `${ROOT}/items/${id(itemId)}/shares`,
+        post({ granteeUserId: id(granteeUserId) }, signal)
+      ).then(grant),
+    revokeFolderShare: async (itemId, grantId, signal) => {
+      await request(`${ROOT}/items/${id(itemId)}/shares/${id(grantId)}`, {
+        method: 'DELETE',
+        signal
+      })
+    },
+    listSharedFolders: async (signal) => {
+      const result = object(await json('/api/assets/shared-folders', { signal }))
+      requireValid(Array.isArray(result.folders) && result.folders.length <= 100)
+      return result.folders.map(sharedRoot)
+    },
+    getSharedFolderSnapshot: (grantId, cursor, signal) =>
+      json(
+        `/api/assets/shared-folders/${id(grantId)}/snapshot${cursor ? `?${new URLSearchParams({ cursor })}` : ''}`,
+        { signal }
+      ).then(sharedSnapshot),
+    leaveSharedFolder: async (grantId, signal) => {
+      await request(`/api/assets/shared-folders/${id(grantId)}`, { method: 'DELETE', signal })
+    },
+    downloadSharedContent: (grantId, itemId, signal) =>
+      request(`/api/assets/shared-folders/${id(grantId)}/items/${id(itemId)}/content`, { signal })
   }
 }
 
 export function createAuthenticatedPersonalCloudApi(
-  auth: Pick<HhcAuthAdapter, 'getSession' | 'getAccessToken' | 'refreshAccessToken'>,
+  auth: {
+    getSession(): HhcSession | null | Promise<HhcSession | null>
+    getAccessToken(): Promise<string | null>
+    refreshAccessToken(): Promise<string | null>
+  },
   ownerId: string,
   fetcher: typeof fetch = fetch
 ): PersonalCloudHttpApi {
@@ -461,6 +603,25 @@ export interface PersonalNativeApi {
   ): Promise<PersonalCloudReply<PersonalTrashPurgeResult>>
   downloadSnapshot(
     input: PersonalNativeRequest & { itemId: string; revision: number; blobId: string }
+  ): Promise<PersonalCloudReply<PersonalNativeDownload>>
+  listFolderShares(
+    input: PersonalNativeRequest & { itemId: string }
+  ): Promise<PersonalCloudReply<PersonalFolderGrant[]>>
+  createFolderShare(
+    input: PersonalNativeRequest & { itemId: string; granteeUserId: string }
+  ): Promise<PersonalCloudReply<PersonalFolderGrant>>
+  revokeFolderShare(
+    input: PersonalNativeRequest & { itemId: string; grantId: string }
+  ): Promise<PersonalCloudReply<void>>
+  listSharedFolders(input: PersonalNativeRequest): Promise<PersonalCloudReply<SharedFolderRoot[]>>
+  getSharedFolderSnapshot(
+    input: PersonalNativeRequest & { grantId: string; cursor?: string }
+  ): Promise<PersonalCloudReply<SharedFolderSnapshot>>
+  leaveSharedFolder(
+    input: PersonalNativeRequest & { grantId: string }
+  ): Promise<PersonalCloudReply<void>>
+  downloadSharedSnapshot(
+    input: PersonalNativeRequest & { grantId: string; itemId: string; blobId: string }
   ): Promise<PersonalCloudReply<PersonalNativeDownload>>
   cancel(requestId: string): Promise<void>
 }
