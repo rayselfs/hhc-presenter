@@ -1,5 +1,7 @@
+import { act, renderHook } from '@testing-library/react'
 import {
   publishPersistedFileItem,
+  useCurrentFolderDisplay,
   useFavoritesExplorerSettings,
   useFileExplorerStore,
   useFileExplorerSettings,
@@ -75,7 +77,7 @@ describe.each([
     const options = store.persist.getOptions()
     const migrate = options.migrate
 
-    expect(options.version).toBe(4)
+    expect(options.version).toBe(5)
     await expect(
       Promise.resolve(
         migrate?.({ colWidths: { created: 112, size: 80, kind: 96 }, marker: true }, 0)
@@ -287,7 +289,7 @@ describe('useFileExplorerStore', () => {
 
 describe('useFileExplorerSettings', () => {
   beforeEach(() => {
-    useFileExplorerSettings.setState({ viewMode: 'medium-icon' })
+    useFileExplorerSettings.setState({ viewMode: 'medium-icon', folderDisplay: {} })
   })
 
   it('has default viewMode of medium-icon', () => {
@@ -305,5 +307,22 @@ describe('useFileExplorerSettings', () => {
       useFileExplorerSettings.getState().setViewMode(mode)
       expect(useFileExplorerSettings.getState().viewMode).toBe(mode)
     }
+  })
+
+  it('keeps a separate view mode for each folder', () => {
+    useFileExplorerStore.setState({ currentFolderId: 'file-root' })
+    const { result } = renderHook(() => useCurrentFolderDisplay())
+
+    act(() => result.current.setViewMode('list'))
+    expect(result.current.viewMode).toBe('list')
+
+    act(() => useFileExplorerStore.setState({ currentFolderId: 'folder-a' }))
+    expect(result.current.viewMode).toBe('medium-icon')
+
+    act(() => result.current.setViewMode('extra-large-icon'))
+    expect(result.current.viewMode).toBe('extra-large-icon')
+
+    act(() => useFileExplorerStore.setState({ currentFolderId: 'file-root' }))
+    expect(result.current.viewMode).toBe('list')
   })
 })

@@ -221,6 +221,28 @@ describe('FilesPage HHC LINE role resolution', () => {
     )
   })
 
+  it('disables after the only eligible collection is imported and re-enables for a new one', async () => {
+    mocks.listFolders
+      .mockResolvedValueOnce([{ remoteItemId: 'only', name: 'Only', parentRemoteItemId: null }])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ remoteItemId: 'new', name: 'New', parentRemoteItemId: null }])
+    render(<FilesPage />)
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Sync LINE group' })).toBeEnabled()
+    )
+
+    act(() => window.dispatchEvent(new Event('focus')))
+    await waitFor(() => expect(mocks.listFolders).toHaveBeenCalledTimes(2))
+    expect(screen.getByRole('button', { name: 'Sync LINE group' })).toBeDisabled()
+
+    act(() => window.dispatchEvent(new Event('focus')))
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Sync LINE group' })).toBeEnabled()
+    )
+    expect(mocks.listFolders).toHaveBeenCalledTimes(3)
+  })
+
   it('keeps HHC LINE visible and disabled while signed out', () => {
     mocks.session = null
     render(<FilesPage />)

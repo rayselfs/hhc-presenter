@@ -9,7 +9,7 @@ import {
   useState
 } from 'react'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
-import { hasHhcPermission, type HhcAuthAdapter, type HhcSession } from '@shared/hhc-auth'
+import { hasPresenterCloudAccess, type HhcAuthAdapter, type HhcSession } from '@shared/hhc-auth'
 import { createHhcAuthAdapter, registerHhcSessionOwner } from '@renderer/lib/hhc-auth'
 
 export type HhcAuthStatus = 'loading' | 'anonymous' | 'authenticated' | 'unavailable'
@@ -53,7 +53,7 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
   )
 
   const sessionUserId = session?.userId
-  const cloudAllowed = hasHhcPermission(session?.permissions, 'presenter:cloud:use')
+  const cloudAllowed = hasPresenterCloudAccess(session?.permissions)
   useLayoutEffect(() => {
     usePersonalSyncStore.getState().setAccount(status, sessionUserId, cloudAllowed)
   }, [status, sessionUserId, cloudAllowed])
@@ -357,7 +357,7 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
           .setAccount(
             current ? 'authenticated' : 'anonymous',
             current?.userId,
-            hasHhcPermission(current?.permissions, 'presenter:cloud:use')
+            hasPresenterCloudAccess(current?.permissions)
           )
       }
       throw error

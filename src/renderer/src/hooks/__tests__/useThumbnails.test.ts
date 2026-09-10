@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { useThumbnails } from '../useThumbnails'
 import * as thumbnailDb from '@renderer/lib/thumbnail-db'
@@ -69,6 +69,23 @@ describe('useThumbnails', () => {
     await waitFor(() => {
       expect(mockGetThumbnail).toHaveBeenCalledWith('copy-item', 'original-blob')
     })
+    unmount()
+  })
+
+  it('shows a thumbnail generated after the item was rendered', async () => {
+    mockGetThumbnail.mockResolvedValue(null)
+    const items = [makeItem('personal-item')]
+    const { result, unmount } = renderHook(() => useThumbnails(items))
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('hhc:thumbnail-ready', {
+          detail: { itemId: 'personal-item', dataUrl: 'data:image/jpeg;base64,dGh1bWI=' }
+        })
+      )
+    })
+
+    expect(result.current['personal-item']).toBe('data:image/jpeg;base64,dGh1bWI=')
     unmount()
   })
 

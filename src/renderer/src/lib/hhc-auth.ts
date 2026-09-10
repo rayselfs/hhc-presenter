@@ -21,7 +21,7 @@ export const HHC_AUTH = {
   token: `${APP_CONFIG.hhcAccountOrigin}/api/account/v1/oauth/token`,
   callbackUri: 'https://client.alive.org.tw/oauth/callback',
   clientId: 'client-web',
-  scope: 'openid profile presenter:cloud:use'
+  scope: 'openid profile presenter:cloud:manage'
 } as const
 
 export async function createHhcAuthAdapter(): Promise<HhcAuthAdapter> {
