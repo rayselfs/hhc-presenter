@@ -20,7 +20,7 @@ function conflictScope(
   catalog: { id: string; parentId: string | null }[]
 ): PersonalConflictScope | null {
   const first = pending.sort((a, b) => a.sequence - b.sequence)[0]
-  if (!first?.failure) return null
+  if (first?.failure !== 'conflict') return null
   const ids = new Set([first.nodeId])
   let changed = true
   while (changed) {

@@ -1297,6 +1297,10 @@
     "backupConfirm": "將受影響的 {{count}} 個項目完整複製到本機多媒體，再以雲端版本取代這些項目的本機修改。",
     "discardConfirm": "將捨棄受影響的 {{count}} 個項目的本機修改，重新下載雲端版本。此操作不會修改雲端。",
     "copyCreated": "版本衝突：已保留本機內容為衝突副本",
+    "activeBytes": "使用中的項目",
+    "trashBytes": "垃圾桶",
+    "availableBytes": "可用空間",
+    "quotaExceeded": "需要 {{required}} GiB；目前已使用 {{used}} / {{quota}} GiB，本機資料已保留",
     "missingFonts": "此裝置可能缺少字型：{{fonts}}。目前使用替代字型，原字型設定會保留。"
   }
 }

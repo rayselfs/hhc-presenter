@@ -1,5 +1,45 @@
 import { expect, it, vi } from 'vitest'
-import { createPersonalCloudHttpApi, PersonalCloudHttpError } from '../personal-cloud'
+import {
+  createPersonalCloudHttpApi,
+  PersonalCloudHttpError,
+  requirePersonalUsage
+} from '../personal-cloud'
+
+it('validates integer quota usage and purge responses', async () => {
+  expect(
+    requirePersonalUsage({
+      activeBytes: 1,
+      trashBytes: 2,
+      protectedBytes: 3,
+      usedBytes: 6,
+      quotaBytes: 100 * 1024 ** 3,
+      overrideBytes: null
+    })
+  ).toMatchObject({ usedBytes: 6, quotaBytes: 100 * 1024 ** 3 })
+  expect(() =>
+    requirePersonalUsage({
+      activeBytes: 1,
+      trashBytes: 2.5,
+      protectedBytes: 3,
+      usedBytes: 6,
+      quotaBytes: 100,
+      overrideBytes: null
+    })
+  ).toThrow(PersonalCloudHttpError)
+
+  const send = vi.fn().mockResolvedValue(Response.json({ purgedItemIds: ['item'] }))
+  const result = await createPersonalCloudHttpApi(send).purgeTrash({
+    operationId: 'operation',
+    itemIds: ['item']
+  })
+  expect(result).toEqual({ purgedItemIds: ['item'] })
+  expect(send).toHaveBeenCalledWith(
+    '/api/assets/personal-space/trash/purge',
+    expect.objectContaining({
+      body: JSON.stringify({ operationId: 'operation', itemIds: ['item'] })
+    })
+  )
+})
 
 it('scopes paths and forwards cancellation while validating changes', async () => {
   const send = vi.fn().mockResolvedValue(

@@ -137,6 +137,7 @@ export async function commitPersonalChangePage(
     [
       'personal-sync-state',
       'personal-sync-nodes',
+      'personal-sync-outbox',
       'folder-records',
       'folder-items',
       'file-blobs',
@@ -163,6 +164,34 @@ export async function commitPersonalChangePage(
       signal.throwIfAborted()
       revision = Math.max(revision, remote.revision)
       const previous = byRemote.get(remote.id)
+      if (remote.purged) {
+        if (!previous) continue
+        const items = tx.objectStore('folder-items')
+        const item = await items.get(previous.id)
+        const blobs = tx.objectStore('file-blobs')
+        if (item?.type === 'file') {
+          const blob = await blobs.get(getBlobId(item))
+          if (blob) await blobs.put({ ...blob, refCount: Math.max(0, (blob.refCount ?? 1) - 1) })
+        }
+        const outbox = tx.objectStore('personal-sync-outbox')
+        for (const operation of await outbox.index('by-owner').getAll(ownerId)) {
+          if (operation.nodeId !== previous.id) continue
+          if (operation.snapshotBlobId) {
+            const snapshot = await blobs.get(operation.snapshotBlobId)
+            if (snapshot)
+              await blobs.put({
+                ...snapshot,
+                refCount: Math.max(0, (snapshot.refCount ?? 1) - 1)
+              })
+          }
+          await outbox.delete(operation.id)
+        }
+        await items.delete(previous.id)
+        await tx.objectStore('folder-records').delete(previous.id)
+        await nodes.delete(previous.id)
+        byRemote.delete(remote.id)
+        continue
+      }
       if (
         !previous &&
         remote.deletedAt &&

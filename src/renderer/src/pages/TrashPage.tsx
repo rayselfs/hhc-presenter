@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from '@heroui/react/toast'
 import { Trash2, RotateCcw } from 'lucide-react'
@@ -28,6 +28,7 @@ import type { SortField } from '@renderer/stores/file-explorer'
 import type { SortableItem } from '@renderer/lib/file-explorer-sort'
 import { hasNameConflict, validateDisplayName } from '@renderer/lib/file-naming'
 import { ShortcutScope } from '@renderer/contexts/ShortcutScopeContext'
+import { useHhcAuth } from '@renderer/contexts/HhcAuthContext'
 
 type TrashEntry = { kind: 'folder'; folder: FolderRecord } | { kind: 'file'; item: FileItemRecord }
 
@@ -53,6 +54,9 @@ function compareTrashByField(
 export default function TrashPage(): React.JSX.Element {
   const { t } = useTranslation()
   const confirm = useConfirm()
+  const { session, getAccessToken, refreshAccessToken } = useHhcAuth()
+  const sessionRef = useRef(session)
+  sessionRef.current = session
   const { showMenu } = useContextMenu()
   const foldersArray = useFileExplorerStore((state) => state._foldersArray)
   const itemsArray = useFileExplorerStore((state) => state._itemsArray)
@@ -300,33 +304,47 @@ export default function TrashPage(): React.JSX.Element {
   )
 
   const permanentlyDeleteIds = useCallback(
-    async (ids: Set<string>): Promise<void> => {
-      if (
-        ids.size === 0 ||
-        entries.some((entry) => {
-          const record = entry.kind === 'folder' ? entry.folder : entry.item
-          return ids.has(record.id) && Boolean(record.personalOwnerId)
-        })
-      )
-        return
+    async (ids: Set<string>, allCloud = false): Promise<void> => {
+      if (ids.size === 0) return
       const confirmed = await confirm({
         title: t('trash.permanentDeleteTitle'),
         description: t('trash.permanentDeleteDescription'),
         status: 'danger'
       })
       if (!confirmed) return
-      for (const id of ids) {
-        const entry = entries.find((e) => (e.kind === 'folder' ? e.folder.id : e.item.id) === id)
-        if (!entry) continue
-        if (entry.kind === 'folder') {
-          await permanentDeleteFolderFromStore(entry.folder.id)
-        } else {
-          await permanentDeleteFileItemFromStore(entry.item.id)
+      try {
+        const selected = entries.filter((entry) =>
+          ids.has(entry.kind === 'folder' ? entry.folder.id : entry.item.id)
+        )
+        const cloudIds = selected
+          .filter((entry) =>
+            Boolean((entry.kind === 'folder' ? entry.folder : entry.item).personalOwnerId)
+          )
+          .map((entry) => (entry.kind === 'folder' ? entry.folder.id : entry.item.id))
+        const key = allCloud ? 'all' : [...cloudIds].sort().join(',')
+        if (cloudIds.length) {
+          const { purgePersonalTrash } = await import('@renderer/lib/personal-file-actions')
+          await purgePersonalTrash(allCloud ? { key, all: true } : { key, itemIds: cloudIds }, {
+            getSession: async () => sessionRef.current,
+            getAccessToken,
+            refreshAccessToken
+          })
         }
+        for (const entry of selected) {
+          const record = entry.kind === 'folder' ? entry.folder : entry.item
+          if (record.personalOwnerId) continue
+          if (entry.kind === 'folder') {
+            await permanentDeleteFolderFromStore(entry.folder.id)
+          } else {
+            await permanentDeleteFileItemFromStore(entry.item.id)
+          }
+        }
+        clearSelection()
+      } catch (error) {
+        toast.danger(error instanceof Error ? error.message : t('personalCloud.failed'))
       }
-      clearSelection()
     },
-    [clearSelection, confirm, entries, t]
+    [clearSelection, confirm, entries, getAccessToken, refreshAccessToken, t]
   )
 
   const handleContextMenu = useCallback(
@@ -349,10 +367,6 @@ export default function TrashPage(): React.JSX.Element {
           'separator',
           {
             id: 'permanent-delete',
-            disabled: entries.some((entry) => {
-              const record = entry.kind === 'folder' ? entry.folder : entry.item
-              return effectiveIds.has(record.id) && Boolean(record.personalOwnerId)
-            }),
             label: t('fileExplorer.contextMenu.permanentDelete'),
             icon: React.createElement(Trash2, { size: 14 }),
             variant: 'danger',
@@ -362,7 +376,7 @@ export default function TrashPage(): React.JSX.Element {
         event
       )
     },
-    [showMenu, t, selectedIds, setSelectedIds, requestRestoreIds, permanentlyDeleteIds, entries]
+    [showMenu, t, selectedIds, setSelectedIds, requestRestoreIds, permanentlyDeleteIds]
   )
 
   const handleContainerContextMenu = useCallback(
@@ -373,19 +387,16 @@ export default function TrashPage(): React.JSX.Element {
         [
           {
             id: 'empty-trash',
-            disabled: entries.some((entry) =>
-              Boolean((entry.kind === 'folder' ? entry.folder : entry.item).personalOwnerId)
-            ),
             label: t('trash.emptyTrash'),
             icon: React.createElement(Trash2, { size: 14 }),
             variant: 'danger',
-            onAction: () => void permanentlyDeleteIds(new Set(allIds))
+            onAction: () => void permanentlyDeleteIds(new Set(allIds), true)
           }
         ],
         event
       )
     },
-    [allIds, permanentlyDeleteIds, showMenu, t, entries]
+    [allIds, permanentlyDeleteIds, showMenu, t]
   )
 
   const handleSortChange = useCallback(

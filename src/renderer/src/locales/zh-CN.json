@@ -1297,6 +1297,10 @@
     "backupConfirm": "将受影响的 {{count}} 个项目完整复制到本机多媒体，再以云端版本取代这些项目的本机修改。",
     "discardConfirm": "将丢弃受影响的 {{count}} 个项目的本机修改，重新下载云端版本。此操作不会修改云端。",
     "copyCreated": "版本冲突：已保留本机内容为冲突副本",
+    "activeBytes": "使用中的项目",
+    "trashBytes": "回收站",
+    "availableBytes": "可用空间",
+    "quotaExceeded": "需要 {{required}} GiB；目前已使用 {{used}} / {{quota}} GiB，本机数据已保留",
     "missingFonts": "此设备可能缺少字体：{{fonts}}。目前使用替代字体，原字体设置会保留。"
   }
 }

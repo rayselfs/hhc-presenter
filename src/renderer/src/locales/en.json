@@ -1297,6 +1297,10 @@
     "backupConfirm": "Copy all {{count}} affected items to local media, then replace their local changes with the cloud versions.",
     "discardConfirm": "Discard local changes to {{count}} affected items and download the cloud versions. This does not modify the cloud.",
     "copyCreated": "Version conflict: local content preserved in a conflict copy",
+    "activeBytes": "Active items",
+    "trashBytes": "Trash",
+    "availableBytes": "Available",
+    "quotaExceeded": "Requires {{required}} GiB; currently using {{used}} / {{quota}} GiB. Local data was kept",
     "missingFonts": "Fonts may be missing on this device: {{fonts}}. Fallback fonts are displayed; the original font settings are retained."
   }
 }

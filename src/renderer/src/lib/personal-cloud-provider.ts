@@ -51,7 +51,7 @@ export function createPersonalCloudProvider(
         const reply = await call(request)
         signal?.throwIfAborted()
         if (!reply.ok) {
-          throw new PersonalCloudHttpError(reply.status, reply.code, reply.retryAfterMs)
+          throw new PersonalCloudHttpError(reply.status, reply.code, reply.retryAfterMs, reply.data)
         }
         return reply.value
       } finally {
@@ -60,6 +60,7 @@ export function createPersonalCloudProvider(
     }
     return {
       ensureSpace: (signal) => invoke((request) => native.ensureSpace(request), signal),
+      getUsage: (signal) => invoke((request) => native.getUsage(request), signal),
       getChanges: (cursor, signal) =>
         invoke(
           (request) => native.getChanges({ ...request, ...(cursor ? { cursor } : {}) }),
@@ -73,6 +74,8 @@ export function createPersonalCloudProvider(
         invoke((request) => native.completeUpload({ ...request, uploadId, upload }), signal),
       mutate: (mutation, signal) =>
         invoke((request) => native.mutate({ ...request, mutation }), signal),
+      purgeTrash: (purge, signal) =>
+        invoke((request) => native.purgeTrash({ ...request, purge }), signal),
       uploadSnapshot: (uploadId, blobId, signal) =>
         invoke((request) => native.uploadSnapshot({ ...request, uploadId, blobId }), signal),
       downloadSnapshot: async (itemId, revision, blobId, signal) => {
@@ -92,6 +95,7 @@ export function createPersonalCloudProvider(
   const api = createAuthenticatedPersonalCloudApi(auth, ownerId)
   return {
     ensureSpace: api.ensureSpace,
+    getUsage: api.getUsage,
     getChanges: api.getChanges,
     createUpload: api.createUpload,
     getUpload: api.getUpload,
@@ -114,6 +118,7 @@ export function createPersonalCloudProvider(
       )
     },
     mutate: api.mutate,
+    purgeTrash: api.purgeTrash,
     uploadSnapshot: async (uploadId, blobId, signal) => {
       signal.throwIfAborted()
       const record = await getFileBlobRecord(blobId)

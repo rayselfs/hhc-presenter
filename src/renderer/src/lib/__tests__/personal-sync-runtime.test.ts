@@ -29,12 +29,14 @@ const upload: PersonalUploadState = {
 }
 const api = {
   ensureSpace: vi.fn(),
+  getUsage: vi.fn(),
   getChanges: vi.fn(),
   createUpload: vi.fn(),
   getUpload: vi.fn(),
   uploadSnapshot: vi.fn(),
   completeUpload: vi.fn(),
   mutate: vi.fn(),
+  purgeTrash: vi.fn(),
   downloadSnapshot: vi.fn()
 } satisfies PersonalCloudProvider
 const run = (): ReturnType<typeof advancePersonalOutbox> =>
@@ -89,6 +91,23 @@ it('replays the exact submitted body after a lost mutation response, without a n
   expect(api.createUpload).toHaveBeenCalledTimes(1)
   expect(api.getUpload).not.toHaveBeenCalled()
   expect(await listPersonalOutbox('alice')).toEqual([])
+})
+
+it('keeps the local snapshot and durable outbox when quota is exceeded', async () => {
+  api.mutate.mockRejectedValue(
+    new PersonalCloudHttpError(409, 'quota-exceeded', 0, {
+      usedBytes: 90,
+      quotaBytes: 100,
+      requiredBytes: 20
+    })
+  )
+  expect(await run()).toBe('blocked')
+  expect((await listPersonalOutbox('alice'))[0]).toMatchObject({
+    failure: 'quota-exceeded',
+    failureData: { usedBytes: 90, quotaBytes: 100, requiredBytes: 20 }
+  })
+  expect(await getPersonalConflictScope('alice')).toBeNull()
+  expect(await (await openFileExplorerDB()).get('file-blobs', 'snapshot')).toBeDefined()
 })
 
 it('reuses the acknowledged local content instead of downloading its own upload again', async () => {

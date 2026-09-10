@@ -74,7 +74,19 @@ beforeEach(async () => {
 
 it('prepares a thumbnail after a downloaded personal snapshot commits', async () => {
   const api = {
-    ensureSpace: vi.fn(async () => page.collection),
+    ensureSpace: vi.fn(async () => ({
+      ...page.collection,
+      usedBytes: 3,
+      quotaBytes: 100 * 1024 ** 3
+    })),
+    getUsage: vi.fn(async () => ({
+      activeBytes: 3,
+      trashBytes: 0,
+      protectedBytes: 0,
+      usedBytes: 3,
+      quotaBytes: 100 * 1024 ** 3,
+      overrideBytes: null
+    })),
     getChanges: vi.fn(async () => page),
     createUpload: vi.fn(async () => {
       throw new Error('unused')
@@ -88,6 +100,7 @@ it('prepares a thumbnail after a downloaded personal snapshot commits', async ()
     mutate: vi.fn(async () => {
       throw new Error('unused')
     }),
+    purgeTrash: vi.fn(async () => ({ purgedItemIds: [] })),
     uploadSnapshot: vi.fn(async () => undefined),
     downloadSnapshot: vi.fn(async () => ({
       id: 'snapshot',
@@ -132,6 +145,45 @@ it('commits a page with its snapshot and advances only to revisions actually obs
     url: 'blob:snapshot',
     expiresAt: null
   })
+})
+
+it('removes local catalog records after a cloud purge change', async () => {
+  await commitPersonalChangePage(
+    'alice',
+    'worker',
+    undefined,
+    page,
+    new Map([
+      ['remote', { id: 'snapshot', blob: new Blob(['one']), size: 3, mimeType: 'image/png' }]
+    ]),
+    signal()
+  )
+  await commitPersonalChangePage(
+    'alice',
+    'worker',
+    'next',
+    {
+      ...page,
+      items: [
+        {
+          ...page.items[0],
+          revision: 2,
+          assetId: undefined,
+          deletedAt: new Date().toISOString(),
+          purged: true
+        }
+      ],
+      nextCursor: 'purged'
+    },
+    new Map(),
+    signal()
+  )
+  const db = await openFileExplorerDB()
+  expect(await db.get('folder-items', personalLocalNodeId('space', 'remote'))).toBeUndefined()
+  expect(
+    await db.get('personal-sync-nodes', personalLocalNodeId('space', 'remote'))
+  ).toBeUndefined()
+  expect(await db.get('file-blobs', 'snapshot')).toMatchObject({ refCount: 0 })
 })
 
 it('rolls back the entire page and cursor when one active file has no download', async () => {

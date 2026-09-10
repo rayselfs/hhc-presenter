@@ -21,6 +21,7 @@ import {
   renewPersonalSyncLease
 } from '@renderer/lib/personal-sync-db'
 import { requestPersonalSync } from '@renderer/lib/personal-sync-runtime'
+import { formatPersonalGiB } from '@shared/personal-cloud'
 
 export function PersonalCloudStatus(): React.JSX.Element | null {
   const ownerId = usePersonalSyncStore((state) => state.activeOwnerId)
@@ -30,10 +31,11 @@ export function PersonalCloudStatus(): React.JSX.Element | null {
 function PersonalCloudAccountStatus({ ownerId }: { ownerId: string }): React.JSX.Element | null {
   const { t } = useTranslation()
   const status = usePersonalSyncStore((state) => state.syncStatus)
-  const hasBlockedItems = usePersonalSyncStore((state) =>
-    Object.values(state.itemStatuses).some((value) => value === 'conflict' || value === 'failed')
+  const hasConflicts = usePersonalSyncStore((state) =>
+    Object.values(state.itemStatuses).some((value) => value === 'conflict')
   )
   const accountStatus = usePersonalSyncStore((state) => state.accountStatus)
+  const quotaExceeded = usePersonalSyncStore((state) => state.quotaExceeded)
   const confirm = useConfirm()
   const sessions = usePresentationSessionRegistry()
   const [busy, setBusy] = useState(false)
@@ -111,15 +113,22 @@ function PersonalCloudAccountStatus({ ownerId }: { ownerId: string }): React.JSX
   const displayedStatus = accountStatus === 'unavailable' ? 'offline' : status
   if (
     accountStatus === 'unavailable' ||
-    (status !== 'failed' && status !== 'conflict' && !hasBlockedItems)
+    (status !== 'failed' && status !== 'conflict' && !hasConflicts)
   )
     return null
   return (
     <div className="mx-3 mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-border p-3">
       <span role="status" className="mr-auto text-sm">
-        {t('personalCloud.title')} · {t(`personalCloud.${displayedStatus}`)}
+        {t('personalCloud.title')} ·{' '}
+        {quotaExceeded
+          ? t('personalCloud.quotaExceeded', {
+              required: formatPersonalGiB(quotaExceeded.requiredBytes),
+              used: formatPersonalGiB(quotaExceeded.usedBytes),
+              quota: formatPersonalGiB(quotaExceeded.quotaBytes)
+            })
+          : t(`personalCloud.${displayedStatus}`)}
       </span>
-      {status === 'conflict' || hasBlockedItems ? (
+      {status === 'conflict' || hasConflicts ? (
         <>
           <Button
             size="sm"

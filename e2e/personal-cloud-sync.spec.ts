@@ -59,6 +59,17 @@ test('two clients preserve an offline rename conflict and replay a lost commit r
         })
       } else if (path.endsWith('/content')) {
         await route.fulfill({ contentType: 'image/png', body: png })
+      } else if (path.endsWith('/usage')) {
+        await route.fulfill({
+          json: {
+            activeBytes: png.byteLength,
+            trashBytes: 0,
+            protectedBytes: 0,
+            usedBytes: png.byteLength,
+            quotaBytes: 100 * 1024 ** 3,
+            overrideBytes: null
+          }
+        })
       } else if (path.endsWith('/mutations')) {
         const operation: PersonalMutationRequest = request.postDataJSON()
         requests.push(operation)
@@ -88,7 +99,16 @@ test('two clients preserve an offline rename conflict and replay a lost commit r
           return
         }
         await route.fulfill({ json: result })
-      } else await route.fulfill({ json: { id: 'space', revision: remote.revision } })
+      } else {
+        await route.fulfill({
+          json: {
+            id: 'space',
+            revision: remote.revision,
+            usedBytes: png.byteLength,
+            quotaBytes: 100 * 1024 ** 3
+          }
+        })
+      }
     })
   }
   const open = async (context: BrowserContext): Promise<Page> => {

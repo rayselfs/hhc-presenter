@@ -53,6 +53,7 @@ import { FolderPersistenceStatus } from '@renderer/components/Common/FolderPersi
 import { buildPresentationItemActions } from '@renderer/lib/presentation-item-actions'
 import { useHhcAuth } from '@renderer/contexts/HhcAuthContext'
 import { PersonalCloudStatus } from '@renderer/components/Control/FileExplorer/PersonalCloudStatus'
+import { PersonalCloudUsage } from '@renderer/components/Control/FileExplorer/PersonalCloudUsage'
 
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
 
@@ -947,7 +948,11 @@ function FilesWorkspace({ cloud }: { cloud: boolean }): React.JSX.Element {
         className="hidden"
         onChange={(e) => void handleFolderChange(e)}
       />
-      <FileExplorerShell itemCount={itemCount} selectedCount={selectedCount}>
+      <FileExplorerShell
+        itemCount={itemCount}
+        selectedCount={selectedCount}
+        endContent={cloud ? <PersonalCloudUsage /> : undefined}
+      >
         {cloud && <PersonalCloudStatus />}
         <FolderPersistenceStatus
           className="mx-3 mt-3"

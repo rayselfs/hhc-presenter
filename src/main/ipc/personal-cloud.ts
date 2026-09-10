@@ -11,6 +11,7 @@ import {
   type PersonalCloudHttpApi,
   type PersonalCloudReply,
   type PersonalMutationRequest,
+  type PersonalTrashPurgeInput,
   type PersonalUploadInput
 } from '@shared/personal-cloud'
 import type { WindowManager } from '../windowManager'
@@ -67,6 +68,20 @@ function uploadInput(value: unknown): PersonalUploadInput {
   const sizeBytes = number(input.sizeBytes)
   valid(sizeBytes <= PERSONAL_MAX_FILE_BYTES)
   return { fileName: text(input.fileName, 1024), mimeType: text(input.mimeType), sizeBytes }
+}
+function purgeInput(value: unknown): PersonalTrashPurgeInput {
+  const input = exact(value, ['operationId'], ['itemIds', 'all'])
+  valid(input.all === undefined || typeof input.all === 'boolean')
+  valid(
+    input.itemIds === undefined || (Array.isArray(input.itemIds) && input.itemIds.length <= 1000)
+  )
+  const itemIds = Array.isArray(input.itemIds) ? input.itemIds.map(opaque) : undefined
+  valid(Boolean(input.all) !== Boolean(itemIds?.length))
+  return {
+    operationId: text(input.operationId, 128),
+    ...(itemIds ? { itemIds } : {}),
+    ...(input.all ? { all: true } : {})
+  }
 }
 function mutationInput(value: unknown): PersonalMutationRequest {
   const input = exact(
@@ -152,7 +167,8 @@ export function registerPersonalCloudHandlers(wm: WindowManager, auth: Auth): vo
             ok: false,
             status: error.status,
             code: error.code,
-            retryAfterMs: error.retryAfterMs
+            retryAfterMs: error.retryAfterMs,
+            ...(error.data ? { data: error.data } : {})
           }
         }
         const aborted = requestId && requests.get(requestId)?.signal.aborted
@@ -180,6 +196,7 @@ export function registerPersonalCloudHandlers(wm: WindowManager, auth: Auth): vo
     })
   }
   register('personal-cloud:ensureSpace', [], (api, _input, signal) => api.ensureSpace(signal))
+  register('personal-cloud:getUsage', [], (api, _input, signal) => api.getUsage(signal))
   register(
     'personal-cloud:getChanges',
     [],
@@ -219,6 +236,9 @@ export function registerPersonalCloudHandlers(wm: WindowManager, auth: Auth): vo
   })
   register('personal-cloud:mutate', ['mutation'], (api, input, signal) =>
     api.mutate(mutationInput(input.mutation), signal)
+  )
+  register('personal-cloud:purgeTrash', ['purge'], (api, input, signal) =>
+    api.purgeTrash(purgeInput(input.purge), signal)
   )
   register('personal-cloud:uploadSnapshot', ['uploadId', 'blobId'], async (api, input, signal) => {
     const blob = await openAsBlob(getNativeFilePath(fileId(input.blobId)))
