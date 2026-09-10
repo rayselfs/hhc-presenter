@@ -4,6 +4,29 @@ import type { HhcAuthAdapter } from './hhc-auth'
 export interface PersonalSpace {
   id: string
   revision: number
+  usedBytes: number
+  quotaBytes: number
+}
+export interface PersonalUsage {
+  activeBytes: number
+  trashBytes: number
+  protectedBytes: number
+  usedBytes: number
+  quotaBytes: number
+  overrideBytes: number | null
+}
+export interface PersonalTrashPurgeInput {
+  operationId: string
+  itemIds?: string[]
+  all?: boolean
+}
+export interface PersonalTrashPurgeResult {
+  purgedItemIds: string[]
+}
+export interface PersonalQuotaExceededData {
+  usedBytes: number
+  quotaBytes: number
+  requiredBytes: number
 }
 export interface PersonalRemoteNode {
   id: string
@@ -14,9 +37,10 @@ export interface PersonalRemoteNode {
   assetId?: string
   revision: number
   deletedAt?: string
+  purged?: true
 }
 export interface PersonalChangePage {
-  collection: PersonalSpace
+  collection: Pick<PersonalSpace, 'id' | 'revision'>
   items: PersonalRemoteNode[]
   nextCursor: string
   hasMore: boolean
@@ -62,7 +86,8 @@ export class PersonalCloudHttpError extends Error {
   constructor(
     readonly status: number,
     readonly code: string,
-    readonly retryAfterMs = 0
+    readonly retryAfterMs = 0,
+    readonly data?: PersonalQuotaExceededData
   ) {
     super(`Personal cloud request failed: ${status} ${code}`)
   }
@@ -70,6 +95,7 @@ export class PersonalCloudHttpError extends Error {
 
 export interface PersonalCloudHttpApi {
   ensureSpace(signal?: AbortSignal): Promise<PersonalSpace>
+  getUsage(signal?: AbortSignal): Promise<PersonalUsage>
   getChanges(cursor?: string, signal?: AbortSignal): Promise<PersonalChangePage>
   createUpload(
     input: PersonalUploadInput,
@@ -84,11 +110,19 @@ export interface PersonalCloudHttpApi {
     signal?: AbortSignal
   ): Promise<PersonalUploadState>
   mutate(input: PersonalMutationRequest, signal?: AbortSignal): Promise<PersonalMutationResult>
+  purgeTrash(
+    input: PersonalTrashPurgeInput,
+    signal?: AbortSignal
+  ): Promise<PersonalTrashPurgeResult>
   downloadContent(itemId: string, revision: number, signal?: AbortSignal): Promise<Response>
 }
 
 const ROOT = '/api/assets/personal-space'
 export const PERSONAL_MAX_FILE_BYTES = 200 * 1024 * 1024
+
+export function formatPersonalGiB(bytes: number): string {
+  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(bytes / 1024 ** 3)
+}
 
 function requireValid(condition: unknown): asserts condition {
   if (!condition) throw new PersonalCloudHttpError(0, 'invalid-response')
@@ -105,9 +139,32 @@ function revision(value: unknown, minimum = 0): number {
   requireValid(typeof value === 'number' && Number.isSafeInteger(value) && value >= minimum)
   return value
 }
+function bytes(value: unknown, minimum = 0): number {
+  requireValid(typeof value === 'number' && Number.isSafeInteger(value) && value >= minimum)
+  return value
+}
 function space(value: unknown): PersonalSpace {
   const item = object(value)
+  return {
+    ...collectionRef(value),
+    usedBytes: bytes(item.usedBytes),
+    quotaBytes: bytes(item.quotaBytes, 1)
+  }
+}
+function collectionRef(value: unknown): Pick<PersonalSpace, 'id' | 'revision'> {
+  const item = object(value)
   return { id: id(item.id), revision: revision(item.revision) }
+}
+export function requirePersonalUsage(value: unknown): PersonalUsage {
+  const item = object(value)
+  return {
+    activeBytes: bytes(item.activeBytes),
+    trashBytes: bytes(item.trashBytes),
+    protectedBytes: bytes(item.protectedBytes),
+    usedBytes: bytes(item.usedBytes),
+    quotaBytes: bytes(item.quotaBytes, 1),
+    overrideBytes: item.overrideBytes === null ? null : bytes(item.overrideBytes, 1)
+  }
 }
 function upload(value: unknown): PersonalUploadState {
   const item = object(value)
@@ -143,7 +200,7 @@ function upload(value: unknown): PersonalUploadState {
 }
 function changes(value: unknown): PersonalChangePage {
   const page = object(value)
-  const collection = space(page.collection)
+  const collection = collectionRef(page.collection)
   requireValid(Array.isArray(page.items) && page.items.length <= 500)
   requireValid(typeof page.nextCursor === 'string' && page.nextCursor.length <= 2048)
   requireValid(typeof page.hasMore === 'boolean' && typeof page.reset === 'boolean')
@@ -153,7 +210,10 @@ function changes(value: unknown): PersonalChangePage {
     requireValid(item.kind === 'folder' || item.kind === 'file')
     requireValid(item.parentId === undefined || typeof item.parentId === 'string')
     requireValid(item.assetId === undefined || typeof item.assetId === 'string')
-    requireValid(item.kind !== 'file' || item.deletedAt !== undefined || Boolean(item.assetId))
+    requireValid(item.purged === undefined || item.purged === true)
+    requireValid(
+      item.kind !== 'file' || item.deletedAt !== undefined || item.purged || Boolean(item.assetId)
+    )
     requireValid(
       typeof item.name === 'string' &&
         item.name.trim().length > 0 &&
@@ -169,6 +229,7 @@ function changes(value: unknown): PersonalChangePage {
       kind: item.kind,
       name: item.name,
       revision: revision(item.revision, 1),
+      ...(item.purged ? { purged: true as const } : {}),
       ...(item.parentId ? { parentId: id(item.parentId) } : {}),
       ...(item.assetId ? { assetId: id(item.assetId) } : {}),
       ...(typeof item.deletedAt === 'string' ? { deletedAt: item.deletedAt } : {})
@@ -224,12 +285,26 @@ export function createPersonalCloudHttpApi(
         error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
           ? error.code.slice(0, 128)
           : 'request-failed'
+      const rawData = error && typeof error === 'object' && 'data' in error ? error.data : undefined
+      let data: PersonalQuotaExceededData | undefined
+      if (code === 'quota-exceeded') {
+        try {
+          const value = object(rawData)
+          data = {
+            usedBytes: bytes(value.usedBytes),
+            quotaBytes: bytes(value.quotaBytes, 1),
+            requiredBytes: bytes(value.requiredBytes, 1)
+          }
+        } catch {
+          data = undefined
+        }
+      }
       const retry = response.headers.get('retry-after')
       const seconds = retry === null ? 0 : Number(retry)
       const retryAfterMs = Number.isFinite(seconds)
         ? Math.max(0, seconds * 1000)
         : Math.max(0, Date.parse(retry ?? '') - Date.now()) || 0
-      throw new PersonalCloudHttpError(response.status, code, Math.min(retryAfterMs, 3600000))
+      throw new PersonalCloudHttpError(response.status, code, Math.min(retryAfterMs, 3600000), data)
     }
     return response
   }
@@ -249,6 +324,7 @@ export function createPersonalCloudHttpApi(
   })
   return {
     ensureSpace: async (signal) => space(await json(ROOT, post({}, signal))),
+    getUsage: async (signal) => requirePersonalUsage(await json(`${ROOT}/usage`, { signal })),
     getChanges: async (cursor, signal) =>
       changes(
         await json(`${ROOT}/changes${cursor ? `?${new URLSearchParams({ cursor })}` : ''}`, {
@@ -280,6 +356,21 @@ export function createPersonalCloudHttpApi(
         nodeRevision: revision(result.nodeRevision, 1),
         collectionRevision: revision(result.collectionRevision, 1)
       }
+    },
+    purgeTrash: async (input, signal) => {
+      requireValid(
+        typeof input.operationId === 'string' &&
+          input.operationId.length > 0 &&
+          input.operationId.length <= 128 &&
+          Boolean(input.all) !== Boolean(input.itemIds?.length)
+      )
+      if (input.itemIds) {
+        requireValid(input.itemIds.length <= 1000)
+        input.itemIds.forEach(id)
+      }
+      const result = object(await json(`${ROOT}/trash/purge`, post(input, signal)))
+      requireValid(Array.isArray(result.purgedItemIds) && result.purgedItemIds.length <= 1000)
+      return { purgedItemIds: result.purgedItemIds.map(id) }
     },
     downloadContent: (itemId, version, signal) =>
       request(`${ROOT}/items/${id(itemId)}/content?revision=${revision(version, 1)}`, { signal })
@@ -339,9 +430,11 @@ export type PersonalCloudReply<T> =
       status: number
       code: string
       retryAfterMs: number
+      data?: PersonalQuotaExceededData
     }
 export interface PersonalNativeApi {
   ensureSpace(input: PersonalNativeRequest): Promise<PersonalCloudReply<PersonalSpace>>
+  getUsage(input: PersonalNativeRequest): Promise<PersonalCloudReply<PersonalUsage>>
   getChanges(
     input: PersonalNativeRequest & { cursor?: string }
   ): Promise<PersonalCloudReply<PersonalChangePage>>
@@ -363,6 +456,9 @@ export interface PersonalNativeApi {
   mutate(
     input: PersonalNativeRequest & { mutation: PersonalMutationRequest }
   ): Promise<PersonalCloudReply<PersonalMutationResult>>
+  purgeTrash(
+    input: PersonalNativeRequest & { purge: PersonalTrashPurgeInput }
+  ): Promise<PersonalCloudReply<PersonalTrashPurgeResult>>
   downloadSnapshot(
     input: PersonalNativeRequest & { itemId: string; revision: number; blobId: string }
   ): Promise<PersonalCloudReply<PersonalNativeDownload>>

@@ -1,7 +1,13 @@
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 import type { PersonalSpace } from '@shared/personal-cloud'
+import type { HhcAuthAdapter } from '@shared/hhc-auth'
 import { openFileExplorerDB } from './file-explorer-db'
-import { commitPersonalFileMutation, commitPersonalLocalMutation } from './personal-sync-db'
+import {
+  commitPersonalFileMutation,
+  commitPersonalLocalMutation,
+  completePersonalPurge,
+  preparePersonalPurge
+} from './personal-sync-db'
 import { resolveUniqueName } from './file-naming'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
 import i18n from '@renderer/i18n'
@@ -10,6 +16,7 @@ import {
   publishPersistedFileItem,
   refreshPersonalCatalog
 } from '@renderer/stores/file-explorer'
+import { createPersonalCloudProvider } from './personal-cloud-provider'
 
 function activeOwner(): string {
   const ownerId = usePersonalSyncStore.getState().activeOwnerId
@@ -228,6 +235,30 @@ export async function mutatePersonalNode(
     mutation: operation
   })
   await publish(ownerId)
+}
+
+export async function purgePersonalTrash(
+  input: { key: string; itemIds: string[] } | { key: string; all: true },
+  auth: Pick<HhcAuthAdapter, 'getSession' | 'getAccessToken' | 'refreshAccessToken'>
+): Promise<void> {
+  const ownerId = activeOwner()
+  const api = createPersonalCloudProvider(auth, ownerId)
+  let itemIds: string[] | undefined
+  if ('itemIds' in input) {
+    const db = await openFileExplorerDB()
+    const nodes = await Promise.all(input.itemIds.map((id) => db.get('personal-sync-nodes', id)))
+    if (nodes.some((node) => !node || node.ownerId !== ownerId)) {
+      throw new Error('Personal trash selection is unavailable')
+    }
+    itemIds = nodes.map((node) => node!.remoteId)
+  }
+  const operationId = await preparePersonalPurge(ownerId, input.key)
+  await api.purgeTrash({ operationId, ...(itemIds ? { itemIds } : { all: true }) })
+  window.dispatchEvent(new CustomEvent('hhc:personal-sync', { detail: ownerId }))
+  await completePersonalPurge(ownerId, input.key, operationId)
+  const usage = await api.getUsage().catch(() => undefined)
+  if (!usage || usePersonalSyncStore.getState().activeOwnerId !== ownerId) return
+  usePersonalSyncStore.setState({ usage })
 }
 
 export async function setPersonalFileNotes(id: string, notes: string | undefined): Promise<void> {

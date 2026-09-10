@@ -6,12 +6,14 @@ export interface FileExplorerShellProps {
   children: React.ReactNode
   itemCount: number
   selectedCount: number
+  endContent?: React.ReactNode
 }
 
 export default function FileExplorerShell({
   children,
   itemCount,
-  selectedCount
+  selectedCount,
+  endContent
 }: FileExplorerShellProps): React.JSX.Element {
   const { t } = useTranslation()
 
@@ -34,6 +36,7 @@ export default function FileExplorerShell({
             })}
           </>
         )}
+        {endContent && <div className="ml-auto">{endContent}</div>}
       </div>
     </div>
   )

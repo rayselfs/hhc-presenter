@@ -1,4 +1,8 @@
-import type { PersonalMutationRequest, PersonalRemoteNode } from '@shared/personal-cloud'
+import type {
+  PersonalMutationRequest,
+  PersonalQuotaExceededData,
+  PersonalRemoteNode
+} from '@shared/personal-cloud'
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 import { openFileExplorerDB, type FileBlobRecord } from './file-explorer-db'
 import { getBlobId } from './blob-identity'
@@ -37,6 +41,7 @@ export interface PersonalSyncState {
   cursor?: string
   pullRevision?: number
   lease?: { workerId: string; expiresAt: number }
+  pendingPurge?: { key: string; operationId: string }
 }
 
 export interface PersonalOutboxRecord {
@@ -59,6 +64,7 @@ export interface PersonalOutboxRecord {
   uploadId?: string
   submittedRequest?: PersonalMutationRequest
   failure?: string
+  failureData?: PersonalQuotaExceededData
   subtree?: { nodeId: string; localRevision: number }[]
 }
 
@@ -609,11 +615,41 @@ export async function releasePersonalSyncLease(ownerId: string, workerId: string
   await updatePersonalSyncLease(ownerId, workerId, 'release')
 }
 
+export async function preparePersonalPurge(ownerId: string, key: string): Promise<string> {
+  const db = await openFileExplorerDB()
+  const tx = db.transaction('personal-sync-state', 'readwrite')
+  const state = await tx.store.get(ownerId)
+  if (!state) throw new Error('Personal owner is missing')
+  const operationId =
+    state.pendingPurge?.key === key ? state.pendingPurge.operationId : crypto.randomUUID()
+  await tx.store.put({ ...state, pendingPurge: { key, operationId } })
+  await tx.done
+  return operationId
+}
+
+export async function completePersonalPurge(
+  ownerId: string,
+  key: string,
+  operationId: string
+): Promise<void> {
+  const db = await openFileExplorerDB()
+  const tx = db.transaction('personal-sync-state', 'readwrite')
+  const state = await tx.store.get(ownerId)
+  if (!state) throw new Error('Personal owner is missing')
+  if (state.pendingPurge?.key === key && state.pendingPurge.operationId === operationId) {
+    await tx.store.put({ ...state, pendingPurge: undefined })
+  }
+  await tx.done
+}
+
 export async function updatePersonalOperationTransfer(
   ownerId: string,
   workerId: string,
   operationId: string,
-  update: Pick<PersonalOutboxRecord, 'uploadAttempt' | 'uploadId' | 'submittedRequest' | 'failure'>,
+  update: Pick<
+    PersonalOutboxRecord,
+    'uploadAttempt' | 'uploadId' | 'submittedRequest' | 'failure' | 'failureData'
+  >,
   signal: AbortSignal
 ): Promise<PersonalOutboxRecord> {
   signal.throwIfAborted()

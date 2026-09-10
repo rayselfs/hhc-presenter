@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { createPersistName, hhcPersistStorage } from '@renderer/lib/persist-storage'
+import type { PersonalQuotaExceededData, PersonalUsage } from '@shared/personal-cloud'
 
 type PersonalAccountStatus = 'loading' | 'anonymous' | 'authenticated' | 'unavailable'
 export type PersonalItemStatus = 'pending' | 'synced' | 'conflict' | 'failed'
@@ -11,6 +12,8 @@ interface PersonalSyncState {
   accountStatus: PersonalAccountStatus
   syncStatus: 'idle' | 'pending' | 'syncing' | 'synced' | 'conflict' | 'auth-required' | 'failed'
   errorCode: string | null
+  usage: PersonalUsage | null
+  quotaExceeded: PersonalQuotaExceededData | null
   setAccount(status: PersonalAccountStatus, ownerId?: string, allowed?: boolean): void
 }
 
@@ -23,6 +26,8 @@ export const usePersonalSyncStore = create<PersonalSyncState>()(
       accountStatus: 'loading',
       syncStatus: 'idle',
       errorCode: null,
+      usage: null,
+      quotaExceeded: null,
       setAccount: (status, ownerId, allowed = false) =>
         set((state) => ({
           accountStatus: status,
@@ -44,6 +49,12 @@ export const usePersonalSyncStore = create<PersonalSyncState>()(
                 : state.lastOwnerId,
           syncStatus: 'idle',
           errorCode: null,
+          usage:
+            status === 'unavailable' ||
+            (status === 'authenticated' && allowed && ownerId === state.activeOwnerId)
+              ? state.usage
+              : null,
+          quotaExceeded: null,
           itemStatuses: {}
         }))
     }),

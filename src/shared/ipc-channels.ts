@@ -312,6 +312,10 @@ export interface IpcInvokeMap {
     args: Parameters<PersonalNativeApi['ensureSpace']>
     result: Awaited<ReturnType<PersonalNativeApi['ensureSpace']>>
   }
+  'personal-cloud:getUsage': {
+    args: Parameters<PersonalNativeApi['getUsage']>
+    result: Awaited<ReturnType<PersonalNativeApi['getUsage']>>
+  }
   'personal-cloud:getChanges': {
     args: Parameters<PersonalNativeApi['getChanges']>
     result: Awaited<ReturnType<PersonalNativeApi['getChanges']>>
@@ -335,6 +339,10 @@ export interface IpcInvokeMap {
   'personal-cloud:mutate': {
     args: Parameters<PersonalNativeApi['mutate']>
     result: Awaited<ReturnType<PersonalNativeApi['mutate']>>
+  }
+  'personal-cloud:purgeTrash': {
+    args: Parameters<PersonalNativeApi['purgeTrash']>
+    result: Awaited<ReturnType<PersonalNativeApi['purgeTrash']>>
   }
   'personal-cloud:downloadSnapshot': {
     args: Parameters<PersonalNativeApi['downloadSnapshot']>

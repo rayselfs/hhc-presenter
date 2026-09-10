@@ -110,6 +110,54 @@ it('accepts the dependent rename operation ID emitted by a deck save', async () 
   ).toMatchObject({ ok: true })
 })
 
+it('returns usage, purges trash, and preserves structured quota errors', async () => {
+  mocks.fetch
+    .mockResolvedValueOnce(
+      Response.json({
+        activeBytes: 1,
+        trashBytes: 2,
+        protectedBytes: 3,
+        usedBytes: 6,
+        quotaBytes: 100,
+        overrideBytes: null
+      })
+    )
+    .mockResolvedValueOnce(Response.json({ purgedItemIds: ['item'] }))
+    .mockResolvedValueOnce(
+      Response.json(
+        {
+          error: {
+            code: 'quota-exceeded',
+            data: { usedBytes: 90, quotaBytes: 100, requiredBytes: 20 }
+          }
+        },
+        { status: 409 }
+      )
+    )
+  expect(await invoke('getUsage', request)).toMatchObject({ ok: true, value: { usedBytes: 6 } })
+  expect(
+    await invoke('purgeTrash', {
+      ...request,
+      purge: { operationId: 'operation', itemIds: ['item'] }
+    })
+  ).toMatchObject({ ok: true, value: { purgedItemIds: ['item'] } })
+  expect(
+    await invoke('mutate', {
+      ...request,
+      mutation: {
+        operationId: 'operation',
+        itemId: 'item',
+        type: 'create-folder',
+        name: 'Folder'
+      }
+    })
+  ).toMatchObject({
+    ok: false,
+    code: 'quota-exceeded',
+    data: { usedBytes: 90, quotaBytes: 100, requiredBytes: 20 }
+  })
+})
+
 it('completes uploads with the SHA-256 of the immutable native snapshot', async () => {
   await writeFile(join(mocks.root, blobId), 'one')
   mocks.fetch.mockResolvedValue(

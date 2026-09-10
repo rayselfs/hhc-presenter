@@ -36,3 +36,17 @@ it('keeps normal background synchronization invisible', () => {
   const { container } = render(<PersonalCloudStatus />)
   expect(container).toBeEmptyDOMElement()
 })
+
+it('does not offer conflict actions for quota-blocked items', () => {
+  usePersonalSyncStore.setState({
+    activeOwnerId: 'owner',
+    accountStatus: 'authenticated',
+    syncStatus: 'failed',
+    itemStatuses: { item: 'failed' },
+    quotaExceeded: { usedBytes: 90, quotaBytes: 100, requiredBytes: 20 }
+  })
+  render(<PersonalCloudStatus />)
+  expect(screen.getByRole('status')).toHaveTextContent('personalCloud.quotaExceeded')
+  expect(screen.queryByRole('button', { name: 'personalCloud.keepCloud' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'personalCloud.backup' })).toBeNull()
+})

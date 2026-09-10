@@ -116,7 +116,7 @@ it('retains a durable personal creation when thumbnail generation fails', async 
   usePersonalSyncStore.getState().setAccount('authenticated', 'alice', true)
   await ensurePersonalLocalSpace(
     'alice',
-    { id: 'space', revision: 0 },
+    { id: 'space', revision: 0, usedBytes: 0, quotaBytes: 100 * 1024 ** 3 },
     new AbortController().signal
   )
   const personalItem = { ...item, parentId: 'personal:space' }

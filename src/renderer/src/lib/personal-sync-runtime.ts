@@ -124,7 +124,15 @@ export async function advancePersonalOutbox(
       [400, 413, 422].includes(error.status) ||
       error.code === 'source-missing'
     ) {
-      await update({ failure: error.status === 409 ? 'conflict' : error.code })
+      await update({
+        failure:
+          error.code === 'quota-exceeded'
+            ? error.code
+            : error.status === 409
+              ? 'conflict'
+              : error.code,
+        ...(error.code === 'quota-exceeded' && error.data ? { failureData: error.data } : {})
+      })
       return 'blocked'
     }
     throw error
@@ -194,6 +202,7 @@ export function startPersonalSync(
       }
       signal.throwIfAborted()
       if (!(await acquirePersonalSyncLease(ownerId, workerId))) {
+        usePersonalSyncStore.setState({ usage: await api.getUsage(signal) })
         await refreshPersonalCatalog(ownerId)
         delay = 2_000
         return
@@ -250,6 +259,10 @@ export function startPersonalSync(
       signal.throwIfAborted()
       const remaining = await listPersonalOutbox(ownerId)
       const failure = remaining[0]?.failure
+      usePersonalSyncStore.setState({
+        quotaExceeded: failure === 'quota-exceeded' ? (remaining[0]?.failureData ?? null) : null
+      })
+      usePersonalSyncStore.setState({ usage: await api.getUsage(signal) })
       publish(
         failure === 'conflict'
           ? 'conflict'

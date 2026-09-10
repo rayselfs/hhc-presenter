@@ -189,12 +189,14 @@ const hhcAuthApi = {
 
 const personalCloudApi: PersonalNativeApi = {
   ensureSpace: (input) => typedInvoke('personal-cloud:ensureSpace', input),
+  getUsage: (input) => typedInvoke('personal-cloud:getUsage', input),
   getChanges: (input) => typedInvoke('personal-cloud:getChanges', input),
   createUpload: (input) => typedInvoke('personal-cloud:createUpload', input),
   getUpload: (input) => typedInvoke('personal-cloud:getUpload', input),
   uploadSnapshot: (input) => typedInvoke('personal-cloud:uploadSnapshot', input),
   completeUpload: (input) => typedInvoke('personal-cloud:completeUpload', input),
   mutate: (input) => typedInvoke('personal-cloud:mutate', input),
+  purgeTrash: (input) => typedInvoke('personal-cloud:purgeTrash', input),
   downloadSnapshot: (input) => typedInvoke('personal-cloud:downloadSnapshot', input),
   cancel: (input) => typedInvoke('personal-cloud:cancel', input)
 }
