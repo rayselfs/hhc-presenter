@@ -115,3 +115,60 @@ it('never sends another account credentials when the session changes during toke
   await expect(api.ensureSpace()).rejects.toMatchObject({ status: 401, code: 'owner-changed' })
   expect(fetcher).toHaveBeenCalledTimes(1)
 })
+
+it('validates grant-scoped shared roots, snapshots, and content paths', async () => {
+  const send = vi.fn(async (path: string) => {
+    if (path === '/api/assets/shared-folders') {
+      return Response.json({
+        folders: [
+          {
+            grantId: 'grant',
+            ownerUserId: 'owner',
+            collectionRevision: 3,
+            root: {
+              id: 'folder',
+              collectionId: 'collection',
+              kind: 'folder',
+              name: 'Shared',
+              revision: 3
+            }
+          }
+        ]
+      })
+    }
+    if (path.includes('/snapshot')) {
+      return Response.json({
+        grantId: 'grant',
+        collectionRevision: 3,
+        items: [
+          {
+            id: 'file',
+            collectionId: 'collection',
+            parentId: 'folder',
+            kind: 'file',
+            name: 'photo.jpg',
+            assetId: 'asset',
+            mimeType: 'image/jpeg',
+            sizeBytes: 12,
+            etag: 'etag',
+            revision: 3
+          }
+        ],
+        nextCursor: '',
+        hasMore: false,
+        reset: true
+      })
+    }
+    return new Response('content')
+  })
+  const api = createPersonalCloudHttpApi(send)
+  await expect(api.listSharedFolders()).resolves.toHaveLength(1)
+  await expect(api.getSharedFolderSnapshot('grant')).resolves.toMatchObject({
+    items: [{ mimeType: 'image/jpeg', sizeBytes: 12 }]
+  })
+  await api.downloadSharedContent('grant', 'file')
+  expect(send).toHaveBeenLastCalledWith(
+    '/api/assets/shared-folders/grant/items/file/content',
+    expect.any(Object)
+  )
+})

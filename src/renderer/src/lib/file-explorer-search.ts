@@ -20,7 +20,18 @@ export function searchAllItems(
   for (const record of storeState._itemsArray) {
     if (record.type !== 'file') continue
     if (record.deletedAt) continue
-    if (ownerId !== undefined && (record.personalOwnerId ?? null) !== ownerId) continue
+    if (
+      ownerId !== undefined &&
+      (record.personalOwnerId ?? record.sharedRecipientId ?? null) !== ownerId
+    )
+      continue
+    if (
+      record.sharedRecipientId &&
+      !storeState
+        .getFolderPath(record.parentId)
+        .some((folder) => folder.syncLink?.providerType === 'hhc-share' && folder.parentId)
+    )
+      continue
     if (!record.name.toLowerCase().includes(lowerQuery)) continue
 
     const item = record as FileItemRecord
@@ -38,7 +49,18 @@ export function searchAllItems(
     for (const folder of storeState._foldersArray) {
       if (folder.parentId === null) continue
       if (folder.deletedAt || isPersonalRootFolder(folder)) continue
-      if (ownerId !== undefined && (folder.personalOwnerId ?? null) !== ownerId) continue
+      if (
+        ownerId !== undefined &&
+        (folder.personalOwnerId ?? folder.sharedRecipientId ?? null) !== ownerId
+      )
+        continue
+      if (
+        folder.sharedRecipientId &&
+        !storeState
+          .getFolderPath(folder.id)
+          .some((ancestor) => ancestor.syncLink?.providerType === 'hhc-share' && ancestor.parentId)
+      )
+        continue
       if (!folder.name.toLowerCase().includes(lowerQuery)) continue
 
       const pathFolders = storeState

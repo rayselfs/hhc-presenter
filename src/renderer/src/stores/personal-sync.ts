@@ -68,9 +68,13 @@ export const usePersonalSyncStore = create<PersonalSyncState>()(
   )
 )
 
-export function isPersonalRecordVisible(record: { personalOwnerId?: string }): boolean {
+export function isPersonalRecordVisible(record: {
+  personalOwnerId?: string
+  sharedRecipientId?: string
+}): boolean {
+  const owner = usePersonalSyncStore.getState().activeOwnerId
   return (
-    !record.personalOwnerId ||
-    record.personalOwnerId === usePersonalSyncStore.getState().activeOwnerId
+    (!record.personalOwnerId || record.personalOwnerId === owner) &&
+    (!record.sharedRecipientId || record.sharedRecipientId === owner)
   )
 }

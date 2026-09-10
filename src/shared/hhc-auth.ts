@@ -13,6 +13,12 @@ export interface HhcPendingSignIn {
   expiresAt: number
 }
 
+export interface PresenterAccountLabel {
+  userId: string
+  displayName: string
+  email?: string
+}
+
 export interface HhcAuthAdapter {
   getSession(): Promise<HhcSession | null>
   attemptPassiveSignIn?(): Promise<boolean>

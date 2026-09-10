@@ -5,6 +5,7 @@
   },
   "nav": {
     "cloudFiles": "Cloud documents",
+    "sharedFiles": "Shared with me",
     "timer": "TIMER",
     "bible": "BIBLE",
     "service": "SERVICE",
@@ -615,6 +616,7 @@
     },
     "provider": {
       "hhc-line": "LINE",
+      "hhc-share": "Shared with me",
       "onedrive": "OneDrive",
       "local-fs": "Local sync"
     }
@@ -961,7 +963,7 @@
         "lanRemote": "LAN Remote Control"
       },
       "defaultOfflinePolicy": "Offline Policy",
-      "defaultOfflinePolicyDesc": "Applies to HHC LINE and OneDrive folders.",
+      "defaultOfflinePolicyDesc": "Applies to HHC LINE, OneDrive, and Shared with me folders.",
       "offlinePolicies": {
         "online-only": "Online only",
         "on-demand": "On demand",
@@ -1277,6 +1279,19 @@
       "connection": "Projection connection failed. Retry to reconnect.",
       "playback": "Video playback failed. Select the source again."
     }
+  },
+  "personalShare": {
+    "title": "Share {{name}}",
+    "share": "Share folder",
+    "email": "HHC account email",
+    "find": "Find",
+    "confirm": "Share",
+    "account": "HHC account",
+    "revoke": "Stop sharing",
+    "notFound": "No eligible HHC account was found",
+    "failed": "Sharing failed",
+    "leave": "Remove shared folder",
+    "leaveConfirm": "Remove this folder from Shared with me? Downloaded local copies will also be removed."
   },
   "personalCloud": {
     "title": "Cloud folder",

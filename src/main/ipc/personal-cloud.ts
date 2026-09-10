@@ -240,6 +240,59 @@ export function registerPersonalCloudHandlers(wm: WindowManager, auth: Auth): vo
   register('personal-cloud:purgeTrash', ['purge'], (api, input, signal) =>
     api.purgeTrash(purgeInput(input.purge), signal)
   )
+  register('personal-cloud:listFolderShares', ['itemId'], (api, input, signal) =>
+    api.listFolderShares(opaque(input.itemId), signal)
+  )
+  register('personal-cloud:createFolderShare', ['itemId', 'granteeUserId'], (api, input, signal) =>
+    api.createFolderShare(opaque(input.itemId), opaque(input.granteeUserId), signal)
+  )
+  register('personal-cloud:revokeFolderShare', ['itemId', 'grantId'], (api, input, signal) =>
+    api.revokeFolderShare(opaque(input.itemId), opaque(input.grantId), signal)
+  )
+  register('personal-cloud:listSharedFolders', [], (api, _input, signal) =>
+    api.listSharedFolders(signal)
+  )
+  register(
+    'personal-cloud:getSharedFolderSnapshot',
+    ['grantId'],
+    (api, input, signal) => {
+      valid(
+        input.cursor === undefined ||
+          (typeof input.cursor === 'string' && input.cursor.length <= 2048)
+      )
+      return api.getSharedFolderSnapshot(
+        opaque(input.grantId),
+        input.cursor as string | undefined,
+        signal
+      )
+    },
+    ['cursor']
+  )
+  register('personal-cloud:leaveSharedFolder', ['grantId'], (api, input, signal) =>
+    api.leaveSharedFolder(opaque(input.grantId), signal)
+  )
+  register(
+    'personal-cloud:downloadSharedSnapshot',
+    ['grantId', 'itemId', 'blobId'],
+    async (api, input, signal) => {
+      const blobId = fileId(input.blobId)
+      const destination = getNativeFilePath(blobId)
+      const temporary = `${destination}.download-${randomUUID()}`
+      try {
+        const response = await api.downloadSharedContent(
+          opaque(input.grantId),
+          opaque(input.itemId),
+          signal
+        )
+        const downloaded = await saveAssetContent(response, temporary, signal)
+        signal.throwIfAborted()
+        await fs.link(temporary, destination)
+        return { fileId: blobId, size: downloaded.size, mimeType: downloaded.mimeType }
+      } finally {
+        await fs.rm(temporary, { force: true })
+      }
+    }
+  )
   register('personal-cloud:uploadSnapshot', ['uploadId', 'blobId'], async (api, input, signal) => {
     const blob = await openAsBlob(getNativeFilePath(fileId(input.blobId)))
     await api.putUpload(opaque(input.uploadId), blob, signal)

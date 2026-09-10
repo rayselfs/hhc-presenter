@@ -42,6 +42,7 @@ export interface ShowItemMenuOptions {
   onDelete: (targetIds: Set<string>) => void
   onEdit?: (item: FolderItem) => void
   isReadOnly?: boolean
+  canCopy?: boolean
   extraActions?: ContextMenuEntry[]
 }
 
@@ -57,6 +58,7 @@ export interface ShowFolderMenuOptions {
   onDelete: (targetIds: Set<string>) => void
   onEdit?: (folder: FolderRecord) => void
   isReadOnly?: boolean
+  canCopy?: boolean
   extraActions?: ContextMenuEntry[]
 }
 
@@ -67,6 +69,7 @@ export interface ShowMultiSelectMenuOptions {
   onCut: (targetIds: Set<string>) => void
   onDelete: (targetIds: Set<string>) => void
   isReadOnly?: boolean
+  canCopy?: boolean
 }
 
 export interface ShowEmptyAreaMenuOptions {
@@ -114,6 +117,7 @@ export function createFolderContextMenu(
       onDelete,
       onEdit,
       isReadOnly = false,
+      canCopy = true,
       extraActions = []
     }: ShowItemMenuOptions): void => {
       if (!isAlreadySelected) {
@@ -135,12 +139,16 @@ export function createFolderContextMenu(
       }
       const baseItems: ContextMenuEntry[] = [
         ...editItems,
-        {
-          id: 'copy',
-          label: tKey('copy'),
-          icon: React.createElement(Copy, { size: 14 }),
-          onAction: () => onCopy(targetIds)
-        },
+        ...(canCopy
+          ? [
+              {
+                id: 'copy',
+                label: tKey('copy'),
+                icon: React.createElement(Copy, { size: 14 }),
+                onAction: () => onCopy(targetIds)
+              }
+            ]
+          : []),
         ...(isReadOnly
           ? []
           : [
@@ -177,6 +185,7 @@ export function createFolderContextMenu(
       onDelete,
       onEdit,
       isReadOnly = false,
+      canCopy = true,
       extraActions = []
     }: ShowFolderMenuOptions): void => {
       if (!isAlreadySelected) {
@@ -211,12 +220,16 @@ export function createFolderContextMenu(
 
       const baseItems: ContextMenuEntry[] = [
         ...editItems,
-        {
-          id: 'copy',
-          label: tKey('copy'),
-          icon: React.createElement(Copy, { size: 14 }),
-          onAction: () => onCopy(targetIds)
-        },
+        ...(canCopy
+          ? [
+              {
+                id: 'copy',
+                label: tKey('copy'),
+                icon: React.createElement(Copy, { size: 14 }),
+                onAction: () => onCopy(targetIds)
+              }
+            ]
+          : []),
         ...(isReadOnly
           ? []
           : [
@@ -252,15 +265,20 @@ export function createFolderContextMenu(
       onCopy,
       onCut,
       onDelete,
-      isReadOnly = false
+      isReadOnly = false,
+      canCopy = true
     }: ShowMultiSelectMenuOptions): void => {
       const items: ContextMenuEntry[] = [
-        {
-          id: 'copy',
-          label: tKey('copy'),
-          icon: React.createElement(Copy, { size: 14 }),
-          onAction: () => onCopy(selectedIds)
-        },
+        ...(canCopy
+          ? [
+              {
+                id: 'copy',
+                label: tKey('copy'),
+                icon: React.createElement(Copy, { size: 14 }),
+                onAction: () => onCopy(selectedIds)
+              }
+            ]
+          : []),
         ...(isReadOnly
           ? []
           : [

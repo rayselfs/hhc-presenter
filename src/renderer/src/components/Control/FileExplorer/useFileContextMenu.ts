@@ -116,16 +116,18 @@ function getFolderProjectActions(
     })
   }
 
-  actions.push(...(actions.length === 0 ? ['separator' as const] : []), {
-    id: isFavorited ? 'remove-favorite' : 'add-favorite',
-    label: t(
-      isFavorited
-        ? 'fileExplorer.contextMenu.removeFavorite'
-        : 'fileExplorer.contextMenu.addFavorite'
-    ),
-    icon: React.createElement(isFavorited ? StarOff : Star, { size: 14 }),
-    onAction: () => toggleFavorite(folder.id)
-  })
+  if (!folder.sharedRecipientId) {
+    actions.push(...(actions.length === 0 ? ['separator' as const] : []), {
+      id: isFavorited ? 'remove-favorite' : 'add-favorite',
+      label: t(
+        isFavorited
+          ? 'fileExplorer.contextMenu.removeFavorite'
+          : 'fileExplorer.contextMenu.addFavorite'
+      ),
+      icon: React.createElement(isFavorited ? StarOff : Star, { size: 14 }),
+      onAction: () => toggleFavorite(folder.id)
+    })
+  }
 
   return actions
 }
@@ -140,21 +142,24 @@ export function useFileContextMenu(): UseFolderContextMenu {
   return {
     ...menu,
     showItemMenu: (options: Parameters<typeof menu.showItemMenu>[0]) => {
+      const actions = getItemProjectActions(options.item, translate, navigate, ensureProjectionOpen)
+      if (options.canCopy === false && actions[0] === 'separator') actions.shift()
       menu.showItemMenu({
         ...options,
-        extraActions: [
-          ...getItemProjectActions(options.item, translate, navigate, ensureProjectionOpen),
-          ...(options.extraActions ?? [])
-        ]
+        extraActions: [...actions, ...(options.extraActions ?? [])]
       })
     },
     showFolderMenu: (options: Parameters<typeof menu.showFolderMenu>[0]) => {
+      const actions = getFolderProjectActions(
+        options.folder,
+        translate,
+        navigate,
+        ensureProjectionOpen
+      )
+      if (options.canCopy === false && actions[0] === 'separator') actions.shift()
       menu.showFolderMenu({
         ...options,
-        extraActions: [
-          ...getFolderProjectActions(options.folder, translate, navigate, ensureProjectionOpen),
-          ...(options.extraActions ?? [])
-        ]
+        extraActions: [...actions, ...(options.extraActions ?? [])]
       })
     }
   }

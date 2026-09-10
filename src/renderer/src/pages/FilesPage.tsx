@@ -20,7 +20,7 @@ import {
 } from '@renderer/stores/file-explorer'
 import { useSoundboardStore } from '@renderer/stores/soundboard'
 import { getUploadMediaPlatform, uploadFiles, uploadFolderFiles } from '@renderer/lib/upload-utils'
-import { Presentation, RefreshCw, Unlink } from 'lucide-react'
+import { LogOut, Presentation, RefreshCw, Share2, Unlink } from 'lucide-react'
 import { createEditablePresentation } from '@renderer/lib/editable-presentation'
 import { connectLocalSyncFolder, refreshLocalSyncConnection } from '@renderer/lib/local-sync-import'
 import { getCloudProviderAdapter, type CloudRemoteFolder } from '@renderer/lib/cloud-provider'
@@ -54,8 +54,16 @@ import { buildPresentationItemActions } from '@renderer/lib/presentation-item-ac
 import { useHhcAuth } from '@renderer/contexts/HhcAuthContext'
 import { PersonalCloudStatus } from '@renderer/components/Control/FileExplorer/PersonalCloudStatus'
 import { PersonalCloudUsage } from '@renderer/components/Control/FileExplorer/PersonalCloudUsage'
+import { ShareFolderDialog } from '@renderer/components/Control/FileExplorer/ShareFolderDialog'
 
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
+import {
+  leavePersonalShare,
+  personalShareContainerId,
+  reconcilePersonalShares
+} from '@renderer/lib/personal-share-sync'
+
+type FilesMode = 'local' | 'personal' | 'shared'
 
 const ONE_DRIVE_PROVIDER = getCloudProviderAdapter('onedrive')
 const ONE_DRIVE_FOLDER_PICKER_PROVIDER: CloudFolderPickerProvider = {
@@ -118,10 +126,11 @@ async function countDeletedSoundboardPadUsages(targetIds: Set<string>): Promise<
 }
 
 export default function FilesPage({
-  cloud = false
+  mode = 'local'
 }: {
-  cloud?: boolean
+  mode?: FilesMode
 }): React.JSX.Element | null {
+  const auth = useHhcAuth()
   const ownerId = usePersonalSyncStore((state) => state.activeOwnerId)
   const folders = useFileExplorerStore((state) => state.folders)
   const currentId = useFileExplorerStore((state) => state.currentFolderId)
@@ -129,18 +138,37 @@ export default function FilesPage({
   const root = Object.values(folders).find(
     (folder) => folder.personalOwnerId === ownerId && isPersonalRootFolder(folder)
   )
-  const inScope = cloud
-    ? Boolean(ownerId && root && folders[currentId]?.personalOwnerId === ownerId)
-    : !folders[currentId]?.personalOwnerId
+  const sharedRoot = ownerId ? folders[personalShareContainerId(ownerId)] : undefined
+  const inScope =
+    mode === 'personal'
+      ? Boolean(ownerId && root && folders[currentId]?.personalOwnerId === ownerId)
+      : mode === 'shared'
+        ? Boolean(ownerId && sharedRoot && folders[currentId]?.sharedRecipientId === ownerId)
+        : !folders[currentId]?.personalOwnerId && !folders[currentId]?.sharedRecipientId
+
+  useEffect(() => {
+    if (mode !== 'shared' || !ownerId) return
+    void reconcilePersonalShares({
+      getSession: () => auth.session,
+      getAccessToken: auth.getAccessToken,
+      refreshAccessToken: auth.refreshAccessToken,
+      getAuthGeneration: auth.getAuthGeneration,
+      endSession: auth.endSession
+    }).catch(() => undefined)
+  }, [auth, mode, ownerId])
+
   useLayoutEffect(() => {
-    if (!inScope && (!cloud || root))
-      void navigateToFolder(cloud ? root!.id : FILE_EXPLORER_ROOT_ID)
-  }, [cloud, inScope, navigateToFolder, root])
-  if (!inScope) return cloud && ownerId ? <PersonalCloudStatus /> : null
-  return <FilesWorkspace key={cloud ? ownerId : 'local'} cloud={cloud} />
+    const target = mode === 'personal' ? root : mode === 'shared' ? sharedRoot : undefined
+    if (!inScope && (mode === 'local' || target))
+      void navigateToFolder(target?.id ?? FILE_EXPLORER_ROOT_ID)
+  }, [inScope, mode, navigateToFolder, root, sharedRoot])
+  if (!inScope) return mode === 'personal' && ownerId ? <PersonalCloudStatus /> : null
+  return <FilesWorkspace key={mode === 'local' ? mode : `${mode}:${ownerId}`} mode={mode} />
 }
 
-function FilesWorkspace({ cloud }: { cloud: boolean }): React.JSX.Element {
+function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
+  const cloud = mode === 'personal'
+  const shared = mode === 'shared'
   const { t } = useTranslation()
   const { session, getAccessToken, getAuthGeneration, refreshAccessToken, endSession } =
     useHhcAuth()
@@ -168,6 +196,7 @@ function FilesWorkspace({ cloud }: { cloud: boolean }): React.JSX.Element {
   const [createFolderDuration, setCreateFolderDuration] = useState<FolderDuration>('1day')
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [sharingFolder, setSharingFolder] = useState<FolderRecord | null>(null)
   const [renameItemRequestId, setRenameItemRequestId] = useState<string | null>(null)
   const [editModalName, setEditModalName] = useState('')
   const [editModalDuration, setEditModalDuration] = useState<FolderDuration>('1day')
@@ -213,7 +242,7 @@ function FilesWorkspace({ cloud }: { cloud: boolean }): React.JSX.Element {
   useEffect(() => {
     const userId = session?.userId
     setClaimsResolvedUserId(null)
-    if (!userId || cloud) return
+    if (!userId || mode !== 'local') return
     let active = true
     let pending = false
     const refresh = async (): Promise<void> => {
@@ -242,7 +271,7 @@ function FilesWorkspace({ cloud }: { cloud: boolean }): React.JSX.Element {
       window.removeEventListener('focus', onRefresh)
       window.removeEventListener('online', onRefresh)
     }
-  }, [cloud, hhcLineProvider, session?.userId, isHhcLineImporting])
+  }, [mode, hhcLineProvider, session?.userId, isHhcLineImporting])
 
   const itemCount = useFileExplorerStore(
     useCallback(
@@ -270,8 +299,8 @@ function FilesWorkspace({ cloud }: { cloud: boolean }): React.JSX.Element {
     setIsHhcLinePickerOpen(true)
   }, [canAddHhcLineFolder])
   const isCurrentFolderReadOnly = useMemo(
-    () => isFolderReadOnlyBySyncLink(currentFolderId, foldersById),
-    [currentFolderId, foldersById]
+    () => shared || isFolderReadOnlyBySyncLink(currentFolderId, foldersById),
+    [currentFolderId, foldersById, shared]
   )
 
   const areIdsReadOnly = useCallback((ids: Set<string>): boolean => {
@@ -747,7 +776,8 @@ function FilesWorkspace({ cloud }: { cloud: boolean }): React.JSX.Element {
           onCopy: handleCopy,
           onCut: handleCut,
           onDelete: handleDelete,
-          isReadOnly
+          isReadOnly,
+          canCopy: !shared
         })
         return
       }
@@ -763,6 +793,7 @@ function FilesWorkspace({ cloud }: { cloud: boolean }): React.JSX.Element {
         onDelete: handleDelete,
         onEdit: (targetItem) => setRenameItemRequestId(targetItem.id),
         isReadOnly,
+        canCopy: !shared,
         extraActions: [
           ...getPresentationItemActions(item),
           ...(isReadOnly ? getRefreshSyncActions(item.parentId, 'resyncFile') : [])
@@ -778,7 +809,8 @@ function FilesWorkspace({ cloud }: { cloud: boolean }): React.JSX.Element {
       handleDelete,
       getRefreshSyncActions,
       getPresentationItemActions,
-      areIdsReadOnly
+      areIdsReadOnly,
+      shared
     ]
   )
 
@@ -796,7 +828,8 @@ function FilesWorkspace({ cloud }: { cloud: boolean }): React.JSX.Element {
           onCopy: handleCopy,
           onCut: handleCut,
           onDelete: handleDelete,
-          isReadOnly
+          isReadOnly,
+          canCopy: !shared
         })
         return
       }
@@ -816,9 +849,23 @@ function FilesWorkspace({ cloud }: { cloud: boolean }): React.JSX.Element {
         onDelete: handleDelete,
         onEdit: (targetFolder) => openEditModal(targetFolder.id),
         isReadOnly,
+        canCopy: !shared,
         extraActions: [
+          ...(cloud &&
+          folder.personalOwnerId === session?.userId &&
+          !isPersonalRootFolder(folder) &&
+          !folder.syncLink
+            ? [
+                {
+                  id: 'share-folder',
+                  label: t('personalShare.share'),
+                  icon: React.createElement(Share2, { size: 14 }),
+                  onAction: () => setSharingFolder(folder)
+                }
+              ]
+            : []),
           ...getRefreshSyncActions(folder.id),
-          ...(isSyncRootFolder(folder)
+          ...(!shared && isSyncRootFolder(folder)
             ? [
                 'separator' as const,
                 {
@@ -827,6 +874,36 @@ function FilesWorkspace({ cloud }: { cloud: boolean }): React.JSX.Element {
                   icon: React.createElement(Unlink, { size: 14 }),
                   variant: 'danger' as const,
                   onAction: () => void handleUnlinkSyncRoot(folder)
+                }
+              ]
+            : []),
+          ...(shared && session && folder.parentId === personalShareContainerId(session.userId)
+            ? [
+                'separator' as const,
+                {
+                  id: 'leave-share',
+                  label: t('personalShare.leave'),
+                  icon: React.createElement(LogOut, { size: 14 }),
+                  variant: 'danger' as const,
+                  onAction: () =>
+                    void confirm({
+                      title: t('personalShare.leave'),
+                      description: t('personalShare.leaveConfirm'),
+                      confirmLabel: t('personalShare.leave')
+                    }).then((accepted) =>
+                      accepted
+                        ? leavePersonalShare(
+                            {
+                              getSession: () => session,
+                              getAccessToken,
+                              refreshAccessToken,
+                              getAuthGeneration,
+                              endSession
+                            },
+                            folder
+                          )
+                        : undefined
+                    )
                 }
               ]
             : [])
@@ -847,7 +924,15 @@ function FilesWorkspace({ cloud }: { cloud: boolean }): React.JSX.Element {
       handleUnlinkSyncRoot,
       isSyncRootFolder,
       areIdsReadOnly,
-      t
+      t,
+      shared,
+      session,
+      confirm,
+      getAccessToken,
+      refreshAccessToken,
+      getAuthGeneration,
+      endSession,
+      cloud
     ]
   )
 
@@ -1015,6 +1100,17 @@ function FilesWorkspace({ cloud }: { cloud: boolean }): React.JSX.Element {
         folderDuration={createFolderDuration}
         onFolderDurationChange={setCreateFolderDuration}
         hideDuration={Boolean(foldersById[currentFolderId]?.personalOwnerId)}
+      />
+      <ShareFolderDialog
+        folder={sharingFolder}
+        auth={{
+          getSession: () => session,
+          getAccessToken,
+          refreshAccessToken,
+          getAuthGeneration,
+          endSession
+        }}
+        onClose={() => setSharingFolder(null)}
       />
       <FolderModal
         isOpen={isEditModalOpen}

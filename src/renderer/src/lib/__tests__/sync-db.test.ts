@@ -12,9 +12,12 @@ import {
   getSyncEntryByRemoteItem,
   getSyncEntryPreference,
   listHhcLineProviderConnectionsByAccountUser,
+  listPendingShareLeaves,
   listSyncEntriesByProviderConnection,
   openSyncDB,
   putProviderConnection,
+  putPendingShareLeave,
+  deletePendingShareLeave,
   putSyncCursor,
   putSyncEntry,
   putSyncEntryPreference,
@@ -87,7 +90,7 @@ describe('sync-db', () => {
 
     const db = await openSyncDB()
 
-    expect(db.version).toBe(2)
+    expect(db.version).toBe(3)
     await expect(getProviderConnection('onedrive:legacy')).resolves.toEqual({
       id: 'onedrive:legacy',
       providerType: 'onedrive',
@@ -103,6 +106,16 @@ describe('sync-db', () => {
       createdAt: 3,
       updatedAt: 4
     })
+  })
+
+  it('persists and acknowledges offline shared-folder leaves per recipient', async () => {
+    await putPendingShareLeave('recipient-a', 'grant-a')
+    await putPendingShareLeave('recipient-b', 'grant-b')
+    await expect(listPendingShareLeaves('recipient-a')).resolves.toMatchObject([
+      { recipientId: 'recipient-a', grantId: 'grant-a' }
+    ])
+    await deletePendingShareLeave('recipient-a', 'grant-a')
+    await expect(listPendingShareLeaves('recipient-a')).resolves.toEqual([])
   })
 
   it('requires canonical account identity for HHC LINE provider connections', async () => {

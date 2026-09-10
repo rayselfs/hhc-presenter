@@ -6,6 +6,7 @@ import { APP_CONFIG } from '@shared/app-config'
 import {
   HHC_AUTH_TRANSACTION_TTL_MS,
   readHhcPermissions,
+  type PresenterAccountLabel,
   type HhcPendingSignIn,
   type HhcSession
 } from '@shared/hhc-auth'
@@ -52,6 +53,8 @@ export interface HhcAuthService {
   getSession(): Promise<HhcSession | null>
   signOut(): Promise<void>
   clearLocalData(): Promise<void>
+  resolveShareTarget(email: string): Promise<PresenterAccountLabel>
+  resolveAccountLabels(userIds: string[]): Promise<PresenterAccountLabel[]>
   subscribe(listener: (session: HhcSession | null) => void): () => void
 }
 
@@ -250,6 +253,74 @@ class MainHhcAuthService implements HhcAuthService {
     }
     const token = await this.getAccessToken()
     return token ? this.session : null
+  }
+
+  resolveShareTarget(email: string): Promise<PresenterAccountLabel> {
+    return this.presenterPost('/presenter/share-targets/resolve', { email }).then((value) =>
+      this.presenterLabel(value, true)
+    )
+  }
+
+  async resolveAccountLabels(userIds: string[]): Promise<PresenterAccountLabel[]> {
+    const value = await this.presenterPost('/presenter/account-labels/resolve', { userIds })
+    if (!value || !Array.isArray(value.accounts) || value.accounts.length > 50) {
+      throw new Error('Invalid HHC account response')
+    }
+    return value.accounts.map((account) => this.presenterLabel(account, false))
+  }
+
+  private presenterLabel(value: unknown, includeEmail: boolean): PresenterAccountLabel {
+    if (!value || typeof value !== 'object') throw new Error('Invalid HHC account response')
+    const item = value as Record<string, unknown>
+    if (
+      typeof item.userId !== 'string' ||
+      !/^[0-9a-f-]{36}$/i.test(item.userId) ||
+      typeof item.displayName !== 'string' ||
+      !item.displayName.trim() ||
+      (includeEmail && (typeof item.email !== 'string' || !item.email))
+    ) {
+      throw new Error('Invalid HHC account response')
+    }
+    return {
+      userId: item.userId,
+      displayName: item.displayName,
+      ...(includeEmail ? { email: item.email as string } : {})
+    }
+  }
+
+  private async presenterPost(path: string, body: unknown): Promise<Record<string, unknown>> {
+    const csrfResponse = await net.fetch(`${this.accountApi}/csrf-token`, {
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { accept: 'application/json' }
+    })
+    const csrf = await responseJson(csrfResponse)
+    if (typeof csrf.csrf_token !== 'string' || !csrf.csrf_token) {
+      throw new Error('CSRF token missing')
+    }
+    const csrfToken = csrf.csrf_token
+    const send = async (refresh: boolean): Promise<Response> => {
+      const token = await (refresh ? this.refreshAccessToken() : this.getAccessToken())
+      if (!token) throw new Error('HHC account authentication required')
+      return net.fetch(`${this.accountApi}${path}`, {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+        headers: {
+          accept: 'application/json',
+          authorization: `Bearer ${token}`,
+          'content-type': 'application/json',
+          'x-csrf-token': csrfToken
+        },
+        body: JSON.stringify(body)
+      })
+    }
+    let response = await send(false)
+    if (response.status === 401) {
+      await response.body?.cancel().catch(() => undefined)
+      response = await send(true)
+    }
+    return responseJson(response)
   }
 
   signOut(): Promise<void> {
@@ -607,6 +678,25 @@ export function registerHhcAuthIpc(wm: WindowManager, service: HhcAuthService): 
     'hhc-auth:begin',
     authorized(() => service.begin())
   )
+  ipcMain.handle('hhc-auth:resolve-share-target', async (event, email: unknown) => {
+    if (!isMainWindow(wm, event)) throw new Error('Unauthorized HHC authentication access')
+    if (typeof email !== 'string' || email.length > 320 || !email.includes('@')) {
+      throw new Error('Invalid sharing email')
+    }
+    return service.resolveShareTarget(email)
+  })
+  ipcMain.handle('hhc-auth:resolve-account-labels', async (event, userIds: unknown) => {
+    if (!isMainWindow(wm, event)) throw new Error('Unauthorized HHC authentication access')
+    if (
+      !Array.isArray(userIds) ||
+      userIds.length < 1 ||
+      userIds.length > 50 ||
+      !userIds.every((id) => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id))
+    ) {
+      throw new Error('Invalid account IDs')
+    }
+    return service.resolveAccountLabels(userIds)
+  })
   ipcMain.handle(
     'hhc-auth:cancel',
     authorized(() => service.cancelSignIn())

@@ -225,7 +225,9 @@ describe('PreferencesDialog', () => {
 
     await user.click(screen.getByTestId('category-media'))
     expect(screen.getByLabelText('Offline Policy')).toBeInTheDocument()
-    expect(screen.getByText('Applies to HHC LINE and OneDrive folders.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Applies to HHC LINE, OneDrive, and Shared with me folders.')
+    ).toBeInTheDocument()
     await user.click(screen.getByTestId('category-media-oneDrive'))
     expect(screen.getByTestId('category-media')).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByTestId('category-media-oneDrive')).toHaveAttribute('aria-pressed', 'true')

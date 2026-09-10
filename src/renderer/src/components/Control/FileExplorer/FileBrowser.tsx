@@ -468,11 +468,15 @@ export function FileBrowser({
       searchQuery,
       useFileExplorerStore.getState(),
       t(
-        useFileExplorerStore.getState().folders[currentFolderId]?.personalOwnerId
-          ? 'nav.cloudFiles'
-          : 'fileExplorer.breadcrumb.root'
+        useFileExplorerStore.getState().folders[currentFolderId]?.sharedRecipientId
+          ? 'nav.sharedFiles'
+          : useFileExplorerStore.getState().folders[currentFolderId]?.personalOwnerId
+            ? 'nav.cloudFiles'
+            : 'fileExplorer.breadcrumb.root'
       ),
-      useFileExplorerStore.getState().folders[currentFolderId]?.personalOwnerId ?? null
+      useFileExplorerStore.getState().folders[currentFolderId]?.personalOwnerId ??
+        useFileExplorerStore.getState().folders[currentFolderId]?.sharedRecipientId ??
+        null
     )
     return [...raw].sort((a, b) => {
       const nameA = a.kind === 'file' ? a.item.name : a.folder.name

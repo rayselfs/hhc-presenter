@@ -182,6 +182,9 @@ const hhcAuthApi = {
   refreshAccessToken: () => typedInvoke('hhc-auth:refresh-access-token'),
   getSession: () => typedInvoke('hhc-auth:get-session'),
   signOut: () => typedInvoke('hhc-auth:sign-out'),
+  resolveShareTarget: (email: string) => typedInvoke('hhc-auth:resolve-share-target', email),
+  resolveAccountLabels: (userIds: string[]) =>
+    typedInvoke('hhc-auth:resolve-account-labels', userIds),
   onSessionChanged: (
     callback: (session: IpcMainToRendererMap['hhc-auth:session-changed'][0]) => void
   ) => typedOn('hhc-auth:session-changed', callback)
@@ -198,6 +201,13 @@ const personalCloudApi: PersonalNativeApi = {
   mutate: (input) => typedInvoke('personal-cloud:mutate', input),
   purgeTrash: (input) => typedInvoke('personal-cloud:purgeTrash', input),
   downloadSnapshot: (input) => typedInvoke('personal-cloud:downloadSnapshot', input),
+  listFolderShares: (input) => typedInvoke('personal-cloud:listFolderShares', input),
+  createFolderShare: (input) => typedInvoke('personal-cloud:createFolderShare', input),
+  revokeFolderShare: (input) => typedInvoke('personal-cloud:revokeFolderShare', input),
+  listSharedFolders: (input) => typedInvoke('personal-cloud:listSharedFolders', input),
+  getSharedFolderSnapshot: (input) => typedInvoke('personal-cloud:getSharedFolderSnapshot', input),
+  leaveSharedFolder: (input) => typedInvoke('personal-cloud:leaveSharedFolder', input),
+  downloadSharedSnapshot: (input) => typedInvoke('personal-cloud:downloadSharedSnapshot', input),
   cancel: (input) => typedInvoke('personal-cloud:cancel', input)
 }
 

@@ -12,7 +12,8 @@ import {
   Trash2,
   Files,
   Camera,
-  Cloud
+  Cloud,
+  UsersRound
 } from 'lucide-react'
 import { Dropdown } from '@renderer/components/Common/MenuPopover'
 import UserMenu from '@renderer/components/Control/UserMenu/UserMenu'
@@ -28,13 +29,14 @@ interface NavItem {
 interface MediaSubItem {
   to: string
   icon: React.ComponentType<{ className?: string; size?: number }>
-  labelKey: 'nav.files' | 'nav.favorites' | 'nav.trash' | 'nav.cloudFiles'
+  labelKey: 'nav.files' | 'nav.favorites' | 'nav.trash' | 'nav.cloudFiles' | 'nav.sharedFiles'
   disabled: boolean
 }
 
 const MEDIA_SUB_ITEMS: MediaSubItem[] = [
   { to: '/files', icon: Files, labelKey: 'nav.files', disabled: false },
   { to: '/cloud-files', icon: Cloud, labelKey: 'nav.cloudFiles', disabled: true },
+  { to: '/shared-files', icon: UsersRound, labelKey: 'nav.sharedFiles', disabled: true },
   { to: '/favorites', icon: Star, labelKey: 'nav.favorites', disabled: false },
   { to: '/trash', icon: Trash2, labelKey: 'nav.trash', disabled: false }
 ]
@@ -54,7 +56,9 @@ export default function Sidebar(): React.JSX.Element {
   const { t } = useTranslation()
   const cloudOwnerId = usePersonalSyncStore((state) => state.activeOwnerId)
   const mediaItems = MEDIA_SUB_ITEMS.map((item) =>
-    item.to === '/cloud-files' ? { ...item, disabled: !cloudOwnerId } : item
+    item.to === '/cloud-files' || item.to === '/shared-files'
+      ? { ...item, disabled: !cloudOwnerId }
+      : item
   )
   const location = useLocation()
   const navigate = useNavigate()
