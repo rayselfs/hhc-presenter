@@ -241,7 +241,11 @@ test('launches packaged control and projection windows with recovery lifecycle',
   await expect(control).toHaveURL(/#\/files$/)
   await expect(projection.locator('.timer-digits').first()).toBeVisible()
   await control.getByRole('button', { name: /Stop projection|停止投影/ }).click()
-  await expect.poll(() => electronApp?.windows().length ?? 0).toBe(1)
+  await expect
+    .poll(() => control.evaluate(() => window.api.projection.check()))
+    .toMatchObject({ exists: false, lifecycle: { status: 'closed' } })
+  expect(electronApp?.windows()).toHaveLength(2)
+  expect(projection.isClosed()).toBe(false)
 })
 
 test('VLC production matrix', async ({ browserName: _browserName }, testInfo) => {

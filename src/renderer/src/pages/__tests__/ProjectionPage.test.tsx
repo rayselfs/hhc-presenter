@@ -130,6 +130,11 @@ describe('ProjectionPage', () => {
     expect(
       vi.mocked(window.api.projection.onProjectionLifecycle).mock.invocationCallOrder[0]
     ).toBeLessThan(vi.mocked(window.api.projection.getGeneration).mock.invocationCallOrder[0])
+    act(() => {
+      mockAdapter._trigger('__system:blank', { showDefault: false })
+      mockAdapter._trigger('timer:tick', { ...baseTimerTick, mode: 'timer' })
+    })
+    expect(screen.getByText('02:00')).toBeInTheDocument()
 
     act(() => {
       lifecycleHandlers[0]({ generation: 5, status: 'opening' })
@@ -137,6 +142,7 @@ describe('ProjectionPage', () => {
 
     expect(mockAdapter.setGeneration).toHaveBeenCalledWith(5)
     expect(mockAdapter.send).toHaveBeenCalledWith('__system:ready', { generation: 5 })
+    expect(screen.getByText('02:00')).toBeInTheDocument()
   })
 
   it('shows TimerDisplay when receiving timer:tick with mode=timer', () => {
