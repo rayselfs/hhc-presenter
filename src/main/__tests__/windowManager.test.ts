@@ -316,9 +316,13 @@ describe('WindowManager', () => {
 
   it('keeps the same generation for a later renderer reload', () => {
     const wm = WindowManager.getInstance()
+    wm.createMainWindow()
     const first = wm.createProjectionWindow()
-    const projection = FakeBrowserWindow.instances[0]
+    const main = FakeBrowserWindow.instances[0]
+    const projection = FakeBrowserWindow.instances[1]
     projection.emitWebContents('did-finish-load')
+    main.webContents.send.mockClear()
+    projection.webContents.send.mockClear()
     projection.emitWebContents('did-start-loading')
 
     expect(first).toBe(1)
@@ -327,6 +331,15 @@ describe('WindowManager', () => {
       status: 'opening',
       reason: 'reload'
     })
+    expect(main.webContents.send).toHaveBeenCalledWith('projection:lifecycle', {
+      generation: 1,
+      status: 'opening',
+      reason: 'reload'
+    })
+    expect(projection.webContents.send).not.toHaveBeenCalledWith(
+      'projection:lifecycle',
+      expect.anything()
+    )
   })
 
   it('marks only the current projection generation ready', () => {

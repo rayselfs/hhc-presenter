@@ -149,10 +149,13 @@ export class WindowManager {
     })
   }
 
-  private publishProjectionLifecycle(event: ProjectionLifecycleEvent): void {
+  private publishProjectionLifecycle(
+    event: ProjectionLifecycleEvent,
+    notifyProjection = true
+  ): void {
     this.projectionLifecycle = event
     this.sendToMain('projection:lifecycle', event)
-    this.sendToProjection('projection:lifecycle', event)
+    if (notifyProjection) this.sendToProjection('projection:lifecycle', event)
   }
 
   private guardTopLevelNavigation(window: BrowserWindow): void {
@@ -287,11 +290,14 @@ export class WindowManager {
       ) {
         return
       }
-      this.publishProjectionLifecycle({
-        generation: windowGeneration,
-        status: 'opening',
-        reason: 'reload'
-      })
+      this.publishProjectionLifecycle(
+        {
+          generation: windowGeneration,
+          status: 'opening',
+          reason: 'reload'
+        },
+        false
+      )
       hasFinishedInitialLoad = false
     })
 
