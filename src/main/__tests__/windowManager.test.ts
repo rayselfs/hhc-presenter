@@ -223,7 +223,7 @@ describe('WindowManager', () => {
       y: 0,
       show: false,
       frame: false,
-      fullscreen: false,
+      fullscreen: process.platform === 'win32',
       enableLargerThanScreen: true,
       focusable: process.platform === 'darwin',
       fullscreenable: false,

@@ -127,6 +127,9 @@ describe('ProjectionPage', () => {
     await waitFor(() =>
       expect(mockAdapter.send).toHaveBeenCalledWith('__system:ready', { generation: 4 })
     )
+    expect(
+      vi.mocked(window.api.projection.onProjectionLifecycle).mock.invocationCallOrder[0]
+    ).toBeLessThan(vi.mocked(window.api.projection.getGeneration).mock.invocationCallOrder[0])
 
     act(() => {
       lifecycleHandlers[0]({ generation: 5, status: 'opening' })

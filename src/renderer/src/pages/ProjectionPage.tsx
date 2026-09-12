@@ -94,11 +94,11 @@ export default function ProjectionPage(): React.JSX.Element {
     }
 
     if (isElectron()) {
-      void window.api.projection.getGeneration().then(({ generation }) => initialize(generation))
       const unsubscribeLifecycle = window.api.projection.onProjectionLifecycle((event) => {
         if (event.status === 'opening' || event.status === 'recovering')
           initialize(event.generation)
       })
+      void window.api.projection.getGeneration().then(({ generation }) => initialize(generation))
 
       return () => {
         active = false
