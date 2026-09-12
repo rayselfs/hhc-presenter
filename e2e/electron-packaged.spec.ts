@@ -133,7 +133,7 @@ async function selectGridItem(control: Page, fileName: string): Promise<void> {
   await control.getByRole('button', { name: /Grid|網格|网格/ }).click()
   const escaped = fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const item = control.getByRole('button', { name: new RegExp(escaped) })
-  await item.click({ force: true })
+  await item.evaluate((button: HTMLButtonElement) => button.click())
   await expect(item).toHaveCount(0)
 }
 
