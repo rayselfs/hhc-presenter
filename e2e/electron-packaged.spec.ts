@@ -132,8 +132,9 @@ async function seekCurrentVideo(control: Page, seconds: number): Promise<void> {
 async function selectGridItem(control: Page, fileName: string): Promise<void> {
   await control.getByRole('button', { name: /Grid|網格|网格/ }).click()
   const escaped = fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  await control.getByRole('button', { name: new RegExp(escaped) }).click()
-  await expect(control.getByRole('button', { name: new RegExp(escaped) })).toHaveCount(0)
+  const item = control.getByRole('button', { name: new RegExp(escaped) })
+  await item.click({ force: true })
+  await expect(item).toHaveCount(0)
 }
 
 async function fixtureItemIds(

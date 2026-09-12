@@ -1,6 +1,6 @@
 {
   "name": "hhc-presenter",
-  "version": "2.5.8",
+  "version": "2.5.6",
   "description": "A projection system designed for church services.",
   "license": "GPL-3.0-or-later",
   "main": "./out/main/index.js",
