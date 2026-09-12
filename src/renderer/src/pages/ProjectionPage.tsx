@@ -32,6 +32,7 @@ export default function ProjectionPage(): React.JSX.Element {
     const adapter = createProjectionAdapter('projection', browserSession.sessionId)
     const unsubscribers: Array<() => void> = []
     let active = true
+    let initialized = false
 
     const subscribe = <C extends ProjectionChannel>(channel: C): void => {
       unsubscribers.push(
@@ -48,6 +49,12 @@ export default function ProjectionPage(): React.JSX.Element {
     const initialize = (generation: number): void => {
       if (!active || generation <= 0) return
       adapter.setGeneration(generation)
+      dispatch({ type: 'message', channel: '__system:blank', data: { showDefault: true } })
+      if (initialized) {
+        adapter.send('__system:ready', { generation })
+        return
+      }
+      initialized = true
       unsubscribers.push(
         adapter.on('__system:replay', (payload) => {
           dispatch({ type: 'replay', payload })
@@ -88,6 +95,17 @@ export default function ProjectionPage(): React.JSX.Element {
 
     if (isElectron()) {
       void window.api.projection.getGeneration().then(({ generation }) => initialize(generation))
+      const unsubscribeLifecycle = window.api.projection.onProjectionLifecycle((event) => {
+        if (event.status === 'opening' || event.status === 'recovering')
+          initialize(event.generation)
+      })
+
+      return () => {
+        active = false
+        unsubscribeLifecycle()
+        for (const unsubscribe of unsubscribers) unsubscribe()
+        adapter.dispose()
+      }
     } else {
       initialize(browserSession.generation)
     }

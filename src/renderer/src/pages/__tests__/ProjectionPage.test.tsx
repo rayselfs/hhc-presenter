@@ -52,6 +52,7 @@ vi.mock('@renderer/lib/projection-adapter', () => ({
 
 import ProjectionPage from '../ProjectionPage'
 import { createProjectionAdapter } from '@renderer/lib/projection-adapter'
+import { isElectron, isWeb } from '@renderer/lib/env'
 
 const mockProjectionVlcStop = vi.fn()
 
@@ -75,6 +76,8 @@ const baseStopwatchTick: StopwatchTickPayload = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(isElectron).mockReturnValue(false)
+  vi.mocked(isWeb).mockReturnValue(true)
   window.location.hash = '#/projection?generation=4&session=session-1'
   Object.defineProperty(window, 'api', {
     configurable: true,
@@ -100,6 +103,37 @@ describe('ProjectionPage', () => {
       expect(mockAdapter.setGeneration).toHaveBeenCalledWith(4)
       expect(mockAdapter.send).toHaveBeenCalledWith('__system:ready', { generation: 4 })
     })
+  })
+
+  it('renegotiates readiness when a hidden projection surface starts a new session', async () => {
+    const lifecycleHandlers: Array<(event: { generation: number; status: string }) => void> = []
+    vi.mocked(isElectron).mockReturnValue(true)
+    vi.mocked(isWeb).mockReturnValue(false)
+    Object.defineProperty(window, 'api', {
+      configurable: true,
+      value: {
+        projection: {
+          getGeneration: vi.fn(() => Promise.resolve({ generation: 4 })),
+          onProjectionLifecycle: vi.fn((handler) => {
+            lifecycleHandlers.push(handler)
+            return () => undefined
+          })
+        },
+        projectionVlc: { stop: mockProjectionVlcStop }
+      }
+    })
+
+    render(<ProjectionPage />)
+    await waitFor(() =>
+      expect(mockAdapter.send).toHaveBeenCalledWith('__system:ready', { generation: 4 })
+    )
+
+    act(() => {
+      lifecycleHandlers[0]({ generation: 5, status: 'opening' })
+    })
+
+    expect(mockAdapter.setGeneration).toHaveBeenCalledWith(5)
+    expect(mockAdapter.send).toHaveBeenCalledWith('__system:ready', { generation: 5 })
   })
 
   it('shows TimerDisplay when receiving timer:tick with mode=timer', () => {
