@@ -49,7 +49,6 @@ export default function ProjectionPage(): React.JSX.Element {
     const initialize = (generation: number): void => {
       if (!active || generation <= 0) return
       adapter.setGeneration(generation)
-      dispatch({ type: 'message', channel: '__system:blank', data: { showDefault: true } })
       if (initialized) {
         adapter.send('__system:ready', { generation })
         return
