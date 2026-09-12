@@ -197,7 +197,7 @@ export class WindowManager {
     const useMacSimpleFullscreen = process.platform === 'darwin' && hasSecondScreen
     const useWindowsNativeFullscreen = process.platform === 'win32' && hasSecondScreen
     this.projectionDisplayId = String(targetDisplay.id)
-    let windowGeneration = this.nextProjectionGeneration(
+    const windowGeneration = this.nextProjectionGeneration(
       reason === 'renderer-crash' ? 'recovering' : 'opening',
       reason
     )
@@ -287,7 +287,11 @@ export class WindowManager {
       ) {
         return
       }
-      windowGeneration = this.nextProjectionGeneration('opening', 'reload')
+      this.publishProjectionLifecycle({
+        generation: windowGeneration,
+        status: 'opening',
+        reason: 'reload'
+      })
       hasFinishedInitialLoad = false
     })
 

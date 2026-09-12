@@ -314,7 +314,7 @@ describe('WindowManager', () => {
     expect(projectionWindow.webContents.send).not.toHaveBeenCalledWith('app:close-requested')
   })
 
-  it('allocates once for initial load and once for a later reload', () => {
+  it('keeps the same generation for a later renderer reload', () => {
     const wm = WindowManager.getInstance()
     const first = wm.createProjectionWindow()
     const projection = FakeBrowserWindow.instances[0]
@@ -323,7 +323,7 @@ describe('WindowManager', () => {
 
     expect(first).toBe(1)
     expect(wm.getProjectionState().lifecycle).toMatchObject({
-      generation: 2,
+      generation: 1,
       status: 'opening',
       reason: 'reload'
     })
