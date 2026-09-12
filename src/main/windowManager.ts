@@ -152,6 +152,7 @@ export class WindowManager {
   private publishProjectionLifecycle(event: ProjectionLifecycleEvent): void {
     this.projectionLifecycle = event
     this.sendToMain('projection:lifecycle', event)
+    this.sendToProjection('projection:lifecycle', event)
   }
 
   private guardTopLevelNavigation(window: BrowserWindow): void {
@@ -179,10 +180,22 @@ export class WindowManager {
   ): number {
     if (this.isProjectionOpen()) return this.projectionGeneration
 
+    const reusableProjectionWindow = this.projectionWindow
+    if (
+      this.projectionLifecycle.status === 'closed' &&
+      reusableProjectionWindow &&
+      !reusableProjectionWindow.isDestroyed()
+    ) {
+      const generation = this.nextProjectionGeneration('opening', reason)
+      reusableProjectionWindow.showInactive()
+      return generation
+    }
+
     const primaryDisplay = screen.getPrimaryDisplay()
     const targetDisplay = this.getProjectionDisplay(displayId)
     const hasSecondScreen = targetDisplay.id !== primaryDisplay.id
     const useMacSimpleFullscreen = process.platform === 'darwin' && hasSecondScreen
+    const useWindowsNativeFullscreen = process.platform === 'win32' && hasSecondScreen
     this.projectionDisplayId = String(targetDisplay.id)
     let windowGeneration = this.nextProjectionGeneration(
       reason === 'renderer-crash' ? 'recovering' : 'opening',
@@ -195,7 +208,7 @@ export class WindowManager {
       height: hasSecondScreen ? targetDisplay.bounds.height : 600,
       x: targetDisplay.bounds.x,
       y: targetDisplay.bounds.y,
-      fullscreen: false,
+      fullscreen: useWindowsNativeFullscreen,
       enableLargerThanScreen: hasSecondScreen,
       frame: false,
       focusable: useMacSimpleFullscreen,
@@ -309,9 +322,14 @@ export class WindowManager {
       return { moved: false, generation: this.projectionGeneration }
     }
 
+    const wasProjecting = this.isProjectionOpen()
     this.closingProjectionWindows.add(projectionWindow)
     this.projectionWindow = null
     projectionWindow.close()
+    if (!wasProjecting) {
+      this.projectionGeneration = 0
+      return { moved: true, generation: 0 }
+    }
     const generation = this.createProjectionWindow(displayId, 'display-move')
     return { moved: true, generation }
   }
@@ -403,12 +421,16 @@ export class WindowManager {
 
   closeProjection(): void {
     const projectionWindow = this.projectionWindow
-    if (projectionWindow && !projectionWindow.isDestroyed()) {
-      this.closingProjectionWindows.add(projectionWindow)
-      this.projectionWindow = null
-      projectionWindow.close()
+    const reusable = projectionWindow && !projectionWindow.isDestroyed()
+    if (reusable) {
+      if (this.projectionGeneration > 0) {
+        this.sendToProjection('projection:message', this.projectionGeneration, '__system:blank', {
+          showDefault: true
+        })
+      }
+      projectionWindow.hide()
     }
-    this.projectionGeneration = 0
+    if (!reusable) this.projectionGeneration = 0
     this.lastAutomaticRecoveryAt = null
     this.publishProjectionLifecycle({
       generation: 0,
@@ -418,7 +440,13 @@ export class WindowManager {
   }
 
   isProjectionOpen(): boolean {
-    return this.projectionWindow !== null && !this.projectionWindow.isDestroyed()
+    return (
+      this.projectionWindow !== null &&
+      !this.projectionWindow.isDestroyed() &&
+      (this.projectionLifecycle.status === 'opening' ||
+        this.projectionLifecycle.status === 'ready' ||
+        this.projectionLifecycle.status === 'recovering')
+    )
   }
 
   getDisplays(): Electron.Display[] {

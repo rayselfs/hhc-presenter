@@ -36,6 +36,7 @@ const { FakeBrowserWindow } = vi.hoisted(() => {
     moveTop = vi.fn()
     focus = vi.fn()
     show = vi.fn()
+    hide = vi.fn()
     setIgnoreMouseEvents = vi.fn()
     setFullScreen = vi.fn()
     setSimpleFullScreen = vi.fn()
@@ -100,6 +101,8 @@ import { WindowManager } from '../windowManager'
 import { optimizer } from '@electron-toolkit/utils'
 
 describe('WindowManager', () => {
+  const platformDescriptor = Object.getOwnPropertyDescriptor(process, 'platform')
+
   beforeEach(() => {
     vi.clearAllMocks()
     const instance = WindowManager.getInstance()
@@ -109,6 +112,7 @@ describe('WindowManager', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+    if (platformDescriptor) Object.defineProperty(process, 'platform', platformDescriptor)
   })
 
   it('getInstance returns a singleton', () => {
@@ -219,7 +223,7 @@ describe('WindowManager', () => {
       y: 0,
       show: false,
       frame: false,
-      fullscreen: false,
+      fullscreen: process.platform === 'win32',
       enableLargerThanScreen: true,
       focusable: process.platform === 'darwin',
       fullscreenable: false,
@@ -229,6 +233,15 @@ describe('WindowManager', () => {
       resizable: false
     })
     expect(projection.setIgnoreMouseEvents).toHaveBeenCalledWith(true)
+  })
+
+  it('uses native fullscreen for a Windows external projection display', () => {
+    Object.defineProperty(process, 'platform', { value: 'win32' })
+    const wm = WindowManager.getInstance()
+
+    wm.createProjectionWindow('2')
+
+    expect(FakeBrowserWindow.instances[0].options.fullscreen).toBe(true)
   })
 
   it('uses macOS simple fullscreen without keeping projection always on top', () => {
@@ -356,6 +369,19 @@ describe('WindowManager', () => {
     expect(FakeBrowserWindow.instances[1].options.x).toBe(1920)
   })
 
+  it('discards a hidden projection surface on display change without opening a new output window', () => {
+    const wm = WindowManager.getInstance()
+    const generation = wm.createProjectionWindow()
+    const projection = FakeBrowserWindow.instances[0]
+    wm.markProjectionReady(generation)
+    wm.closeProjection()
+
+    expect(wm.moveProjectionWindow('2')).toEqual({ moved: true, generation: 0 })
+    expect(projection.close).toHaveBeenCalledOnce()
+    expect(FakeBrowserWindow.instances).toHaveLength(1)
+    expect(wm.getProjectionState().exists).toBe(false)
+  })
+
   it('recovers one renderer crash and fails the second inside 30 seconds', () => {
     vi.useFakeTimers()
     vi.setSystemTime(1_000)
@@ -472,16 +498,15 @@ describe('WindowManager', () => {
     expect(wm.getProjectionState().lifecycle.generation).toBe(4)
   })
 
-  it('explicit close never recreates or retains the session generation', () => {
+  it('hides a stopped projection and reuses its ready renderer for the next session', () => {
     const wm = WindowManager.getInstance()
-    wm.createProjectionWindow()
+    wm.markProjectionReady(wm.createProjectionWindow())
     const projection = FakeBrowserWindow.instances[0]
 
     wm.closeProjection()
-    projection.emit('closed')
-    projection.emitWebContents('render-process-gone', {}, { reason: 'clean-exit' })
 
-    expect(FakeBrowserWindow.instances).toHaveLength(1)
+    expect(projection.hide).toHaveBeenCalledOnce()
+    expect(projection.close).not.toHaveBeenCalled()
     expect(wm.getProjectionState()).toEqual({
       exists: false,
       lifecycle: {
@@ -489,6 +514,14 @@ describe('WindowManager', () => {
         status: 'closed',
         reason: 'user-close'
       }
+    })
+
+    expect(wm.createProjectionWindow()).toBe(2)
+    expect(FakeBrowserWindow.instances).toHaveLength(1)
+    expect(projection.showInactive).toHaveBeenCalledOnce()
+    expect(wm.getProjectionState()).toMatchObject({
+      exists: true,
+      lifecycle: { generation: 2, status: 'opening', reason: 'created' }
     })
   })
 
