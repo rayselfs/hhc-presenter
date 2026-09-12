@@ -9,9 +9,52 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
+  cleanup_stale_previews:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      pull-requests: read
+    steps:
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_SWA_CLEANUP_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Remove previews for closed pull requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          set -euo pipefail
+          open_prs="$(gh api --paginate "/repos/${GITHUB_REPOSITORY}/pulls?state=open&base=main&per_page=100" --jq '.[].number')"
+
+          while IFS= read -r preview; do
+            [[ "$preview" =~ ^[0-9]+$ ]] || continue
+            if ! grep -Fxq "$preview" <<< "$open_prs"; then
+              az rest \
+                --method delete \
+                --url "https://management.azure.com/subscriptions/${AZURE_SUBSCRIPTION_ID}/resourceGroups/alive/providers/Microsoft.Web/staticSites/hhc-client/builds/${preview}?api-version=2024-04-01" \
+                --only-show-errors
+            fi
+          done < <(az staticwebapp environment list \
+            --name hhc-client \
+            --resource-group alive \
+            --query "[?name != 'default'].name" \
+            --output tsv)
+
   build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    needs: cleanup_stale_previews
+    if: >-
+      (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')) &&
+      (needs.cleanup_stale_previews.result == 'success' || needs.cleanup_stale_previews.result == 'skipped')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
