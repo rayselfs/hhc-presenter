@@ -161,7 +161,7 @@ describe('HHC browser auth entry and hosting config', () => {
     expect(release).toContain('dist/*.zip')
   })
 
-  it('publishes checksums generated from the packaged release artifacts', () => {
+  it('publishes only after every packaged artifact is checksummed and uploaded', () => {
     const release = read('.github/workflows/build-release.yml')
     const checksumStep = release.match(
       /- name: Generate release checksums[\s\S]*?(?=\n\s{6}- name:)/
@@ -184,7 +184,10 @@ describe('HHC browser auth entry and hosting config', () => {
       release.indexOf('- name: Publish GitHub release')
     )
     expect(release).toContain('find release-artifacts -maxdepth 1 -type f -print0')
-    expect(release).toContain('gh release create "${GITHUB_REF_NAME}" "${artifacts[@]}"')
+    expect(release).toContain('gh release create "${GITHUB_REF_NAME}" --draft')
+    expect(release).toContain('expected_digest="sha256:$(sha256sum "${artifact}"')
+    expect(release).toContain('timeout 30m gh release upload "${GITHUB_REF_NAME}" "${artifact}"')
+    expect(release).toContain('gh release edit "${GITHUB_REF_NAME}" --draft=false')
     expect(release).not.toContain('release-artifacts/*')
   })
 
