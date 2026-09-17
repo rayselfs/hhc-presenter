@@ -254,4 +254,26 @@ jobs:
           mapfile -d '' artifacts < <(
             find release-artifacts -maxdepth 1 -type f -print0 | sort -z
           )
-          gh release create "${GITHUB_REF_NAME}" "${artifacts[@]}" --generate-notes --verify-tag
+
+          if ! gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release create "${GITHUB_REF_NAME}" --draft --generate-notes --verify-tag
+          fi
+
+          for artifact in "${artifacts[@]}"; do
+            name="${artifact##*/}"
+            expected_digest="sha256:$(sha256sum "${artifact}" | cut -d ' ' -f 1)"
+            uploaded_digest="$(
+              gh release view "${GITHUB_REF_NAME}" --json assets \
+                --jq ".assets[] | select(.name == \"${name}\") | .digest"
+            )"
+            if [[ "${uploaded_digest}" == "${expected_digest}" ]]; then
+              continue
+            fi
+            timeout 30m gh release upload "${GITHUB_REF_NAME}" "${artifact}" --clobber
+          done
+
+          uploaded_names="$(gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name')"
+          for artifact in "${artifacts[@]}"; do
+            grep -Fx -- "${artifact##*/}" <<< "${uploaded_names}" >/dev/null
+          done
+          gh release edit "${GITHUB_REF_NAME}" --draft=false
