@@ -269,7 +269,15 @@ jobs:
             if [[ "${uploaded_digest}" == "${expected_digest}" ]]; then
               continue
             fi
-            timeout 30m gh release upload "${GITHUB_REF_NAME}" "${artifact}" --clobber
+            for attempt in 1 2 3; do
+              if timeout 30m gh release upload "${GITHUB_REF_NAME}" "${artifact}" --clobber; then
+                break
+              fi
+              if (( attempt == 3 )); then
+                exit 1
+              fi
+              sleep $((attempt * 15))
+            done
           done
 
           uploaded_names="$(gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name')"
