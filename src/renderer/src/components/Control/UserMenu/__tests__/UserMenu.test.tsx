@@ -297,7 +297,7 @@ describe('UserMenu', () => {
       userId: 'user-1',
       displayName: 'Ada Lovelace',
       roles: [],
-      permissions: ['cms:read']
+      permissions: ['cms:pages:read']
     }
 
     renderUserMenu()
@@ -338,7 +338,7 @@ describe('UserMenu', () => {
       userId: 'user-1',
       displayName: 'Ada Lovelace',
       roles: [],
-      permissions: ['cms:read']
+      permissions: ['cms:pages:read']
     }
 
     renderUserMenu()

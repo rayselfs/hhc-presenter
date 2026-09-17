@@ -129,7 +129,7 @@ async function fetchAsset(
   if (!token) throw requestError('HHC_ASSET_AUTH_REQUIRED')
   let response = await send(token)
   if (response.status === 401) {
-    const refreshed = await service.refreshAccessToken()
+    const refreshed = await service.refreshAfterUnauthorized(token)
     if (!refreshed) throw requestError('HHC_ASSET_AUTH_REQUIRED')
     response = await send(refreshed)
   }

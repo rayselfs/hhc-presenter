@@ -4,7 +4,7 @@ const {
   handlers,
   mockFetch,
   mockGetAccessToken,
-  mockRefreshAccessToken,
+  mockRefreshAfterUnauthorized,
   mockMkdir,
   mockOpen,
   mockRename,
@@ -18,7 +18,7 @@ const {
   handlers: new Map<string, (...args: unknown[]) => unknown>(),
   mockFetch: vi.fn(),
   mockGetAccessToken: vi.fn(),
-  mockRefreshAccessToken: vi.fn(),
+  mockRefreshAfterUnauthorized: vi.fn(),
   mockMkdir: vi.fn(),
   mockOpen: vi.fn(),
   mockRename: vi.fn(),
@@ -68,7 +68,7 @@ import type { WindowManager } from '../../windowManager'
 const wm = { getMainWindow: vi.fn(() => mainWindow) } as unknown as WindowManager
 const auth = {
   getAccessToken: mockGetAccessToken,
-  refreshAccessToken: mockRefreshAccessToken
+  refreshAfterUnauthorized: mockRefreshAfterUnauthorized
 } as unknown as HhcAuthService
 
 function event(): Electron.IpcMainInvokeEvent {
@@ -125,7 +125,7 @@ beforeEach(() => {
   handlers.clear()
   vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mainWindow as never)
   mockGetAccessToken.mockResolvedValue('token-1')
-  mockRefreshAccessToken.mockResolvedValue('token-2')
+  mockRefreshAfterUnauthorized.mockResolvedValue('token-2')
   mockMkdir.mockResolvedValue(undefined)
   mockWrite.mockResolvedValue(undefined)
   mockClose.mockResolvedValue(undefined)
@@ -224,7 +224,7 @@ describe('HHC Asset IPC', () => {
     await expect(handler('hhc-assets:list-collections')(event())).rejects.toThrow(
       'HHC_ASSET_AUTH_REQUIRED'
     )
-    expect(mockRefreshAccessToken).toHaveBeenCalledOnce()
+    expect(mockRefreshAfterUnauthorized).toHaveBeenCalledWith('token-1')
     expect(mockFetch).toHaveBeenCalledTimes(2)
   })
 

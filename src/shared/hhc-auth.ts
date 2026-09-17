@@ -59,27 +59,24 @@ export function hasPresenterCloudAccess(permissions: readonly string[] | undefin
 }
 
 const hhcAdminCapabilities = [
-  'cms:read',
+  'cms:pages:read',
+  'cms:news:read',
+  'cms:bulletins:read',
   'campaigns:read',
+  'operations:meetings:read',
+  'operations:resources:read',
+  'operations:reservations:read',
+  'memberships:read',
   'users:read',
   'rbac:read',
+  'oauth:read',
+  'audit:read',
+  'assets:read',
+  'presenter:cloud:manage',
   'presenter:line:manage',
   'dsr:read'
 ] as const
-type HhcAdminCapability = (typeof hhcAdminCapabilities)[number]
-
-const hhcAdminLegacyPermissions: Partial<Record<HhcAdminCapability, string>> = {
-  'campaigns:read': 'cms:read',
-  'users:read': 'users:manage',
-  'rbac:read': 'rbac:manage',
-  'dsr:read': 'dsr:manage',
-  'presenter:line:manage': 'media-sync:manage'
-} as const
 
 export function canAccessHhcAdmin(permissions: readonly string[] | undefined): boolean {
-  return hhcAdminCapabilities.some((capability) => {
-    if (hasHhcPermission(permissions, capability)) return true
-    const legacyPermission = hhcAdminLegacyPermissions[capability]
-    return legacyPermission !== undefined && hasHhcPermission(permissions, legacyPermission)
-  })
+  return hhcAdminCapabilities.some((capability) => hasHhcPermission(permissions, capability))
 }

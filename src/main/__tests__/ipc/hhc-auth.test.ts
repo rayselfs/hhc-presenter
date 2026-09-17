@@ -876,7 +876,7 @@ describe('HhcAuthService credentials and session', () => {
     expect(currentStoredRecord()).toEqual({ installationId, refreshToken: 'refresh-3' })
   })
 
-  it('explicitly refreshes a still-valid cached access token and coalesces callers', async () => {
+  it('refreshes a rejected cached access token and coalesces callers', async () => {
     const service = createHhcAuthService({ now: () => now })
     await service.begin()
     mockNetFetch
@@ -889,8 +889,8 @@ describe('HhcAuthService credentials and session', () => {
       .mockResolvedValueOnce(tokenResponse('refresh-2'))
       .mockResolvedValueOnce(profileResponse())
     const [first, second] = await Promise.all([
-      service.refreshAccessToken(),
-      service.refreshAccessToken()
+      service.refreshAfterUnauthorized(cached as string),
+      service.refreshAfterUnauthorized(cached as string)
     ])
 
     expect(first).toBe(second)
@@ -902,6 +902,19 @@ describe('HhcAuthService credentials and session', () => {
       refresh_token: 'refresh-1'
     })
     expect(currentStoredRecord()).toMatchObject({ refreshToken: 'refresh-2' })
+  })
+
+  it('does not refresh when a 401 was sent with a stale token', async () => {
+    const service = createHhcAuthService({ now: () => now })
+    await service.begin()
+    mockNetFetch
+      .mockResolvedValueOnce(tokenResponse('refresh-1'))
+      .mockResolvedValueOnce(profileResponse())
+    await service.completeProtocolCallback(callbackFromOpenedUrl())
+    const current = await service.getAccessToken()
+
+    await expect(service.refreshAfterUnauthorized('stale-token')).resolves.toBe(current)
+    expect(mockNetFetch).toHaveBeenCalledTimes(2)
   })
 
   it('clears invalid refresh credentials while preserving the installation id', async () => {
@@ -1192,6 +1205,7 @@ describe('HHC auth IPC', () => {
       completeProtocolCallback: vi.fn().mockResolvedValue(false),
       getAccessToken: vi.fn().mockResolvedValue('access-token'),
       refreshAccessToken: vi.fn().mockResolvedValue('refreshed-access-token'),
+      refreshAfterUnauthorized: vi.fn().mockResolvedValue('refreshed-access-token'),
       getSession: vi.fn().mockResolvedValue(null),
       signOut: vi.fn().mockResolvedValue(undefined),
       clearLocalData: vi.fn().mockResolvedValue(undefined),
