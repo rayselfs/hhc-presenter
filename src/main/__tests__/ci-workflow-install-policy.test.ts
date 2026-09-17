@@ -24,6 +24,14 @@ describe('CI workflow dependency installation policy', () => {
 })
 
 describe('release contract', () => {
+  test('retries each release asset upload before leaving the release as a draft', () => {
+    const workflow = readFileSync(resolve('.github/workflows/build-release.yml'), 'utf8')
+
+    expect(workflow).toContain('for attempt in 1 2 3; do')
+    expect(workflow).toContain('timeout 30m gh release upload')
+    expect(workflow).toContain('sleep $((attempt * 15))')
+  })
+
   test('keeps package versions aligned and the media sync runbook ACL-only', () => {
     const packageManifest = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as {
       version: string
