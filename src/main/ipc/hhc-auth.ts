@@ -50,6 +50,7 @@ export interface HhcAuthService {
   completeProtocolCallback(action: AccountAuthAction): Promise<boolean>
   getAccessToken(): Promise<string | null>
   refreshAccessToken(): Promise<string | null>
+  refreshAfterUnauthorized(rejectedToken: string): Promise<string | null>
   getSession(): Promise<HhcSession | null>
   signOut(): Promise<void>
   clearLocalData(): Promise<void>
@@ -243,6 +244,11 @@ class MainHhcAuthService implements HhcAuthService {
     return this.refreshInFlight
   }
 
+  async refreshAfterUnauthorized(rejectedToken: string): Promise<string | null> {
+    if (this.accessCredential?.token !== rejectedToken) return this.getAccessToken()
+    return this.refreshAccessToken()
+  }
+
   async getSession(): Promise<HhcSession | null> {
     if (this.signOutInFlight || this.clearLocalDataInFlight) return null
     if (this.session && this.accessCredential && this.accessCredential.expiresAt > this.now()) {
@@ -299,9 +305,7 @@ class MainHhcAuthService implements HhcAuthService {
       throw new Error('CSRF token missing')
     }
     const csrfToken = csrf.csrf_token
-    const send = async (refresh: boolean): Promise<Response> => {
-      const token = await (refresh ? this.refreshAccessToken() : this.getAccessToken())
-      if (!token) throw new Error('HHC account authentication required')
+    const send = async (token: string): Promise<Response> => {
       return net.fetch(`${this.accountApi}${path}`, {
         method: 'POST',
         credentials: 'include',
@@ -315,10 +319,14 @@ class MainHhcAuthService implements HhcAuthService {
         body: JSON.stringify(body)
       })
     }
-    let response = await send(false)
+    const token = await this.getAccessToken()
+    if (!token) throw new Error('HHC account authentication required')
+    let response = await send(token)
     if (response.status === 401) {
       await response.body?.cancel().catch(() => undefined)
-      response = await send(true)
+      const refreshed = await this.refreshAfterUnauthorized(token)
+      if (!refreshed) throw new Error('HHC account authentication required')
+      response = await send(refreshed)
     }
     return responseJson(response)
   }
