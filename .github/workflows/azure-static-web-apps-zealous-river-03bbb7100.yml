@@ -54,6 +54,7 @@ jobs:
   build_and_deploy_job:
     needs: cleanup_stale_previews
     if: >-
+      always() &&
       (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')) &&
       (needs.cleanup_stale_previews.result == 'success' || needs.cleanup_stale_previews.result == 'skipped')
     runs-on: ubuntu-latest
