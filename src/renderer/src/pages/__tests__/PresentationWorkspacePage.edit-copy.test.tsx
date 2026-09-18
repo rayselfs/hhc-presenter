@@ -33,7 +33,7 @@ vi.mock('@renderer/contexts/HhcAuthContext', () => ({
     session: mocks.session,
     getAuthGeneration: vi.fn(() => 0),
     getAccessToken: vi.fn(async () => null),
-    refreshAccessToken: vi.fn(async () => null),
+    refreshAfterUnauthorized: vi.fn(async () => null),
     endSession: vi.fn(async () => undefined)
   })
 }))

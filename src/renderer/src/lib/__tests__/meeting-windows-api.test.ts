@@ -19,7 +19,7 @@ describe('meeting windows API', () => {
     const api = createMeetingWindowsApi(
       {
         getAccessToken: vi.fn(async () => 'token'),
-        refreshAccessToken: vi.fn(async () => 'refreshed')
+        refreshAfterUnauthorized: vi.fn(async () => 'refreshed')
       },
       { origin: ORIGIN, fetcher }
     )
@@ -46,7 +46,7 @@ describe('meeting windows API', () => {
     const api = createMeetingWindowsApi(
       {
         getAccessToken: vi.fn(async () => 'token'),
-        refreshAccessToken: vi.fn(async () => null)
+        refreshAfterUnauthorized: vi.fn(async () => null)
       },
       { origin: ORIGIN, fetcher }
     )
@@ -88,7 +88,7 @@ describe('meeting windows API', () => {
             if (stage === 'auth' && attempt === 1) await stalled
             return 'token'
           },
-          refreshAccessToken: async () => null
+          refreshAfterUnauthorized: async () => null
         },
         { fetcher }
       )
@@ -110,13 +110,13 @@ describe('meeting windows API', () => {
       .fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(null, { status: 401 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: [], meta: {}, error: null })))
-    const refreshAccessToken = vi.fn(async () => 'new-token')
+    const refreshAfterUnauthorized = vi.fn(async () => 'new-token')
     const api = createMeetingWindowsApi(
-      { getAccessToken: async () => 'old-token', refreshAccessToken },
+      { getAccessToken: async () => 'old-token', refreshAfterUnauthorized },
       { fetcher }
     )
     await expect(api.list()).resolves.toEqual([])
-    expect(refreshAccessToken).toHaveBeenCalledOnce()
+    expect(refreshAfterUnauthorized).toHaveBeenCalledOnce()
     expect(new Headers(fetcher.mock.calls[1][1]?.headers).get('authorization')).toBe(
       'Bearer new-token'
     )
@@ -127,7 +127,7 @@ describe('meeting windows API', () => {
     const api = createMeetingWindowsApi(
       {
         getAccessToken: vi.fn(async () => 'token'),
-        refreshAccessToken: vi.fn(async () => null)
+        refreshAfterUnauthorized: vi.fn(async () => null)
       },
       {
         origin: ORIGIN,

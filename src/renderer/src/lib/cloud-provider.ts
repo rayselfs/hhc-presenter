@@ -16,7 +16,7 @@ export interface HhcLineCloudAuth {
   getSession(): HhcSession | null
   getAuthGeneration?(): number
   getAccessToken(): Promise<string | null>
-  refreshAccessToken(): Promise<string | null>
+  refreshAfterUnauthorized(rejectedToken: string): Promise<string | null>
   endSession(): Promise<void>
 }
 

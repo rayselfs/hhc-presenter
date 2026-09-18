@@ -290,7 +290,7 @@ export function startSyncRuntime(options: SyncRuntimeOptions = {}): () => void {
       stopPersonal = startPersonalSync(owner, {
         getSession: async () => getCurrentHhcSession(),
         getAccessToken: auth.getAccessToken,
-        refreshAccessToken: auth.refreshAccessToken
+        refreshAfterUnauthorized: auth.refreshAfterUnauthorized
       })
   }
   const unsubscribePersonal = usePersonalSyncStore.subscribe(reconcilePersonal)

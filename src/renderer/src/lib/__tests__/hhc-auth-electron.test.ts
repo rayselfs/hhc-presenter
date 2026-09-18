@@ -16,7 +16,7 @@ describe('ElectronHhcAuthAdapter', () => {
         begin: vi.fn().mockResolvedValue({ expiresAt: 301_000 }),
         cancel: vi.fn().mockResolvedValue(undefined),
         getAccessToken: vi.fn().mockResolvedValue('access-token'),
-        refreshAccessToken: vi.fn().mockResolvedValue('refreshed-access-token'),
+        refreshAfterUnauthorized: vi.fn().mockResolvedValue('refreshed-access-token'),
         getSession: vi.fn().mockResolvedValue(session),
         signOut: vi.fn().mockResolvedValue(undefined),
         onSessionChanged: vi.fn(() => vi.fn())
@@ -29,7 +29,9 @@ describe('ElectronHhcAuthAdapter', () => {
 
     await expect(adapter.getSession()).resolves.toEqual(session)
     await expect(adapter.getAccessToken()).resolves.toBe('access-token')
-    await expect(adapter.refreshAccessToken()).resolves.toBe('refreshed-access-token')
+    await expect(adapter.refreshAfterUnauthorized('rejected-token')).resolves.toBe(
+      'refreshed-access-token'
+    )
     await expect(adapter.signIn()).resolves.toEqual({
       expiresAt: 301_000
     })
@@ -47,7 +49,7 @@ describe('ElectronHhcAuthAdapter', () => {
       'getAccessToken',
       'getSession',
       'onSessionChanged',
-      'refreshAccessToken',
+      'refreshAfterUnauthorized',
       'signOut'
     ])
   })

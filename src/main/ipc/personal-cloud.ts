@@ -21,7 +21,7 @@ import { isMainWindow } from './validate'
 
 type Auth = Pick<
   HhcAuthAdapter,
-  'getSession' | 'getAccessToken' | 'refreshAccessToken' | 'subscribe'
+  'getSession' | 'getAccessToken' | 'refreshAfterUnauthorized' | 'subscribe'
 >
 
 function valid(condition: unknown): asserts condition {

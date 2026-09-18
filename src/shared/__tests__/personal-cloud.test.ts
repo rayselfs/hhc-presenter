@@ -105,7 +105,7 @@ it('never sends another account credentials when the session changes during toke
   const auth = {
     getSession: async () => ({ userId: owner, displayName: owner, roles: [] }),
     getAccessToken: async () => 'first-token',
-    refreshAccessToken: async () => {
+    refreshAfterUnauthorized: async () => {
       owner = 'bob'
       return 'other-token'
     }

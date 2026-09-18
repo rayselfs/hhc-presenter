@@ -9,8 +9,9 @@ import {
   useState
 } from 'react'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
-import { hasPresenterCloudAccess, type HhcAuthAdapter, type HhcSession } from '@shared/hhc-auth'
+import type { HhcAuthAdapter, HhcSession } from '@shared/hhc-auth'
 import { createHhcAuthAdapter, registerHhcSessionOwner } from '@renderer/lib/hhc-auth'
+import { hasPresenterCloudAccess } from '@renderer/lib/hhc-permissions'
 
 export type HhcAuthStatus = 'loading' | 'anonymous' | 'authenticated' | 'unavailable'
 export type HhcSignInStatus = 'idle' | 'pending' | 'cancelled' | 'expired'
@@ -26,7 +27,7 @@ type HhcAuthContextValue = {
   endSession(): Promise<void>
   getAuthGeneration(): number
   getAccessToken(): Promise<string | null>
-  refreshAccessToken(): Promise<string | null>
+  refreshAfterUnauthorized(rejectedToken: string): Promise<string | null>
 }
 
 const HhcAuthContext = createContext<HhcAuthContextValue | null>(null)
@@ -43,7 +44,7 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
   const signInAttemptRef = useRef(0)
   const signOutPendingRef = useRef(false)
   const accessTokenPromiseRef = useRef<Promise<string | null> | null>(null)
-  const refreshTokenPromiseRef = useRef<Promise<string | null> | null>(null)
+  const refreshTokenPromisesRef = useRef(new Map<string, Promise<string | null>>())
   const sessionTransitionPromiseRef = useRef<Promise<void>>(Promise.resolve())
   const departingAccountCleanupRef = useRef(new Map<string, Promise<void>>())
 
@@ -61,7 +62,7 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
   const invalidateTokenRequests = useCallback((): void => {
     sessionEpochRef.current += 1
     accessTokenPromiseRef.current = null
-    refreshTokenPromiseRef.current = null
+    refreshTokenPromisesRef.current.clear()
   }, [])
 
   const getAuthGeneration = useCallback((): number => authGenerationRef.current, [])
@@ -406,15 +407,16 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
     return request
   }, [invalidateTokenRequests])
 
-  const refreshAccessToken = useCallback((): Promise<string | null> => {
+  const refreshAfterUnauthorized = useCallback((rejectedToken: string): Promise<string | null> => {
     const adapter = adapterRef.current
     const expectedUserId = sessionRef.current?.userId
     if (!adapter || !expectedUserId || signOutPendingRef.current) return Promise.resolve(null)
-    if (refreshTokenPromiseRef.current) return refreshTokenPromiseRef.current
+    const existing = refreshTokenPromisesRef.current.get(rejectedToken)
+    if (existing) return existing
 
     const epoch = sessionEpochRef.current
     const request = adapter
-      .refreshAccessToken()
+      .refreshAfterUnauthorized(rejectedToken)
       .then((token) =>
         adapterRef.current === adapter &&
         sessionEpochRef.current === epoch &&
@@ -423,15 +425,12 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
           ? token
           : null
       )
-    refreshTokenPromiseRef.current = request
-    request.then(
-      () => {
-        if (refreshTokenPromiseRef.current === request) refreshTokenPromiseRef.current = null
-      },
-      () => {
-        if (refreshTokenPromiseRef.current === request) refreshTokenPromiseRef.current = null
-      }
-    )
+      .finally(() => {
+        if (refreshTokenPromisesRef.current.get(rejectedToken) === request) {
+          refreshTokenPromisesRef.current.delete(rejectedToken)
+        }
+      })
+    refreshTokenPromisesRef.current.set(rejectedToken, request)
     return request
   }, [])
 
@@ -447,14 +446,14 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
       endSession: signOut,
       getAuthGeneration,
       getAccessToken,
-      refreshAccessToken
+      refreshAfterUnauthorized
     }),
     [
       cancelSignIn,
       getAccessToken,
       getAuthGeneration,
       pendingSignInExpiresAt,
-      refreshAccessToken,
+      refreshAfterUnauthorized,
       session,
       signIn,
       signInStatus,

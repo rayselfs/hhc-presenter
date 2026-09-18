@@ -1,135 +1,43 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import icon from '@renderer/assets/icon.png'
-import { HHC_AUTH_CALLBACK_CHANNEL } from '@shared/hhc-auth'
-import {
-  completeBrowserRedirectSignIn,
-  HHC_AUTH_REDIRECT_TRANSACTION_KEY
-} from '@renderer/lib/hhc-auth-browser'
+import { createHhcAuthAdapter } from '@renderer/lib/hhc-auth'
 
 export default function HhcOAuthCallbackPage(): React.JSX.Element {
   const [status, setStatus] = useState<'pending' | 'complete' | 'failed'>('pending')
   const { t } = useTranslation()
+  const title =
+    status === 'complete'
+      ? t('authCallback.completeTitle')
+      : status === 'failed'
+        ? t('authCallback.failedTitle')
+        : t('authCallback.pendingTitle')
+  const description =
+    status === 'complete'
+      ? t('authCallback.completeDescription')
+      : status === 'failed'
+        ? t('authCallback.failedDescription')
+        : t('authCallback.pendingDescription')
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const codes = params.getAll('code')
-    const states = params.getAll('state')
-    const errors = params.getAll('error')
-    if (sessionStorage.getItem(HHC_AUTH_REDIRECT_TRANSACTION_KEY)) {
-      if (
-        states.length !== 1 ||
-        !states[0] ||
-        !(
-          (codes.length === 1 && codes[0] && errors.length === 0) ||
-          (errors.length === 1 && errors[0] && codes.length === 0)
-        )
-      ) {
-        const timer = window.setTimeout(() => setStatus('failed'))
-        return () => window.clearTimeout(timer)
-      }
-      let active = true
-      const payload = codes[0]
-        ? { code: codes[0], state: states[0] }
-        : { error: errors[0], state: states[0] }
-      void completeBrowserRedirectSignIn(payload).then(
-        (completed) => {
-          if (active) setStatus(completed ? 'complete' : 'failed')
-        },
-        () => {
-          if (active) setStatus('failed')
-        }
-      )
-      return () => {
-        active = false
-      }
-    }
-
-    if (codes.length !== 1 || states.length !== 1 || !codes[0] || !states[0]) {
-      const timer = window.setTimeout(() => setStatus('failed'))
-      return () => window.clearTimeout(timer)
-    }
-
-    const payload = { code: codes[0], state: states[0] }
-
-    let channel =
-      typeof BroadcastChannel === 'undefined'
-        ? null
-        : new BroadcastChannel(HHC_AUTH_CALLBACK_CHANNEL)
-    let settled = false
-    const finish = (data: unknown): void => {
-      if (
-        !data ||
-        typeof data !== 'object' ||
-        !('state' in data) ||
-        !('status' in data) ||
-        data.state !== payload.state ||
-        (data.status !== 'complete' && data.status !== 'failed')
-      )
-        return
-      if (settled) return
-      settled = true
-      if (timer) window.clearTimeout(timer)
-      setStatus(data.status)
-      window.removeEventListener('message', onMessage)
-      channel?.removeEventListener('message', onBroadcast)
-      channel?.close()
-      channel = null
-    }
-    const onBroadcast = (event: MessageEvent<unknown>): void => finish(event.data)
-    const onMessage = (event: MessageEvent<unknown>): void => {
-      if (event.origin === window.location.origin && event.source === window.opener)
-        finish(event.data)
-    }
-    channel?.addEventListener('message', onBroadcast)
-    window.addEventListener('message', onMessage)
-
-    let delivered = false
-    try {
-      if (window.opener?.location.origin === window.location.origin) {
-        window.opener.postMessage(payload, window.location.origin)
-        delivered = true
-      }
-    } catch {
-      // Cross-origin openers are deliberately not trusted with OAuth callback data.
-    }
-
-    if (!delivered && channel) {
-      channel.postMessage(payload)
-      delivered = true
-    }
-    const timer = window.setTimeout(
-      () => {
-        if (settled) return
-        settled = true
-        setStatus('failed')
-        window.removeEventListener('message', onMessage)
-        channel?.removeEventListener('message', onBroadcast)
-        channel?.close()
-        channel = null
-      },
-      delivered ? 30_000 : 0
-    )
+    let active = true
+    let adapter: Awaited<ReturnType<typeof createHhcAuthAdapter>> | undefined
+    void createHhcAuthAdapter()
+      .then(async (created) => {
+        adapter = created
+        return created.getSession()
+      })
+      .then((session) => {
+        if (active) setStatus(session ? 'complete' : 'failed')
+      })
+      .catch(() => {
+        if (active) setStatus('failed')
+      })
     return () => {
-      if (timer) window.clearTimeout(timer)
-      window.removeEventListener('message', onMessage)
-      channel?.removeEventListener('message', onBroadcast)
-      channel?.close()
+      active = false
+      adapter?.dispose()
     }
   }, [])
-
-  const title =
-    status === 'pending'
-      ? t('authCallback.pendingTitle')
-      : status === 'complete'
-        ? t('authCallback.completeTitle')
-        : t('authCallback.failedTitle')
-  const description =
-    status === 'pending'
-      ? t('authCallback.pendingDescription')
-      : status === 'complete'
-        ? t('authCallback.completeDescription')
-        : t('authCallback.failedDescription')
 
   return (
     <main className="flex h-screen items-center justify-center bg-background p-6 text-foreground">

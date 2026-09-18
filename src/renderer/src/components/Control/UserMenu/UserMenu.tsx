@@ -27,7 +27,7 @@ import { useHhcAuth } from '@renderer/contexts/HhcAuthContext'
 import { isElectron, isMac, isWeb } from '@renderer/lib/env'
 import { useUpdateStore } from '@renderer/stores/update'
 import { selectUpdateStatus, selectAvailableVersion } from '@renderer/stores/selectors/update'
-import { canAccessHhcAdmin } from '@shared/hhc-auth'
+import { canAccessHhcAdmin } from '@renderer/lib/hhc-permissions'
 
 interface UserMenuProps {
   isExpanded: boolean

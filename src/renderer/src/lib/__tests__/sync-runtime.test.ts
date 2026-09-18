@@ -94,7 +94,7 @@ function auth(sessionRef: { current: HhcSession | null }): HhcLineCloudAuth {
   return {
     getSession: () => sessionRef.current,
     getAccessToken: vi.fn(async () => 'token'),
-    refreshAccessToken: vi.fn(async () => 'refreshed'),
+    refreshAfterUnauthorized: vi.fn(async () => 'refreshed'),
     endSession: vi.fn(async () => undefined)
   }
 }
@@ -544,7 +544,7 @@ describe('startSyncRuntime', () => {
     await flushMicrotasks()
     await vi.advanceTimersByTimeAsync(60_000)
     expect(hhcMocks.refreshFolder).toHaveBeenCalledTimes(1)
-    expect(hhcAuth.refreshAccessToken).not.toHaveBeenCalled()
+    expect(hhcAuth.refreshAfterUnauthorized).not.toHaveBeenCalled()
 
     sessionRef.current = { ...firstSession, roles: ['media_sync_user', 'reader'] }
     await vi.advanceTimersByTimeAsync(120_000)

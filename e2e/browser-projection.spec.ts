@@ -211,7 +211,14 @@ test('restores the HHC account session without storing the access token', async 
           authenticated && hasSessionCookie
             ? {
                 authenticated: true,
-                user: { id: 'user-1', display_name: 'Ada Lovelace', permissions: [] }
+                user: {
+                  id: 'user-1',
+                  email: 'ada@example.com',
+                  display_name: 'Ada Lovelace',
+                  avatar_url: null
+                },
+                permissions: [],
+                permission_availability: { status: 'available' }
               }
             : { authenticated: false }
         )
@@ -231,7 +238,7 @@ test('restores the HHC account session without storing the access token', async 
       await route.fulfill({
         status: 200,
         headers: { ...corsHeaders, 'content-type': 'application/json' },
-        body: JSON.stringify({ access_token: accessToken })
+        body: JSON.stringify({ access_token: accessToken, expires_in: 3600 })
       })
       return
     }
@@ -378,11 +385,8 @@ test('restores the HHC account session without storing the access token', async 
   await completeOnboarding(page)
 
   await page.getByRole('button', { name: 'Account menu for Guest' }).click()
-  const popupPromise = context.waitForEvent('page')
   await page.getByRole('menuitem', { name: 'Login' }).click()
-  const popup = await popupPromise
   await expect(page.getByRole('button', { name: 'Account menu for Ada Lovelace' })).toBeVisible()
-  expect(popup.isClosed()).toBe(false)
   expect(callbackRequests).toBe(1)
   await page.reload()
   await expect(page.getByRole('button', { name: 'Account menu for Ada Lovelace' })).toBeVisible()

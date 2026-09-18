@@ -98,7 +98,7 @@ function auth(
     getSession: () => sessionRef.current,
     getAuthGeneration: () => generationRef.current,
     getAccessToken: vi.fn(async () => 'access-token'),
-    refreshAccessToken: vi.fn(async () => 'refresh-token'),
+    refreshAfterUnauthorized: vi.fn(async () => 'refresh-token'),
     endSession: vi.fn(async () => undefined)
   }
 }

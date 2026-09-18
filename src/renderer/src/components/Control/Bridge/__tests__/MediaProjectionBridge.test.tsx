@@ -32,7 +32,7 @@ vi.mock('@renderer/contexts/HhcAuthContext', () => ({
   useHhcAuth: () => ({
     session: { userId: 'user-1', displayName: 'Ada', roles: [] },
     getAccessToken: vi.fn(),
-    refreshAccessToken: vi.fn(),
+    refreshAfterUnauthorized: vi.fn(),
     endSession: mocks.endSession
   })
 }))

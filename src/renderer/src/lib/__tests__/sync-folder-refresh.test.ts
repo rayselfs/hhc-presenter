@@ -103,7 +103,7 @@ describe('refreshSyncFolderOnNavigation', () => {
     const auth = {
       getSession: vi.fn(),
       getAccessToken: vi.fn(),
-      refreshAccessToken: vi.fn(),
+      refreshAfterUnauthorized: vi.fn(),
       endSession: vi.fn()
     }
 

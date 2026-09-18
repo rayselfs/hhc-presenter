@@ -103,7 +103,7 @@ export function createPersonalCloudProvider(
   auth: {
     getSession(): HhcSession | null | Promise<HhcSession | null>
     getAccessToken(): Promise<string | null>
-    refreshAccessToken(): Promise<string | null>
+    refreshAfterUnauthorized(rejectedToken: string): Promise<string | null>
   },
   ownerId: string
 ): PersonalSharingProvider {

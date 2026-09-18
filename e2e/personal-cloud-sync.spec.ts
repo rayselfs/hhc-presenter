@@ -35,13 +35,16 @@ test('two clients preserve an offline rename conflict and replay a lost commit r
             authenticated: true,
             user: {
               id: 'qa-owner',
+              email: 'cloud-qa@example.com',
               display_name: 'Cloud QA',
-              permissions: ['presenter:cloud:manage']
-            }
+              avatar_url: null
+            },
+            permissions: ['presenter:cloud:manage'],
+            permission_availability: { status: 'available' }
           }
         : path.endsWith('/csrf-token')
           ? { csrf_token: 'qa-csrf' }
-          : { access_token: token }
+          : { access_token: token, expires_in: 3600 }
       await route.fulfill({ json })
     })
     await context.route('https://www.alive.org.tw/api/assets/personal-space**', async (route) => {

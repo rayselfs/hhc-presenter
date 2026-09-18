@@ -73,10 +73,10 @@ let plaintextByCiphertext: Map<string, string>
 let ciphertextSequence: number
 let now: number
 
-function jsonResponse(value: unknown, status = 200): Response {
+function jsonResponse(value: unknown, status = 200, headers: HeadersInit = {}): Response {
   return new Response(JSON.stringify(value), {
     status,
-    headers: { 'content-type': 'application/json' }
+    headers: { 'content-type': 'application/json', ...headers }
   })
 }
 
@@ -568,7 +568,8 @@ describe('HhcAuthService credentials and session', () => {
       displayName: 'Alice Chen',
       avatarUrl: 'https://account.example/avatar.png',
       roles: ['media_sync_user'],
-      permissions: []
+      permissions: [],
+      permissionAvailability: { status: 'available' }
     })
     expect(mockNetFetch.mock.calls[1][0]).toBe('https://account.alive.org.tw/api/account/v1/me')
     expect(mockNetFetch.mock.calls[1][1].headers).toMatchObject({
@@ -917,6 +918,37 @@ describe('HhcAuthService credentials and session', () => {
     expect(mockNetFetch).toHaveBeenCalledTimes(2)
   })
 
+  it('honors Retry-After before another token refresh', async () => {
+    const service = createHhcAuthService({ now: () => now })
+    await service.begin()
+    mockNetFetch
+      .mockResolvedValueOnce(tokenResponse('refresh-1'))
+      .mockResolvedValueOnce(profileResponse())
+    await service.completeProtocolCallback(callbackFromOpenedUrl())
+    const cached = await service.getAccessToken()
+
+    mockNetFetch.mockResolvedValueOnce(
+      jsonResponse({ error: 'rate_limited' }, 429, { 'retry-after': '30' })
+    )
+    await expect(service.refreshAfterUnauthorized(cached as string)).rejects.toMatchObject({
+      status: 429,
+      code: 'ACC_AUTH_RATE_LIMITED',
+      retryAt: now + 30_000
+    })
+    await expect(service.refreshAfterUnauthorized(cached as string)).rejects.toMatchObject({
+      status: 429,
+      retryAt: now + 30_000
+    })
+    expect(mockNetFetch).toHaveBeenCalledTimes(3)
+
+    now += 30_000
+    mockNetFetch
+      .mockResolvedValueOnce(tokenResponse('refresh-2'))
+      .mockResolvedValueOnce(profileResponse())
+    await expect(service.refreshAfterUnauthorized(cached as string)).resolves.toBeTruthy()
+    expect(mockNetFetch).toHaveBeenCalledTimes(5)
+  })
+
   it('clears invalid refresh credentials while preserving the installation id', async () => {
     const service = createHhcAuthService({ now: () => now })
     await service.begin()
@@ -1204,7 +1236,6 @@ describe('HHC auth IPC', () => {
       cancelSignIn: vi.fn().mockResolvedValue(undefined),
       completeProtocolCallback: vi.fn().mockResolvedValue(false),
       getAccessToken: vi.fn().mockResolvedValue('access-token'),
-      refreshAccessToken: vi.fn().mockResolvedValue('refreshed-access-token'),
       refreshAfterUnauthorized: vi.fn().mockResolvedValue('refreshed-access-token'),
       getSession: vi.fn().mockResolvedValue(null),
       signOut: vi.fn().mockResolvedValue(undefined),
@@ -1234,7 +1265,7 @@ describe('HHC auth IPC', () => {
         'hhc-auth:begin',
         'hhc-auth:cancel',
         'hhc-auth:get-access-token',
-        'hhc-auth:refresh-access-token',
+        'hhc-auth:refresh-after-unauthorized',
         'hhc-auth:get-session',
         'hhc-auth:resolve-share-target',
         'hhc-auth:resolve-account-labels',
@@ -1268,9 +1299,9 @@ describe('HHC auth IPC', () => {
     await expect(handlers.get('hhc-auth:get-access-token')!(makeEvent())).resolves.toBe(
       'access-token'
     )
-    await expect(handlers.get('hhc-auth:refresh-access-token')!(makeEvent())).resolves.toBe(
-      'refreshed-access-token'
-    )
+    await expect(
+      handlers.get('hhc-auth:refresh-after-unauthorized')!(makeEvent(), 'rejected-token')
+    ).resolves.toBe('refreshed-access-token')
     expect(handlers.has('hhc-auth:complete')).toBe(false)
 
     sessionListener?.({ userId: 'user-1', displayName: 'Alice', roles: [] })

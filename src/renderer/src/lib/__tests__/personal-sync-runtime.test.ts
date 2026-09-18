@@ -255,7 +255,7 @@ it('aborts the account worker and fences a successful mutation arriving after st
   const stop = startPersonalSync('alice', {
     getSession: async () => ({ userId: 'alice', displayName: 'Alice', roles: [] }),
     getAccessToken: async () => 'token',
-    refreshAccessToken: async () => 'token'
+    refreshAfterUnauthorized: async () => 'token'
   })
   try {
     await vi.waitFor(() => expect(finish).toBeDefined())

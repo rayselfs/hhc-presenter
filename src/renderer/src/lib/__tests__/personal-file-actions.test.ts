@@ -47,7 +47,7 @@ it('maps local trash IDs and refreshes usage after an idempotent purge', async (
     {
       getSession: async () => ({ userId: 'alice', displayName: 'Alice', roles: [] }),
       getAccessToken: async () => 'token',
-      refreshAccessToken: async () => 'token'
+      refreshAfterUnauthorized: async () => 'token'
     }
   )
   expect(cloud.purgeTrash).toHaveBeenCalledWith({
@@ -63,7 +63,7 @@ it('reuses the purge operation ID after an uncertain failure', async () => {
   const auth = {
     getSession: async () => ({ userId: 'alice', displayName: 'Alice', roles: [] }),
     getAccessToken: async () => 'token',
-    refreshAccessToken: async () => 'token'
+    refreshAfterUnauthorized: async () => 'token'
   }
   await expect(purgePersonalTrash({ key: folder, itemIds: [folder] }, auth)).rejects.toThrow()
   await purgePersonalTrash({ key: folder, itemIds: [folder] }, auth)
@@ -84,7 +84,7 @@ it('schedules reconciliation when purge succeeds but usage refresh fails', async
       {
         getSession: async () => ({ userId: 'alice', displayName: 'Alice', roles: [] }),
         getAccessToken: async () => 'token',
-        refreshAccessToken: async () => 'token'
+        refreshAfterUnauthorized: async () => 'token'
       }
     )
   ).resolves.toBeUndefined()

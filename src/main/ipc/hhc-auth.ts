@@ -49,7 +49,6 @@ export interface HhcAuthService {
   cancelSignIn(): Promise<void>
   completeProtocolCallback(action: AccountAuthAction): Promise<boolean>
   getAccessToken(): Promise<string | null>
-  refreshAccessToken(): Promise<string | null>
   refreshAfterUnauthorized(rejectedToken: string): Promise<string | null>
   getSession(): Promise<HhcSession | null>
   signOut(): Promise<void>
@@ -123,6 +122,22 @@ async function responseJson(response: Response): Promise<Record<string, unknown>
   }
 }
 
+class HhcAuthRateLimitError extends Error {
+  readonly status = 429
+  readonly code = 'ACC_AUTH_RATE_LIMITED'
+
+  constructor(readonly retryAt: number) {
+    super('Account access token is cooling down')
+    this.name = 'HhcAuthRateLimitError'
+  }
+}
+
+function retryAtFrom(value: string | null, now: number): number {
+  if (value && /^\d+$/.test(value.trim())) return now + Number(value) * 1000
+  const timestamp = value ? Date.parse(value) : Number.NaN
+  return Number.isFinite(timestamp) && timestamp > now ? timestamp : now + 60_000
+}
+
 class MainHhcAuthService implements HhcAuthService {
   private readonly accountApi = `${APP_CONFIG.hhcAccountOrigin}/api/account/v1`
   private readonly credentialPath = join(app.getPath('userData'), 'hhc-auth.enc')
@@ -142,6 +157,7 @@ class MainHhcAuthService implements HhcAuthService {
   private storedCredentialLoaded = false
   private accessCredential: AccessCredential | null = null
   private session: HhcSession | null = null
+  private tokenCooldownUntil: number | null = null
 
   constructor(options: HhcAuthServiceOptions) {
     this.now = options.now ?? Date.now
@@ -218,6 +234,8 @@ class MainHhcAuthService implements HhcAuthService {
 
   async getAccessToken(): Promise<string | null> {
     if (this.signOutInFlight || this.clearLocalDataInFlight) return null
+    const cooldown = this.tokenCooldownError()
+    if (cooldown) throw cooldown
     if (this.accessCredential && this.accessCredential.expiresAt > this.now()) {
       if (!this.session) await this.loadSessionFromAccessToken()
       return this.accessCredential.token
@@ -231,11 +249,13 @@ class MainHhcAuthService implements HhcAuthService {
     return this.refreshInFlight
   }
 
-  async refreshAccessToken(): Promise<string | null> {
+  private async refreshAccessToken(): Promise<string | null> {
     if (this.signOutInFlight || this.clearLocalDataInFlight) return null
     const completion = this.completionInFlight
     if (completion) await completion
     if (this.signOutInFlight || this.clearLocalDataInFlight) return null
+    const cooldown = this.tokenCooldownError()
+    if (cooldown) throw cooldown
     if (this.refreshInFlight) return this.refreshInFlight
 
     this.refreshInFlight = this.refreshStoredCredential().finally(() => {
@@ -245,7 +265,12 @@ class MainHhcAuthService implements HhcAuthService {
   }
 
   async refreshAfterUnauthorized(rejectedToken: string): Promise<string | null> {
-    if (this.accessCredential?.token !== rejectedToken) return this.getAccessToken()
+    if (this.accessCredential?.token !== rejectedToken) {
+      if (this.accessCredential && this.accessCredential.expiresAt > this.now()) {
+        return this.accessCredential.token
+      }
+      return this.getAccessToken()
+    }
     return this.refreshAccessToken()
   }
 
@@ -494,16 +519,24 @@ class MainHhcAuthService implements HhcAuthService {
   }
 
   private async requestToken(body: URLSearchParams): Promise<Record<string, unknown>> {
-    return responseJson(
-      await net.fetch(`${this.accountApi}/oauth/token`, {
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/x-www-form-urlencoded'
-        },
-        body
-      })
-    )
+    const cooldown = this.tokenCooldownError()
+    if (cooldown) throw cooldown
+    const response = await net.fetch(`${this.accountApi}/oauth/token`, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/x-www-form-urlencoded'
+      },
+      body
+    })
+    if (response.status === 429) {
+      const retryAt = retryAtFrom(response.headers.get('retry-after'), this.now())
+      this.tokenCooldownUntil = retryAt
+      throw new HhcAuthRateLimitError(retryAt)
+    }
+    const data = await responseJson(response)
+    this.tokenCooldownUntil = null
+    return data
   }
 
   private async acceptTokenResponse(
@@ -577,7 +610,8 @@ class MainHhcAuthService implements HhcAuthService {
         ? { avatarUrl: data.avatar_url }
         : {}),
       roles: access.roles,
-      permissions: readHhcPermissions(data.permissions)
+      permissions: readHhcPermissions(data.permissions),
+      permissionAvailability: { status: 'available' }
     }
     this.notify()
     return this.session
@@ -656,7 +690,18 @@ class MainHhcAuthService implements HhcAuthService {
   private clearMemory(): void {
     this.accessCredential = null
     this.session = null
+    this.tokenCooldownUntil = null
     this.notify()
+  }
+
+  private tokenCooldownError(): HhcAuthRateLimitError | undefined {
+    const retryAt = this.tokenCooldownUntil
+    if (!retryAt) return undefined
+    if (retryAt <= this.now()) {
+      this.tokenCooldownUntil = null
+      return undefined
+    }
+    return new HhcAuthRateLimitError(retryAt)
   }
 
   private notify(): void {
@@ -674,12 +719,12 @@ export function createHhcAuthService(options: HhcAuthServiceOptions = {}): HhcAu
 
 export function registerHhcAuthIpc(wm: WindowManager, service: HhcAuthService): void {
   const authorized =
-    <T>(handler: () => Promise<T>) =>
-    async (event: Electron.IpcMainInvokeEvent): Promise<T> => {
+    <Args extends unknown[], T>(handler: (...args: Args) => Promise<T>) =>
+    async (event: Electron.IpcMainInvokeEvent, ...args: Args): Promise<T> => {
       if (!isMainWindow(wm, event)) {
         throw new Error('Unauthorized HHC authentication access')
       }
-      return handler()
+      return handler(...args)
     }
 
   ipcMain.handle(
@@ -714,8 +759,8 @@ export function registerHhcAuthIpc(wm: WindowManager, service: HhcAuthService): 
     authorized(() => service.getAccessToken())
   )
   ipcMain.handle(
-    'hhc-auth:refresh-access-token',
-    authorized(() => service.refreshAccessToken())
+    'hhc-auth:refresh-after-unauthorized',
+    authorized((rejectedToken: string) => service.refreshAfterUnauthorized(rejectedToken))
   )
   ipcMain.handle(
     'hhc-auth:get-session',

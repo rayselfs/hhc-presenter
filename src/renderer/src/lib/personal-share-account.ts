@@ -14,9 +14,7 @@ async function post(auth: HhcLineCloudAuth, path: string, body: unknown): Promis
   const csrf = (await csrfResponse.json()) as { csrf_token?: unknown }
   if (typeof csrf.csrf_token !== 'string' || !csrf.csrf_token) throw new Error('CSRF token missing')
   const csrfToken = csrf.csrf_token
-  const send = async (refresh: boolean): Promise<Response> => {
-    const token = await (refresh ? auth.refreshAccessToken() : auth.getAccessToken())
-    if (!token) throw new Error('HHC account authentication required')
+  const send = async (token: string): Promise<Response> => {
     return fetch(`${root}${path}`, {
       method: 'POST',
       credentials: 'include',
@@ -30,10 +28,14 @@ async function post(auth: HhcLineCloudAuth, path: string, body: unknown): Promis
       body: JSON.stringify(body)
     })
   }
-  let response = await send(false)
+  const token = await auth.getAccessToken()
+  if (!token) throw new Error('HHC account authentication required')
+  let response = await send(token)
   if (response.status === 401) {
     await response.body?.cancel().catch(() => undefined)
-    response = await send(true)
+    const refreshed = await auth.refreshAfterUnauthorized(token)
+    if (!refreshed) throw new Error('HHC account authentication required')
+    response = await send(refreshed)
   }
   if (!response.ok)
     throw Object.assign(new Error(`HHC account request failed (${response.status})`), {

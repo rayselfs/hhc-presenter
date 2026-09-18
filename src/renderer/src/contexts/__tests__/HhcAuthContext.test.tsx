@@ -64,7 +64,7 @@ function createAdapter(session: HhcSession | null | Error = null): TestAdapter {
     signIn: vi.fn(async () => ({ expiresAt: Date.now() + 300_000 })),
     cancelSignIn: vi.fn(async () => undefined),
     getAccessToken: vi.fn(async () => 'access-token'),
-    refreshAccessToken: vi.fn(async () => 'refreshed-access-token'),
+    refreshAfterUnauthorized: vi.fn(async () => 'refreshed-access-token'),
     signOut: vi.fn(async () => undefined),
     subscribe: vi.fn((nextListener) => {
       listener = nextListener
@@ -484,7 +484,7 @@ describe('HhcAuthContext', () => {
         resolveToken = resolve
       })
     )
-    vi.mocked(adapter.refreshAccessToken).mockReturnValue(
+    vi.mocked(adapter.refreshAfterUnauthorized).mockReturnValue(
       new Promise<string>((resolve) => {
         resolveRefresh = resolve
       })
@@ -494,15 +494,15 @@ describe('HhcAuthContext', () => {
     await waitFor(() => expect(result.current.status).toBe('authenticated'))
 
     const token = result.current.getAccessToken()
-    const refresh = result.current.refreshAccessToken()
+    const refresh = result.current.refreshAfterUnauthorized('rejected-token')
     act(() => adapter.emit({ ...SESSION, roles: ['media_sync_user', 'reader'] }))
     const sameToken = result.current.getAccessToken()
-    const sameRefresh = result.current.refreshAccessToken()
+    const sameRefresh = result.current.refreshAfterUnauthorized('rejected-token')
 
     expect(sameToken).toBe(token)
     expect(sameRefresh).toBe(refresh)
     expect(adapter.getAccessToken).toHaveBeenCalledOnce()
-    expect(adapter.refreshAccessToken).toHaveBeenCalledOnce()
+    expect(adapter.refreshAfterUnauthorized).toHaveBeenCalledOnce()
     resolveToken('same-user-token')
     resolveRefresh('same-user-refresh')
     await expect(Promise.all([token, sameToken])).resolves.toEqual([
@@ -525,7 +525,7 @@ describe('HhcAuthContext', () => {
         resolveToken = resolve
       })
     )
-    vi.mocked(adapter.refreshAccessToken).mockReturnValue(
+    vi.mocked(adapter.refreshAfterUnauthorized).mockReturnValue(
       new Promise<string>((resolve) => {
         resolveRefresh = resolve
       })
@@ -540,7 +540,7 @@ describe('HhcAuthContext', () => {
     await waitFor(() => expect(result.current.status).toBe('authenticated'))
 
     const token = result.current.getAccessToken()
-    const refresh = result.current.refreshAccessToken()
+    const refresh = result.current.refreshAfterUnauthorized('rejected-token')
     const signingOut = result.current.signOut()
     act(() => adapter.emit({ ...SESSION, roles: ['media_sync_user', 'reader'] }))
     resolveToken('stale-token')
@@ -548,7 +548,7 @@ describe('HhcAuthContext', () => {
 
     await expect(Promise.all([token, refresh])).resolves.toEqual([null, null])
     await expect(result.current.getAccessToken()).resolves.toBeNull()
-    await expect(result.current.refreshAccessToken()).resolves.toBeNull()
+    await expect(result.current.refreshAfterUnauthorized('rejected-token')).resolves.toBeNull()
     resolveSignOut()
     await signingOut
   })
@@ -578,7 +578,7 @@ describe('HhcAuthContext', () => {
         resolveToken = resolve
       })
     )
-    vi.mocked(adapter.refreshAccessToken).mockReturnValue(
+    vi.mocked(adapter.refreshAfterUnauthorized).mockReturnValue(
       new Promise<string>((resolve) => {
         resolveRefresh = resolve
       })
@@ -588,7 +588,7 @@ describe('HhcAuthContext', () => {
     await waitFor(() => expect(result.current.status).toBe('authenticated'))
 
     const token = result.current.getAccessToken()
-    const refresh = result.current.refreshAccessToken()
+    const refresh = result.current.refreshAfterUnauthorized('rejected-token')
     unmount()
     resolveToken('stale-token')
     resolveRefresh('stale-refresh')
@@ -618,7 +618,7 @@ describe('HhcAuthContext', () => {
   it('coalesces concurrent refreshes and discards tokens after logout or account switch', async () => {
     const adapter = createAdapter(SESSION)
     let resolveRefresh: (token: string) => void = () => undefined
-    vi.mocked(adapter.refreshAccessToken).mockReturnValue(
+    vi.mocked(adapter.refreshAfterUnauthorized).mockReturnValue(
       new Promise<string>((resolve) => {
         resolveRefresh = resolve
       })
@@ -627,23 +627,23 @@ describe('HhcAuthContext', () => {
     const { result } = renderHook(() => useHhcAuth(), { wrapper })
     await waitFor(() => expect(result.current.status).toBe('authenticated'))
 
-    const first = result.current.refreshAccessToken()
-    const second = result.current.refreshAccessToken()
+    const first = result.current.refreshAfterUnauthorized('rejected-token')
+    const second = result.current.refreshAfterUnauthorized('rejected-token')
     expect(first).toBe(second)
-    expect(adapter.refreshAccessToken).toHaveBeenCalledOnce()
+    expect(adapter.refreshAfterUnauthorized).toHaveBeenCalledOnce()
 
     act(() => adapter.emit(null))
     resolveRefresh('stale-token')
     await expect(Promise.all([first, second])).resolves.toEqual([null, null])
 
     let resolveSwitchedRefresh: (token: string) => void = () => undefined
-    vi.mocked(adapter.refreshAccessToken).mockReturnValueOnce(
+    vi.mocked(adapter.refreshAfterUnauthorized).mockReturnValueOnce(
       new Promise<string>((resolve) => {
         resolveSwitchedRefresh = resolve
       })
     )
     act(() => adapter.emit(SESSION))
-    const switched = result.current.refreshAccessToken()
+    const switched = result.current.refreshAfterUnauthorized('rejected-token')
     act(() => adapter.emit({ ...SESSION, userId: 'user-2' }))
     resolveSwitchedRefresh('other-stale-token')
     await expect(switched).resolves.toBeNull()
@@ -652,7 +652,7 @@ describe('HhcAuthContext', () => {
   it('shares one context refresh across concurrent Asset 401 retries', async () => {
     const adapter = createAdapter(SESSION)
     let resolveRefresh: (token: string) => void = () => undefined
-    vi.mocked(adapter.refreshAccessToken).mockReturnValue(
+    vi.mocked(adapter.refreshAfterUnauthorized).mockReturnValue(
       new Promise<string>((resolve) => {
         resolveRefresh = resolve
       })
@@ -668,19 +668,19 @@ describe('HhcAuthContext', () => {
     await waitFor(() => expect(result.current.status).toBe('authenticated'))
     const api = createBrowserHhcAssetApi({
       getAccessToken: result.current.getAccessToken,
-      refreshAccessToken: result.current.refreshAccessToken,
+      refreshAfterUnauthorized: result.current.refreshAfterUnauthorized,
       fetcher
     })
 
     const requests = [api.listCollections(), api.listCollections()]
-    await waitFor(() => expect(adapter.refreshAccessToken).toHaveBeenCalledOnce())
+    await waitFor(() => expect(adapter.refreshAfterUnauthorized).toHaveBeenCalledOnce())
     resolveRefresh('refreshed-access-token')
 
     await expect(Promise.all(requests)).resolves.toEqual([
       { collections: [], hasMore: false },
       { collections: [], hasMore: false }
     ])
-    expect(adapter.refreshAccessToken).toHaveBeenCalledOnce()
+    expect(adapter.refreshAfterUnauthorized).toHaveBeenCalledOnce()
   })
 
   it('unsubscribes every subscription and disposes every adapter under StrictMode', async () => {

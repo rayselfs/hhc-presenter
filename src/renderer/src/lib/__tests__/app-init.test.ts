@@ -240,7 +240,7 @@ describe('initializeApp — online handler', () => {
       hhcAuth: {
         getSession: () => null,
         getAccessToken: vi.fn(async () => null),
-        refreshAccessToken: vi.fn(async () => null),
+        refreshAfterUnauthorized: vi.fn(async () => null),
         endSession: vi.fn(async () => undefined)
       },
       onHhcAccessRevoked: vi.fn()

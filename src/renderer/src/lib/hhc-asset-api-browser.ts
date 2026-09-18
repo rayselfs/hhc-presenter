@@ -14,7 +14,7 @@ const RANGE_PATTERN = /^bytes=(?:\d+-\d*|-\d+)$/
 type BrowserHhcAssetApiOptions = {
   origin?: string
   getAccessToken: () => Promise<string | null>
-  refreshAccessToken: () => Promise<string | null>
+  refreshAfterUnauthorized: (rejectedToken: string) => Promise<string | null>
   fetcher?: typeof fetch
 }
 
@@ -89,7 +89,7 @@ export function createBrowserHhcAssetApi(options: BrowserHhcAssetApiOptions): Hh
     if (!firstToken) throw new HhcAssetApiError('auth-required', 401)
     let response = await send(firstToken)
     if (response.status === 401) {
-      const refreshed = await options.refreshAccessToken()
+      const refreshed = await options.refreshAfterUnauthorized(firstToken)
       if (!refreshed) throw new HhcAssetApiError('auth-required', 401)
       response = await send(refreshed)
     }

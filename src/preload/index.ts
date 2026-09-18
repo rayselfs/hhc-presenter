@@ -179,7 +179,8 @@ const hhcAuthApi = {
   begin: () => typedInvoke('hhc-auth:begin'),
   cancel: () => typedInvoke('hhc-auth:cancel'),
   getAccessToken: () => typedInvoke('hhc-auth:get-access-token'),
-  refreshAccessToken: () => typedInvoke('hhc-auth:refresh-access-token'),
+  refreshAfterUnauthorized: (rejectedToken: string) =>
+    typedInvoke('hhc-auth:refresh-after-unauthorized', rejectedToken),
   getSession: () => typedInvoke('hhc-auth:get-session'),
   signOut: () => typedInvoke('hhc-auth:sign-out'),
   resolveShareTarget: (email: string) => typedInvoke('hhc-auth:resolve-share-target', email),

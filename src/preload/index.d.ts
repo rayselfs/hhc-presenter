@@ -176,7 +176,7 @@ interface HhcAuthAPI {
   begin: () => Promise<HhcPendingSignIn>
   cancel: () => Promise<void>
   getAccessToken: () => Promise<string | null>
-  refreshAccessToken: () => Promise<string | null>
+  refreshAfterUnauthorized: (rejectedToken: string) => Promise<string | null>
   getSession: () => Promise<HhcSession | null>
   signOut: () => Promise<void>
   resolveShareTarget: (email: string) => Promise<PresenterAccountLabel>

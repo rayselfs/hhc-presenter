@@ -31,7 +31,7 @@ import { createMeetingWindowsApi } from '@renderer/lib/meeting-windows-api'
 
 export default function Layout(): React.JSX.Element {
   const [initialized, setInitialized] = useState(false)
-  const { session, getAccessToken, getAuthGeneration, refreshAccessToken, endSession } =
+  const { session, getAccessToken, getAuthGeneration, refreshAfterUnauthorized, endSession } =
     useHhcAuth()
   const hhcSessionRef = useRef(session)
   useEffect(() => {
@@ -42,10 +42,10 @@ export default function Layout(): React.JSX.Element {
       getSession: () => hhcSessionRef.current,
       getAuthGeneration,
       getAccessToken,
-      refreshAccessToken,
+      refreshAfterUnauthorized,
       endSession
     }),
-    [endSession, getAccessToken, getAuthGeneration, refreshAccessToken]
+    [endSession, getAccessToken, getAuthGeneration, refreshAfterUnauthorized]
   )
   const meetingWindows = useMemo(() => createMeetingWindowsApi(hhcAuth), [hhcAuth])
   const handleHhcAccessRevoked = useCallback(
