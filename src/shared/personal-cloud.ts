@@ -519,7 +519,7 @@ export function createAuthenticatedPersonalCloudApi(
   auth: {
     getSession(): HhcSession | null | Promise<HhcSession | null>
     getAccessToken(): Promise<string | null>
-    refreshAccessToken(): Promise<string | null>
+    refreshAfterUnauthorized(rejectedToken: string): Promise<string | null>
   },
   ownerId: string,
   fetcher: typeof fetch = fetch
@@ -533,18 +533,20 @@ export function createAuthenticatedPersonalCloudApi(
   }
   return createPersonalCloudHttpApi(async (path, init) => {
     await assertOwner(init.signal)
-    const send = async (refresh: boolean): Promise<Response> => {
-      const token = await (refresh ? auth.refreshAccessToken() : auth.getAccessToken())
-      if (!token) throw new PersonalCloudHttpError(401, 'auth-required')
+    const send = async (token: string): Promise<Response> => {
       await assertOwner(init.signal)
       const headers = new Headers(init.headers)
       headers.set('authorization', `Bearer ${token}`)
       return fetcher(`${APP_CONFIG.hhcAssetOrigin}${path}`, { ...init, headers })
     }
-    let response = await send(false)
+    const token = await auth.getAccessToken()
+    if (!token) throw new PersonalCloudHttpError(401, 'auth-required')
+    let response = await send(token)
     if (response.status === 401) {
       await response.body?.cancel().catch(() => undefined)
-      response = await send(true)
+      const refreshed = await auth.refreshAfterUnauthorized(token)
+      if (!refreshed) throw new PersonalCloudHttpError(401, 'auth-required')
+      response = await send(refreshed)
     }
     try {
       await assertOwner(init.signal)

@@ -156,7 +156,7 @@ export function requestPersonalSync(ownerId: string): void {
 
 export function startPersonalSync(
   ownerId: string,
-  auth: Pick<HhcAuthAdapter, 'getSession' | 'getAccessToken' | 'refreshAccessToken'>
+  auth: Pick<HhcAuthAdapter, 'getSession' | 'getAccessToken' | 'refreshAfterUnauthorized'>
 ): () => void {
   const workerId = crypto.randomUUID()
   const api = createPersonalCloudProvider(auth, ownerId)

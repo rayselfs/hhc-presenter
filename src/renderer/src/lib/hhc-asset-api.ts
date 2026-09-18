@@ -34,7 +34,7 @@ export interface HhcAssetApi {
   ): Promise<Response | { fileId: string; size: number; mimeType: string }>
 }
 
-type HhcAssetAuth = Pick<HhcAuthAdapter, 'getAccessToken' | 'refreshAccessToken'>
+type HhcAssetAuth = Pick<HhcAuthAdapter, 'getAccessToken' | 'refreshAfterUnauthorized'>
 
 export async function createHhcAssetApi(auth?: HhcAssetAuth): Promise<HhcAssetApi> {
   if (isElectron()) {
@@ -46,6 +46,6 @@ export async function createHhcAssetApi(auth?: HhcAssetAuth): Promise<HhcAssetAp
   const { createBrowserHhcAssetApi } = await import('./hhc-asset-api-browser')
   return createBrowserHhcAssetApi({
     getAccessToken: () => auth.getAccessToken(),
-    refreshAccessToken: () => auth.refreshAccessToken()
+    refreshAfterUnauthorized: (rejectedToken) => auth.refreshAfterUnauthorized(rejectedToken)
   })
 }

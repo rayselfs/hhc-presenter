@@ -239,7 +239,7 @@ export async function mutatePersonalNode(
 
 export async function purgePersonalTrash(
   input: { key: string; itemIds: string[] } | { key: string; all: true },
-  auth: Pick<HhcAuthAdapter, 'getSession' | 'getAccessToken' | 'refreshAccessToken'>
+  auth: Pick<HhcAuthAdapter, 'getSession' | 'getAccessToken' | 'refreshAfterUnauthorized'>
 ): Promise<void> {
   const ownerId = activeOwner()
   const api = createPersonalCloudProvider(auth, ownerId)

@@ -54,7 +54,7 @@ function compareTrashByField(
 export default function TrashPage(): React.JSX.Element {
   const { t } = useTranslation()
   const confirm = useConfirm()
-  const { session, getAccessToken, refreshAccessToken } = useHhcAuth()
+  const { session, getAccessToken, refreshAfterUnauthorized } = useHhcAuth()
   const sessionRef = useRef(session)
   sessionRef.current = session
   const { showMenu } = useContextMenu()
@@ -327,7 +327,7 @@ export default function TrashPage(): React.JSX.Element {
           await purgePersonalTrash(allCloud ? { key, all: true } : { key, itemIds: cloudIds }, {
             getSession: async () => sessionRef.current,
             getAccessToken,
-            refreshAccessToken
+            refreshAfterUnauthorized
           })
         }
         for (const entry of selected) {
@@ -344,7 +344,7 @@ export default function TrashPage(): React.JSX.Element {
         toast.danger(error instanceof Error ? error.message : t('personalCloud.failed'))
       }
     },
-    [clearSelection, confirm, entries, getAccessToken, refreshAccessToken, t]
+    [clearSelection, confirm, entries, getAccessToken, refreshAfterUnauthorized, t]
   )
 
   const handleContextMenu = useCallback(

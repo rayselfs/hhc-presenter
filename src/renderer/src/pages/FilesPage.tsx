@@ -151,7 +151,7 @@ export default function FilesPage({
     void reconcilePersonalShares({
       getSession: () => auth.session,
       getAccessToken: auth.getAccessToken,
-      refreshAccessToken: auth.refreshAccessToken,
+      refreshAfterUnauthorized: auth.refreshAfterUnauthorized,
       getAuthGeneration: auth.getAuthGeneration,
       endSession: auth.endSession
     }).catch(() => undefined)
@@ -170,7 +170,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   const cloud = mode === 'personal'
   const shared = mode === 'shared'
   const { t } = useTranslation()
-  const { session, getAccessToken, getAuthGeneration, refreshAccessToken, endSession } =
+  const { session, getAccessToken, getAuthGeneration, refreshAfterUnauthorized, endSession } =
     useHhcAuth()
   const navigate = useNavigate()
   const confirm = useConfirm()
@@ -218,10 +218,10 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
       getSession: () => sessionRef.current,
       getAuthGeneration,
       getAccessToken,
-      refreshAccessToken,
+      refreshAfterUnauthorized,
       endSession
     }),
-    [endSession, getAccessToken, getAuthGeneration, refreshAccessToken]
+    [endSession, getAccessToken, getAuthGeneration, refreshAfterUnauthorized]
   )
   const hhcLineProvider = useMemo(() => getCloudProviderAdapter('hhc-line', hhcAuth), [hhcAuth])
   const hhcLinePickerProvider = useMemo<CloudFolderPickerProvider>(
@@ -896,7 +896,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
                             {
                               getSession: () => session,
                               getAccessToken,
-                              refreshAccessToken,
+                              refreshAfterUnauthorized,
                               getAuthGeneration,
                               endSession
                             },
@@ -929,7 +929,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
       session,
       confirm,
       getAccessToken,
-      refreshAccessToken,
+      refreshAfterUnauthorized,
       getAuthGeneration,
       endSession,
       cloud
@@ -1106,7 +1106,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
         auth={{
           getSession: () => session,
           getAccessToken,
-          refreshAccessToken,
+          refreshAfterUnauthorized,
           getAuthGeneration,
           endSession
         }}

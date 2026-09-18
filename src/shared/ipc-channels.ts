@@ -305,7 +305,7 @@ export interface IpcInvokeMap {
   'hhc-auth:begin': { args: []; result: HhcPendingSignIn }
   'hhc-auth:cancel': { args: []; result: void }
   'hhc-auth:get-access-token': { args: []; result: string | null }
-  'hhc-auth:refresh-access-token': { args: []; result: string | null }
+  'hhc-auth:refresh-after-unauthorized': { args: [string]; result: string | null }
   'hhc-auth:get-session': { args: []; result: HhcSession | null }
   'hhc-auth:sign-out': { args: []; result: void }
   'hhc-auth:resolve-share-target': { args: [string]; result: PresenterAccountLabel }

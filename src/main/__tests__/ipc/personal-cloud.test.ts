@@ -45,7 +45,7 @@ beforeEach(async () => {
   registerPersonalCloudHandlers({ getMainWindow: () => mocks.main } as unknown as WindowManager, {
     getSession: async () => ({ userId: owner, displayName: owner, roles: [] }),
     getAccessToken: async () => 'token',
-    refreshAccessToken: async () => 'refreshed',
+    refreshAfterUnauthorized: async () => 'refreshed',
     subscribe: () => () => undefined
   })
 })

@@ -341,17 +341,17 @@ export function PptxDocumentView({
 }): React.JSX.Element {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { session, getAccessToken, getAuthGeneration, refreshAccessToken, endSession } =
+  const { session, getAccessToken, getAuthGeneration, refreshAfterUnauthorized, endSession } =
     useHhcAuth()
   const hhcAuth = useMemo<HhcLineCloudAuth>(
     () => ({
       getSession: () => session,
       getAuthGeneration,
       getAccessToken,
-      refreshAccessToken,
+      refreshAfterUnauthorized,
       endSession
     }),
-    [endSession, getAccessToken, getAuthGeneration, refreshAccessToken, session]
+    [endSession, getAccessToken, getAuthGeneration, refreshAfterUnauthorized, session]
   )
   const openDocument = usePresentationWorkspaceStore((state) => state.openDocument)
   const setSlideCount = usePresentationWorkspaceStore((state) => state.setSlideCount)

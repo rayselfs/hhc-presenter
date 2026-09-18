@@ -31,7 +31,7 @@ const authRuntime = vi.hoisted(() => ({
   generation: 0,
   getAuthGeneration: vi.fn(() => authRuntime.generation),
   getAccessToken: vi.fn(async () => null as string | null),
-  refreshAccessToken: vi.fn(async () => null as string | null),
+  refreshAfterUnauthorized: vi.fn(async () => null as string | null),
   endSession: vi.fn(async () => undefined)
 }))
 const accessRuntime = vi.hoisted(() => ({
@@ -59,7 +59,7 @@ vi.mock('@renderer/contexts/HhcAuthContext', () => ({
     endSession: authRuntime.endSession,
     getAuthGeneration: authRuntime.getAuthGeneration,
     getAccessToken: authRuntime.getAccessToken,
-    refreshAccessToken: authRuntime.refreshAccessToken
+    refreshAfterUnauthorized: authRuntime.refreshAfterUnauthorized
   })
 }))
 

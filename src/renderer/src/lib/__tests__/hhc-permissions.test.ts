@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canAccessHhcAdmin, hasPresenterCloudAccess } from '../hhc-auth'
+import { canAccessHhcAdmin, hasPresenterCloudAccess } from '../hhc-permissions'
 
 describe('canAccessHhcAdmin', () => {
   it.each([

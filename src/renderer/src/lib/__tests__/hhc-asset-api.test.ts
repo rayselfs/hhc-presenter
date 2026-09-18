@@ -57,12 +57,12 @@ function changePage(itemCount: number, tombstoneCount: number): object {
 describe('browser HHC Asset API', () => {
   it('uses only context-owned auth callbacks', async () => {
     const getAccessToken = vi.fn(async () => 'context-token')
-    const refreshAccessToken = vi.fn(async () => 'context-refresh')
+    const refreshAfterUnauthorized = vi.fn(async () => 'context-refresh')
     const originalFetch = window.fetch
     window.fetch = vi.fn(async () => jsonResponse(collectionPage()))
 
     try {
-      const api = await createHhcAssetApi({ getAccessToken, refreshAccessToken })
+      const api = await createHhcAssetApi({ getAccessToken, refreshAfterUnauthorized })
       await api.listCollections()
       expect(getAccessToken).toHaveBeenCalledOnce()
       expect(
@@ -80,7 +80,7 @@ describe('browser HHC Asset API', () => {
         createBrowserHhcAssetApi({
           origin,
           getAccessToken: vi.fn(),
-          refreshAccessToken: vi.fn()
+          refreshAfterUnauthorized: vi.fn()
         })
       ).toThrow('Invalid HHC Asset origin')
     }
@@ -117,7 +117,7 @@ describe('browser HHC Asset API', () => {
     const api = createBrowserHhcAssetApi({
       origin: ORIGIN,
       getAccessToken: vi.fn(async () => 'token-1'),
-      refreshAccessToken: vi.fn(async () => 'token-2'),
+      refreshAfterUnauthorized: vi.fn(async () => 'token-2'),
       fetcher
     })
 
@@ -159,7 +159,7 @@ describe('browser HHC Asset API', () => {
       .mockResolvedValueOnce(jsonResponse(changePage(251, 250)))
     const api = createBrowserHhcAssetApi({
       getAccessToken: vi.fn(async () => 'token-1'),
-      refreshAccessToken: vi.fn(async () => 'token-2'),
+      refreshAfterUnauthorized: vi.fn(async () => 'token-2'),
       fetcher
     })
 
@@ -173,17 +173,17 @@ describe('browser HHC Asset API', () => {
   })
 
   it('refreshes once on 401, retries once, and never loops on a second 401', async () => {
-    const refreshAccessToken = vi.fn(async () => 'token-2')
+    const refreshAfterUnauthorized = vi.fn(async () => 'token-2')
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({}, 401))
     const api = createBrowserHhcAssetApi({
       origin: ORIGIN,
       getAccessToken: vi.fn(async () => 'token-1'),
-      refreshAccessToken,
+      refreshAfterUnauthorized,
       fetcher
     })
 
     await expect(api.listCollections()).rejects.toMatchObject({ classification: 'auth-required' })
-    expect(refreshAccessToken).toHaveBeenCalledOnce()
+    expect(refreshAfterUnauthorized).toHaveBeenCalledOnce()
     expect(fetcher).toHaveBeenCalledTimes(2)
     expect(new Headers(fetcher.mock.calls[1]?.[1]?.headers).get('authorization')).toBe(
       'Bearer token-2'
@@ -199,7 +199,7 @@ describe('browser HHC Asset API', () => {
     const api = createBrowserHhcAssetApi({
       origin: ORIGIN,
       getAccessToken: vi.fn(async () => 'token-1'),
-      refreshAccessToken: vi.fn(async () => 'token-2'),
+      refreshAfterUnauthorized: vi.fn(async () => 'token-2'),
       fetcher: vi.fn(async () => jsonResponse({ secret: 'must-not-leak' }, status))
     })
 
@@ -210,7 +210,7 @@ describe('browser HHC Asset API', () => {
     const api = createBrowserHhcAssetApi({
       origin: ORIGIN,
       getAccessToken: vi.fn(async () => 'token-1'),
-      refreshAccessToken: vi.fn(async () => 'token-2'),
+      refreshAfterUnauthorized: vi.fn(async () => 'token-2'),
       fetcher: vi.fn(async () => {
         throw new TypeError('offline')
       })
@@ -233,7 +233,7 @@ describe('browser HHC Asset API', () => {
     const api = createBrowserHhcAssetApi({
       origin: ORIGIN,
       getAccessToken: vi.fn(async () => 'token-1'),
-      refreshAccessToken: vi.fn(async () => 'token-2'),
+      refreshAfterUnauthorized: vi.fn(async () => 'token-2'),
       fetcher
     })
 
@@ -258,7 +258,7 @@ describe('browser HHC Asset API', () => {
     const api = createBrowserHhcAssetApi({
       origin: ORIGIN,
       getAccessToken: vi.fn(async () => 'token-1'),
-      refreshAccessToken: vi.fn(async () => 'token-2'),
+      refreshAfterUnauthorized: vi.fn(async () => 'token-2'),
       fetcher
     })
 

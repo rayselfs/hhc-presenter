@@ -193,7 +193,7 @@ describe('media projection sync', () => {
     const auth = {
       getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
       getAccessToken: vi.fn(),
-      refreshAccessToken: vi.fn(),
+      refreshAfterUnauthorized: vi.fn(),
       endSession: vi.fn()
     }
     const item = setRemotePresentationItem(name, mimeType)
@@ -308,7 +308,7 @@ describe('media projection sync', () => {
       auth: {
         getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
         getAccessToken: vi.fn(),
-        refreshAccessToken: vi.fn(),
+        refreshAfterUnauthorized: vi.fn(),
         endSession: vi.fn()
       }
     })
@@ -384,7 +384,7 @@ describe('media projection sync', () => {
       auth: {
         getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
         getAccessToken: vi.fn(),
-        refreshAccessToken: vi.fn(),
+        refreshAfterUnauthorized: vi.fn(),
         endSession: vi.fn()
       },
       onAccessRevoked
@@ -463,7 +463,7 @@ describe('media projection sync', () => {
         auth: {
           getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
           getAccessToken: vi.fn(),
-          refreshAccessToken: vi.fn(),
+          refreshAfterUnauthorized: vi.fn(),
           endSession: vi.fn()
         },
         onAccessRevoked
@@ -524,7 +524,7 @@ describe('media projection sync', () => {
       auth: {
         getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
         getAccessToken: vi.fn(),
-        refreshAccessToken: vi.fn(),
+        refreshAfterUnauthorized: vi.fn(),
         endSession: vi.fn()
       }
     })
@@ -562,7 +562,7 @@ describe('media projection sync', () => {
       auth: {
         getSession: () => ({ userId: 'user-2', displayName: 'Grace', roles: [] }),
         getAccessToken: vi.fn(),
-        refreshAccessToken: vi.fn(),
+        refreshAfterUnauthorized: vi.fn(),
         endSession: vi.fn()
       },
       onAccessRevoked
@@ -600,7 +600,7 @@ describe('media projection sync', () => {
       const auth = {
         getSession: () => sessionRef.current,
         getAccessToken: vi.fn(),
-        refreshAccessToken: vi.fn(),
+        refreshAfterUnauthorized: vi.fn(),
         endSession: vi.fn()
       }
       setRemotePresentationItem()
@@ -691,7 +691,7 @@ describe('media projection sync', () => {
       auth: {
         getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
         getAccessToken: vi.fn(),
-        refreshAccessToken: vi.fn(),
+        refreshAfterUnauthorized: vi.fn(),
         endSession: vi.fn()
       }
     })
@@ -732,7 +732,7 @@ describe('media projection sync', () => {
     const auth = {
       getSession: () => sessionRef.current,
       getAccessToken: vi.fn(),
-      refreshAccessToken: vi.fn(),
+      refreshAfterUnauthorized: vi.fn(),
       endSession: vi.fn()
     }
     useMediaProjectionStore.setState({
@@ -868,7 +868,7 @@ describe('media projection sync', () => {
       auth: {
         getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
         getAccessToken: vi.fn(),
-        refreshAccessToken: vi.fn(),
+        refreshAfterUnauthorized: vi.fn(),
         endSession: vi.fn()
       }
     })
@@ -914,7 +914,7 @@ describe('media projection sync', () => {
       auth: {
         getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
         getAccessToken: vi.fn(),
-        refreshAccessToken: vi.fn(),
+        refreshAfterUnauthorized: vi.fn(),
         endSession: vi.fn()
       },
       onAccessRevoked
@@ -938,7 +938,7 @@ describe('media projection sync', () => {
       auth: {
         getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
         getAccessToken: vi.fn(),
-        refreshAccessToken: vi.fn(),
+        refreshAfterUnauthorized: vi.fn(),
         endSession: vi.fn()
       }
     })
@@ -1447,7 +1447,7 @@ describe('media projection sync', () => {
       auth: {
         getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
         getAccessToken: vi.fn(),
-        refreshAccessToken: vi.fn(),
+        refreshAfterUnauthorized: vi.fn(),
         endSession: vi.fn()
       }
     })
@@ -1542,7 +1542,7 @@ describe('media projection sync', () => {
       auth: {
         getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
         getAccessToken: vi.fn(),
-        refreshAccessToken: vi.fn(),
+        refreshAfterUnauthorized: vi.fn(),
         endSession: vi.fn()
       }
     })

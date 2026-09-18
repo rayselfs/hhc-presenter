@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   listFolders: vi.fn<() => Promise<CloudRemoteFolder[]>>(),
   session: null as HhcSession | null,
   getAccessToken: vi.fn<() => Promise<string | null>>(),
-  refreshAccessToken: vi.fn<() => Promise<string | null>>(),
+  refreshAfterUnauthorized: vi.fn<() => Promise<string | null>>(),
   getCloudProviderAdapter: vi.fn((providerId: string) => ({
     id: providerId,
     supportsFolderNavigation: providerId === 'hhc-line' ? false : undefined,
@@ -48,7 +48,7 @@ vi.mock('@renderer/contexts/HhcAuthContext', () => ({
     signIn: vi.fn(),
     signOut: vi.fn(),
     getAccessToken: mocks.getAccessToken,
-    refreshAccessToken: mocks.refreshAccessToken
+    refreshAfterUnauthorized: mocks.refreshAfterUnauthorized
   })
 }))
 
@@ -159,7 +159,7 @@ describe('FilesPage HHC LINE role resolution', () => {
       .mockReset()
       .mockResolvedValue([{ remoteItemId: 'folder', name: 'Group', parentRemoteItemId: null }])
     mocks.getAccessToken.mockReset()
-    mocks.refreshAccessToken.mockReset()
+    mocks.refreshAfterUnauthorized.mockReset()
     mocks.getCloudProviderAdapter.mockReset()
     mocks.showEmptyAreaMenu.mockReset()
     mocks.getCloudProviderAdapter.mockImplementation((providerId: string) => ({
@@ -194,7 +194,7 @@ describe('FilesPage HHC LINE role resolution', () => {
       'hhc-line',
       expect.objectContaining({
         getAccessToken: mocks.getAccessToken,
-        refreshAccessToken: mocks.refreshAccessToken
+        refreshAfterUnauthorized: mocks.refreshAfterUnauthorized
       })
     )
   })

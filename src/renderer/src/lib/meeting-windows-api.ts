@@ -11,7 +11,7 @@ export interface MeetingWindowsApi {
 
 type MeetingWindowsAuth = {
   getAccessToken: () => Promise<string | null>
-  refreshAccessToken: () => Promise<string | null>
+  refreshAfterUnauthorized: (rejectedToken: string) => Promise<string | null>
 }
 
 type MeetingWindowsOptions = {
@@ -98,7 +98,7 @@ export function createMeetingWindowsApi(
         let response = await send(token)
         if (response.status === 401) {
           controller.signal.throwIfAborted()
-          const refreshed = await auth.refreshAccessToken()
+          const refreshed = await auth.refreshAfterUnauthorized(token)
           if (!refreshed) throw new Error()
           response = await send(refreshed)
         }
