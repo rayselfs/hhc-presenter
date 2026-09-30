@@ -857,6 +857,7 @@
     "failedDescription": "Return to HHC Presenter and try signing in again."
   },
   "userMenu": {
+    "member": "Member",
     "guest": "Guest",
     "accountMenu": "Account menu for {{name}}",
     "loadingAccount": "Loading account...",

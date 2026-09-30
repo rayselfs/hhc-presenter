@@ -857,6 +857,7 @@
     "failedDescription": "请返回 HHC 投影系统并重新登录。"
   },
   "userMenu": {
+    "member": "会员",
     "guest": "访客",
     "accountMenu": "{{name}}的帐号菜单",
     "loadingAccount": "正在加载帐号...",
