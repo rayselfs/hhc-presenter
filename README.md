@@ -35,6 +35,16 @@ npm install
 npm run dev
 ```
 
+The browser UI at `http://localhost:5173` can exercise local projection and media workflows.
+Production Account deliberately rejects credentialed session requests from localhost, so HHC
+browser login requires the hosted Presenter at `https://client.alive.org.tw`. Electron development
+uses its native OAuth flow and is unaffected by that browser CORS restriction. Do not proxy
+production session cookies through the development server to bypass this boundary.
+
+`VITE_HHC_ACCOUNT_ORIGIN` can select a configured test Account host, but that environment must
+also provide an available login service and a registered callback for the originating Presenter
+browser. Changing the API origin alone does not make the hosted callback work on localhost.
+
 Useful checks:
 
 ```bash

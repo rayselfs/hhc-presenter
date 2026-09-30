@@ -1,4 +1,5 @@
 import { hasPermission } from '@hallelujahhomechurch/account-client'
+import { canAccessAdmin } from '@hallelujahhomechurch/account-client/admin-access'
 
 const presenterCloudPermissions = ['presenter:cloud:manage', 'presenter:cloud:use'] as const
 
@@ -8,25 +9,6 @@ export function hasPresenterCloudAccess(permissions: readonly string[] | undefin
   )
 }
 
-const hhcAdminCapabilities = [
-  'cms:pages:read',
-  'cms:news:read',
-  'cms:bulletins:read',
-  'campaigns:read',
-  'operations:meetings:read',
-  'operations:resources:read',
-  'operations:reservations:read',
-  'memberships:read',
-  'users:read',
-  'rbac:read',
-  'oauth:read',
-  'audit:read',
-  'assets:read',
-  'presenter:cloud:manage',
-  'presenter:line:manage',
-  'dsr:read'
-] as const
-
 export function canAccessHhcAdmin(permissions: readonly string[] | undefined): boolean {
-  return hhcAdminCapabilities.some((capability) => hasPermission(permissions ?? [], capability))
+  return canAccessAdmin(permissions ?? [])
 }

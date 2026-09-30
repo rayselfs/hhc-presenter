@@ -48,7 +48,7 @@
     "@fontsource-variable/noto-sans-sc": "^5.2.10",
     "@fontsource-variable/noto-sans-tc": "^5.2.10",
     "@fontsource-variable/roboto": "^5.2.10",
-    "@hallelujahhomechurch/account-client": "1.0.8",
+    "@hallelujahhomechurch/account-client": "1.0.27",
     "@heroui/react": "^3.0.2",
     "@heroui/styles": "^3.0.2",
     "@phosphor-icons/react": "^2.1.10",

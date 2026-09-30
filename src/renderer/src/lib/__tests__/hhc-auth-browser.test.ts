@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createBrowserHhcAuthAdapter } from '../hhc-auth-browser'
+import {
+  createBrowserAccountAuthRuntime,
+  createOAuthTransaction,
+  saveOAuthTransaction
+} from '@hallelujahhomechurch/account-client'
+import { HHC_AUTH } from '../hhc-auth'
 
 function response(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -18,7 +24,66 @@ function session(permissionAvailability: object = { status: 'available' }): Resp
 }
 
 describe('browser HHC auth', () => {
-  afterEach(() => vi.restoreAllMocks())
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+    sessionStorage.clear()
+  })
+
+  it('revalidates after OAuth exchange when startup still has an anonymous result in flight', async () => {
+    let finishInitial!: (value: { authenticated: false }) => void
+    const initial = new Promise<{ authenticated: false }>((resolve) => {
+      finishInitial = resolve
+    })
+    const authenticated = await session().json()
+    const getSession = vi
+      .fn()
+      .mockImplementationOnce(() => initial)
+      .mockResolvedValue(authenticated)
+    const transaction = await createOAuthTransaction('/', {
+      randomBytes: () => new Uint8Array(32).fill(7),
+      now: () => 1_000
+    })
+    saveOAuthTransaction(transaction, {
+      storage: sessionStorage,
+      storageKey: `hhc:oauth:${HHC_AUTH.clientId}`
+    })
+    vi.stubGlobal('location', {
+      href: `${HHC_AUTH.callbackUri}?code=code-1&state=${transaction.state}`
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => response({ access_token: 'token-1', expires_in: 900 }))
+    )
+    const runtime = createBrowserAccountAuthRuntime({
+      client: {
+        getSession,
+        issueAccessToken: async () => ({ accessToken: 'token-1', expiresIn: 900 }),
+        refreshAccessToken: async () => ({ accessToken: 'token-2', expiresIn: 900 }),
+        logout: async () => undefined,
+        logoutAll: async () => undefined
+      },
+      now: () => 1_000,
+      storage: sessionStorage,
+      oauth: {
+        authorizeBaseUrl: HHC_AUTH.accountApi,
+        clientId: HHC_AUTH.clientId,
+        redirectUri: HHC_AUTH.callbackUri,
+        scope: HHC_AUTH.scope
+      }
+    })
+    try {
+      const startup = runtime.start()
+      const callback = runtime.completeSignIn()
+      await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce())
+      finishInitial({ authenticated: false })
+      await expect(startup).resolves.toMatchObject({ status: 'anonymous' })
+      await expect(callback).resolves.toMatchObject({ status: 'authenticated' })
+      expect(getSession).toHaveBeenCalledTimes(2)
+    } finally {
+      runtime.dispose()
+    }
+  })
 
   it('keeps an empty permission list authenticated', async () => {
     const adapter = createBrowserHhcAuthAdapter({ fetcher: vi.fn(async () => session()) })

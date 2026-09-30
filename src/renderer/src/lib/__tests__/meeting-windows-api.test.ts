@@ -5,6 +5,33 @@ const ORIGIN = 'https://www.alive.org.tw'
 
 describe('meeting windows API', () => {
   afterEach(() => vi.useRealTimers())
+  it('accepts the Operations array response', async () => {
+    const windows = [{ startsAt: '2026-09-30T01:00:00Z', endsAt: '2026-09-30T03:00:00Z' }]
+    const api = createMeetingWindowsApi(
+      { getAccessToken: async () => 'token', refreshAfterUnauthorized: async () => null },
+      { fetcher: async () => new Response(JSON.stringify(windows)) }
+    )
+    await expect(api.list()).resolves.toEqual(windows)
+  })
+
+  it.each(
+    [
+      [{ startsAt: 'invalid', endsAt: '2026-09-30T03:00:00Z' }],
+      [{ startsAt: '2026-09-30T03:00:00Z', endsAt: '2026-09-30T01:00:00Z' }],
+      [{ startsAt: '2026-09-30T01:00:00Z', endsAt: '2026-09-30T03:00:00Z', meetingId: 'private' }],
+      Array.from({ length: 501 }, () => ({
+        startsAt: '2026-09-30T01:00:00Z',
+        endsAt: '2026-09-30T03:00:00Z'
+      }))
+    ].map((windows) => ({ windows }))
+  )('rejects invalid or privacy-expanding Operations arrays (%#)', async ({ windows }) => {
+    const api = createMeetingWindowsApi(
+      { getAccessToken: async () => 'token', refreshAfterUnauthorized: async () => null },
+      { fetcher: async () => new Response(JSON.stringify(windows)) }
+    )
+    await expect(api.list()).resolves.toEqual([])
+  })
+
   it('uses HHC auth, validates the redacted response, and caches for 60 seconds', async () => {
     const fetcher = vi.fn<typeof fetch>(
       async () =>
