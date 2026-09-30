@@ -262,7 +262,9 @@ describe('SpeechRecognitionCard', () => {
 
       // Start recognition
       const startButton = screen.getByRole('button', { name: /bible.speech.start/i })
-      fireEvent.click(startButton)
+      await act(async () => {
+        fireEvent.click(startButton)
+      })
 
       await screen.findByRole('button', { name: /bible.speech.stop/i })
 
