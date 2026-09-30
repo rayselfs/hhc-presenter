@@ -25,20 +25,23 @@ const REQUEST_TIMEOUT_MS = 5_000
 const QUERY_RANGE_MS = 24 * 60 * 60 * 1000
 
 function project(value: unknown): MediaSyncWindow[] {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error()
-  const root = value as Record<string, unknown>
-  if (
-    Object.keys(root).sort().join(',') !== 'data,error,meta' ||
-    !Array.isArray(root.data) ||
-    root.data.length > 500 ||
-    !root.meta ||
-    typeof root.meta !== 'object' ||
-    Array.isArray(root.meta) ||
-    root.error !== null
-  ) {
-    throw new Error()
+  let windows: unknown = value
+  if (!Array.isArray(value)) {
+    if (!value || typeof value !== 'object') throw new Error()
+    const root = value as Record<string, unknown>
+    if (
+      Object.keys(root).sort().join(',') !== 'data,error,meta' ||
+      !root.meta ||
+      typeof root.meta !== 'object' ||
+      Array.isArray(root.meta) ||
+      root.error !== null
+    ) {
+      throw new Error()
+    }
+    windows = root.data
   }
-  return root.data.map((entry) => {
+  if (!Array.isArray(windows) || windows.length > 500) throw new Error()
+  return windows.map((entry) => {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) throw new Error()
     const window = entry as Record<string, unknown>
     if (

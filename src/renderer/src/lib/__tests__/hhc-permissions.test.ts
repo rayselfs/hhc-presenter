@@ -7,6 +7,7 @@ describe('canAccessHhcAdmin', () => {
     'cms:pages:read',
     'cms:news:read',
     'cms:bulletins:read',
+    'cms:bulletins:investigate',
     'campaigns:read',
     'operations:meetings:read',
     'operations:resources:read',

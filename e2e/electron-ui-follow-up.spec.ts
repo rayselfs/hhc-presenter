@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { completeOnboarding } from './helpers'
 
-test('Electron next after the end screen closes the actual projection window', async ({
+test('Electron next after the end screen hides the reusable projection window', async ({
   browserName
 }, testInfo) => {
   test.skip(browserName !== 'chromium', 'Electron uses Chromium')
@@ -32,19 +32,28 @@ test('Electron next after the end screen closes the actual projection window', a
       )
     )
     await page.locator('input[type="file"]:not([webkitdirectory])').first().setInputFiles(imagePath)
+    const opened = app.waitForEvent('window')
     await page.getByText('End screen.png', { exact: true }).dblclick()
     await expect(page).toHaveURL(/#\/media$/)
-    const projection = app.windows().find((window) => window !== page)!
-    expect(projection).toBeDefined()
+    const projection = await opened
     await page.getByRole('button', { name: 'Next', exact: true }).focus()
     await page.keyboard.press('ArrowRight')
     await expect(page.getByText('End of slides', { exact: true })).toHaveCount(2)
     await page.screenshot({ path: testInfo.outputPath('electron-end-screen.png') })
     await page.keyboard.press('ArrowRight')
-    await expect.poll(() => projection.isClosed()).toBe(true)
     await expect(page).toHaveURL(/#\/files$/)
-    expect(app.windows()).toHaveLength(1)
-    console.log('Electron projection window closed; media session returned to Files')
+    await expect
+      .poll(() =>
+        app.evaluate(({ BrowserWindow }) =>
+          BrowserWindow.getAllWindows()
+            .filter((window) => window.webContents.getURL().endsWith('#/projection'))
+            .every((window) => !window.isVisible())
+        )
+      )
+      .toBe(true)
+    expect(projection.isClosed()).toBe(false)
+    expect(app.windows()).toHaveLength(2)
+    console.log('Electron projection window hidden for reuse; media session returned to Files')
   } finally {
     const exited = new Promise<void>((resolve) => {
       app.process().once('exit', () => resolve())
