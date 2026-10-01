@@ -59,7 +59,9 @@ export default function UserMenu({
     (!isMacPlatform && updateStatus === 'downloaded')
   const { status, session, signInStatus, signIn, cancelSignIn, signOut } = useHhcAuth()
   const accountLabel =
-    status === 'authenticated' && session ? session.displayName : t('userMenu.guest')
+    status === 'authenticated' && session
+      ? session.displayName || t('userMenu.member')
+      : t('userMenu.guest')
   const websiteLocale =
     i18n.resolvedLanguage === 'zh-TW'
       ? 'zh-Hant'
@@ -174,7 +176,7 @@ export default function UserMenu({
               <>
                 <Dropdown.Item key="accountIdentity" id="accountIdentity" isDisabled>
                   <CircleUser className="size-4" />
-                  {session.displayName}
+                  {accountLabel}
                 </Dropdown.Item>
                 <Dropdown.Item
                   key="logout"

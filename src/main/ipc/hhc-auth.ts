@@ -599,9 +599,13 @@ class MainHhcAuthService implements HhcAuthService {
 
     const firstName = typeof data.first_name === 'string' ? data.first_name.trim() : ''
     const lastName = typeof data.last_name === 'string' ? data.last_name.trim() : ''
-    const email = typeof data.email === 'string' ? data.email.trim() : ''
-    const displayName = [firstName, lastName].filter(Boolean).join(' ') || email
-    if (!displayName) throw new Error('Invalid HHC account profile')
+    if (Object.hasOwn(data, 'nickname') && typeof data.nickname !== 'string') {
+      throw new Error('Invalid HHC account nickname')
+    }
+    const displayName =
+      typeof data.nickname === 'string'
+        ? data.nickname
+        : [firstName, lastName].filter(Boolean).join(' ')
 
     this.session = {
       userId: access.subject,

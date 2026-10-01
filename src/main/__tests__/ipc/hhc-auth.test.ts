@@ -553,6 +553,20 @@ describe('HhcAuthService credentials and session', () => {
     expect(mockRm).toHaveBeenCalledWith(expect.stringContaining('hhc-auth.enc.'), { force: true })
   })
 
+  it.each([
+    ['Chosen alias', 'Chosen alias'],
+    ['', '']
+  ])('prefers nickname %j without exposing legacy names or email', async (nickname, expected) => {
+    const service = createHhcAuthService({ now: () => now })
+    await service.begin()
+    const legacy = await profileResponse().json()
+    mockNetFetch
+      .mockResolvedValueOnce(tokenResponse('refresh-nickname'))
+      .mockResolvedValueOnce(jsonResponse({ ...legacy, nickname }))
+    await service.completeProtocolCallback(callbackFromOpenedUrl())
+    await expect(service.getSession()).resolves.toMatchObject({ displayName: expected })
+  })
+
   it('maps /me only after token claim validation and clears credentials on subject mismatch', async () => {
     const service = createHhcAuthService({ now: () => now })
     const listener = vi.fn()
