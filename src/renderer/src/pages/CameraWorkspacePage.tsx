@@ -151,9 +151,10 @@ export default function CameraWorkspacePage(): React.JSX.Element {
             {t('camera.empty')}
           </p>
         )}
-        {camera.stream && !state.locked && (
+        {camera.stream && (
           <div
-            className="pointer-events-none absolute border-2 border-accent"
+            data-testid="camera-frame"
+            className={`pointer-events-none absolute border-2 ${state.locked ? 'border-danger' : 'border-accent'}`}
             style={{
               left: `${(state.transform.x / 1920) * 100}%`,
               top: `${(state.transform.y / 1080) * 100}%`,
@@ -161,6 +162,16 @@ export default function CameraWorkspacePage(): React.JSX.Element {
               height: `${(state.transform.height / 1080) * 100}%`
             }}
           ></div>
+        )}
+        {camera.stream && state.locked && (
+          <div
+            role="status"
+            data-testid="camera-lock-indicator"
+            className="pointer-events-none absolute top-2 right-2 inline-flex items-center gap-2 rounded-md bg-black/80 px-3 py-2 text-sm text-white"
+          >
+            <Lock size={16} aria-hidden="true" />
+            {t('camera.locked')}
+          </div>
         )}
         {camera.stream &&
           !state.locked &&

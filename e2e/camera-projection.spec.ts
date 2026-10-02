@@ -89,7 +89,15 @@ test('projects one camera, restores framing after navigation, and releases captu
   const lock = workspace.getByRole('button', {
     name: /^(Lock|Unlock) framing$|^(鎖定|解鎖)取景$|^(锁定|解锁)取景$/
   })
+  const sourceFrame = page.getByTestId('camera-frame')
+  const unlockedColor = await sourceFrame.evaluate((node) => getComputedStyle(node).borderColor)
   await lock.click()
+  await expect(sourceFrame).toBeVisible()
+  await expect(sourceFrame).toHaveClass(/border-danger/)
+  expect(await sourceFrame.evaluate((node) => getComputedStyle(node).borderColor)).not.toBe(
+    unlockedColor
+  )
+  await expect(page.getByTestId('camera-lock-indicator')).toBeVisible()
   await expect(lock).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('[data-testid^="camera-resize-"]')).toHaveCount(0)
   await expect(workspace.getByRole('button', { name: /^Reset$|^重設$|^重设$/ })).toBeDisabled()
