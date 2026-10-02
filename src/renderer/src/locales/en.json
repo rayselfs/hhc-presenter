@@ -1262,6 +1262,8 @@
   },
   "camera": {
     "title": "Camera",
+    "present": "Present camera",
+    "presenting": "Projecting camera",
     "locked": "Framing locked",
     "lock": "Lock framing",
     "unlock": "Unlock framing",

@@ -1,7 +1,8 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Lock, LockOpen } from 'lucide-react'
+import { Lock, LockOpen, Monitor } from 'lucide-react'
 import CameraStage from '@renderer/components/Common/CameraStage'
+import { useProjection } from '@renderer/contexts/ProjectionContext'
 import { useCameraSession } from '@renderer/contexts/CameraSessionContext'
 import { useCameraStore } from '@renderer/stores/camera'
 import { SHORTCUTS } from '@renderer/config/shortcuts'
@@ -38,6 +39,8 @@ function cameraDimensions(width: number, height: number): void {
 export default function CameraWorkspacePage(): React.JSX.Element {
   const { t } = useTranslation()
   const camera = useCameraSession()
+  const { activeOwner, isProjectionOpen, startProjection } = useProjection()
+  const projecting = activeOwner === 'camera' && isProjectionOpen
   const state = useCameraStore()
   const LockIcon = state.locked ? Lock : LockOpen
   const canvas = useRef<HTMLDivElement>(null)
@@ -122,9 +125,10 @@ export default function CameraWorkspacePage(): React.JSX.Element {
         aria-label={t('camera.canvas')}
         tabIndex={0}
         data-testid="camera-editor"
-        className="relative w-full touch-none overflow-hidden bg-black outline outline-1 outline-border focus:outline-2 focus:outline-accent"
+        className="relative w-full shrink-0 touch-none overflow-hidden bg-black outline outline-1 outline-border focus:outline-2 focus:outline-accent"
         style={{
           aspectRatio: '16 / 9',
+          height: 'auto',
           width: 'min(100%, max(320px, calc((100dvh - 180px) * 16 / 9)))',
           alignSelf: 'center'
         }}
@@ -204,6 +208,15 @@ export default function CameraWorkspacePage(): React.JSX.Element {
           ))}
       </div>
       <div className="flex flex-wrap items-center justify-end gap-4">
+        <button
+          type="button"
+          className={`${control} inline-flex items-center gap-2`}
+          disabled={!state.capturing || projecting}
+          onClick={() => void startProjection('camera')}
+        >
+          <Monitor size={16} aria-hidden="true" />
+          {t(projecting ? 'camera.presenting' : 'camera.present')}
+        </button>
         <button
           type="button"
           className={`${control} inline-flex items-center gap-2 aria-pressed:border-accent aria-pressed:text-accent`}

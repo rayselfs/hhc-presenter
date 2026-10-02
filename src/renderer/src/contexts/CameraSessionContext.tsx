@@ -22,22 +22,16 @@ export function CameraSessionProvider({
   children: React.ReactNode
 }): React.JSX.Element {
   const { pathname } = useLocation()
-  const {
-    activeOwner,
-    isProjectionOpen,
-    recovery,
-    projectionReadyCount,
-    on,
-    send,
-    stopProjection
-  } = useProjection()
+  const { activeOwner, isProjectionOpen, recovery, projectionReadyCount, on, send } =
+    useProjection()
   const session = useRef<ReturnType<typeof createCameraSession> | null>(null)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [retry, setRetry] = useState(0)
   const projecting = activeOwner === 'camera' && isProjectionOpen
+  const keepCapture = pathname === '/camera' || projecting
 
   useEffect(() => {
-    if (pathname !== '/camera') return
+    if (!keepCapture) return
     session.current = createCameraSession()
     return () => {
       session.current?.dispose()
@@ -50,7 +44,7 @@ export function CameraSessionProvider({
         connection: 'idle'
       })
     }
-  }, [pathname])
+  }, [keepCapture])
 
   const listDevices = useCallback(async (): Promise<void> => {
     const current = session.current
@@ -142,11 +136,7 @@ export function CameraSessionProvider({
   }, [pathname, listDevices, selectSource])
 
   useEffect(() => {
-    if (pathname !== '/camera' && projecting) void stopProjection().catch(() => undefined)
-  }, [pathname, projecting, stopProjection])
-
-  useEffect(() => {
-    if (pathname !== '/camera' || !projecting || recovery.status !== 'ready' || !stream) {
+    if (!projecting || recovery.status !== 'ready' || !stream) {
       useCameraStore.setState({ connection: projecting ? 'unavailable' : 'idle' })
       return
     }
@@ -230,7 +220,6 @@ export function CameraSessionProvider({
       unstore()
     }
   }, [
-    pathname,
     projecting,
     recovery.status,
     recovery.generation,
