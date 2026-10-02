@@ -215,7 +215,7 @@ export class WindowManager {
       enableLargerThanScreen: hasSecondScreen,
       frame: false,
       focusable: useMacSimpleFullscreen,
-      fullscreenable: false,
+      fullscreenable: useWindowsNativeFullscreen,
       minimizable: false,
       maximizable: false,
       movable: false,
