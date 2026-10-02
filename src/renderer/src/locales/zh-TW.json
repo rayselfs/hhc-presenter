@@ -1262,6 +1262,8 @@
   },
   "camera": {
     "title": "攝影機",
+    "lock": "鎖定取景",
+    "unlock": "解鎖取景",
     "choose": "選擇來源",
     "reset": "重設",
     "retry": "重試",

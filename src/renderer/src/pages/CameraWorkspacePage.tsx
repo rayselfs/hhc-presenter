@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Lock, LockOpen } from 'lucide-react'
 import CameraStage from '@renderer/components/Common/CameraStage'
 import { useCameraSession } from '@renderer/contexts/CameraSessionContext'
 import { useCameraStore } from '@renderer/stores/camera'
@@ -38,12 +39,13 @@ export default function CameraWorkspacePage(): React.JSX.Element {
   const { t } = useTranslation()
   const camera = useCameraSession()
   const state = useCameraStore()
+  const LockIcon = state.locked ? Lock : LockOpen
   const canvas = useRef<HTMLDivElement>(null)
   const drag = useRef<{ x: number; y: number; frame: CameraTransform; corner?: Corner } | null>(
     null
   )
   const begin = (event: React.PointerEvent<HTMLElement>, corner?: Corner): void => {
-    if (!camera.stream || event.button !== 0) return
+    if (!camera.stream || state.locked || event.button !== 0) return
     event.preventDefault()
     event.stopPropagation()
     canvas.current?.focus({ preventScroll: true })
@@ -89,7 +91,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
         })
       }
     })),
-    { sectionKey: 'camera', enabled: !!camera.stream && !state.selectorOpen }
+    { sectionKey: 'camera', enabled: !!camera.stream && !state.selectorOpen && !state.locked }
   )
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-4" aria-label={t('camera.title')}>
@@ -149,7 +151,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
             {t('camera.empty')}
           </p>
         )}
-        {camera.stream && (
+        {camera.stream && !state.locked && (
           <div
             className="pointer-events-none absolute border-2 border-accent"
             style={{
@@ -161,6 +163,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
           ></div>
         )}
         {camera.stream &&
+          !state.locked &&
           (['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const).map((corner) => (
             <button
               type="button"
@@ -190,7 +193,24 @@ export default function CameraWorkspacePage(): React.JSX.Element {
           ))}
       </div>
       <div className="flex flex-wrap items-center justify-end gap-4">
-        <button className={control} disabled={!camera.stream} onClick={camera.reset}>
+        <button
+          type="button"
+          className={`${control} inline-flex items-center gap-2 aria-pressed:border-accent aria-pressed:text-accent`}
+          aria-pressed={state.locked}
+          disabled={!camera.stream && !state.locked}
+          onClick={() => {
+            drag.current = null
+            useCameraStore.setState({ locked: !state.locked })
+          }}
+        >
+          <LockIcon size={16} aria-hidden="true" />
+          {t(state.locked ? 'camera.unlock' : 'camera.lock')}
+        </button>
+        <button
+          className={control}
+          disabled={!camera.stream || state.locked}
+          onClick={camera.reset}
+        >
           {t('camera.reset')}
         </button>
         {(['x', 'y', 'width'] as const).map((key) => (
@@ -200,7 +220,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
               className={`${control} w-28`}
               type="number"
               step="1"
-              disabled={!camera.stream}
+              disabled={!camera.stream || state.locked}
               value={Math.round(state.transform[key])}
               onChange={(event) => {
                 if (!event.target.value) return

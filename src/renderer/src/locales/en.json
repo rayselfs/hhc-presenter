@@ -1262,6 +1262,8 @@
   },
   "camera": {
     "title": "Camera",
+    "lock": "Lock framing",
+    "unlock": "Unlock framing",
     "choose": "Select a source",
     "reset": "Reset",
     "retry": "Retry",

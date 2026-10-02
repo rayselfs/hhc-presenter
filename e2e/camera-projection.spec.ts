@@ -86,6 +86,32 @@ test('projects one camera, restores framing after navigation, and releases captu
   await expect
     .poll(() => projection.getByTestId('camera-stage').getAttribute('data-frame'))
     .toBe(JSON.stringify(frame))
+  const lock = workspace.getByRole('button', {
+    name: /^(Lock|Unlock) framing$|^(鎖定|解鎖)取景$|^(锁定|解锁)取景$/
+  })
+  await lock.click()
+  await expect(lock).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('[data-testid^="camera-resize-"]')).toHaveCount(0)
+  await expect(workspace.getByRole('button', { name: /^Reset$|^重設$|^重设$/ })).toBeDisabled()
+  for (const input of await workspace.getByRole('spinbutton').all())
+    await expect(input).toBeDisabled()
+  await page.screenshot({ path: '/tmp/hhc-camera-locked.png' })
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(bounds.x + bounds.width * 0.6, bounds.y + bounds.height / 2)
+  await page.mouse.up()
+  await page.keyboard.press('Shift+ArrowRight')
+  await expect(editor.getByTestId('camera-stage')).toHaveAttribute(
+    'data-frame',
+    JSON.stringify(frame)
+  )
+  await expect(projection.getByTestId('camera-stage')).toHaveAttribute(
+    'data-frame',
+    JSON.stringify(frame)
+  )
+  await lock.click()
+  await expect(lock).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.locator('[data-testid^="camera-resize-"]')).toHaveCount(8)
   await workspace.getByRole('button', { name: /^Reset$|^重設$|^重设$/ }).click()
   await expect(workspace.getByRole('spinbutton', { name: 'X', exact: true })).toHaveValue('0')
   await workspace.getByRole('spinbutton', { name: 'X', exact: true }).fill('4000')
@@ -119,6 +145,7 @@ test('projects one camera, restores framing after navigation, and releases captu
       { timeout: 15000 }
     )
     .toBeGreaterThan(0)
+  await lock.click()
   await page.locator('nav a[href="#/files"]').click()
   await expect.poll(() => projection.isClosed()).toBe(true)
   await expect
@@ -135,6 +162,8 @@ test('projects one camera, restores framing after navigation, and releases captu
   await expect
     .poll(() => editor.getByTestId('camera-stage').getAttribute('data-frame'))
     .toBe(savedFrame)
+  await expect(lock).toHaveAttribute('aria-pressed', 'true')
+  await lock.click()
   const restoredPopup = context.waitForEvent('page')
   await page
     .locator('header')
