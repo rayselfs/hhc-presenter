@@ -226,7 +226,7 @@ describe('WindowManager', () => {
       fullscreen: process.platform === 'win32',
       enableLargerThanScreen: true,
       focusable: process.platform === 'darwin',
-      fullscreenable: false,
+      fullscreenable: process.platform === 'win32',
       minimizable: false,
       maximizable: false,
       movable: false,
@@ -241,7 +241,10 @@ describe('WindowManager', () => {
 
     wm.createProjectionWindow('2')
 
-    expect(FakeBrowserWindow.instances[0].options.fullscreen).toBe(true)
+    expect(FakeBrowserWindow.instances[0].options).toMatchObject({
+      fullscreen: true,
+      fullscreenable: true
+    })
   })
 
   it('uses macOS simple fullscreen without keeping projection always on top', () => {
