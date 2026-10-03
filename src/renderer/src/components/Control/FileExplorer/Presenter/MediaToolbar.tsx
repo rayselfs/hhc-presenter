@@ -18,7 +18,7 @@ export default function MediaToolbar({ onToggleGrid }: MediaToolbarProps): React
   const zoomDisabled = currentMimeType === 'application/pdf' && pdfViewMode === 'scroll'
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 shrink-0">
+    <div className="presenter-toolbar flex w-full items-center gap-2 py-2 shrink-0">
       <Button
         isIconOnly
         variant="ghost"

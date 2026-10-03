@@ -5,6 +5,7 @@ import type { MediaTypeDescriptor } from '@renderer/lib/presenter-registry'
 import { useMediaProjectionStore } from '@renderer/stores/media-projection'
 
 interface MediaPreviewProps {
+  children?: React.ReactNode
   currentItem: FileItemRecord | null
   descriptor: MediaTypeDescriptor | null
   isEnded?: boolean
@@ -13,6 +14,7 @@ interface MediaPreviewProps {
 }
 
 export default function MediaPreview({
+  children,
   currentItem,
   descriptor,
   isEnded = false,
@@ -123,6 +125,7 @@ export default function MediaPreview({
           </div>
         )}
       </div>
+      {children}
     </div>
   )
 }

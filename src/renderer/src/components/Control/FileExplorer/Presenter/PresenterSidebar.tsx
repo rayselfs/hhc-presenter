@@ -84,7 +84,9 @@ export default function PresenterSidebar({
                 {t('presenter.endOfSlides')}
               </span>
             )}
-            {nextItem && <NextItemPreview item={nextItem} previewCache={previewCache} />}
+            {nextItem && (
+              <NextItemPreview key={nextItem.id} item={nextItem} previewCache={previewCache} />
+            )}
           </div>
         </div>
       </div>

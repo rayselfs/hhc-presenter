@@ -127,6 +127,32 @@ describe('PresentationPreview', () => {
     storeState.snapshot = null
   })
 
+  it('shows the first slide for a next preview without changing the current projection state', async () => {
+    const document = createBlankEditablePresentationDocument('Next deck')
+    const slideId = document.slideOrder[0]
+    mockLoadEditablePresentation.mockResolvedValue(
+      addElementToSlide(document, slideId, createTextElement({ text: 'First slide of next deck' }))
+    )
+    storeState.typeStates.presentation = { slideIndex: 3 }
+
+    render(<PresentationPreview item={makeItem()} previewOnly />)
+
+    expect(await screen.findByText('First slide of next deck')).toBeInTheDocument()
+    expect(mockSetTypeState).not.toHaveBeenCalled()
+  })
+
+  it('reports a failed editable-deck preview so its caller can retain the cover', async () => {
+    const onError = vi.fn()
+    mockLoadEditablePresentation.mockRejectedValue(new Error('Source unavailable'))
+    render(<PresentationPreview item={makeItem()} previewOnly onError={onError} />)
+    await waitFor(() =>
+      expect(onError).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Source unavailable' })
+      )
+    )
+    expect(mockSetTypeState).not.toHaveBeenCalled()
+  })
+
   it('renders editable slide text and image elements', async () => {
     const document = createBlankEditablePresentationDocument('Sunday')
     const slideId = document.slideOrder[0]

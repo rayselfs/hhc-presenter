@@ -12,7 +12,14 @@ import type { PresentationEditorSession } from '@renderer/lib/presentation-edito
 import { useMediaProjectionStore } from '@renderer/stores/media-projection'
 import type { PreviewComponentProps } from '@renderer/lib/presenter-registry'
 
-export default function PresentationPreview({ item }: PreviewComponentProps): React.JSX.Element {
+export default function PresentationPreview({
+  item,
+  previewOnly = false,
+  onError
+}: PreviewComponentProps & {
+  previewOnly?: boolean
+  onError?: (error: Error) => void
+}): React.JSX.Element {
   const registry = usePresentationSessionRegistry()
   const presentationState = useMediaProjectionStore((s) => s.typeStates.presentation)
   const remoteSourceUrl = useMediaProjectionStore((s) => {
@@ -20,15 +27,19 @@ export default function PresentationPreview({ item }: PreviewComponentProps): Re
     if (!entry?.remoteItem) return undefined
     return entry.remoteSource ? entry.sourceUrl : null
   })
-  const slideIndex = presentationState?.slideIndex ?? 0
+  const slideIndex = previewOnly ? 0 : (presentationState?.slideIndex ?? 0)
 
-  const handleReady = useCallback((info: { slideCount: number }) => {
-    const state = useMediaProjectionStore.getState()
-    const current = state.typeStates.presentation ?? { slideIndex: 0 }
-    const slideIndex = Math.min(current.slideIndex, Math.max(0, info.slideCount - 1))
-    if (current.slideIndex === slideIndex && current.slideCount === info.slideCount) return
-    state.setTypeState('presentation', { slideIndex, slideCount: info.slideCount })
-  }, [])
+  const handleReady = useCallback(
+    (info: { slideCount: number }) => {
+      if (previewOnly) return
+      const state = useMediaProjectionStore.getState()
+      const current = state.typeStates.presentation ?? { slideIndex: 0 }
+      const slideIndex = Math.min(current.slideIndex, Math.max(0, info.slideCount - 1))
+      if (current.slideIndex === slideIndex && current.slideCount === info.slideCount) return
+      state.setTypeState('presentation', { slideIndex, slideCount: info.slideCount })
+    },
+    [previewOnly]
+  )
 
   if (isEditablePresentationMimeType(item.mimeType)) {
     const session = registry.get(item.id)
@@ -43,6 +54,7 @@ export default function PresentationPreview({ item }: PreviewComponentProps): Re
         item={item}
         slideIndex={slideIndex}
         onReady={handleReady}
+        onError={onError}
       />
     )
   }
@@ -61,6 +73,7 @@ export default function PresentationPreview({ item }: PreviewComponentProps): Re
       slideIndex={slideIndex}
       className="rounded-2xl"
       onReady={handleReady}
+      onError={onError}
     />
   )
 }
@@ -87,24 +100,32 @@ function OpenEditablePresentationPreview({
 function DurableEditablePresentationPreview({
   item,
   slideIndex,
-  onReady
+  onReady,
+  onError
 }: PreviewComponentProps & {
   slideIndex: number
   onReady: (info: { slideCount: number }) => void
+  onError?: (error: Error) => void
 }): React.JSX.Element {
   const [document, setDocument] = useState<EditablePresentationDocument | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    void loadEditablePresentation(item).then((loadedDocument) => {
-      if (cancelled) return
-      setDocument(loadedDocument)
-      onReady({ slideCount: loadedDocument.slideOrder.length })
-    })
+    void loadEditablePresentation(item)
+      .then((loadedDocument) => {
+        if (cancelled) return
+        setDocument(loadedDocument)
+        onReady({ slideCount: loadedDocument.slideOrder.length })
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return
+        if (!onError) throw error
+        onError(error instanceof Error ? error : new Error(String(error)))
+      })
     return () => {
       cancelled = true
     }
-  }, [item, onReady])
+  }, [item, onReady, onError])
 
   return <EditablePresentationSurface document={document} slideIndex={slideIndex} />
 }
