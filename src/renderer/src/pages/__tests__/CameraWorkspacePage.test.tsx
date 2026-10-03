@@ -71,3 +71,84 @@ it('requires confirmation before resetting framing and cancellation preserves it
   expect(camera.reset).toHaveBeenCalledOnce()
   camera.stream = null
 })
+
+it.each([320, 960])(
+  'snaps camera dragging in preview pixels at width %i and clears guides',
+  (width) => {
+    camera.stream = {} as MediaStream
+    useCameraStore.setState({
+      locked: false,
+      transform: { x: 380, y: 170, width: 960, height: 540 }
+    })
+    render(
+      <MemoryRouter>
+        <CameraWorkspacePage />
+      </MemoryRouter>
+    )
+    const editor = screen.getByTestId('camera-editor')
+    vi.spyOn(editor, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, width, (width * 9) / 16)
+    )
+    editor.setPointerCapture = vi.fn()
+    editor.hasPointerCapture = () => false
+    const scale = width / 1920
+    const pointer = { pointerId: 1, button: 0 }
+    fireEvent.pointerDown(editor, { ...pointer, clientX: 100, clientY: 100 })
+    fireEvent.pointerMove(editor, {
+      ...pointer,
+      clientX: 100 + 100 * scale + 5,
+      clientY: 100 + 100 * scale - 5
+    })
+    expect(useCameraStore.getState().transform).toEqual({ x: 480, y: 270, width: 960, height: 540 })
+    expect(screen.getByTestId('camera-guide-vertical')).toBeVisible()
+    expect(screen.getByTestId('camera-guide-horizontal')).toBeVisible()
+    fireEvent.pointerMove(editor, {
+      ...pointer,
+      clientX: 100 + 100 * scale + 12,
+      clientY: 100 + 100 * scale - 5
+    })
+    expect(useCameraStore.getState().transform.x).toBeCloseTo(480 + 12 / scale)
+    expect(screen.queryByTestId('camera-guide-vertical')).toBeNull()
+    expect(screen.getByTestId('camera-guide-horizontal')).toBeVisible()
+    fireEvent.pointerUp(editor, {
+      ...pointer,
+      clientX: 100 + 100 * scale,
+      clientY: 100 + 100 * scale
+    })
+    expect(useCameraStore.getState().transform.x).toBe(480)
+    expect(screen.queryByTestId('camera-guide-vertical')).toBeNull()
+    expect(screen.queryByTestId('camera-guide-horizontal')).toBeNull()
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'camera.x' }), {
+      target: { value: '481' }
+    })
+    expect(useCameraStore.getState().transform.x).toBe(481)
+    fireEvent.pointerDown(editor, { ...pointer, clientX: 100, clientY: 100 })
+    fireEvent.pointerMove(editor, { ...pointer, clientX: 100, clientY: 100 })
+    expect(screen.getByTestId('camera-guide-vertical')).toBeVisible()
+    if (width === 320) fireEvent.pointerCancel(editor, pointer)
+    else fireEvent.lostPointerCapture(editor, pointer)
+    expect(screen.queryByTestId('camera-guide-vertical')).toBeNull()
+    fireEvent.pointerMove(editor, { ...pointer, clientX: 200, clientY: 200 })
+    expect(useCameraStore.getState().transform.x).toBe(480)
+    camera.stream = null
+  }
+)
+
+it('shows center guides when a full-size source also aligns with every edge', () => {
+  camera.stream = {} as MediaStream
+  useCameraStore.setState({ locked: false, transform: { x: 0, y: 0, width: 1920, height: 1080 } })
+  render(
+    <MemoryRouter>
+      <CameraWorkspacePage />
+    </MemoryRouter>
+  )
+  const editor = screen.getByTestId('camera-editor')
+  vi.spyOn(editor, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 960, 540))
+  editor.setPointerCapture = vi.fn()
+  fireEvent.pointerDown(editor, { pointerId: 1, button: 0, clientX: 100, clientY: 100 })
+  fireEvent.pointerMove(editor, { pointerId: 1, clientX: 105, clientY: 105 })
+  expect(useCameraStore.getState().transform).toEqual({ x: 0, y: 0, width: 1920, height: 1080 })
+  expect(screen.getByTestId('camera-guide-vertical').style.left).toContain('50%')
+  expect(screen.getByTestId('camera-guide-horizontal').style.top).toContain('50%')
+  camera.stream = null
+})

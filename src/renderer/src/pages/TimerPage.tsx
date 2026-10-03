@@ -11,7 +11,7 @@ import PresetChips from '@renderer/components/Control/Timer/PresetChips'
 import { useProjection } from '@renderer/contexts/ProjectionContext'
 import { useKeyboardShortcuts } from '@renderer/hooks/useKeyboardShortcuts'
 import { SHORTCUTS } from '@renderer/config/shortcuts'
-import { startTimerProjection } from '@renderer/lib/projection-actions'
+import { getTimerProjectionPayloads, startTimerProjection } from '@renderer/lib/projection-actions'
 import { toast } from '@heroui/react/toast'
 import { useTranslation } from 'react-i18next'
 
@@ -31,7 +31,7 @@ export default function TimerPage(): React.JSX.Element {
 
   const swFormattedTime = useStopwatchStore(selectFormattedTime)
 
-  const { claimProjection, isProjectionOpen, startProjection } = useProjection()
+  const { claimProjection, isProjectionOpen, startProjection, send } = useProjection()
 
   const isTimerActive = timerStatus === 'running' || timerStatus === 'paused'
   const isTimerActiveRef = useRef(isTimerActive)
@@ -54,7 +54,8 @@ export default function TimerPage(): React.JSX.Element {
   useEffect(() => {
     if (!isProjectionOpen) return
     claimProjection('timer', { unblank: isTimerActiveRef.current })
-  }, [isProjectionOpen, claimProjection])
+    for (const [channel, payload] of getTimerProjectionPayloads()) send(channel, payload)
+  }, [isProjectionOpen, claimProjection, send])
 
   useKeyboardShortcuts([
     {
