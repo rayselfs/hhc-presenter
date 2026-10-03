@@ -18,14 +18,14 @@ async function resolveUnsafePresentationWork(
   requestCloseDecision: RequestCloseDecision
 ): Promise<boolean> {
   try {
-    await registry.flushAll()
+    await (registry.checkpointAll?.() ?? registry.flushAll())
     return true
   } catch {
     const decision = await requestCloseDecision(registry.getUnsafeItemIds())
     if (decision === 'keep-editing') return false
     try {
       if (decision === 'retry') {
-        await registry.flushAll()
+        await (registry.checkpointAll?.() ?? registry.flushAll())
       } else {
         await registry.discardAll()
       }

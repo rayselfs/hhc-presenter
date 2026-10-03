@@ -15,6 +15,7 @@ export interface PresentationWorkspaceDocument {
   url: string
   size: number
   openedAt: number
+  isUnsaved?: boolean
   personalOwnerId?: string
   slideCount?: number
   saveStatus?: PresentationSaveStatus
@@ -25,7 +26,7 @@ export interface PresentationWorkspaceDocument {
 
 type PresentationEditorMetadata = Pick<
   PresentationWorkspaceDocument,
-  'saveStatus' | 'mirrorWarnings' | 'canUndo' | 'canRedo'
+  'saveStatus' | 'mirrorWarnings' | 'canUndo' | 'canRedo' | 'isUnsaved'
 >
 
 interface PresentationWorkspaceState {
@@ -47,6 +48,7 @@ interface PresentationWorkspaceState {
 function toWorkspaceDocument(item: FileItemRecord): PresentationWorkspaceDocument {
   return {
     itemId: item.id,
+    isUnsaved: item.parentId === 'presentation-drafts',
     mode: isEditablePresentationMimeType(item.mimeType) ? 'editable' : 'pptx',
     name: item.name,
     mimeType: item.mimeType,

@@ -622,6 +622,14 @@
     }
   },
   "presentationWorkspace": {
+    "saveDraftTitle": "保存演示文稿",
+    "draftName": "名称",
+    "draftLocation": "保存位置",
+    "localFiles": "本机多媒体",
+    "unsavedTitle": "要保存这份演示文稿吗？",
+    "unsavedBody": "此副本尚未选定保存位置。请保存、不保存或继续编辑。",
+    "recoveredDrafts": "恢复未保存的演示文稿",
+    "recoveryFailed": "无法加载待恢复的演示文稿",
     "title": "演示文稿工作区",
     "subtitle": "打开并整理 PPTX 演示文稿",
     "home": "常用",

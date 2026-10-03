@@ -1,3 +1,8 @@
+import {
+  discardPresentationDraft,
+  savePresentationDraft,
+  PRESENTATION_DRAFT_PARENT
+} from '@renderer/lib/presentation-drafts'
 import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { getBlobId } from '@renderer/lib/blob-identity'
 import type { EditablePresentationDocument } from '@renderer/lib/editable-presentation'
@@ -14,6 +19,8 @@ export interface PresentationSessionRegistry {
   finalizeAndFlush(itemId: string): Promise<EditablePresentationDocument | null>
   activate(itemId: string): Promise<boolean>
   close(itemId: string, decision?: CloseDecision): Promise<boolean>
+  checkpointAll?(): Promise<void>
+  saveDraft?(itemId: string, parentId: string, name: string): Promise<void>
   flushAll(): Promise<void>
   discardAll(): Promise<void>
   undo?(itemId: string): boolean
@@ -46,6 +53,8 @@ export function PresentationSessionRegistryProvider({
 }: {
   children: ReactNode
 }): React.JSX.Element {
+  const sessionItemsRef = useRef(new Map<string, FileItemRecord>())
+  const draftIdsRef = useRef(new Set<string>())
   const sessionsRef = useRef(new Map<string, PresentationEditorSession>())
   const openingRef = useRef(new Map<string, Promise<PresentationEditorSession>>())
   const sessionUnsubscribersRef = useRef(new Map<string, () => void>())
@@ -70,6 +79,7 @@ export function PresentationSessionRegistryProvider({
     const publishSessionMetadata = (itemId: string, session: PresentationEditorSession): void => {
       const snapshot = session.getSnapshot()
       usePresentationWorkspaceStore.getState().updateEditorMetadata(itemId, {
+        isUnsaved: draftIdsRef.current.has(itemId),
         saveStatus: snapshot.save.status,
         mirrorWarnings: snapshot.save.mirrorWarnings,
         canUndo: snapshot.history.past.length > 0,
@@ -96,6 +106,7 @@ export function PresentationSessionRegistryProvider({
         ])
         const { document, revision } = await loadEditablePresentationSnapshot(item)
         if (!isPersonalRecordVisible(item)) throw new Error('Personal account changed')
+        if (item.parentId === PRESENTATION_DRAFT_PARENT) draftIdsRef.current.add(item.id)
         const session = createPresentationEditorSession({
           initialDocument: document,
           initialRevision: revision,
@@ -108,6 +119,7 @@ export function PresentationSessionRegistryProvider({
           refreshThumbnail: refreshEditablePresentationThumbnail
         })
         sessionsRef.current.set(item.id, session)
+        sessionItemsRef.current.set(item.id, item)
         publishSessionMetadata(item.id, session)
         sessionUnsubscribersRef.current.set(
           item.id,
@@ -127,13 +139,23 @@ export function PresentationSessionRegistryProvider({
       }
     }
 
-    const getUnsafeItemIds = (): string[] =>
-      [...sessionsRef.current.entries()]
-        .filter(
-          ([itemId, session]) =>
-            isSessionUnsafe(session) || editorFinalizersRef.current.get(itemId)?.hasUnsafeWork()
-        )
-        .map(([itemId]) => itemId)
+    const getUnsafeItemIds = (): string[] => [
+      ...new Set([
+        ...usePresentationWorkspaceStore
+          .getState()
+          .documents.filter((entry) => entry.isUnsaved && isPersonalRecordVisible(entry))
+          .map((entry) => entry.itemId),
+        ...[...sessionsRef.current.entries()]
+          .filter(
+            ([itemId, session]) =>
+              isPersonalRecordVisible(sessionItemsRef.current.get(itemId) ?? {}) &&
+              (draftIdsRef.current.has(itemId) ||
+                isSessionUnsafe(session) ||
+                editorFinalizersRef.current.get(itemId)?.hasUnsafeWork())
+          )
+          .map(([itemId]) => itemId)
+      ])
+    ]
 
     const finalizeEditor = (itemId: string): boolean =>
       editorFinalizersRef.current.get(itemId)?.finalize() ?? true
@@ -155,8 +177,31 @@ export function PresentationSessionRegistryProvider({
       return session.getSnapshot().history.present
     }
 
+    const checkpointAll = async (): Promise<void> => {
+      await Promise.all(openingRef.current.values())
+      for (const itemId of sessionsRef.current.keys()) {
+        if (!isPersonalRecordVisible(sessionItemsRef.current.get(itemId) ?? {})) continue
+        if (!finalizeEditor(itemId)) throw new Error('Text composition is still active')
+        await sessionsRef.current.get(itemId)!.flush()
+      }
+    }
+
     return {
       open,
+      checkpointAll,
+      saveDraft: async (itemId, parentId, name) => {
+        const session = sessionsRef.current.get(itemId)
+        if (!session || !finalizeEditor(itemId)) throw new Error('Presentation is not ready')
+        session.commitDraft()
+        session.rename(name.trim(), name.trim())
+        await session.flush()
+        const item = await savePresentationDraft(itemId, parentId, name)
+        draftIdsRef.current.delete(itemId)
+        sessionItemsRef.current.set(itemId, item)
+        usePresentationWorkspaceStore.getState().openDocument(item)
+        publishSessionMetadata(itemId, session)
+        notify()
+      },
       get: (itemId) => sessionsRef.current.get(itemId),
       finalizeAndFlush,
       activate: async (itemId) => {
@@ -177,6 +222,13 @@ export function PresentationSessionRegistryProvider({
       },
       close: async (itemId, decision) => {
         if (decision === 'keep-editing') return false
+        await openingRef.current.get(itemId)?.catch(() => undefined)
+        const isDraft =
+          draftIdsRef.current.has(itemId) ||
+          usePresentationWorkspaceStore
+            .getState()
+            .documents.some((entry) => entry.itemId === itemId && entry.isUnsaved)
+        if (isDraft && decision !== 'discard') return false
         const session = sessionsRef.current.get(itemId)
         if (session) {
           if (!finalizeEditor(itemId)) return false
@@ -195,23 +247,51 @@ export function PresentationSessionRegistryProvider({
           sessionsRef.current.delete(itemId)
           editorFinalizersRef.current.delete(itemId)
         }
+        if (isDraft) {
+          await discardPresentationDraft(itemId)
+          draftIdsRef.current.delete(itemId)
+        }
+        sessionItemsRef.current.delete(itemId)
         usePresentationWorkspaceStore.getState().closeDocument(itemId)
         notify()
         return true
       },
       flushAll: async () => {
-        for (const itemId of editorFinalizersRef.current.keys()) {
-          if (!finalizeEditor(itemId)) throw new Error('Text composition is still active')
-        }
-        const unsafeSessions = [...sessionsRef.current.values()].filter(isSessionUnsafe)
-        await Promise.all(unsafeSessions.map((session) => session.flush()))
+        await checkpointAll()
+        if (
+          usePresentationWorkspaceStore
+            .getState()
+            .documents.some((entry) => entry.isUnsaved && isPersonalRecordVisible(entry)) ||
+          [...draftIdsRef.current].some((id) =>
+            isPersonalRecordVisible(sessionItemsRef.current.get(id) ?? {})
+          )
+        )
+          throw new Error('Presentation has no saved destination')
       },
       discardAll: async () => {
-        for (const itemId of editorFinalizersRef.current.keys()) {
+        await Promise.allSettled(openingRef.current.values())
+        for (const [itemId, session] of sessionsRef.current) {
+          if (!isPersonalRecordVisible(sessionItemsRef.current.get(itemId) ?? {})) continue
           if (!finalizeEditor(itemId)) throw new Error('Text composition is still active')
+          if (draftIdsRef.current.has(itemId)) {
+            await session.discard()
+            await discardPresentationDraft(itemId)
+            sessionUnsubscribersRef.current.get(itemId)?.()
+            sessionUnsubscribersRef.current.delete(itemId)
+            session.dispose()
+            sessionsRef.current.delete(itemId)
+            draftIdsRef.current.delete(itemId)
+            editorFinalizersRef.current.delete(itemId)
+            usePresentationWorkspaceStore.getState().closeDocument(itemId)
+          } else if (isSessionUnsafe(session)) await session.discard()
         }
-        const unsafeSessions = [...sessionsRef.current.values()].filter(isSessionUnsafe)
-        await Promise.all(unsafeSessions.map((session) => session.discard()))
+        for (const entry of usePresentationWorkspaceStore.getState().documents) {
+          if (entry.isUnsaved && isPersonalRecordVisible(entry)) {
+            await discardPresentationDraft(entry.itemId)
+            usePresentationWorkspaceStore.getState().closeDocument(entry.itemId)
+          }
+        }
+        notify()
       },
       undo: (itemId) => moveHistory(itemId, 'undo'),
       redo: (itemId) => moveHistory(itemId, 'redo'),

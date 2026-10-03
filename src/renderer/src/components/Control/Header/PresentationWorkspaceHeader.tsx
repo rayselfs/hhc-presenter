@@ -1,3 +1,5 @@
+import PresentationSaveDialog from '@renderer/components/Control/Presentation/PresentationSaveDialog'
+import { getPresentationItem } from '@renderer/lib/presentation-drafts'
 import { ButtonGroup } from '@heroui/react/button-group'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Button } from '@heroui/react/button'
@@ -39,6 +41,7 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
   )
   const activeDocument = usePresentationWorkspaceStore((state) => state.getActiveDocument())
   const updateDocumentName = usePresentationWorkspaceStore((state) => state.updateDocumentName)
+  const [savingItemId, setSavingItemId] = useState<string | null>(null)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
   const editInputRef = useRef<HTMLInputElement>(null)
@@ -118,7 +121,7 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
     }
 
     const db = await openFileExplorerDB()
-    const item = await db.get('folder-items', itemId)
+    const item = await getPresentationItem(itemId)
     if (!item || !isFileItem(item)) return
 
     const siblings = await db.getAllFromIndex('folder-items', 'by-parent', item.parentId)
@@ -150,8 +153,7 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
     if (!activeDocument) return
     if (isWeb()) void ensureProjectionOpen().catch(() => undefined)
 
-    const db = await openFileExplorerDB()
-    const item = await db.get('folder-items', activeDocument.itemId)
+    const item = await getPresentationItem(activeDocument.itemId)
     if (!item || !isFileItem(item) || !isPresentationItem(item)) return
 
     const activeSlideId = usePresentationWorkspaceStore.getState().getActiveSlideId(item.id)
@@ -204,6 +206,20 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
   useKeyboardShortcuts(
     [
       {
+        id: 'presentation-save',
+        config: SHORTCUTS.PRESENTATION.SAVE,
+        description: t('common.save', 'Save'),
+        handler: () => {
+          if (activeDocument?.isUnsaved) setSavingItemId(activeDocument.itemId)
+          else if (activeItemId)
+            void registry
+              .finalizeAndFlush(activeItemId)
+              .catch(() =>
+                toast.danger(t('presentationWorkspace.saveFailed', 'Unable to save presentation'))
+              )
+        }
+      },
+      {
         id: 'presentation-start-beginning',
         config: SHORTCUTS.PRESENTATION.START_FROM_BEGINNING,
         description: t('presentationWorkspace.presentFromBeginning', 'Present from Beginning'),
@@ -241,6 +257,14 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
 
   return (
     <header className="relative flex h-14 shrink-0 items-center gap-1 bg-surface/80 px-2">
+      {savingItemId && (
+        <PresentationSaveDialog
+          key={savingItemId}
+          itemId={savingItemId}
+          onSaved={() => setSavingItemId(null)}
+          onCancel={() => setSavingItemId(null)}
+        />
+      )}
       <span className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-separator" />
       <Button
         isIconOnly
@@ -346,11 +370,16 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
         </div>
       ))}
       <div className="relative z-10 ml-auto flex items-center gap-3">
+        {activeDocument?.isUnsaved && (
+          <Button variant="primary" onPress={() => setSavingItemId(activeDocument.itemId)}>
+            {t('common.save', 'Save')}
+          </Button>
+        )}
         {activeDocument?.saveStatus && (
           <div className="flex items-center gap-2 text-xs text-muted">
             <span role={activeDocument.saveStatus === 'error' ? 'alert' : undefined}>
               {t(
-                `presentationWorkspace.saveStatus.${activeDocument.saveStatus}`,
+                `presentationWorkspace.saveStatus.${activeDocument.isUnsaved && activeDocument.saveStatus === 'saved' ? 'dirty' : activeDocument.saveStatus}`,
                 activeDocument.saveStatus === 'dirty'
                   ? 'Unsaved'
                   : activeDocument.saveStatus === 'saving'

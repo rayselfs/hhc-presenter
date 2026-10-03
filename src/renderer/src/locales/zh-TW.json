@@ -622,6 +622,14 @@
     }
   },
   "presentationWorkspace": {
+    "saveDraftTitle": "儲存簡報",
+    "draftName": "名稱",
+    "draftLocation": "儲存位置",
+    "localFiles": "本機多媒體",
+    "unsavedTitle": "要儲存這份簡報嗎？",
+    "unsavedBody": "此副本尚未選定儲存位置。請儲存、不儲存或繼續編輯。",
+    "recoveredDrafts": "復原未儲存簡報",
+    "recoveryFailed": "無法載入待復原的簡報",
     "title": "簡報工作區",
     "subtitle": "開啟並整理 PPTX 簡報",
     "home": "常用",

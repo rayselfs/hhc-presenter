@@ -1,3 +1,4 @@
+import { getPresentationItem } from '@renderer/lib/presentation-drafts'
 import React, {
   useCallback,
   useEffect,
@@ -106,7 +107,6 @@ import {
   type ElementAlignment,
   type ElementDistribution
 } from '@renderer/lib/presentation-editor-commands'
-import { openFileExplorerDB } from '@renderer/lib/file-explorer-db'
 import {
   getDocumentFontFamilies,
   findUnavailablePresentationFonts,
@@ -311,8 +311,7 @@ async function getPresentationSourceItem(itemId: string): Promise<FileItemRecord
   const storeItem = useFileExplorerStore.getState().items[itemId]
   if (storeItem && isFileItem(storeItem)) return storeItem
 
-  const db = await openFileExplorerDB()
-  const record = await db.get('folder-items', itemId)
+  const record = await getPresentationItem(itemId)
   if (record && isFileItem(record)) return record
   throw new Error('Presentation source is unavailable')
 }
@@ -3154,8 +3153,7 @@ export default function PresentationWorkspacePage(): React.JSX.Element {
     let cancelled = false
     async function loadRouteDocument(): Promise<void> {
       await useFileExplorerStore.getState().initialize()
-      const db = await openFileExplorerDB()
-      const item = await db.get('folder-items', routeItemId)
+      const item = await getPresentationItem(routeItemId)
       if (cancelled || !item || !isFileItem(item) || !isPresentationItem(item)) return
       openDocument(item)
     }
