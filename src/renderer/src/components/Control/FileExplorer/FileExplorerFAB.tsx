@@ -102,7 +102,7 @@ export default function FileExplorerFAB({
               <Plus size={24} />
             </div>
           </Dropdown.Trigger>
-          <Dropdown.Popover>
+          <Dropdown.Popover placement="top end">
             <Dropdown.Menu
               onAction={(key) => {
                 if (key === 'newFolder' && !isReadOnly) openCreateFolderModal()
