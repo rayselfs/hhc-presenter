@@ -476,3 +476,36 @@ test('persists generated document bytes through native storage', async ({
   expect(result.text).toBe(result.expected)
   expect(result.size).toBe(Buffer.byteLength(result.expected))
 })
+
+for (const mode of ['baseline', 'after-show', 'resize-after-fullscreen']) {
+  test(`Windows diagnostic ${mode} isolates the profile and records native geometry`, async () => {
+    test.skip(process.platform !== 'win32', 'Windows-only diagnostic')
+    const configuredPath = process.env.PACKAGED_APP_PATH
+    if (!configuredPath) throw new Error('PACKAGED_APP_PATH is required')
+    electronApp = await electron.launch({
+      executablePath: resolve(configuredPath),
+      args: [`--projection-diagnostic=${mode}`],
+      timeout: 15_000
+    })
+    const diagnosticProfile = await electronApp.evaluate(({ app }) => app.getPath('userData'))
+    expect(diagnosticProfile).toMatch(/HHC Presenter Projection Diagnostic$/)
+    const control = await electronApp.firstWindow()
+    await completeOnboarding(control)
+    await control.getByTestId('btn-start').click()
+    await expect.poll(() => electronApp?.windows().length ?? 0).toBe(2)
+    const pid = electronApp.process().pid
+    const logPath = join(diagnosticProfile, 'projection-diagnostics', `${mode}-${pid}.jsonl`)
+    await expect.poll(async () => readFile(logPath, 'utf8')).toContain('after-show')
+    const records = (await readFile(logPath, 'utf8'))
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line))
+    const shown = records.find((record) => record.phase === 'after-show')
+    expect(shown.mode).toBe(mode)
+    expect(shown.window.bounds.width).toBeGreaterThan(0)
+    expect(shown.window.contentBounds.height).toBeGreaterThan(0)
+    expect(shown.window.maximumSize).toHaveLength(2)
+    expect(typeof shown.window.fullscreen).toBe('boolean')
+    expect(shown.displays.length).toBeGreaterThan(0)
+  })
+}

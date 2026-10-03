@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*.*.*'
   workflow_dispatch:
+    inputs:
+      windows_projection_diagnostic:
+        description: Build only an unpacked Windows projection diagnostic artifact (no release)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -83,15 +88,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: macos-15
-            target: --mac
-            artifact: macos
-            smoke_executable: dist/mac-arm64/HHC Presenter.app/Contents/MacOS/HHC Presenter
-          - os: windows-2025
-            target: --win
-            artifact: windows
-            smoke_executable: dist/win-unpacked/hhc-presenter.exe
+        include: ${{ fromJSON(inputs.windows_projection_diagnostic && '[{"os":"windows-2025","target":"--win --dir","artifact":"windows","smoke_executable":"dist/win-unpacked/hhc-presenter.exe"}]' || '[{"os":"macos-15","target":"--mac","artifact":"macos","smoke_executable":"dist/mac-arm64/HHC Presenter.app/Contents/MacOS/HHC Presenter"},{"os":"windows-2025","target":"--win","artifact":"windows","smoke_executable":"dist/win-unpacked/hhc-presenter.exe"}]') }}
 
     steps:
       - name: Checkout code
@@ -190,7 +187,7 @@ jobs:
           --config.mac.notarize=false
 
       - name: Verify packaged runtime and notices
-        run: npm run check:packaged-runtime
+        run: npm run check:packaged-runtime -- ${{ inputs.windows_projection_diagnostic && '--unpacked-only' || '' }}
 
       - name: Packaged projection smoke
         env:
@@ -207,8 +204,24 @@ jobs:
             test-results
           if-no-files-found: warn
 
+      - name: Add diagnostic launchers and build identity
+        if: inputs.windows_projection_diagnostic
+        shell: pwsh
+        run: |
+          Copy-Item scripts/projection-diagnostic/* dist/win-unpacked/
+          "Commit: ${{ github.sha }}`nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" | Set-Content dist/win-unpacked/diagnostic-build.txt
+
+      - name: Upload Windows projection diagnostic
+        if: inputs.windows_projection_diagnostic
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: hhc-presenter-windows-projection-diagnostic-${{ github.run_id }}
+          path: dist/win-unpacked/
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload desktop artifacts
-        if: success()
+        if: success() && !inputs.windows_projection_diagnostic
         uses: actions/upload-artifact@v6.0.0
         with:
           name: hhc-presenter-${{ matrix.artifact }}-${{ needs.prepare.outputs.version }}

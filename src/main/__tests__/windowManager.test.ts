@@ -39,6 +39,7 @@ const { FakeBrowserWindow } = vi.hoisted(() => {
     hide = vi.fn()
     setIgnoreMouseEvents = vi.fn()
     setFullScreen = vi.fn()
+    setResizable = vi.fn()
     setSimpleFullScreen = vi.fn()
     setFocusable = vi.fn()
     maximize = vi.fn()
@@ -97,6 +98,12 @@ vi.mock('@electron-toolkit/utils', () => ({
   is: { dev: false }
 }))
 
+const diagnostic = vi.hoisted(() => ({ mode: undefined as string | undefined, record: vi.fn() }))
+vi.mock('../projectionDiagnostic', () => ({
+  getProjectionDiagnosticMode: () => diagnostic.mode,
+  recordProjectionDiagnostic: diagnostic.record
+}))
+
 import { WindowManager } from '../windowManager'
 import { optimizer } from '@electron-toolkit/utils'
 
@@ -105,6 +112,7 @@ describe('WindowManager', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    diagnostic.mode = undefined
     const instance = WindowManager.getInstance()
     instance.cleanup()
     FakeBrowserWindow.instances = []
@@ -246,6 +254,35 @@ describe('WindowManager', () => {
       fullscreenable: true
     })
   })
+
+  it.each(['baseline', 'after-show', 'resize-after-fullscreen'])(
+    'records and applies the Windows diagnostic sequence: %s',
+    (mode) => {
+      Object.defineProperty(process, 'platform', { value: 'win32' })
+      diagnostic.mode = mode
+      WindowManager.getInstance().createProjectionWindow()
+      const projection = FakeBrowserWindow.instances.at(-1)!
+      expect(projection.options.fullscreen).toBe(mode === 'baseline')
+      expect(projection.options.resizable).toBe(mode === 'resize-after-fullscreen')
+      projection.emitOnce('ready-to-show')
+      if (mode === 'baseline') expect(projection.setFullScreen).not.toHaveBeenCalled()
+      else {
+        expect(projection.setFullScreen).toHaveBeenCalledWith(true)
+        expect(projection.showInactive.mock.invocationCallOrder[0]).toBeLessThan(
+          projection.setFullScreen.mock.invocationCallOrder[0]
+        )
+      }
+      if (mode === 'resize-after-fullscreen') {
+        expect(projection.setResizable).toHaveBeenCalledWith(false)
+        expect(projection.setFullScreen.mock.invocationCallOrder[0]).toBeLessThan(
+          projection.setResizable.mock.invocationCallOrder[0]
+        )
+      } else expect(projection.setResizable).not.toHaveBeenCalled()
+      expect(diagnostic.record.mock.calls.map((call) => call[0])).toContain('after-show')
+      expect(projection.focus).not.toHaveBeenCalled()
+      expect(projection.setAlwaysOnTop).not.toHaveBeenCalled()
+    }
+  )
 
   it('uses macOS simple fullscreen without keeping projection always on top', () => {
     const wm = WindowManager.getInstance()
