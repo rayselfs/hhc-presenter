@@ -861,6 +861,7 @@
     "guest": "访客",
     "accountMenu": "{{name}}的帐号菜单",
     "loadingAccount": "正在加载帐号...",
+    "retryConnection": "重试连接",
     "accountUnavailable": "帐号服务不可用",
     "signInFailed": "无法登录",
     "signInPending": "正在等待登录...",

@@ -57,11 +57,17 @@ export default function UserMenu({
   const canUseUpdateAction =
     (isMacPlatform && updateStatus === 'available') ||
     (!isMacPlatform && updateStatus === 'downloaded')
-  const { status, session, signInStatus, signIn, cancelSignIn, signOut } = useHhcAuth()
-  const accountLabel =
-    status === 'authenticated' && session
-      ? session.displayName || t('userMenu.member')
-      : t('userMenu.guest')
+  const { status, session, signInStatus, retrySession, signIn, cancelSignIn, signOut } =
+    useHhcAuth()
+  const accountLabel = session
+    ? session.displayName || t('userMenu.member')
+    : t(
+        status === 'anonymous'
+          ? 'userMenu.guest'
+          : status === 'loading'
+            ? 'userMenu.loadingAccount'
+            : 'userMenu.accountUnavailable'
+      )
   const websiteLocale =
     i18n.resolvedLanguage === 'zh-TW'
       ? 'zh-Hant'
@@ -140,9 +146,7 @@ export default function UserMenu({
               {session?.avatarUrl ? (
                 <Avatar.Image src={session.avatarUrl} alt={accountLabel} />
               ) : null}
-              <Avatar.Fallback>
-                {status === 'authenticated' && session ? avatarInitials : <CircleUser />}
-              </Avatar.Fallback>
+              <Avatar.Fallback>{session ? avatarInitials : <CircleUser />}</Avatar.Fallback>
             </Avatar.Root>
             {isExpanded && <span>{accountLabel}</span>}
           </Button>
@@ -150,6 +154,7 @@ export default function UserMenu({
         <Dropdown.Popover>
           <Dropdown.Menu
             onAction={(key) => {
+              if (key === 'retrySession') void retrySession()
               if (key === 'login') {
                 void signIn().catch(() => toast.danger(t('userMenu.signInFailed')))
               }
@@ -226,12 +231,28 @@ export default function UserMenu({
                 </>
               )
             ) : (
-              <Dropdown.Item key="accountStatus" id="accountStatus" isDisabled>
-                <RefreshCw className={`size-4 ${status === 'loading' ? 'animate-spin' : ''}`} />
-                {status === 'loading'
-                  ? t('userMenu.loadingAccount')
-                  : t('userMenu.accountUnavailable')}
-              </Dropdown.Item>
+              <>
+                <Dropdown.Item key="accountStatus" id="accountStatus" isDisabled>
+                  <RefreshCw className={`size-4 ${status === 'loading' ? 'animate-spin' : ''}`} />
+                  {status === 'loading'
+                    ? t('userMenu.loadingAccount')
+                    : t('userMenu.accountUnavailable')}
+                </Dropdown.Item>
+                {status === 'unavailable' && (
+                  <>
+                    <Dropdown.Item key="retrySession" id="retrySession">
+                      <RefreshCw className="size-4" />
+                      {t('userMenu.retryConnection')}
+                    </Dropdown.Item>
+                    {session && (
+                      <Dropdown.Item key="logout" id="logout">
+                        <LogOut className="size-4" />
+                        {t('userMenu.logout')}
+                      </Dropdown.Item>
+                    )}
+                  </>
+                )}
+              </>
             )}
             <Dropdown.Item
               id="preferences"

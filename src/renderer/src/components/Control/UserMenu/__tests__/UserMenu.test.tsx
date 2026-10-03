@@ -23,6 +23,7 @@ const auth = vi.hoisted(() => ({
     } | null,
     signInStatus: 'idle' as 'idle' | 'pending' | 'cancelled' | 'expired',
     pendingSignInExpiresAt: null as number | null,
+    retrySession: vi.fn(async () => undefined),
     signIn: vi.fn(async () => undefined),
     cancelSignIn: vi.fn(async () => undefined),
     signOut: vi.fn(async () => undefined),
@@ -76,6 +77,7 @@ beforeEach(async () => {
   auth.value.session = null
   auth.value.signInStatus = 'idle'
   auth.value.pendingSignInExpiresAt = null
+  auth.value.retrySession.mockClear()
   auth.value.signIn = vi.fn(async () => undefined)
   auth.value.cancelSignIn = vi.fn(async () => undefined)
   auth.value.signOut = vi.fn(async () => undefined)
@@ -247,9 +249,23 @@ describe('UserMenu', () => {
   ] as const)('shows a disabled %s account state', (status, label) => {
     auth.value.status = status
     renderUserMenu()
-    const item = screen.getByText(label).closest('[role="menuitem"]')
+    const item = screen
+      .getAllByText(label)
+      .find((node) => node.closest('[role="menuitem"]'))!
+      .closest('[role="menuitem"]')
     expect(item).toHaveAttribute('aria-disabled', 'true')
     expect(screen.queryByText('Login')).not.toBeInTheDocument()
+  })
+
+  it('keeps account identity during an outage and offers retry and logout', () => {
+    auth.value.status = 'unavailable'
+    auth.value.session = { userId: 'user-1', displayName: 'Ada Lovelace', roles: [] }
+    renderUserMenu()
+    expect(screen.queryByText('Guest')).not.toBeInTheDocument()
+    expect(screen.getByText('Ada Lovelace')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Retry connection').closest('[role="menuitem"]')!)
+    expect(auth.value.retrySession).toHaveBeenCalledOnce()
+    expect(screen.getByText('Logout')).toBeInTheDocument()
   })
 
   it('shows the authenticated display name and logs out', () => {

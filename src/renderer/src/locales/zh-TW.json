@@ -861,6 +861,7 @@
     "guest": "訪客",
     "accountMenu": "{{name}}的帳號選單",
     "loadingAccount": "正在載入帳號...",
+    "retryConnection": "重試連線",
     "accountUnavailable": "帳號服務無法使用",
     "signInFailed": "無法登入",
     "signInPending": "正在等待登入...",
