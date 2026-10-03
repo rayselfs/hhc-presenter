@@ -861,6 +861,7 @@
     "guest": "Guest",
     "accountMenu": "Account menu for {{name}}",
     "loadingAccount": "Loading account...",
+    "retryConnection": "Retry connection",
     "accountUnavailable": "Account unavailable",
     "signInFailed": "Unable to sign in",
     "signInPending": "Waiting for sign-in...",

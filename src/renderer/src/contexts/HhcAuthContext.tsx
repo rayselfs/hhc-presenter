@@ -21,6 +21,7 @@ type HhcAuthContextValue = {
   session: HhcSession | null
   signInStatus: HhcSignInStatus
   pendingSignInExpiresAt: number | null
+  retrySession(): Promise<void>
   signIn(): Promise<void>
   cancelSignIn(): Promise<void>
   signOut(): Promise<void>
@@ -37,6 +38,8 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
   const [session, setSession] = useState<HhcSession | null>(null)
   const [signInStatus, setSignInStatus] = useState<HhcSignInStatus>('idle')
   const [pendingSignInExpiresAt, setPendingSignInExpiresAt] = useState<number | null>(null)
+  const sessionUnavailableRef = useRef(false)
+  const retrySessionRef = useRef<(() => Promise<void>) | null>(null)
   const adapterRef = useRef<HhcAuthAdapter | null>(null)
   const sessionRef = useRef<HhcSession | null>(null)
   const sessionEpochRef = useRef(0)
@@ -93,7 +96,11 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
     const retry = (): void => retryBootstrap()
     let activityTimer: number | null = null
     const revalidate = (): void => {
-      if (!adapter?.revalidateOnPageActivity || activityTimer !== null) return
+      if (
+        (!adapter?.revalidateOnPageActivity && !sessionUnavailableRef.current) ||
+        activityTimer !== null
+      )
+        return
       activityTimer = window.setTimeout(() => {
         activityTimer = null
         retryBootstrap()
@@ -123,7 +130,7 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
         }
 
         adapterRef.current = createdAdapter
-        let bootstrapUnavailable = false
+        sessionUnavailableRef.current = false
         let bootstrapRunning = false
         let sessionNotificationVersion = 0
         let cleanupUserId: string | null = null
@@ -164,7 +171,7 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
 
         const applySession = (nextSession: HhcSession | null): void => {
           if (!active) return
-          bootstrapUnavailable = false
+          sessionUnavailableRef.current = false
           if (nextSession) {
             signInAttemptRef.current += 1
             setSignInStatus('idle')
@@ -220,10 +227,7 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
               sessionNotificationVersion !== requestNotificationVersion
             )
               return
-            bootstrapUnavailable = true
-            if (sessionRef.current) return
-            sessionRef.current = null
-            setSession(null)
+            sessionUnavailableRef.current = true
             setStatus('unavailable')
           } finally {
             bootstrapRunning = false
@@ -233,10 +237,11 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
           if (
             active &&
             !signOutPendingRef.current &&
-            (bootstrapUnavailable || createdAdapter.revalidateOnPageActivity)
+            (sessionUnavailableRef.current || createdAdapter.revalidateOnPageActivity)
           )
             void bootstrap()
         }
+        retrySessionRef.current = bootstrap
         await bootstrap()
       })
       .catch(() => {
@@ -247,6 +252,7 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
 
     return () => {
       active = false
+      retrySessionRef.current = null
       window.removeEventListener('online', retry)
       window.removeEventListener('focus', revalidateFocus)
       window.removeEventListener('pageshow', revalidateRestored)
@@ -262,6 +268,26 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
       adapter?.dispose()
     }
   }, [cleanupDepartingAccount, invalidateTokenRequests])
+
+  const retrySession = useCallback(async (): Promise<void> => {
+    if (!signOutPendingRef.current) await retrySessionRef.current?.()
+  }, [])
+
+  const markSessionUnavailable = useCallback(
+    (adapter: HhcAuthAdapter, epoch: number, userId: string): void => {
+      if (
+        adapterRef.current !== adapter ||
+        sessionEpochRef.current !== epoch ||
+        sessionRef.current?.userId !== userId ||
+        signOutPendingRef.current
+      )
+        return
+      invalidateTokenRequests()
+      sessionUnavailableRef.current = true
+      setStatus('unavailable')
+    },
+    [invalidateTokenRequests]
+  )
 
   const signIn = useCallback(async (): Promise<void> => {
     const adapter = adapterRef.current
@@ -374,25 +400,18 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
     const epoch = sessionEpochRef.current
     const request = adapter
       .getAccessToken()
-      .then((token) =>
-        adapterRef.current === adapter &&
-        sessionEpochRef.current === epoch &&
-        !signOutPendingRef.current &&
-        sessionRef.current?.userId === expectedUserId
-          ? token
-          : null
-      )
-      .catch((error: unknown) => {
+      .then((token) => {
         if (
-          adapterRef.current === adapter &&
-          sessionEpochRef.current === epoch &&
-          sessionRef.current?.userId === expectedUserId
-        ) {
-          invalidateTokenRequests()
-          sessionRef.current = null
-          setSession(null)
-          setStatus('unavailable')
-        }
+          adapterRef.current !== adapter ||
+          sessionEpochRef.current !== epoch ||
+          signOutPendingRef.current ||
+          sessionRef.current?.userId !== expectedUserId
+        )
+          return null
+        return token
+      })
+      .catch((error: unknown) => {
+        markSessionUnavailable(adapter, epoch, expectedUserId)
         throw error
       })
     accessTokenPromiseRef.current = request
@@ -405,34 +424,43 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
       }
     )
     return request
-  }, [invalidateTokenRequests])
+  }, [markSessionUnavailable])
 
-  const refreshAfterUnauthorized = useCallback((rejectedToken: string): Promise<string | null> => {
-    const adapter = adapterRef.current
-    const expectedUserId = sessionRef.current?.userId
-    if (!adapter || !expectedUserId || signOutPendingRef.current) return Promise.resolve(null)
-    const existing = refreshTokenPromisesRef.current.get(rejectedToken)
-    if (existing) return existing
+  const refreshAfterUnauthorized = useCallback(
+    (rejectedToken: string): Promise<string | null> => {
+      const adapter = adapterRef.current
+      const expectedUserId = sessionRef.current?.userId
+      if (!adapter || !expectedUserId || signOutPendingRef.current) return Promise.resolve(null)
+      const existing = refreshTokenPromisesRef.current.get(rejectedToken)
+      if (existing) return existing
 
-    const epoch = sessionEpochRef.current
-    const request = adapter
-      .refreshAfterUnauthorized(rejectedToken)
-      .then((token) =>
-        adapterRef.current === adapter &&
-        sessionEpochRef.current === epoch &&
-        !signOutPendingRef.current &&
-        sessionRef.current?.userId === expectedUserId
-          ? token
-          : null
-      )
-      .finally(() => {
-        if (refreshTokenPromisesRef.current.get(rejectedToken) === request) {
-          refreshTokenPromisesRef.current.delete(rejectedToken)
-        }
-      })
-    refreshTokenPromisesRef.current.set(rejectedToken, request)
-    return request
-  }, [])
+      const epoch = sessionEpochRef.current
+      const request = adapter
+        .refreshAfterUnauthorized(rejectedToken)
+        .then((token) => {
+          if (
+            adapterRef.current !== adapter ||
+            sessionEpochRef.current !== epoch ||
+            signOutPendingRef.current ||
+            sessionRef.current?.userId !== expectedUserId
+          )
+            return null
+          return token
+        })
+        .catch((error: unknown) => {
+          markSessionUnavailable(adapter, epoch, expectedUserId)
+          throw error
+        })
+        .finally(() => {
+          if (refreshTokenPromisesRef.current.get(rejectedToken) === request) {
+            refreshTokenPromisesRef.current.delete(rejectedToken)
+          }
+        })
+      refreshTokenPromisesRef.current.set(rejectedToken, request)
+      return request
+    },
+    [markSessionUnavailable]
+  )
 
   const value = useMemo(
     () => ({
@@ -440,6 +468,7 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
       session,
       signInStatus,
       pendingSignInExpiresAt,
+      retrySession,
       signIn,
       cancelSignIn,
       signOut,
@@ -455,6 +484,7 @@ export function HhcAuthProvider({ children }: { children: React.ReactNode }): Re
       pendingSignInExpiresAt,
       refreshAfterUnauthorized,
       session,
+      retrySession,
       signIn,
       signInStatus,
       signOut,

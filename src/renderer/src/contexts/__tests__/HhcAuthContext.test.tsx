@@ -181,7 +181,7 @@ describe('HhcAuthContext', () => {
     act(() => window.dispatchEvent(new Event('focus')))
     await waitFor(() => expect(adapter.getSession).toHaveBeenCalledTimes(2))
 
-    expect(result.current.status).toBe('authenticated')
+    expect(result.current.status).toBe('unavailable')
     expect(result.current.session).toEqual(SESSION)
 
     vi.mocked(adapter.getSession).mockResolvedValueOnce({ ...SESSION, userId: 'user-2' })
@@ -709,4 +709,77 @@ describe('HhcAuthContext', () => {
     expect(sessionOwnerMocks.register).toHaveBeenCalledTimes(2)
     expect(sessionOwnerMocks.unregister).toHaveBeenCalledTimes(2)
   })
+})
+
+it.each(['getAccessToken', 'refreshAfterUnauthorized'] as const)(
+  'preserves identity and recovers desktop %s failures on focus',
+  async (method) => {
+    const adapter = createAdapter(SESSION)
+    authFactory.adapters.push(adapter)
+    const { result } = renderHook(() => useHhcAuth(), { wrapper })
+    await waitFor(() => expect(result.current.status).toBe('authenticated'))
+    vi.mocked(adapter[method]).mockRejectedValueOnce(new Error('Offline'))
+    await act(async () => {
+      const request =
+        method === 'getAccessToken'
+          ? result.current.getAccessToken()
+          : result.current.refreshAfterUnauthorized('expired-token')
+      await expect(request).rejects.toThrow('Offline')
+    })
+    expect(result.current.status).toBe('unavailable')
+    expect(result.current.session).toEqual(SESSION)
+    act(() => window.dispatchEvent(new Event('focus')))
+    await waitFor(() => expect(result.current.status).toBe('authenticated'))
+    expect(adapter.getSession).toHaveBeenCalledTimes(2)
+    expect(accessMocks.cleanupAccount).not.toHaveBeenCalled()
+  }
+)
+
+it('allows explicit session recovery and keeps a later logout authoritative', async () => {
+  const adapter = createAdapter(new Error('Offline'))
+  authFactory.adapters.push(adapter)
+  const { result } = renderHook(() => useHhcAuth(), { wrapper })
+  await waitFor(() => expect(result.current.status).toBe('unavailable'))
+  vi.mocked(adapter.getSession).mockResolvedValueOnce(SESSION)
+  await act(async () => {
+    await result.current.retrySession()
+  })
+  expect(result.current.status).toBe('authenticated')
+  let resolve!: (session: HhcSession | null) => void
+  vi.mocked(adapter.getSession).mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        resolve = done
+      })
+  )
+  let pending!: Promise<void>
+  act(() => {
+    pending = result.current.retrySession()
+  })
+  act(() => adapter.emit(null))
+  await act(async () => {
+    resolve(SESSION)
+    await pending
+  })
+  await waitFor(() => expect(result.current.status).toBe('anonymous'))
+  expect(result.current.session).toBeNull()
+})
+
+it('marks a failed session retry unavailable while retaining identity', async () => {
+  const adapter = createAdapter(SESSION)
+  authFactory.adapters.push(adapter)
+  const { result } = renderHook(() => useHhcAuth(), { wrapper })
+  await waitFor(() => expect(result.current.status).toBe('authenticated'))
+  vi.mocked(adapter.getSession).mockRejectedValueOnce(new Error('Offline'))
+  await act(async () => {
+    await result.current.retrySession()
+  })
+  expect(result.current.status).toBe('unavailable')
+  expect(result.current.session).toEqual(SESSION)
+  await act(async () => {
+    await result.current.getAccessToken()
+  })
+  expect(result.current.status).toBe('unavailable')
+  act(() => window.dispatchEvent(new Event('online')))
+  await waitFor(() => expect(result.current.status).toBe('authenticated'))
 })

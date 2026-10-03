@@ -113,8 +113,24 @@ function parseAccessCredential(token: string, now: number): AccessCredential {
   }
 }
 
+class HhcAccountRequestError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code?: string
+  ) {
+    super(`HHC account request failed (${status})`)
+  }
+}
+
 async function responseJson(response: Response): Promise<Record<string, unknown>> {
-  if (!response.ok) throw new Error(`HHC account request failed (${response.status})`)
+  if (!response.ok) {
+    const body: unknown = await response.json().catch(() => null)
+    const code =
+      body && typeof body === 'object' && 'error' in body && typeof body.error === 'string'
+        ? body.error
+        : undefined
+    throw new HhcAccountRequestError(response.status, code)
+  }
   try {
     return (await response.json()) as Record<string, unknown>
   } catch {
@@ -271,6 +287,7 @@ class MainHhcAuthService implements HhcAuthService {
       }
       return this.getAccessToken()
     }
+    this.accessCredential = null
     return this.refreshAccessToken()
   }
 
@@ -496,8 +513,9 @@ class MainHhcAuthService implements HhcAuthService {
       await this.acceptTokenResponse(data, credential)
     } catch (error) {
       if (
-        error instanceof Error &&
-        /^HHC account request failed \((400|401)\)$/.test(error.message)
+        error instanceof HhcAccountRequestError &&
+        (error.status === 400 || error.status === 401) &&
+        error.code === 'invalid_grant'
       ) {
         await this.clearStoredRefreshToken(credential)
       }

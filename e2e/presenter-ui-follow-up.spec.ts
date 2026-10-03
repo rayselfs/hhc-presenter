@@ -2,6 +2,15 @@ import { expect, test } from '@playwright/test'
 import { completeOnboarding } from './helpers'
 
 test.beforeEach(async ({ page }) => {
+  await page.route('**/api/account/v1/session', (route) =>
+    route.fulfill({
+      headers: {
+        'access-control-allow-origin': new URL(page.url()).origin,
+        'access-control-allow-credentials': 'true'
+      },
+      json: { authenticated: false }
+    })
+  )
   await page.goto('/')
   await completeOnboarding(page)
 })
@@ -9,6 +18,7 @@ test.beforeEach(async ({ page }) => {
 for (const label of ['About', 'Keyboard Shortcuts', 'Preferences']) {
   test(`${label} leaves the account trigger in place`, async ({ page }) => {
     const account = page.getByRole('button', { name: 'Account menu for Guest' })
+    await expect(account).toBeVisible()
     await page.evaluate(() => document.fonts.ready)
     const before = await account.boundingBox()
     await account.click()

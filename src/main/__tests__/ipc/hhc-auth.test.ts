@@ -919,6 +919,24 @@ describe('HhcAuthService credentials and session', () => {
     expect(currentStoredRecord()).toMatchObject({ refreshToken: 'refresh-2' })
   })
 
+  it('never reuses a rejected access token after a transient refresh failure', async () => {
+    const service = createHhcAuthService({ now: () => now })
+    await service.begin()
+    mockNetFetch
+      .mockResolvedValueOnce(tokenResponse('refresh-1'))
+      .mockResolvedValueOnce(profileResponse())
+    await service.completeProtocolCallback(callbackFromOpenedUrl())
+    const rejected = await service.getAccessToken()
+    mockNetFetch.mockResolvedValueOnce(jsonResponse({ error: 'server_error' }, 503))
+    await expect(service.refreshAfterUnauthorized(rejected!)).rejects.toThrow('503')
+    mockNetFetch
+      .mockResolvedValueOnce(tokenResponse('refresh-2'))
+      .mockResolvedValueOnce(profileResponse())
+    await expect(service.getSession()).resolves.toMatchObject({ userId: expect.any(String) })
+    expect(currentStoredRecord()).toMatchObject({ refreshToken: 'refresh-2' })
+    expect(mockNetFetch).toHaveBeenCalledTimes(5)
+  })
+
   it('does not refresh when a 401 was sent with a stale token', async () => {
     const service = createHhcAuthService({ now: () => now })
     await service.begin()
@@ -961,6 +979,29 @@ describe('HhcAuthService credentials and session', () => {
       .mockResolvedValueOnce(profileResponse())
     await expect(service.refreshAfterUnauthorized(cached as string)).resolves.toBeTruthy()
     expect(mockNetFetch).toHaveBeenCalledTimes(5)
+  })
+
+  it.each([
+    [400, 'invalid_request'],
+    [400, 'invalid_client'],
+    [401, 'server_error'],
+    [503, 'temporarily_unavailable']
+  ])('preserves refresh credentials for HTTP %s %s', async (status, code) => {
+    const service = createHhcAuthService({ now: () => now })
+    await service.begin()
+    mockNetFetch
+      .mockResolvedValueOnce(tokenResponse('refresh-1'))
+      .mockResolvedValueOnce(profileResponse())
+    await service.completeProtocolCallback(callbackFromOpenedUrl())
+    now += 2 * 60 * 60_000
+    mockNetFetch.mockResolvedValueOnce(jsonResponse({ error: code }, Number(status)))
+    await expect(service.getAccessToken()).rejects.toThrow('HHC account request failed')
+    expect(currentStoredRecord()).toMatchObject({ refreshToken: 'refresh-1' })
+    mockNetFetch
+      .mockResolvedValueOnce(tokenResponse('refresh-2'))
+      .mockResolvedValueOnce(profileResponse())
+    await expect(service.getAccessToken()).resolves.toBeTruthy()
+    expect(currentStoredRecord()).toMatchObject({ refreshToken: 'refresh-2' })
   })
 
   it('clears invalid refresh credentials while preserving the installation id', async () => {
