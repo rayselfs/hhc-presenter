@@ -40,3 +40,37 @@ test('keeps larger media controls inside compact and wide windows', async ({ pag
     await page.screenshot({ path: `/tmp/presenter-controls-${width}x${height}.png` })
   }
 })
+
+test('opens the bottom action menu above its trigger without clipping items', async ({ page }) => {
+  await page.goto('/')
+  await completeOnboarding(page)
+  await page.goto('/#/files')
+  const trigger = page.getByRole('button').filter({
+    has: page.locator('[aria-label="New"], [aria-label="新增"]')
+  })
+
+  for (const [width, height] of [
+    [1920, 1080],
+    [1366, 768],
+    [910, 512]
+  ]) {
+    await page.setViewportSize({ width, height })
+    await trigger.click()
+    const menu = page.getByRole('menu')
+    await expect(menu).toBeVisible()
+    const popover = page.locator('.dropdown__popover').filter({ has: menu })
+    await expect(popover).toHaveAttribute('data-placement', 'top')
+    await expect(popover).not.toHaveAttribute('data-entering', 'true')
+    const bounds = (await popover.boundingBox())!
+    const anchor = (await trigger.boundingBox())!
+    expect(bounds.y).toBeGreaterThanOrEqual(0)
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(anchor.y)
+    for (const item of await menu.getByRole('menuitem').all()) {
+      const box = (await item.boundingBox())!
+      expect(box.y).toBeGreaterThanOrEqual(bounds.y)
+      expect(box.y + box.height).toBeLessThanOrEqual(bounds.y + bounds.height)
+    }
+    await page.keyboard.press('Escape')
+    await expect(menu).toBeHidden()
+  }
+})
