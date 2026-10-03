@@ -225,8 +225,9 @@ export default function MediaPresenter({ onExit }: MediaPresenterProps): React.J
                 onNext={advance}
                 isEnded={isEnded}
                 onExit={onExit}
-              />
-              <MediaToolbar onToggleGrid={toggleGridWithMediaPause} />
+              >
+                <MediaToolbar onToggleGrid={toggleGridWithMediaPause} />
+              </MediaPreview>
               <PresenterNavigation onNext={advance} />
             </div>
 

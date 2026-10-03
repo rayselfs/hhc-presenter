@@ -425,45 +425,31 @@ body {
   container-type: size;
 }
 .presenter-control-button {
-  width: clamp(48px, 10cqw, 64px);
-  height: clamp(48px, 10cqw, 64px);
+  width: var(--presenter-control-size);
+  height: var(--presenter-control-size);
   min-width: 48px;
 }
 .presenter-control-icon {
   width: clamp(24px, 5cqw, 32px);
   height: clamp(24px, 5cqw, 32px);
 }
-.presenter-navigation-icon {
-  width: clamp(28px, 6cqw, 36px);
-  height: clamp(28px, 6cqw, 36px);
-}
-.presenter-navigation-label {
-  font-size: clamp(16px, 3.2cqw, 20px);
-}
 .presenter-preview {
+  --presenter-control-size: clamp(48px, 10cqw, 64px);
   container-type: size;
   display: flex;
-  align-items: start;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
 }
 .presenter-preview-stage {
-  width: min(100%, calc(100cqh * 16 / 9));
-  max-height: 100%;
+  width: min(100%, calc((100cqh - var(--presenter-control-size) - 16px) * 16 / 9));
+  flex-shrink: 0;
 }
 @container (height < 550px) {
-  .presenter-control-button {
-    width: 48px;
-    height: 48px;
+  .presenter-preview {
+    --presenter-control-size: 48px;
   }
   .presenter-control-icon {
     width: 24px;
     height: 24px;
-  }
-  .presenter-navigation-icon {
-    width: 28px;
-    height: 28px;
-  }
-  .presenter-navigation-label {
-    font-size: 16px;
   }
 }

@@ -41,20 +41,20 @@ export default function PresenterNavigation({ onNext }: { onNext: () => void }):
 
   return (
     <div className="px-4 pb-3 shrink-0 flex justify-center">
-      <div className="flex items-center gap-3 w-full max-w-xl">
+      <div className="flex items-center gap-3 w-full max-w-80">
         <Button
           variant="outline"
           isIconOnly
           isDisabled={!canPrev}
           onPress={() => void navigate(prev)}
-          className="presenter-control-button rounded-full shrink-0"
+          className="presenter-navigation-button w-12 h-12 rounded-full shrink-0"
           aria-label={t('presenter.prev')}
         >
-          <ChevronLeft className="presenter-navigation-icon" />
+          <ChevronLeft className="w-7 h-7" />
         </Button>
 
         <div className="min-w-0 flex-1 flex flex-col justify-center gap-1">
-          <div className="text-foreground/60 presenter-navigation-label text-center">
+          <div className="text-foreground/60 text-base text-center">
             {t('presenter.slideInfo', { current: progressCurrent, total: progressTotal })}
           </div>
           <ProgressBar
@@ -64,7 +64,7 @@ export default function PresenterNavigation({ onNext }: { onNext: () => void }):
             aria-label={t('fileExplorer.presenter.progress')}
             className="w-full"
           >
-            <ProgressBar.Track className="h-2">
+            <ProgressBar.Track className="h-1">
               <ProgressBar.Fill />
             </ProgressBar.Track>
           </ProgressBar>
@@ -75,10 +75,10 @@ export default function PresenterNavigation({ onNext }: { onNext: () => void }):
           isIconOnly
           isDisabled={!canNext && !isEnded}
           onPress={onNext}
-          className="presenter-control-button rounded-full shrink-0"
+          className="presenter-navigation-button w-12 h-12 rounded-full shrink-0"
           aria-label={t('presenter.next')}
         >
-          <ChevronRight className="presenter-navigation-icon" />
+          <ChevronRight className="w-7 h-7" />
         </Button>
       </div>
     </div>
