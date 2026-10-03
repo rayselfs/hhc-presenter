@@ -346,3 +346,70 @@ test('remembers the camera across page reload without starting projection', asyn
     )
     .toBe(true)
 })
+
+test('snaps camera framing with preview-only guides at different window sizes', async ({
+  page,
+  context
+}) => {
+  await page.goto('/')
+  await completeOnboarding(page)
+  await page.goto('/#/camera')
+  await selectCamera(page)
+  const editor = page.getByTestId('camera-editor')
+  await expect
+    .poll(() => editor.locator('video').evaluate((video: HTMLVideoElement) => video.videoWidth))
+    .toBeGreaterThan(0)
+  const workspace = page.locator('section').filter({ has: editor })
+  const popup = context.waitForEvent('page')
+  await workspace.getByRole('button', { name: /^Present camera$|^開啟投影$|^开启投影$/ }).click()
+  const projection = await popup
+  await expect(projection.getByTestId('camera-projection')).toBeVisible()
+  for (const size of [
+    { width: 800, height: 600 },
+    { width: 1440, height: 900 }
+  ]) {
+    await page.setViewportSize(size)
+    await workspace.getByRole('spinbutton', { name: /Width|寬度|宽度/ }).fill('960')
+    await workspace.getByRole('spinbutton', { name: 'X', exact: true }).fill('480')
+    await workspace.getByRole('spinbutton', { name: 'Y', exact: true }).fill('270')
+    const bounds = await editor.boundingBox()
+    if (!bounds) throw new Error('Camera editor is not visible')
+    const x = bounds.x + bounds.width / 2
+    const y = bounds.y + bounds.height / 2
+    await page.mouse.move(x, y)
+    await page.mouse.down()
+    await page.mouse.move(x + 5, y - 5)
+    await expect(workspace.getByRole('spinbutton', { name: 'X', exact: true })).toHaveValue('480')
+    await expect(workspace.getByRole('spinbutton', { name: 'Y', exact: true })).toHaveValue('270')
+    await expect(page.getByTestId('camera-guide-vertical')).toBeVisible()
+    await expect(page.getByTestId('camera-guide-horizontal')).toBeVisible()
+    await expect(projection.locator('[data-testid^="camera-guide-"]')).toHaveCount(0)
+    await expect
+      .poll(() => projection.getByTestId('camera-stage').getAttribute('data-frame'))
+      .toBe(await editor.getByTestId('camera-stage').getAttribute('data-frame'))
+    await page.screenshot({ path: `/tmp/camera-snap-${size.width}.png` })
+    await page.mouse.move(x + 14, y - 5)
+    await expect(page.getByTestId('camera-guide-vertical')).toHaveCount(0)
+    await expect(page.getByTestId('camera-guide-horizontal')).toBeVisible()
+    await page.mouse.move(x + 5, y - 5)
+    await page.mouse.up()
+    await expect(page.locator('[data-testid^="camera-guide-"]')).toHaveCount(0)
+    await page.keyboard.press('ArrowRight')
+    await expect(workspace.getByRole('spinbutton', { name: 'X', exact: true })).toHaveValue('481')
+    await workspace.getByRole('spinbutton', { name: 'X', exact: true }).fill('960')
+    await workspace.getByRole('spinbutton', { name: 'Y', exact: true }).fill('540')
+    const edgeX = x + bounds.width / 4
+    const edgeY = y + bounds.height / 4
+    await page.mouse.move(edgeX, edgeY)
+    await page.mouse.down()
+    await page.mouse.move(edgeX - 5, edgeY - 5)
+    await expect(workspace.getByRole('spinbutton', { name: 'X', exact: true })).toHaveValue('960')
+    await expect(workspace.getByRole('spinbutton', { name: 'Y', exact: true })).toHaveValue('540')
+    const vertical = await page.getByTestId('camera-guide-vertical').boundingBox()
+    const horizontal = await page.getByTestId('camera-guide-horizontal').boundingBox()
+    expect(vertical!.x + vertical!.width).toBeLessThanOrEqual(bounds.x + bounds.width)
+    expect(horizontal!.y + horizontal!.height).toBeLessThanOrEqual(bounds.y + bounds.height)
+    await page.mouse.up()
+  }
+  await projection.close()
+})
