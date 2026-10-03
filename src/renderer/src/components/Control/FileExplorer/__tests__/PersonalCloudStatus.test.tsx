@@ -11,6 +11,13 @@ vi.mock('@renderer/contexts/ConfirmDialogContext', () => ({ useConfirm: () => vi
 vi.mock('@renderer/contexts/PresentationSessionRegistryContext', () => ({
   usePresentationSessionRegistry: () => ({})
 }))
+// Status rendering does not need the catalog's background IndexedDB subscription.
+vi.mock('@renderer/stores/file-explorer', () => ({
+  copyExplorerFolder: vi.fn(),
+  FILE_EXPLORER_ROOT_ID: 'file-root',
+  refreshPersonalCatalog: vi.fn(),
+  useFileExplorerStore: { getState: vi.fn() }
+}))
 afterEach(cleanup)
 
 it('shows failures before a root exists without offering destructive conflict actions for network failure', () => {

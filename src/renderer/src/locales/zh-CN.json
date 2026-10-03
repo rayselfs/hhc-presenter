@@ -1263,6 +1263,11 @@
   },
   "camera": {
     "title": "摄像头",
+    "present": "开启投影",
+    "presenting": "投影中",
+    "locked": "取景已锁定",
+    "lock": "锁定取景",
+    "unlock": "解锁取景",
     "choose": "选择来源",
     "reset": "重设",
     "retry": "重试",

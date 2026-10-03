@@ -18,7 +18,7 @@ async function selectCamera(page: Page): Promise<void> {
   await page.getByRole('option').first().click()
 }
 
-test('projects one camera, restores framing after navigation, and releases capture outside Camera', async ({
+test('keeps camera projection across navigation, explicitly reclaims it, and preserves 16:9 framing', async ({
   page,
   context
 }) => {
@@ -44,11 +44,8 @@ test('projects one camera, restores framing after navigation, and releases captu
     )
     .toBeGreaterThan(0)
   const popup = context.waitForEvent('page')
-  await page
-    .locator('header')
-    .getByRole('button', { name: /^Start projection$|^開始投影$|^开始投影$/ })
-    .click()
-  let projection = await popup
+  await workspace.getByRole('button', { name: /^Present camera$|^開啟投影$|^开启投影$/ }).click()
+  const projection = await popup
   await expect(projection.getByTestId('camera-projection')).toBeVisible()
   await expect
     .poll(
@@ -57,6 +54,16 @@ test('projects one camera, restores framing after navigation, and releases captu
     )
     .toBeGreaterThan(0)
   const editor = page.getByTestId('camera-editor')
+  for (const size of [
+    { width: 800, height: 600 },
+    { width: 1280, height: 800 }
+  ]) {
+    await page.setViewportSize(size)
+    const canvas = await editor.boundingBox()
+    expect(canvas).not.toBeNull()
+    expect(canvas!.width / canvas!.height).toBeCloseTo(16 / 9, 2)
+  }
+  await page.setViewportSize({ width: 1280, height: 720 })
   const bounds = await editor.boundingBox()
   if (!bounds) throw new Error('Camera editor is not visible')
   await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
@@ -86,6 +93,40 @@ test('projects one camera, restores framing after navigation, and releases captu
   await expect
     .poll(() => projection.getByTestId('camera-stage').getAttribute('data-frame'))
     .toBe(JSON.stringify(frame))
+  const lock = workspace.getByRole('button', {
+    name: /^(Lock|Unlock) framing$|^(鎖定|解鎖)取景$|^(锁定|解锁)取景$/
+  })
+  const sourceFrame = page.getByTestId('camera-frame')
+  const unlockedColor = await sourceFrame.evaluate((node) => getComputedStyle(node).borderColor)
+  await lock.click()
+  await expect(sourceFrame).toBeVisible()
+  await expect(sourceFrame).toHaveClass(/border-danger/)
+  expect(await sourceFrame.evaluate((node) => getComputedStyle(node).borderColor)).not.toBe(
+    unlockedColor
+  )
+  await expect(page.getByTestId('camera-lock-indicator')).toBeVisible()
+  await expect(lock).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('[data-testid^="camera-resize-"]')).toHaveCount(0)
+  await expect(workspace.getByRole('button', { name: /^Reset$|^重設$|^重设$/ })).toBeDisabled()
+  for (const input of await workspace.getByRole('spinbutton').all())
+    await expect(input).toBeDisabled()
+  await page.screenshot({ path: '/tmp/hhc-camera-locked.png' })
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(bounds.x + bounds.width * 0.6, bounds.y + bounds.height / 2)
+  await page.mouse.up()
+  await page.keyboard.press('Shift+ArrowRight')
+  await expect(editor.getByTestId('camera-stage')).toHaveAttribute(
+    'data-frame',
+    JSON.stringify(frame)
+  )
+  await expect(projection.getByTestId('camera-stage')).toHaveAttribute(
+    'data-frame',
+    JSON.stringify(frame)
+  )
+  await lock.click()
+  await expect(lock).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.locator('[data-testid^="camera-resize-"]')).toHaveCount(8)
   await workspace.getByRole('button', { name: /^Reset$|^重設$|^重设$/ }).click()
   await expect(workspace.getByRole('spinbutton', { name: 'X', exact: true })).toHaveValue('0')
   await workspace.getByRole('spinbutton', { name: 'X', exact: true }).fill('4000')
@@ -119,8 +160,29 @@ test('projects one camera, restores framing after navigation, and releases captu
       { timeout: 15000 }
     )
     .toBeGreaterThan(0)
+  await lock.click()
   await page.locator('nav a[href="#/files"]').click()
-  await expect.poll(() => projection.isClosed()).toBe(true)
+  expect(projection.isClosed()).toBe(false)
+  await expect(projection.getByTestId('camera-projection')).toBeVisible()
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          Reflect.get(window, '__cameraTracks').filter(
+            (track: MediaStreamTrack) => track.readyState === 'live'
+          ).length
+      )
+    )
+    .toBe(1)
+  await page.locator('nav a[href="#/bible"]').click()
+  await expect(projection.getByTestId('camera-projection')).toBeVisible()
+  await page.getByRole('link', { name: /^Camera$|^攝影機$|^摄像头$/, exact: true }).click()
+  await expect(editor.getByTestId('camera-stage')).toHaveAttribute('data-frame', savedFrame!)
+  await expect(lock).toHaveAttribute('aria-pressed', 'true')
+  await lock.click()
+  await page.locator('nav a[href="#/timer"]').click()
+  await expect(projection.getByTestId('camera-projection')).toHaveCount(0)
+  expect(projection.isClosed()).toBe(false)
   await expect
     .poll(() =>
       page.evaluate(
@@ -132,16 +194,16 @@ test('projects one camera, restores framing after navigation, and releases captu
     )
     .toBe(0)
   await page.getByRole('link', { name: /^Camera$|^攝影機$|^摄像头$/, exact: true }).click()
-  await expect
-    .poll(() => editor.getByTestId('camera-stage').getAttribute('data-frame'))
-    .toBe(savedFrame)
-  const restoredPopup = context.waitForEvent('page')
-  await page
-    .locator('header')
-    .getByRole('button', { name: /^Start projection$|^開始投影$|^开始投影$/ })
-    .click()
-  projection = await restoredPopup
+  await expect(
+    workspace.getByRole('button', { name: /^Present camera$|^開啟投影$|^开启投影$/ })
+  ).toBeEnabled()
+  await expect(projection.getByTestId('camera-projection')).toHaveCount(0)
+  await workspace.getByRole('button', { name: /^Present camera$|^開啟投影$|^开启投影$/ }).click()
   await expect(projection.getByTestId('camera-projection')).toBeVisible()
+  expect(context.pages()).toHaveLength(2)
+  await expect
+    .poll(() => projection.locator('video').evaluate((video: HTMLVideoElement) => video.videoWidth))
+    .toBeGreaterThan(0)
   await page.evaluate(() => {
     for (const track of Reflect.get(window, '__cameraTracks') as MediaStreamTrack[]) {
       track.stop()

@@ -18,6 +18,7 @@ interface CameraStore {
   transform: CameraTransform
   cover: CameraTransform
   capturing: boolean
+  locked: boolean
   selectorOpen: boolean
   busy: boolean
   error: string | null
@@ -27,7 +28,7 @@ interface CameraStore {
 const initial = { x: 0, y: 0, width: 1920, height: 1080 }
 export const useCameraStore = create<CameraStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       layouts: {},
       activateSource: (deviceId, cover) =>
         set((state) => {
@@ -54,11 +55,13 @@ export const useCameraStore = create<CameraStore>()(
       transform: initial,
       cover: initial,
       capturing: false,
+      locked: false,
       selectorOpen: false,
       busy: false,
       error: null,
       connection: 'idle',
       updateTransform: (frame) => {
+        if (get().locked) return
         if (!Object.values(frame).every(Number.isFinite)) return
         if (frame.width <= 0 || frame.height <= 0) return
         set((state) => {

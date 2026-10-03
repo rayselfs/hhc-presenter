@@ -1,6 +1,8 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Lock, LockOpen, Monitor } from 'lucide-react'
 import CameraStage from '@renderer/components/Common/CameraStage'
+import { useProjection } from '@renderer/contexts/ProjectionContext'
 import { useCameraSession } from '@renderer/contexts/CameraSessionContext'
 import { useCameraStore } from '@renderer/stores/camera'
 import { SHORTCUTS } from '@renderer/config/shortcuts'
@@ -37,13 +39,16 @@ function cameraDimensions(width: number, height: number): void {
 export default function CameraWorkspacePage(): React.JSX.Element {
   const { t } = useTranslation()
   const camera = useCameraSession()
+  const { activeOwner, isProjectionOpen, startProjection } = useProjection()
+  const projecting = activeOwner === 'camera' && isProjectionOpen
   const state = useCameraStore()
+  const LockIcon = state.locked ? Lock : LockOpen
   const canvas = useRef<HTMLDivElement>(null)
   const drag = useRef<{ x: number; y: number; frame: CameraTransform; corner?: Corner } | null>(
     null
   )
   const begin = (event: React.PointerEvent<HTMLElement>, corner?: Corner): void => {
-    if (!camera.stream || event.button !== 0) return
+    if (!camera.stream || state.locked || event.button !== 0) return
     event.preventDefault()
     event.stopPropagation()
     canvas.current?.focus({ preventScroll: true })
@@ -89,7 +94,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
         })
       }
     })),
-    { sectionKey: 'camera', enabled: !!camera.stream && !state.selectorOpen }
+    { sectionKey: 'camera', enabled: !!camera.stream && !state.selectorOpen && !state.locked }
   )
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-4" aria-label={t('camera.title')}>
@@ -120,9 +125,10 @@ export default function CameraWorkspacePage(): React.JSX.Element {
         aria-label={t('camera.canvas')}
         tabIndex={0}
         data-testid="camera-editor"
-        className="relative w-full touch-none overflow-hidden bg-black outline outline-1 outline-border focus:outline-2 focus:outline-accent"
+        className="relative w-full shrink-0 touch-none overflow-hidden bg-black outline outline-1 outline-border focus:outline-2 focus:outline-accent"
         style={{
           aspectRatio: '16 / 9',
+          height: 'auto',
           width: 'min(100%, max(320px, calc((100dvh - 180px) * 16 / 9)))',
           alignSelf: 'center'
         }}
@@ -151,7 +157,8 @@ export default function CameraWorkspacePage(): React.JSX.Element {
         )}
         {camera.stream && (
           <div
-            className="pointer-events-none absolute border-2 border-accent"
+            data-testid="camera-frame"
+            className={`pointer-events-none absolute border-2 ${state.locked ? 'border-danger' : 'border-accent'}`}
             style={{
               left: `${(state.transform.x / 1920) * 100}%`,
               top: `${(state.transform.y / 1080) * 100}%`,
@@ -160,7 +167,18 @@ export default function CameraWorkspacePage(): React.JSX.Element {
             }}
           ></div>
         )}
+        {camera.stream && state.locked && (
+          <div
+            role="status"
+            data-testid="camera-lock-indicator"
+            className="pointer-events-none absolute top-2 right-2 inline-flex items-center gap-2 rounded-md bg-black/80 px-3 py-2 text-sm text-white"
+          >
+            <Lock size={16} aria-hidden="true" />
+            {t('camera.locked')}
+          </div>
+        )}
         {camera.stream &&
+          !state.locked &&
           (['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const).map((corner) => (
             <button
               type="button"
@@ -190,7 +208,33 @@ export default function CameraWorkspacePage(): React.JSX.Element {
           ))}
       </div>
       <div className="flex flex-wrap items-center justify-end gap-4">
-        <button className={control} disabled={!camera.stream} onClick={camera.reset}>
+        <button
+          type="button"
+          className={`${control} inline-flex items-center gap-2`}
+          disabled={!state.capturing || projecting}
+          onClick={() => void startProjection('camera')}
+        >
+          <Monitor size={16} aria-hidden="true" />
+          {t(projecting ? 'camera.presenting' : 'camera.present')}
+        </button>
+        <button
+          type="button"
+          className={`${control} inline-flex items-center gap-2 aria-pressed:border-accent aria-pressed:text-accent`}
+          aria-pressed={state.locked}
+          disabled={!camera.stream && !state.locked}
+          onClick={() => {
+            drag.current = null
+            useCameraStore.setState({ locked: !state.locked })
+          }}
+        >
+          <LockIcon size={16} aria-hidden="true" />
+          {t(state.locked ? 'camera.unlock' : 'camera.lock')}
+        </button>
+        <button
+          className={control}
+          disabled={!camera.stream || state.locked}
+          onClick={camera.reset}
+        >
           {t('camera.reset')}
         </button>
         {(['x', 'y', 'width'] as const).map((key) => (
@@ -200,7 +244,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
               className={`${control} w-28`}
               type="number"
               step="1"
-              disabled={!camera.stream}
+              disabled={!camera.stream || state.locked}
               value={Math.round(state.transform[key])}
               onChange={(event) => {
                 if (!event.target.value) return

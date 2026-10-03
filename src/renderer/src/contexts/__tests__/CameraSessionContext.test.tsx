@@ -15,6 +15,12 @@ const projection = vi.hoisted(() => ({
   stopProjection: vi.fn().mockResolvedValue(undefined)
 }))
 vi.mock('../ProjectionContext', () => ({ useProjection: () => projection }))
+const peer = vi.hoisted(() => ({
+  dispose: vi.fn(),
+  start: vi.fn().mockResolvedValue(undefined),
+  acceptSignal: vi.fn().mockResolvedValue(undefined)
+}))
+vi.mock('@renderer/lib/camera-peer', () => ({ createCameraPeer: () => peer }))
 let navigate: ReturnType<typeof useNavigate>
 let camera: ReturnType<typeof useCameraSession>
 function Controls(): null {
@@ -28,6 +34,9 @@ function Controls(): null {
 }
 beforeEach(() => {
   projection.isProjectionOpen = false
+  projection.activeOwner = 'camera'
+  projection.on.mockReturnValue(() => undefined)
+  peer.dispose.mockClear()
   projection.stopProjection.mockClear()
   useCameraStore.setState({ lastDeviceId: '', deviceId: '', busy: false, layouts: {} })
 })
@@ -78,7 +87,7 @@ it('accesses devices only on the camera route and stops a late capture after lea
   expect(projection.stopProjection).not.toHaveBeenCalled()
 })
 
-it('releases an active camera and stops its projection when leaving the page', async () => {
+it('retains camera projection across navigation and releases capture when Timer takes ownership', async () => {
   const stop = vi.fn()
   const track = {
     stop,
@@ -111,7 +120,16 @@ it('releases an active camera and stops its projection when leaving the page', a
   expect(useCameraStore.getState().capturing).toBe(true)
   projection.isProjectionOpen = true
   act(() => navigate('/files'))
+  expect(stop).not.toHaveBeenCalled()
+  expect(projection.stopProjection).not.toHaveBeenCalled()
+  expect(useCameraStore.getState().capturing).toBe(true)
+  act(() => navigate('/bible'))
+  expect(stop).not.toHaveBeenCalled()
+  expect(peer.dispose).not.toHaveBeenCalled()
+  projection.activeOwner = 'timer'
+  act(() => navigate('/'))
   expect(stop).toHaveBeenCalledTimes(1)
-  expect(projection.stopProjection).toHaveBeenCalledTimes(1)
+  expect(peer.dispose).toHaveBeenCalledTimes(1)
+  expect(projection.stopProjection).not.toHaveBeenCalled()
   expect(useCameraStore.getState().capturing).toBe(false)
 })

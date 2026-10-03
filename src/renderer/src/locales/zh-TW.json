@@ -1263,6 +1263,11 @@
   },
   "camera": {
     "title": "攝影機",
+    "present": "開啟投影",
+    "presenting": "投影中",
+    "locked": "取景已鎖定",
+    "lock": "鎖定取景",
+    "unlock": "解鎖取景",
     "choose": "選擇來源",
     "reset": "重設",
     "retry": "重試",
