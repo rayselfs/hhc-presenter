@@ -21,6 +21,22 @@ describe('useKeyboardShortcuts', () => {
     mockIsMac = false
   })
 
+  it('ignores shortcuts inside confirmation dialogs', () => {
+    const handler = vi.fn()
+    renderHook(() => useKeyboardShortcuts([{ config: { code: 'Space' }, handler }]))
+    const dialog = document.createElement('div')
+    dialog.setAttribute('role', 'alertdialog')
+    const button = document.createElement('button')
+    dialog.append(button)
+    document.body.append(dialog)
+    try {
+      fireEvent.keyDown(button, { code: 'Space' })
+      expect(handler).not.toHaveBeenCalled()
+    } finally {
+      dialog.remove()
+    }
+  })
+
   it('matches platform projection shortcuts', () => {
     expect(
       matchesConfig(new KeyboardEvent('keydown', { code: 'F5' }), SHORTCUTS.PROJECTION.START)

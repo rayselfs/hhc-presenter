@@ -130,7 +130,7 @@ export function useKeyboardShortcuts(
       if (isEditableTarget(event.target)) return
       if (
         event.target instanceof Element &&
-        event.target.closest('[role="menu"], [role="dialog"]')
+        event.target.closest('[role="menu"], [role="dialog"], [role="alertdialog"]')
       ) {
         return
       }

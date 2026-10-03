@@ -1262,6 +1262,8 @@
     "pdfLoadFailed": "Failed to load PDF"
   },
   "camera": {
+    "resetTitle": "Reset framing?",
+    "resetBody": "Position and zoom will return to their defaults.",
     "title": "Camera",
     "present": "Present camera",
     "presenting": "Projecting camera",

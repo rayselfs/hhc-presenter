@@ -8,14 +8,16 @@ const projection = vi.hoisted(() => ({
   startProjection: vi.fn().mockResolvedValue({ ok: true })
 }))
 vi.mock('@renderer/contexts/ProjectionContext', () => ({ useProjection: () => projection }))
+const camera = vi.hoisted(() => ({ stream: null as MediaStream | null, reset: vi.fn() }))
+vi.mock('@renderer/components/Common/CameraStage', () => ({ default: () => null }))
 vi.mock('@renderer/contexts/CameraSessionContext', () => ({
   useCameraSession: () => ({
-    stream: null,
+    stream: camera.stream,
     selectSource: vi.fn(),
     enable: vi.fn(),
     start: vi.fn(),
     stop: vi.fn(),
-    reset: vi.fn(),
+    reset: camera.reset,
     retry: vi.fn()
   })
 }))
@@ -49,4 +51,23 @@ it('explicitly presents the camera into an already open projection', () => {
   fireEvent.click(screen.getByRole('button', { name: 'camera.present' }))
   expect(projection.startProjection).toHaveBeenCalledWith('camera')
   useCameraStore.setState({ capturing: false })
+})
+
+it('requires confirmation before resetting framing and cancellation preserves it', async () => {
+  camera.stream = {} as MediaStream
+  useCameraStore.setState({ locked: false })
+  render(
+    <MemoryRouter>
+      <CameraWorkspacePage />
+    </MemoryRouter>
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'camera.reset' }))
+  expect(camera.reset).not.toHaveBeenCalled()
+  await screen.findByText('camera.resetTitle')
+  fireEvent.click(screen.getByRole('button', { name: 'common.cancel' }))
+  expect(camera.reset).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'camera.reset' }))
+  fireEvent.click(screen.getByRole('button', { name: 'common.confirm' }))
+  expect(camera.reset).toHaveBeenCalledOnce()
+  camera.stream = null
 })

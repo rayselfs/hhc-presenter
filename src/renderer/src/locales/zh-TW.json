@@ -1262,6 +1262,8 @@
     "pdfLoadFailed": "無法載入 PDF"
   },
   "camera": {
+    "resetTitle": "重設取景？",
+    "resetBody": "位置與縮放將恢復預設值。",
     "title": "攝影機",
     "present": "開啟投影",
     "presenting": "投影中",

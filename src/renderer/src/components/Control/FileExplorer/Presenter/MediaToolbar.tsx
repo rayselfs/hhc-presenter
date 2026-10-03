@@ -18,15 +18,15 @@ export default function MediaToolbar({ onToggleGrid }: MediaToolbarProps): React
   const zoomDisabled = currentMimeType === 'application/pdf' && pdfViewMode === 'scroll'
 
   return (
-    <div className="flex items-center gap-1 px-4 py-2 shrink-0">
+    <div className="flex items-center gap-2 px-4 py-2 shrink-0">
       <Button
         isIconOnly
         variant="ghost"
         onPress={onToggleGrid}
         aria-label={t('presenter.grid')}
-        className="w-12 h-12 rounded-full"
+        className="presenter-control-button rounded-full"
       >
-        <LayoutGrid className="w-6 h-6" />
+        <LayoutGrid className="presenter-control-icon" />
       </Button>
       <Button
         isIconOnly
@@ -34,9 +34,13 @@ export default function MediaToolbar({ onToggleGrid }: MediaToolbarProps): React
         isDisabled={zoomDisabled}
         onPress={() => (zoomLevel > 1 ? resetZoom() : setZoomLevel(1.2))}
         aria-label={t('presenter.zoom')}
-        className="w-12 h-12 rounded-full"
+        className="presenter-control-button rounded-full"
       >
-        {zoomLevel > 1 ? <ZoomOut className="w-6 h-6" /> : <ZoomIn className="w-6 h-6" />}
+        {zoomLevel > 1 ? (
+          <ZoomOut className="presenter-control-icon" />
+        ) : (
+          <ZoomIn className="presenter-control-icon" />
+        )}
       </Button>
     </div>
   )

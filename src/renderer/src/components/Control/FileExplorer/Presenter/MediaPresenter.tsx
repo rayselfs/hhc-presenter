@@ -217,7 +217,7 @@ export default function MediaPresenter({ onExit }: MediaPresenterProps): React.J
       <PreviewCacheProvider pdfPageThumbs={pdfPageThumbs}>
         <div className="media-presenter h-full min-h-0 bg-surface" data-testid="media-presenter">
           <div className="flex h-full">
-            <div className="flex-3 lg:flex-2 min-w-0 flex flex-col h-full">
+            <div className="presenter-current flex-3 lg:flex-2 min-w-0 flex flex-col h-full">
               <PresenterHeader onExit={onExit} />
               <MediaPreview
                 currentItem={currentItem}
@@ -227,7 +227,6 @@ export default function MediaPresenter({ onExit }: MediaPresenterProps): React.J
                 onExit={onExit}
               />
               <MediaToolbar onToggleGrid={toggleGridWithMediaPause} />
-              <div className="flex-1" />
               <PresenterNavigation onNext={advance} />
             </div>
 

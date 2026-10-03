@@ -1262,6 +1262,8 @@
     "pdfLoadFailed": "无法加载 PDF"
   },
   "camera": {
+    "resetTitle": "重置取景？",
+    "resetBody": "位置与缩放将恢复默认值。",
     "title": "摄像头",
     "present": "开启投影",
     "presenting": "投影中",
