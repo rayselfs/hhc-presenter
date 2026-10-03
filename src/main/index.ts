@@ -1,6 +1,4 @@
 import { registerMediaPermissions } from './media-permissions'
-import { join } from 'node:path'
-import { getProjectionDiagnosticMode, recordProjectionDiagnostic } from './projectionDiagnostic'
 import { app, BrowserWindow, ipcMain, nativeTheme, protocol, session } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { WindowManager } from './windowManager'
@@ -56,12 +54,6 @@ process.on('unhandledRejection', (reason) => {
   console.error('[MAIN] Unhandled Rejection:', reason)
 })
 
-const projectionDiagnosticMode = getProjectionDiagnosticMode()
-if (projectionDiagnosticMode) {
-  app.setPath('userData', join(app.getPath('appData'), 'HHC Presenter Projection Diagnostic'))
-  app.setName('HHC Presenter Projection Diagnostic')
-}
-
 const wm = WindowManager.getInstance()
 const hhcAuthService = createHhcAuthService()
 let nativeMediaLeasesCleared = false
@@ -103,8 +95,7 @@ if (gotSingleInstanceLock) {
       console.warn('[MAIN] Failed to clear stale video remux files', error)
     })
     electronApp.setAppUserModelId('tw.org.alive.presenter')
-    if (!projectionDiagnosticMode) registerAppProtocol()
-    recordProjectionDiagnostic('app-ready')
+    registerAppProtocol()
 
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window)
@@ -151,7 +142,7 @@ if (gotSingleInstanceLock) {
     registerNativeMediaProtocol()
     registerMediaPermissions(session.defaultSession, () => wm.getMainWindow()?.webContents)
     wm.createMainWindow()
-    if (!projectionDiagnosticMode) registerUpdateService(wm)
+    registerUpdateService(wm)
 
     protocolDispatcher.dispatchArgv(process.argv)
 

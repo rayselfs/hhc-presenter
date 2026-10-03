@@ -1,7 +1,6 @@
 import { BrowserWindow, screen, app, shell } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
-import { getProjectionDiagnosticMode, recordProjectionDiagnostic } from './projectionDiagnostic'
 import type { IpcMainToRendererChannel, IpcMainToRendererMap } from '@shared/ipc-channels'
 import type {
   ProjectionLifecycleEvent,
@@ -92,12 +91,6 @@ export class WindowManager {
     screen.on('display-removed', () => {
       _cachedDisplay = undefined
     })
-
-    if (getProjectionDiagnosticMode()) {
-      screen.on('display-metrics-changed', () => {
-        recordProjectionDiagnostic('display-metrics-changed', this.projectionWindow ?? undefined)
-      })
-    }
 
     this.mainWindow = new BrowserWindow({
       width: 1200,
@@ -197,9 +190,7 @@ export class WindowManager {
       !reusableProjectionWindow.isDestroyed()
     ) {
       const generation = this.nextProjectionGeneration('opening', reason)
-      recordProjectionDiagnostic('before-reuse', reusableProjectionWindow)
       reusableProjectionWindow.showInactive()
-      recordProjectionDiagnostic('after-reuse', reusableProjectionWindow)
       return generation
     }
 
@@ -208,8 +199,6 @@ export class WindowManager {
     const hasSecondScreen = targetDisplay.id !== primaryDisplay.id
     const useMacSimpleFullscreen = process.platform === 'darwin' && hasSecondScreen
     const useWindowsNativeFullscreen = process.platform === 'win32' && hasSecondScreen
-    const diagnosticMode = useWindowsNativeFullscreen ? getProjectionDiagnosticMode() : undefined
-    const deferredFullscreen = diagnosticMode !== undefined && diagnosticMode !== 'baseline'
     this.projectionDisplayId = String(targetDisplay.id)
     const windowGeneration = this.nextProjectionGeneration(
       reason === 'renderer-crash' ? 'recovering' : 'opening',
@@ -217,13 +206,12 @@ export class WindowManager {
     )
     let hasFinishedInitialLoad = false
 
-    recordProjectionDiagnostic('before-create', undefined, targetDisplay)
     const projectionWindow = new BrowserWindow({
       width: hasSecondScreen ? targetDisplay.bounds.width : 800,
       height: hasSecondScreen ? targetDisplay.bounds.height : 600,
       x: targetDisplay.bounds.x,
       y: targetDisplay.bounds.y,
-      fullscreen: useWindowsNativeFullscreen && !deferredFullscreen,
+      fullscreen: false,
       enableLargerThanScreen: hasSecondScreen,
       frame: false,
       focusable: useMacSimpleFullscreen,
@@ -231,7 +219,7 @@ export class WindowManager {
       minimizable: false,
       maximizable: false,
       movable: false,
-      resizable: diagnosticMode === 'resize-after-fullscreen',
+      resizable: useWindowsNativeFullscreen,
       show: false,
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
@@ -242,18 +230,6 @@ export class WindowManager {
       },
       title: 'Projection'
     })
-    recordProjectionDiagnostic('after-create', projectionWindow, targetDisplay)
-    if (diagnosticMode) {
-      const record = (phase: string) => (): void => {
-        recordProjectionDiagnostic(phase, projectionWindow, targetDisplay)
-      }
-      projectionWindow.on('show', record('show'))
-      projectionWindow.on('hide', record('hide'))
-      projectionWindow.on('resize', record('resize'))
-      projectionWindow.on('move', record('move'))
-      projectionWindow.on('enter-full-screen', record('enter-full-screen'))
-      projectionWindow.on('leave-full-screen', record('leave-full-screen'))
-    }
     projectionWindow.setIgnoreMouseEvents(true)
     this.projectionWindow = projectionWindow
     this.guardTopLevelNavigation(projectionWindow)
@@ -298,22 +274,11 @@ export class WindowManager {
 
     projectionWindow.once('ready-to-show', () => {
       if (this.projectionWindow !== projectionWindow) return
-      recordProjectionDiagnostic('before-show', projectionWindow, targetDisplay)
       projectionWindow.showInactive()
-      recordProjectionDiagnostic('after-show', projectionWindow, targetDisplay)
-      if (deferredFullscreen) {
+      if (useWindowsNativeFullscreen) {
+        // Lock size after fullscreen; locking at construction can cap Windows bounds too early.
         projectionWindow.setFullScreen(true)
-        recordProjectionDiagnostic('after-fullscreen-request', projectionWindow, targetDisplay)
-        if (diagnosticMode === 'resize-after-fullscreen') {
-          projectionWindow.setResizable(false)
-          recordProjectionDiagnostic('after-resize-lock', projectionWindow, targetDisplay)
-        }
-      }
-      if (diagnosticMode) {
-        setTimeout(() => {
-          if (!projectionWindow.isDestroyed())
-            recordProjectionDiagnostic('settled', projectionWindow, targetDisplay)
-        }, 1000).unref()
+        projectionWindow.setResizable(false)
       }
       if (useMacSimpleFullscreen) {
         projectionWindow.setSimpleFullScreen(true)
