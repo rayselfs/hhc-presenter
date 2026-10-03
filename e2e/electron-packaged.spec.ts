@@ -478,7 +478,9 @@ test('persists generated document bytes through native storage', async ({
 })
 
 for (const mode of ['baseline', 'after-show', 'resize-after-fullscreen']) {
-  test(`Windows diagnostic ${mode} isolates the profile and records native geometry`, async () => {
+  test(`Windows diagnostic ${mode} isolates the profile and records native geometry`, async ({
+    browserName: _browserName
+  }, testInfo) => {
     test.skip(process.platform !== 'win32', 'Windows-only diagnostic')
     const configuredPath = process.env.PACKAGED_APP_PATH
     if (!configuredPath) throw new Error('PACKAGED_APP_PATH is required')
@@ -493,10 +495,15 @@ for (const mode of ['baseline', 'after-show', 'resize-after-fullscreen']) {
     await completeOnboarding(control)
     await control.getByTestId('btn-start').click()
     await expect.poll(() => electronApp?.windows().length ?? 0).toBe(2)
-    const pid = electronApp.process().pid
+    const pid = await electronApp.evaluate(() => process.pid)
     const logPath = join(diagnosticProfile, 'projection-diagnostics', `${mode}-${pid}.jsonl`)
     await expect.poll(async () => readFile(logPath, 'utf8')).toContain('after-show')
-    const records = (await readFile(logPath, 'utf8'))
+    const log = await readFile(logPath, 'utf8')
+    await testInfo.attach('projection-diagnostic.jsonl', {
+      body: Buffer.from(log),
+      contentType: 'application/x-ndjson'
+    })
+    const records = log
       .trim()
       .split('\n')
       .map((line) => JSON.parse(line))
