@@ -8,8 +8,14 @@ import { useCameraSession } from '@renderer/contexts/CameraSessionContext'
 import { useCameraStore } from '@renderer/stores/camera'
 import { SHORTCUTS } from '@renderer/config/shortcuts'
 import { useKeyboardShortcuts } from '@renderer/hooks/useKeyboardShortcuts'
-import { resizeCamera, createCameraCover, type CameraHandle } from '@renderer/lib/camera-transform'
+import {
+  resizeCamera,
+  createCameraCover,
+  CAMERA_STAGE,
+  type CameraHandle
+} from '@renderer/lib/camera-transform'
 import type { CameraTransform } from '@shared/camera'
+import { snapElementPosition } from '@renderer/lib/presentation-editor-commands'
 
 type Corner = CameraHandle
 const control =
@@ -41,6 +47,10 @@ export default function CameraWorkspacePage(): React.JSX.Element {
   const { t } = useTranslation()
   const camera = useCameraSession()
   const [resetOpen, setResetOpen] = useState(false)
+  const [snapGuides, setSnapGuides] = useState<{
+    verticalGuide?: number
+    horizontalGuide?: number
+  }>({})
   const { activeOwner, isProjectionOpen, startProjection } = useProjection()
   const projecting = activeOwner === 'camera' && isProjectionOpen
   const state = useCameraStore()
@@ -53,6 +63,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
     if (!camera.stream || state.locked || event.button !== 0) return
     event.preventDefault()
     event.stopPropagation()
+    setSnapGuides({})
     canvas.current?.focus({ preventScroll: true })
     canvas.current?.setPointerCapture(event.pointerId)
     drag.current = { x: event.clientX, y: event.clientY, frame: state.transform, corner }
@@ -78,7 +89,24 @@ export default function CameraWorkspacePage(): React.JSX.Element {
       state.updateTransform(
         resizeCamera(start.frame, start.corner, start.frame.width + delta, state.cover.width)
       )
-    } else state.updateTransform({ ...start.frame, x: start.frame.x + dx, y: start.frame.y + dy })
+    } else {
+      const { x, y, ...guides } = snapElementPosition(
+        { ...start.frame, x: start.frame.x + dx, y: start.frame.y + dy },
+        CAMERA_STAGE,
+        (8 * CAMERA_STAGE.width) / bounds.width
+      )
+      state.updateTransform({ ...start.frame, x, y })
+      setSnapGuides({
+        verticalGuide:
+          x === (CAMERA_STAGE.width - start.frame.width) / 2
+            ? CAMERA_STAGE.width / 2
+            : guides.verticalGuide,
+        horizontalGuide:
+          y === (CAMERA_STAGE.height - start.frame.height) / 2
+            ? CAMERA_STAGE.height / 2
+            : guides.horizontalGuide
+      })
+    }
   }
   useKeyboardShortcuts(
     Object.entries(SHORTCUTS.CAMERA).map(([key, config]) => ({
@@ -150,11 +178,17 @@ export default function CameraWorkspacePage(): React.JSX.Element {
         onPointerUp={(event) => {
           move(event)
           drag.current = null
+          setSnapGuides({})
           if (canvas.current?.hasPointerCapture(event.pointerId))
             canvas.current.releasePointerCapture(event.pointerId)
         }}
         onPointerCancel={() => {
           drag.current = null
+          setSnapGuides({})
+        }}
+        onLostPointerCapture={() => {
+          drag.current = null
+          setSnapGuides({})
         }}
       >
         <CameraStage
@@ -179,6 +213,30 @@ export default function CameraWorkspacePage(): React.JSX.Element {
               height: `${(state.transform.height / 1080) * 100}%`
             }}
           ></div>
+        )}
+        {camera.stream && !state.locked && snapGuides.verticalGuide !== undefined && (
+          <span
+            aria-hidden="true"
+            data-testid="camera-guide-vertical"
+            className="pointer-events-none absolute inset-y-0 w-px border-l border-dashed border-fuchsia-400"
+            style={{
+              left: `${(snapGuides.verticalGuide / CAMERA_STAGE.width) * 100}%`,
+              transform:
+                snapGuides.verticalGuide === CAMERA_STAGE.width ? 'translateX(-100%)' : undefined
+            }}
+          />
+        )}
+        {camera.stream && !state.locked && snapGuides.horizontalGuide !== undefined && (
+          <span
+            aria-hidden="true"
+            data-testid="camera-guide-horizontal"
+            className="pointer-events-none absolute inset-x-0 h-px border-t border-dashed border-fuchsia-400"
+            style={{
+              top: `${(snapGuides.horizontalGuide / CAMERA_STAGE.height) * 100}%`,
+              transform:
+                snapGuides.horizontalGuide === CAMERA_STAGE.height ? 'translateY(-100%)' : undefined
+            }}
+          />
         )}
         {camera.stream && state.locked && (
           <div
@@ -231,6 +289,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
             disabled={!camera.stream && !state.locked}
             onClick={() => {
               drag.current = null
+              setSnapGuides({})
               useCameraStore.setState({ locked: !state.locked })
             }}
           >
