@@ -200,6 +200,32 @@ describe('TimerPage — TimeInputPopover gating', () => {
 })
 
 describe('TimerPage — projection ownership', () => {
+  it.each(
+    (['camera', 'bible', 'media'] as const).flatMap((owner) =>
+      (['timer', 'clock', 'stopwatch'] as const).map((mode) => ({ owner, mode }))
+    )
+  )(
+    'sends a complete $mode snapshot when returning from $owner with no running countdown',
+    ({ owner, mode }) => {
+      const send = vi.fn()
+      vi.mocked(useProjection).mockReturnValue({
+        ...useProjection(),
+        isProjectionOpen: true,
+        activeOwner: owner,
+        send
+      })
+      useTimerStore.setState({ mode, status: 'stopped' })
+      useStopwatchStore.setState({ showOnProjection: true })
+      renderTimerPage()
+      expect(send).toHaveBeenCalledWith('timer:tick', expect.objectContaining({ mode }))
+      expect(send).toHaveBeenCalledWith('settings:timezone', expect.any(Object))
+      expect(send).toHaveBeenCalledWith('settings:timer-ring-color', expect.any(Object))
+      if (mode === 'stopwatch') {
+        expect(send).toHaveBeenCalledWith('timer:stopwatch', expect.any(Object))
+      }
+    }
+  )
+
   it('claims timer ownership with unblank when projection opens while timer is running', () => {
     const mockClaimProjection = vi.fn()
 

@@ -192,6 +192,7 @@ test('keeps camera projection across navigation, explicitly reclaims it, and pre
   await lock.click()
   await page.locator('nav a[href="#/timer"]').click()
   await expect(projection.getByTestId('camera-projection')).toHaveCount(0)
+  await expect(projection.locator('.timer-digits').first()).toBeVisible()
   expect(projection.isClosed()).toBe(false)
   await expect
     .poll(() =>
