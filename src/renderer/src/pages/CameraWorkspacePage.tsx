@@ -1,6 +1,7 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Lock, LockOpen, Monitor } from 'lucide-react'
+import { Lock, LockOpen, Monitor, RotateCcw } from 'lucide-react'
+import { AlertDialog, Button } from '@heroui/react'
 import CameraStage from '@renderer/components/Common/CameraStage'
 import { useProjection } from '@renderer/contexts/ProjectionContext'
 import { useCameraSession } from '@renderer/contexts/CameraSessionContext'
@@ -39,6 +40,7 @@ function cameraDimensions(width: number, height: number): void {
 export default function CameraWorkspacePage(): React.JSX.Element {
   const { t } = useTranslation()
   const camera = useCameraSession()
+  const [resetOpen, setResetOpen] = useState(false)
   const { activeOwner, isProjectionOpen, startProjection } = useProjection()
   const projecting = activeOwner === 'camera' && isProjectionOpen
   const state = useCameraStore()
@@ -98,6 +100,17 @@ export default function CameraWorkspacePage(): React.JSX.Element {
   )
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-4" aria-label={t('camera.title')}>
+      <div className="flex shrink-0 justify-center">
+        <button
+          type="button"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-danger px-6 py-2 font-semibold text-danger-foreground disabled:opacity-50"
+          disabled={!state.capturing || projecting}
+          onClick={() => void startProjection('camera')}
+        >
+          <Monitor size={16} aria-hidden="true" />
+          {t(projecting ? 'camera.presenting' : 'camera.present')}
+        </button>
+      </div>
       {state.error && (
         <div
           role="alert"
@@ -129,7 +142,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
         style={{
           aspectRatio: '16 / 9',
           height: 'auto',
-          width: 'min(100%, max(320px, calc((100dvh - 180px) * 16 / 9)))',
+          width: 'min(100%, max(320px, calc((100dvh - 250px) * 16 / 9)))',
           alignSelf: 'center'
         }}
         onPointerDown={(event) => begin(event)}
@@ -207,58 +220,80 @@ export default function CameraWorkspacePage(): React.JSX.Element {
             </button>
           ))}
       </div>
-      <div className="flex flex-wrap items-center justify-end gap-4">
-        <button
-          type="button"
-          className={`${control} inline-flex items-center gap-2`}
-          disabled={!state.capturing || projecting}
-          onClick={() => void startProjection('camera')}
-        >
-          <Monitor size={16} aria-hidden="true" />
-          {t(projecting ? 'camera.presenting' : 'camera.present')}
-        </button>
-        <button
-          type="button"
-          className={`${control} inline-flex items-center gap-2 aria-pressed:border-accent aria-pressed:text-accent`}
-          aria-pressed={state.locked}
-          disabled={!camera.stream && !state.locked}
-          onClick={() => {
-            drag.current = null
-            useCameraStore.setState({ locked: !state.locked })
-          }}
-        >
-          <LockIcon size={16} aria-hidden="true" />
-          {t(state.locked ? 'camera.unlock' : 'camera.lock')}
-        </button>
-        <button
-          className={control}
-          disabled={!camera.stream || state.locked}
-          onClick={camera.reset}
-        >
-          {t('camera.reset')}
-        </button>
-        {(['x', 'y', 'width'] as const).map((key) => (
-          <label key={key} className="flex items-center gap-2 text-sm">
-            {t(`camera.${key}`)}
-            <input
-              className={`${control} w-28`}
-              type="number"
-              step="1"
-              disabled={!camera.stream || state.locked}
-              value={Math.round(state.transform[key])}
-              onChange={(event) => {
-                if (!event.target.value) return
-                const value = Number(event.target.value)
-                state.updateTransform(
-                  key === 'width'
-                    ? resizeCamera(state.transform, 'se', value, state.cover.width)
-                    : { ...state.transform, [key]: value }
-                )
-              }}
-            />
-          </label>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className={`${control} inline-flex items-center gap-2 aria-pressed:border-accent aria-pressed:text-accent`}
+            aria-label={t(state.locked ? 'camera.unlock' : 'camera.lock')}
+            title={t(state.locked ? 'camera.unlock' : 'camera.lock')}
+            aria-pressed={state.locked}
+            disabled={!camera.stream && !state.locked}
+            onClick={() => {
+              drag.current = null
+              useCameraStore.setState({ locked: !state.locked })
+            }}
+          >
+            <LockIcon size={20} aria-hidden="true" />
+          </button>
+          <button
+            className={control}
+            disabled={!camera.stream || state.locked}
+            aria-label={t('camera.reset')}
+            title={t('camera.reset')}
+            onClick={() => setResetOpen(true)}
+          >
+            <RotateCcw size={20} aria-hidden="true" />
+          </button>
+        </div>
+        <div className="ml-auto flex flex-wrap justify-end gap-3">
+          {(['x', 'y', 'width'] as const).map((key) => (
+            <label key={key} className="flex items-center gap-2 text-sm">
+              {t(`camera.${key}`)}
+              <input
+                className={`${control} w-28`}
+                type="number"
+                step="1"
+                disabled={!camera.stream || state.locked}
+                value={Math.round(state.transform[key])}
+                onChange={(event) => {
+                  if (!event.target.value) return
+                  const value = Number(event.target.value)
+                  state.updateTransform(
+                    key === 'width'
+                      ? resizeCamera(state.transform, 'se', value, state.cover.width)
+                      : { ...state.transform, [key]: value }
+                  )
+                }}
+              />
+            </label>
+          ))}
+        </div>
       </div>
+      <AlertDialog.Backdrop isOpen={resetOpen} onOpenChange={setResetOpen}>
+        <AlertDialog.Container size="sm">
+          <AlertDialog.Dialog role="alertdialog">
+            <AlertDialog.Header>
+              <AlertDialog.Heading>{t('camera.resetTitle')}</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>{t('camera.resetBody')}</AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button variant="tertiary" onPress={() => setResetOpen(false)}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="danger"
+                onPress={() => {
+                  if (camera.stream && !useCameraStore.getState().locked) camera.reset()
+                  setResetOpen(false)
+                }}
+              >
+                {t('common.confirm')}
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
     </section>
   )
 }

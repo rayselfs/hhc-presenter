@@ -1034,6 +1034,21 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
         onChange={(e) => void handleFolderChange(e)}
       />
       <FileExplorerShell
+        actionContent={
+          <FileExplorerFAB
+            onUploadFiles={handleUploadFiles}
+            onUploadFolder={handleUploadFolder}
+            onCreatePresentation={handleCreatePresentation}
+            onAddLocalSyncFolder={
+              canAddLocalSyncFolder ? () => void handleAddLocalSyncFolder() : undefined
+            }
+            onAddOneDrive={canAddOneDriveFolder ? () => void handleAddOneDrive() : undefined}
+            onAddHhcLine={canAddSyncSourceHere ? handleOpenHhcLinePicker : undefined}
+            isAddOneDriveDisabled={!hasOneDriveConnection}
+            isAddHhcLineDisabled={!canAddHhcLineFolder}
+            isReadOnly={isCurrentFolderReadOnly}
+          />
+        }
         itemCount={itemCount}
         selectedCount={selectedCount}
         endContent={cloud ? <PersonalCloudUsage /> : undefined}
@@ -1063,19 +1078,6 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
           isCurrentFolderReadOnly={isCurrentFolderReadOnly}
         />
       </FileExplorerShell>
-      <FileExplorerFAB
-        onUploadFiles={handleUploadFiles}
-        onUploadFolder={handleUploadFolder}
-        onCreatePresentation={handleCreatePresentation}
-        onAddLocalSyncFolder={
-          canAddLocalSyncFolder ? () => void handleAddLocalSyncFolder() : undefined
-        }
-        onAddOneDrive={canAddOneDriveFolder ? () => void handleAddOneDrive() : undefined}
-        onAddHhcLine={canAddSyncSourceHere ? handleOpenHhcLinePicker : undefined}
-        isAddOneDriveDisabled={!hasOneDriveConnection}
-        isAddHhcLineDisabled={!canAddHhcLineFolder}
-        isReadOnly={isCurrentFolderReadOnly}
-      />
       <CloudFolderPickerDialog
         provider={ONE_DRIVE_FOLDER_PICKER_PROVIDER}
         isOpen={isOneDrivePickerOpen}

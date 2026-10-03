@@ -70,7 +70,18 @@ vi.mock('@renderer/stores/file-explorer', () => ({
 }))
 
 vi.mock('@renderer/components/Control/FileExplorer', () => ({
-  FileExplorerShell: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  FileExplorerShell: ({
+    children,
+    actionContent
+  }: {
+    children: React.ReactNode
+    actionContent?: React.ReactNode
+  }) => (
+    <>
+      {children}
+      {actionContent}
+    </>
+  ),
   useFileContextMenu: () => ({
     showItemMenu: vi.fn(),
     showFolderMenu: vi.fn(),

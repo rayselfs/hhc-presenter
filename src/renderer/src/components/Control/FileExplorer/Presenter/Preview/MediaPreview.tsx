@@ -20,6 +20,7 @@ export default function MediaPreview({
   onNext
 }: MediaPreviewProps): React.JSX.Element {
   const { t } = useTranslation()
+  const stageRef = useRef<HTMLDivElement>(null)
   const previewBoxRef = useRef<HTMLDivElement>(null)
   const isDraggingRef = useRef(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -46,7 +47,7 @@ export default function MediaPreview({
     if (currentZoom <= 1) return
     isDraggingRef.current = true
     setIsDragging(true)
-    const rect = previewBoxRef.current?.getBoundingClientRect()
+    const rect = stageRef.current?.getBoundingClientRect()
     panDragStart.current = {
       x: e.clientX,
       y: e.clientY,
@@ -83,7 +84,7 @@ export default function MediaPreview({
   return (
     <div
       ref={previewBoxRef}
-      className="relative shrink-0 w-full overflow-hidden px-4"
+      className="presenter-preview relative min-h-0 flex-1 w-full overflow-hidden px-4"
       style={{
         userSelect: 'none',
         cursor:
@@ -95,10 +96,11 @@ export default function MediaPreview({
               ? 'pointer'
               : 'default'
       }}
-      onMouseDown={handlePanStart}
     >
       <div
-        className="aspect-video w-full overflow-hidden relative rounded-2xl bg-surface-secondary border border-default-300"
+        ref={stageRef}
+        onMouseDown={handlePanStart}
+        className="presenter-preview-stage aspect-video overflow-hidden relative rounded-2xl bg-surface-secondary border border-default-300"
         onClick={() => {
           if (isEnded) {
             onExit()
