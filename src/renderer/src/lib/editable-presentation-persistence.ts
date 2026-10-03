@@ -1,3 +1,8 @@
+import {
+  persistDraftRevision,
+  getPresentationDraft,
+  assertWritablePresentationFolder
+} from './presentation-drafts'
 import type { IDBPDatabase } from 'idb'
 import type { EditablePresentationDocument } from './editable-presentation'
 import { generateEditablePresentationThumbnail } from './editable-presentation'
@@ -35,6 +40,8 @@ export async function persistEditablePresentationRevision(
   write: EditablePresentationRevisionWrite,
   overrides: Partial<EditablePresentationPersistenceDependencies> = {}
 ): Promise<EditablePresentationRevisionResult> {
+  if (await persistDraftRevision(write.itemId, write.document, write.revision, write.catalogName))
+    return { revision: write.revision, mirrorWarnings: [] }
   const dependencies = { ...defaultDependencies, ...overrides }
   const body = JSON.stringify(write.document)
   const blob = new Blob([body], { type: EDITABLE_PRESENTATION_MIME_TYPE })
@@ -75,7 +82,7 @@ export async function persistEditablePresentationRevision(
     }
     return { revision: write.revision, mirrorWarnings: [] }
   }
-  const tx = db.transaction(['file-blobs', 'folder-items'], 'readwrite')
+  const tx = db.transaction(['file-blobs', 'folder-items', 'folder-records'], 'readwrite')
   const sourceStore = tx.objectStore('file-blobs')
   const catalogStore = tx.objectStore('folder-items')
   const [source, item] = await Promise.all([
@@ -91,6 +98,13 @@ export async function persistEditablePresentationRevision(
     tx.abort()
     await tx.done.catch(() => undefined)
     throw new Error(`Editable presentation catalog item is missing: ${write.itemId}`)
+  }
+  try {
+    assertWritablePresentationFolder(item.parentId, await tx.objectStore('folder-records').getAll())
+  } catch (error) {
+    tx.abort()
+    await tx.done.catch(() => undefined)
+    throw error
   }
   const storedRevision = source.revision ?? 0
   if (write.revision <= storedRevision) {
@@ -122,6 +136,7 @@ export async function persistEditablePresentationRevision(
 export async function refreshEditablePresentationThumbnail(
   document: EditablePresentationDocument
 ): Promise<void> {
+  if (await getPresentationDraft(document.id)) return
   const thumbnail = generateEditablePresentationThumbnail(document)
   await saveThumbnail(document.id, thumbnail)
   window.dispatchEvent(

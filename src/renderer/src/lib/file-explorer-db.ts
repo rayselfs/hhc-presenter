@@ -1,3 +1,4 @@
+import type { PresentationDraftRecord } from './presentation-drafts'
 import type { DBSchema, IDBPDatabase } from 'idb'
 import { openDB, unwrap } from 'idb'
 import type { AnyItemRecord, FolderRecord } from '@shared/types/folder'
@@ -30,6 +31,7 @@ export interface ResourceCleanupJournalRecord {
 }
 
 export interface FileExplorerDBSchema extends DBSchema {
+  'presentation-drafts': { key: string; value: PresentationDraftRecord }
   'personal-sync-outbox': {
     key: string
     value: PersonalOutboxRecord
@@ -65,7 +67,7 @@ export interface FileExplorerDBSchema extends DBSchema {
 }
 
 const DB_NAME = 'hhc-file-explorer'
-export const FILE_EXPLORER_DB_VERSION = 6
+export const FILE_EXPLORER_DB_VERSION = 7
 
 let fileExplorerDBPromise: Promise<IDBPDatabase<FileExplorerDBSchema>> | null = null
 
@@ -73,6 +75,8 @@ function getFileExplorerDB(): Promise<IDBPDatabase<FileExplorerDBSchema>> {
   if (!fileExplorerDBPromise) {
     fileExplorerDBPromise = openDB<FileExplorerDBSchema>(DB_NAME, FILE_EXPLORER_DB_VERSION, {
       upgrade(db, oldVersion, _newVersion, tx) {
+        if (!db.objectStoreNames.contains('presentation-drafts'))
+          db.createObjectStore('presentation-drafts', { keyPath: 'id' })
         if (!db.objectStoreNames.contains('personal-sync-outbox')) {
           db.createObjectStore('personal-sync-outbox', { keyPath: 'id' }).createIndex(
             'by-owner',

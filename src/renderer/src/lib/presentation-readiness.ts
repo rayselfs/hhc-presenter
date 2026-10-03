@@ -1,3 +1,4 @@
+import { getPresentationDraft, PRESENTATION_DRAFT_PARENT } from './presentation-drafts'
 import type { FileItemRecord } from '@shared/types/folder'
 import { getBlobId } from './blob-identity'
 import { isElectron } from './env'
@@ -170,6 +171,8 @@ async function analyzePresentationItem(
     }
   }
 
+  if (item.parentId === PRESENTATION_DRAFT_PARENT && (await getPresentationDraft(item.id)))
+    return { itemId: item.id, blobId, status: 'ready', reason: 'ready-draft', support: 'native' }
   const syncEntry = await getSyncEntryByLocalItem(item.id)
   if (syncEntry && syncEntry.status !== 'available-offline') {
     const connection = await getProviderConnection(syncEntry.providerConnectionId)

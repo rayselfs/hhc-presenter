@@ -622,6 +622,14 @@
     }
   },
   "presentationWorkspace": {
+    "saveDraftTitle": "Save presentation",
+    "draftName": "Name",
+    "draftLocation": "Location",
+    "localFiles": "Local files",
+    "unsavedTitle": "Save this presentation?",
+    "unsavedBody": "This copy has no saved location. Save it, discard it, or keep editing.",
+    "recoveredDrafts": "Unsaved presentations",
+    "recoveryFailed": "Unable to load recovered presentations",
     "title": "Presentation Workspace",
     "subtitle": "Open and arrange PPTX decks",
     "home": "Home",

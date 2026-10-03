@@ -8,7 +8,8 @@ import {
   type CloseDecision
 } from '@renderer/contexts/PresentationCloseDecisionContext'
 
-vi.mock('react-i18next', () => ({
+vi.mock('react-i18next', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('react-i18next')>()),
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key })
 }))
 

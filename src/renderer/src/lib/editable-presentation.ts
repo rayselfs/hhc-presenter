@@ -1,3 +1,9 @@
+import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
+import {
+  createPresentationDraft,
+  getPresentationDraft,
+  isReadonlyPresentationSource
+} from './presentation-drafts'
 import { getBlobId } from './blob-identity'
 import { openFileExplorerDB } from './file-explorer-db'
 import { EDITABLE_PRESENTATION_MIME_TYPE } from './presentation-media'
@@ -1021,6 +1027,7 @@ export async function createEditablePresentation(
 export async function convertPptxToEditablePresentation(
   item: FileItemRecord
 ): Promise<FileItemRecord> {
+  const ownerId = usePersonalSyncStore.getState().activeOwnerId
   const buffer = await readPresentationArrayBuffer(item)
   const { parseZip, buildPresentation, materializeAllSlideNodes, RECOMMENDED_ZIP_LIMITS } =
     await import('@aiden0z/pptx-renderer')
@@ -1028,6 +1035,9 @@ export async function convertPptxToEditablePresentation(
   const presentation = buildPresentation(files)
   materializeAllSlideNodes(presentation)
   const document = convertPresentationData(item, presentation)
+  if (ownerId !== usePersonalSyncStore.getState().activeOwnerId)
+    throw new Error('Personal account changed')
+  if (await isReadonlyPresentationSource(item)) return createPresentationDraft(item, document)
   return createEditablePresentationItem(document, item.parentId)
 }
 
@@ -1749,6 +1759,8 @@ function stripPresentationExtension(name: string): string {
 export async function loadEditablePresentationSnapshot(
   source: EditablePresentationSource
 ): Promise<EditablePresentationSnapshot> {
+  const draft = await getPresentationDraft(source.id)
+  if (draft) return { document: draft.document, revision: draft.revision }
   const blobId = getBlobId(source)
   const db = await openFileExplorerDB()
   const record = await db.get('file-blobs', blobId)

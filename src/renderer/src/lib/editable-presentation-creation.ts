@@ -1,3 +1,8 @@
+import { hasNameConflict } from './file-naming'
+import {
+  assertWritablePresentationFolder,
+  assertPresentationDraftPromotion
+} from './presentation-drafts'
 import type { FileItemRecord } from '@shared/types/folder'
 import { openFileExplorerDB, type FileExplorerDBSchema } from './file-explorer-db'
 import {
@@ -16,6 +21,8 @@ export interface EditablePresentationCreationInput {
   item: FileItemRecord
   blob: Blob
   thumbnail: string
+  draftId?: string
+  draftRevision?: number
 }
 
 interface EditablePresentationCreationDependencies {
@@ -47,6 +54,7 @@ export async function persistEditablePresentationCreation(
 
   try {
     const db = await dependencies.openFileExplorerDB()
+    assertWritablePresentationFolder(input.item.parentId, await db.getAll('folder-records'))
     const parent = await db.get('folder-records', input.item.parentId)
     if (parent?.personalOwnerId) {
       const ownerId = parent.personalOwnerId
@@ -61,6 +69,9 @@ export async function persistEditablePresentationCreation(
       await commitPersonalFileMutation(
         {
           ownerId,
+          presentationDraft: input.draftId
+            ? { id: input.draftId, revision: input.draftRevision }
+            : undefined,
           nodeId: item.id,
           remoteId: item.id,
           localRevision: 1,
@@ -81,23 +92,56 @@ export async function persistEditablePresentationCreation(
         usePersonalSyncStore.setState({ syncStatus: 'pending', errorCode: null })
         window.dispatchEvent(new CustomEvent('hhc:personal-sync', { detail: ownerId }))
       }
+      if (input.draftId)
+        await db.delete('presentation-drafts', input.draftId).catch(() => undefined)
       return
     }
-    const tx = db.transaction(['file-blobs', 'folder-items'], 'readwrite')
+    const tx = db.transaction(
+      ['file-blobs', 'folder-items', 'folder-records', 'presentation-drafts'],
+      'readwrite'
+    )
+    try {
+      assertWritablePresentationFolder(
+        input.item.parentId,
+        await tx.objectStore('folder-records').getAll()
+      )
+      if (input.draftId) {
+        const siblings = await tx
+          .objectStore('folder-items')
+          .index('by-parent')
+          .getAll(input.item.parentId)
+        if (
+          hasNameConflict(
+            input.item.name,
+            siblings
+              .filter((entry) => entry.type === 'file' && !entry.deletedAt)
+              .map((entry) => (entry.type === 'file' ? entry.name : ''))
+          )
+        )
+          throw new Error('A file with this name already exists')
+        const draft = await tx.objectStore('presentation-drafts').get(input.draftId)
+        assertPresentationDraftPromotion(draft, input.draftRevision)
+      }
+    } catch (error) {
+      tx.abort()
+      await tx.done.catch(() => undefined)
+      throw error
+    }
     await Promise.all([
-      tx.objectStore('file-blobs').put({
+      tx.objectStore('file-blobs').add({
         id: input.item.id,
         blob: input.blob,
         size: input.blob.size,
         refCount: 1
       }),
-      tx.objectStore('folder-items').put(input.item)
+      tx.objectStore('folder-items').add(input.item)
     ])
     await tx.done
     catalogCommitted = true
 
     await dependencies.saveThumbnail(input.item.id, input.thumbnail)
     dependencies.publishItem(input.item)
+    if (input.draftId) await db.delete('presentation-drafts', input.draftId).catch(() => undefined)
   } catch (error) {
     dependencies.removeItem(input.item.id)
     if (catalogCommitted) {

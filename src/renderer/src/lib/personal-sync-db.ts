@@ -1,3 +1,7 @@
+import {
+  assertWritablePresentationFolder,
+  assertPresentationDraftPromotion
+} from './presentation-drafts'
 import type {
   PersonalMutationRequest,
   PersonalQuotaExceededData,
@@ -69,6 +73,7 @@ export interface PersonalOutboxRecord {
 }
 
 export interface PersonalLocalMutationWrite {
+  presentationDraft?: { id: string; revision?: number }
   ownerId: string
   nodeId: string
   remoteId: string
@@ -164,6 +169,7 @@ export async function commitPersonalLocalMutation(
   const tx = db.transaction(
     [
       'file-blobs',
+      'presentation-drafts',
       'folder-records',
       'folder-items',
       'personal-sync-nodes',
@@ -174,6 +180,10 @@ export async function commitPersonalLocalMutation(
     'readwrite'
   )
   try {
+    if (write.presentationDraft) {
+      const draft = await tx.objectStore('presentation-drafts').get(write.presentationDraft.id)
+      assertPresentationDraftPromotion(draft, write.presentationDraft.revision)
+    }
     const nodes = tx.objectStore('personal-sync-nodes')
     const states = tx.objectStore('personal-sync-state')
     const [node, state] = await Promise.all([nodes.get(write.nodeId), states.get(write.ownerId)])
@@ -189,6 +199,17 @@ export async function commitPersonalLocalMutation(
       write.mutation.type === 'create-file' || write.mutation.type === 'create-folder'
     if (isCreate === Boolean(node) || (node && node.kind !== (isFile ? 'file' : 'folder'))) {
       throw new Error('Personal mutation does not match the existing node')
+    }
+    if (
+      'mimeType' in write.catalog &&
+      write.catalog.mimeType === EDITABLE_PRESENTATION_MIME_TYPE &&
+      ['create-file', 'replace-content'].includes(write.mutation.type)
+    ) {
+      assertWritablePresentationFolder(
+        write.catalog.parentId,
+        await tx.objectStore('folder-records').getAll(),
+        write.ownerId
+      )
     }
     const existingCatalog = await tx
       .objectStore(isFile ? 'folder-items' : 'folder-records')
