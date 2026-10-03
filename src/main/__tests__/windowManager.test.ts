@@ -39,6 +39,7 @@ const { FakeBrowserWindow } = vi.hoisted(() => {
     hide = vi.fn()
     setIgnoreMouseEvents = vi.fn()
     setFullScreen = vi.fn()
+    setResizable = vi.fn()
     setSimpleFullScreen = vi.fn()
     setFocusable = vi.fn()
     maximize = vi.fn()
@@ -97,6 +98,7 @@ vi.mock('@electron-toolkit/utils', () => ({
   is: { dev: false }
 }))
 
+import { screen } from 'electron'
 import { WindowManager } from '../windowManager'
 import { optimizer } from '@electron-toolkit/utils'
 
@@ -223,28 +225,66 @@ describe('WindowManager', () => {
       y: 0,
       show: false,
       frame: false,
-      fullscreen: process.platform === 'win32',
+      fullscreen: false,
       enableLargerThanScreen: true,
       focusable: process.platform === 'darwin',
       fullscreenable: process.platform === 'win32',
       minimizable: false,
       maximizable: false,
       movable: false,
-      resizable: false
+      resizable: process.platform === 'win32'
     })
     expect(projection.setIgnoreMouseEvents).toHaveBeenCalledWith(true)
   })
 
-  it('uses native fullscreen for a Windows external projection display', () => {
+  it('locks Windows projection size only after entering fullscreen', () => {
     Object.defineProperty(process, 'platform', { value: 'win32' })
     const wm = WindowManager.getInstance()
-
     wm.createProjectionWindow('2')
-
-    expect(FakeBrowserWindow.instances[0].options).toMatchObject({
-      fullscreen: true,
-      fullscreenable: true
+    const projection = FakeBrowserWindow.instances[0]
+    expect(projection.options).toMatchObject({
+      fullscreen: false,
+      fullscreenable: true,
+      resizable: true
     })
+    expect(projection.setResizable).not.toHaveBeenCalled()
+    projection.emitOnce('ready-to-show')
+    expect(projection.setFullScreen).toHaveBeenCalledWith(true)
+    expect(projection.setResizable).toHaveBeenCalledWith(false)
+    expect(projection.showInactive.mock.invocationCallOrder[0]).toBeLessThan(
+      projection.setFullScreen.mock.invocationCallOrder[0]
+    )
+    expect(projection.setFullScreen.mock.invocationCallOrder[0]).toBeLessThan(
+      projection.setResizable.mock.invocationCallOrder[0]
+    )
+    expect(projection.focus).not.toHaveBeenCalled()
+    expect(projection.setAlwaysOnTop).not.toHaveBeenCalled()
+  })
+
+  it('keeps the Windows primary-display preview out of fullscreen', () => {
+    Object.defineProperty(process, 'platform', { value: 'win32' })
+    const wm = WindowManager.getInstance()
+    wm.createMainWindow()
+    const invalidateDisplay = vi
+      .mocked(screen.on)
+      .mock.calls.find(([event]) => event === 'display-removed')![1] as () => void
+    invalidateDisplay()
+    const displays = screen.getAllDisplays()
+    vi.mocked(screen.getAllDisplays).mockReturnValue([screen.getPrimaryDisplay()])
+    wm.createProjectionWindow('1')
+    vi.mocked(screen.getAllDisplays).mockReturnValue(displays)
+    invalidateDisplay()
+    const projection = FakeBrowserWindow.instances[1]
+    expect(projection.options).toMatchObject({
+      width: 800,
+      height: 600,
+      fullscreen: false,
+      fullscreenable: false,
+      resizable: false
+    })
+    projection.emitOnce('ready-to-show')
+    expect(projection.setFullScreen).not.toHaveBeenCalled()
+    expect(projection.setResizable).not.toHaveBeenCalled()
   })
 
   it('uses macOS simple fullscreen without keeping projection always on top', () => {

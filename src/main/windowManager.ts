@@ -211,7 +211,7 @@ export class WindowManager {
       height: hasSecondScreen ? targetDisplay.bounds.height : 600,
       x: targetDisplay.bounds.x,
       y: targetDisplay.bounds.y,
-      fullscreen: useWindowsNativeFullscreen,
+      fullscreen: false,
       enableLargerThanScreen: hasSecondScreen,
       frame: false,
       focusable: useMacSimpleFullscreen,
@@ -219,7 +219,7 @@ export class WindowManager {
       minimizable: false,
       maximizable: false,
       movable: false,
-      resizable: false,
+      resizable: useWindowsNativeFullscreen,
       show: false,
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
@@ -275,6 +275,11 @@ export class WindowManager {
     projectionWindow.once('ready-to-show', () => {
       if (this.projectionWindow !== projectionWindow) return
       projectionWindow.showInactive()
+      if (useWindowsNativeFullscreen) {
+        // Lock size after fullscreen; locking at construction can cap Windows bounds too early.
+        projectionWindow.setFullScreen(true)
+        projectionWindow.setResizable(false)
+      }
       if (useMacSimpleFullscreen) {
         projectionWindow.setSimpleFullScreen(true)
         projectionWindow.setFocusable(false)
