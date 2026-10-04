@@ -214,6 +214,15 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
         return
       attemptedRevision = data.contentRevision
       attemptedGeneration = generation
+      coordinator.recordPlayback(generation, {
+        itemId: data.itemId,
+        phase: data.transport === 'play' ? 'playing' : 'paused',
+        currentTime: data.currentTime,
+        duration: data.duration,
+        isPlaying: data.transport === 'play',
+        isEnded: false,
+        volume: data.volume
+      })
       const show = coordinator.getSnapshot()!.media.show
       const mediaSnapshotId = useMediaProjectionStore.getState().snapshot?.id
       const isCurrent = (): boolean =>

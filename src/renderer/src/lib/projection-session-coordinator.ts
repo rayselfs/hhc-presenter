@@ -490,15 +490,8 @@ export function createProjectionSessionCoordinator(
       snapshot = {
         ...snapshot,
         media: {
-          show: { ...snapshot.media.show, playbackMode: 'vlc-embedded', playbackVariant: 'source' },
-          state: {
-            ...snapshot.media.state,
-            positionSeconds: data.currentTime,
-            durationSeconds: data.duration,
-            isPlaying: data.transport === 'play',
-            isEnded: false,
-            volume: data.volume
-          }
+          ...snapshot.media,
+          show: { ...snapshot.media.show, playbackMode: 'vlc-embedded', playbackVariant: 'source' }
         }
       }
       sendReplay(generation)

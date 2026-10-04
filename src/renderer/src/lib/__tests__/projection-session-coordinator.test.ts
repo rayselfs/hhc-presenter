@@ -608,6 +608,13 @@ describe('late video promotion', () => {
       transport: 'pause' as const,
       volume: 0.6
     }
+    coordinator.recordPlayback(1, {
+      ...playback,
+      phase: 'paused',
+      currentTime: error.currentTime,
+      isPlaying: false,
+      volume: error.volume
+    })
     return { coordinator, send, error }
   }
   it('promotes through replay while retaining newer pending controls', () => {

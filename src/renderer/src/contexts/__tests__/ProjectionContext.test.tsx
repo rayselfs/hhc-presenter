@@ -920,6 +920,55 @@ describe('late native decode recovery', () => {
       })
     )
   })
+  it('preserves controls acknowledged after the error while runtime preparation awaits', async () => {
+    let resolve!: (value: { status: string }) => void
+    runtime.mockReturnValue(
+      new Promise((done) => {
+        resolve = done
+      })
+    )
+    const { result, report } = await setup()
+    await act(async () => {
+      mockAdapter._trigger('file:playback-error', { ...report, transport: 'play', volume: 1 })
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(runtime).toHaveBeenCalledOnce()
+    await act(async () => {
+      result.current.send('file:control', { itemId: 'video-1', action: 'seek', value: 70 })
+      result.current.send('file:control', { itemId: 'video-1', action: 'pause' })
+      result.current.send('file:control', { itemId: 'video-1', action: 'volume', value: 0.2 })
+      mockAdapter._trigger('file:playback-state', {
+        itemId: 'video-1',
+        phase: 'paused',
+        currentTime: 70,
+        duration: 100,
+        isPlaying: false,
+        isEnded: false,
+        volume: 0.2
+      })
+      resolve({ status: 'ready' })
+      await Promise.resolve()
+    })
+    expect(result.current.getProjectionSnapshot()?.media.state).toMatchObject({
+      positionSeconds: 70,
+      isPlaying: false,
+      volume: 0.2
+    })
+    expect(mockAdapter.send).toHaveBeenLastCalledWith(
+      '__system:replay',
+      expect.objectContaining({
+        snapshot: expect.objectContaining({
+          media: expect.objectContaining({
+            state: expect.objectContaining({ positionSeconds: 70, isPlaying: false, volume: 0.2 })
+          })
+        })
+      })
+    )
+    expect(vi.mocked(mockAdapter.send).mock.calls.at(-1)?.[1]).not.toHaveProperty(
+      'pendingFileControls'
+    )
+  })
   it('reports an unavailable native file before initializing VLC', async () => {
     const { result, report } = await setup()
     vi.mocked(window.api.nativeFs.exists).mockResolvedValue(false)
