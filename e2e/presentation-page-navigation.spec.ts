@@ -84,7 +84,8 @@ for (const editable of [false, true]) {
           .poll(async () =>
             thumbnail.evaluate((element) => {
               const rendered = element.getBoundingClientRect()
-              const container = element.parentElement!.getBoundingClientRect()
+              const container = element.parentElement?.getBoundingClientRect()
+              if (!container) return false
               return (
                 rendered.width <= container.width + 1 && rendered.height <= container.height + 1
               )
