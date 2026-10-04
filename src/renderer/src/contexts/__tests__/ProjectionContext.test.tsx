@@ -779,7 +779,7 @@ describe('late native decode recovery', () => {
         }
       }
     })
-    useMediaProjectionStore.setState({ snapshot: null })
+    useMediaProjectionStore.setState({ snapshot: null, isEnded: false })
   })
   async function setup(): Promise<
     ReturnType<typeof renderProjection> & { report: ProjectionPayload<'file:playback-error'> }
@@ -984,6 +984,51 @@ describe('late native decode recovery', () => {
       result.current.send('file:show', show)
     })
     expect(result.current.vlcFailure).toBeNull()
+  })
+  it('does not recover over the end screen after last Next while runtime awaits', async () => {
+    let resolve!: (value: { status: string }) => void
+    runtime.mockReturnValue(
+      new Promise((done) => {
+        resolve = done
+      })
+    )
+    const { result, report } = await setup()
+    const store = useMediaProjectionStore.getState()
+    store.startPresentation(
+      [
+        {
+          id: 'video-1',
+          name: 'video.mp4',
+          mimeType: 'video/mp4',
+          type: 'file',
+          sortIndex: 0,
+          parentId: 'root',
+          size: 1024,
+          url: 'blob:blob-1',
+          createdAt: 0,
+          expiresAt: null
+        }
+      ],
+      0
+    )
+    const snapshot = useMediaProjectionStore.getState().snapshot!
+    await act(async () => {
+      mockAdapter._trigger('file:playback-error', report)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(runtime).toHaveBeenCalledOnce()
+    vi.mocked(mockAdapter.send).mockClear()
+    await act(async () => {
+      store.next()
+      result.current.send('file:end', null)
+      resolve({ status: 'ready' })
+      await Promise.resolve()
+    })
+    expect(useMediaProjectionStore.getState().isEnded).toBe(true)
+    expect(useMediaProjectionStore.getState().snapshot).toBe(snapshot)
+    expect(result.current.getProjectionSnapshot()?.media.show?.playbackMode).toBe('native')
+    expect(mockAdapter.send).not.toHaveBeenCalledWith('__system:replay', expect.anything())
   })
   it('synchronizes the promoted snapshot for later file reprojection', async () => {
     const { result, report } = await setup()

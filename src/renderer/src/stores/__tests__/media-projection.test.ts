@@ -660,3 +660,13 @@ it('promotes only the exact current presentation snapshot and preserves its iden
     entries: [{ playbackMode: 'vlc-embedded', playbackVariant: 'source' }]
   })
 })
+
+it('rejects video engine promotion after the presentation ends', () => {
+  const store = useMediaProjectionStore.getState()
+  store.startPresentation([makeFile('video', 'video.mp4', 'video/mp4')], 0)
+  const snapshot = useMediaProjectionStore.getState().snapshot!
+  store.next()
+  expect(useMediaProjectionStore.getState().isEnded).toBe(true)
+  expect(store.promoteVideoPlayback(snapshot.id, 'video', 'video')).toBe(false)
+  expect(useMediaProjectionStore.getState().snapshot).toBe(snapshot)
+})

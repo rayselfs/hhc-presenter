@@ -230,7 +230,8 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
         adapter.getGeneration() === generation &&
         coordinator.isCurrentVideo(generation, data) &&
         coordinator.getSnapshot()?.media.show === show &&
-        useMediaProjectionStore.getState().snapshot?.id === mediaSnapshotId
+        useMediaProjectionStore.getState().snapshot?.id === mediaSnapshotId &&
+        (!mediaSnapshotId || !useMediaProjectionStore.getState().isEnded)
       const fail = (code: ProjectionVlcFailure['code'], message: string): void => {
         if (!isCurrent()) return
         playbackFailureRevisionRef.current = data.contentRevision

@@ -254,6 +254,7 @@ export function createProjectionSessionCoordinator(
     generation: 0,
     failure: null
   }
+  let mediaEnded = false
   let contentRevision = 0
   let replayedGeneration = 0
   let pendingFileControls: ProjectionPendingFileControls | null = null
@@ -306,6 +307,7 @@ export function createProjectionSessionCoordinator(
 
   const api: ProjectionSessionCoordinator = {
     startSession(owner, payloads) {
+      mediaEnded = false
       snapshot = createEmptySnapshot(owner)
       pendingFileControls = null
       for (const [channel, original] of payloads) {
@@ -385,6 +387,7 @@ export function createProjectionSessionCoordinator(
     project(channel, data) {
       if (!snapshot) return
       if (channel === 'file:show') {
+        mediaEnded = false
         data = { ...data, contentRevision: ++contentRevision }
       }
       if (channel === 'file:show') {
@@ -424,7 +427,10 @@ export function createProjectionSessionCoordinator(
     },
 
     sendOneShot(channel, data) {
-      if (channel === 'file:end') pendingFileControls = null
+      if (channel === 'file:end') {
+        mediaEnded = true
+        pendingFileControls = null
+      }
       if (recovery.status === 'ready') send(channel, data)
     },
 
@@ -474,6 +480,7 @@ export function createProjectionSessionCoordinator(
         recovery.status === 'ready' &&
         recovery.generation === generation &&
         snapshot?.owner === 'media' &&
+        !mediaEnded &&
         !snapshot.showDefault &&
         !snapshot.isBlackout &&
         show?.itemId === data.itemId &&
@@ -604,6 +611,7 @@ export function createProjectionSessionCoordinator(
     endSession() {
       const generation = recovery.generation
       snapshot = null
+      mediaEnded = false
       pendingFileControls = null
       replayedGeneration = 0
       recovery = { status: 'closed', generation: 0, failure: null }

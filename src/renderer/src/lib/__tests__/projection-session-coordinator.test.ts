@@ -639,6 +639,21 @@ describe('late video promotion', () => {
     coordinator.replay(1)
     expect(coordinator.getSnapshot()?.media.show?.playbackMode).toBe('vlc-embedded')
   })
+  it('invalidates recovery immediately on file:end without a media store', () => {
+    const { coordinator, send, error } = setup()
+    coordinator.sendOneShot('file:end', null)
+    send.mockClear()
+    expect(coordinator.isCurrentVideo(1, error)).toBe(false)
+    expect(coordinator.promoteVideo(1, error)).toBe(false)
+    expect(send).not.toHaveBeenCalled()
+    coordinator.project('file:show', fileShow)
+    expect(
+      coordinator.isCurrentVideo(1, {
+        ...error,
+        contentRevision: coordinator.getSnapshot()!.media.show!.contentRevision!
+      })
+    ).toBe(true)
+  })
   it.each(['restart', 'owner-aba', 'session', 'generation', 'item'] as const)(
     'rejects obsolete %s report',
     (change) => {

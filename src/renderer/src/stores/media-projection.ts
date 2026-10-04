@@ -288,6 +288,7 @@ export const useMediaProjectionStore = create<MediaProjectionStore>()((set, get)
     const entry = snapshot?.entries[state.currentIndex]
     if (
       !state.isPresenting ||
+      state.isEnded ||
       snapshot?.id !== snapshotId ||
       entry?.itemId !== itemId ||
       entry.blobId !== blobId ||
