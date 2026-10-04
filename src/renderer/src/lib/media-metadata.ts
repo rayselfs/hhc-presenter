@@ -42,26 +42,37 @@ async function readImageMetadata(url: string): Promise<DerivedAssetMetadata> {
   return { kind: 'image', width: image.naturalWidth, height: image.naturalHeight }
 }
 
-async function readVideoMetadata(url: string): Promise<DerivedAssetMetadata> {
+async function readVideoMetadata(url: string): Promise<DerivedAssetMetadata | null> {
   const video = document.createElement('video')
   video.preload = 'metadata'
-  const loaded = new Promise<void>((resolve, reject) => {
-    video.onloadedmetadata = () => resolve()
-    video.onerror = () => reject(new Error('Unable to read video metadata'))
-  })
-  video.src = url
-  await loaded
-  video.removeAttribute('src')
-  video.load()
-  return {
-    kind: 'video',
-    browserPlayback: 'playable',
-    width: video.videoWidth || undefined,
-    height: video.videoHeight || undefined,
-    durationMs:
-      Number.isFinite(video.duration) && video.duration > 0
-        ? Math.round(video.duration * 1000)
-        : undefined
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await new Promise<DerivedAssetMetadata | null>((resolve) => {
+      video.onloadedmetadata = () =>
+        resolve({
+          kind: 'video',
+          browserPlayback: 'playable',
+          width: video.videoWidth || undefined,
+          height: video.videoHeight || undefined,
+          durationMs:
+            Number.isFinite(video.duration) && video.duration > 0
+              ? Math.round(video.duration * 1000)
+              : undefined
+        })
+      video.onerror = () => {
+        const code = video.error?.code
+        resolve(code === 3 || code === 4 ? { kind: 'video', browserPlayback: 'unplayable' } : null)
+      }
+      // A stalled/network probe is inconclusive and must remain retryable.
+      timeout = setTimeout(() => resolve(null), 10_000)
+      video.src = url
+    })
+  } finally {
+    if (timeout !== undefined) clearTimeout(timeout)
+    video.onloadedmetadata = null
+    video.onerror = null
+    video.removeAttribute('src')
+    video.load()
   }
 }
 
@@ -99,7 +110,7 @@ async function loadSourceMediaMetadata(
       try {
         return await readVideoMetadata(url)
       } catch {
-        return { kind: 'video', browserPlayback: 'unplayable' }
+        return null
       }
     }
     if (mimeType === 'application/pdf') return readPdfMetadata(url)
