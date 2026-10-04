@@ -9,6 +9,7 @@ import {
 } from '../editable-presentation-creation'
 import { listResourceCleanupRecords } from '../resource-cleanup-journal'
 import { resetThumbnailDBForTests } from '../thumbnail-db'
+import { EDITABLE_PRESENTATION_MIME_TYPE } from '../presentation-media'
 
 const body = JSON.stringify({ id: 'deck-1', name: 'Sunday', updatedAt: 1 })
 const item: FileItemRecord = {
@@ -21,7 +22,7 @@ const item: FileItemRecord = {
   name: 'Sunday',
   url: 'blob:deck-1',
   size: body.length,
-  mimeType: 'application/x-hhc-presentation+json'
+  mimeType: EDITABLE_PRESENTATION_MIME_TYPE
 }
 const input: EditablePresentationCreationInput = {
   item,

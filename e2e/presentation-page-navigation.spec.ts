@@ -75,6 +75,24 @@ for (const editable of [false, true]) {
     }
     await page.keyboard.press('g')
     await expect(page.locator('[data-testid^="grid-slide-"]')).toHaveCount(10)
+    if (!editable) {
+      for (const width of [1024, 1366]) {
+        await page.setViewportSize({ width, height: 768 })
+        const thumbnail = page.getByTestId('grid-slide-0').locator('[data-pptx-thumbnail]')
+        await expect(thumbnail).toBeVisible()
+        await expect
+          .poll(async () =>
+            thumbnail.evaluate((element) => {
+              const rendered = element.getBoundingClientRect()
+              const container = element.parentElement!.getBoundingClientRect()
+              return (
+                rendered.width <= container.width + 1 && rendered.height <= container.height + 1
+              )
+            })
+          )
+          .toBe(true)
+      }
+    }
     await page.getByTestId('grid-slide-6').click()
     await expect(projection.getByText('Presenter page 7', { exact: true }).first()).toBeVisible()
     await page.keyboard.press('Home')

@@ -36,6 +36,7 @@ export default function PresentationGrid({ item }: { item: FileItemRecord }): Re
   const [viewer, setViewer] = useState<PptxViewerHandle | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [visible, setVisible] = useState<Set<number>>(new Set())
+  const mounted = useRef(false)
   const viewport = useRef<HTMLDivElement>(null)
   const viewerHost = useRef<HTMLDivElement>(null)
   const active = useMediaProjectionStore((state) => state.typeStates.presentation?.slideIndex ?? 0)
@@ -99,6 +100,7 @@ export default function PresentationGrid({ item }: { item: FileItemRecord }): Re
     const root = viewport.current
     if (!root || count < 1) return
     const handles = new Map<number, SlideHandle>()
+    const targets = new Map<number, HTMLElement>()
     let cancelled = false
     const update = (target: HTMLElement, showing: boolean): void => {
       if (cancelled) return
@@ -113,7 +115,12 @@ export default function PresentationGrid({ item }: { item: FileItemRecord }): Re
         return
       }
       if (showing && viewer && !handles.has(index)) {
-        const handle = viewer.viewer.renderThumbnailToContainer(index, target, { width: 256 })
+        targets.set(index, target)
+        resizeObserver.observe(target)
+        const width = target.clientWidth
+        const height = target.clientHeight
+        if (width <= 0 || height <= 0) return
+        const handle = viewer.viewer.renderThumbnailToContainer(index, target, { width, height })
         if (!handle) return
         handles.set(index, handle)
         void handle.ready.catch((failure: unknown) => {
@@ -121,11 +128,24 @@ export default function PresentationGrid({ item }: { item: FileItemRecord }): Re
             setError(failure instanceof Error ? failure.message : String(failure))
         })
       } else if (!showing) {
+        targets.delete(index)
+        resizeObserver.unobserve(target)
         handles.get(index)?.dispose()
         handles.delete(index)
         target.replaceChildren()
       }
     }
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const target = entry.target as HTMLElement
+        const index = Number(target.dataset.slideIndex)
+        if (cancelled || targets.get(index) !== target) continue
+        handles.get(index)?.dispose()
+        handles.delete(index)
+        target.replaceChildren()
+        update(target, true)
+      }
+    })
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) update(entry.target as HTMLElement, entry.isIntersecting)
@@ -138,13 +158,19 @@ export default function PresentationGrid({ item }: { item: FileItemRecord }): Re
     return () => {
       cancelled = true
       observer.disconnect()
+      resizeObserver.disconnect()
+      targets.clear()
       for (const handle of handles.values()) handle.dispose()
       handles.clear()
     }
   }, [count, document, viewer])
 
   useEffect(() => {
+    mounted.current = true
     viewport.current?.focus()
+    return () => {
+      mounted.current = false
+    }
   }, [])
   useEffect(() => {
     viewport.current
@@ -156,7 +182,8 @@ export default function PresentationGrid({ item }: { item: FileItemRecord }): Re
     const outcome = await resolveMediaProjectionAction(
       useMediaProjectionStore.getState().jumpToSlide(index)
     )
-    if (outcome.status === 'success') toggleGrid()
+    if (!mounted.current) return
+    if (outcome.status === 'success') useMediaProjectionStore.setState({ showGrid: false })
     else if (outcome.status === 'blocked')
       toast.danger(t('presentationWorkspace.saveFailed', 'Unable to save presentation'))
   }
@@ -226,7 +253,7 @@ export default function PresentationGrid({ item }: { item: FileItemRecord }): Re
             >
               <div
                 data-slide-index={index}
-                className="pointer-events-none h-full w-full overflow-hidden bg-white"
+                className="pointer-events-none flex h-full w-full items-center justify-center overflow-hidden bg-white"
               >
                 {document && visible.has(index) ? (
                   <EditableSlideSurface document={document} slideId={document.slideOrder[index]} />

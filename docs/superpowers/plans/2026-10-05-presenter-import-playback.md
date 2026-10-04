@@ -32,12 +32,12 @@
 
 **Interfaces:** Preserve public upload APIs and provider contracts. Derived jobs consume persisted source blob IDs with separate item IDs. Recovery consumes owner ID and exact failed operation identity under lease; any cancellation uses fresh validated scope and preserves a verified local backup.
 
-- [ ] Add failing tests for different item/blob IDs across cover/PDF/poster jobs; assert source bytes remain accessible.
-- [ ] Add failing tests for personal SVG, over-200-MiB and zero-byte imports rejected before outbox writes while local SVG remains supported; accepted batch entries still import.
-- [ ] Add picker failure/reselection tests. Implement per-file error reporting and guaranteed reset for both file/folder inputs.
-- [ ] Implement smallest policy and enrichment changes; run targeted tests.
-- [ ] Add recovery tests: quota explicit retry retains immutable request/id/snapshot; account/lease changes abort; permanent invalid file can only be cancelled after durable local backup with no submitted mutation/dependents; unsafe scope remains untouched and explains why. Finalize/flush editable sessions before fresh scope capture, then recheck pending editor work/save status after backup. Test blocked save and edits during backup preserve original catalog/outbox/blob refs.
-- [ ] Implement reason-specific status and guarded retry/backup cancellation. Never automatically discard or reorder dependent work. Run personal sync and import suites.
+- [x] Add failing tests for different item/blob IDs across cover/PDF/poster jobs; assert source bytes remain accessible.
+- [x] Add failing tests for personal SVG, over-200-MiB and zero-byte imports rejected before outbox writes while local SVG remains supported; accepted batch entries still import.
+- [x] Add picker failure/reselection tests. Implement per-file error reporting and guaranteed reset for both file/folder inputs.
+- [x] Implement smallest policy and enrichment changes; run targeted tests.
+- [x] Add recovery tests: quota explicit retry retains immutable request/id/snapshot; account/lease changes abort; permanent invalid file can only be cancelled after durable local backup with no submitted mutation/dependents; unsafe scope remains untouched and explains why. Finalize/flush editable sessions before fresh scope capture, then recheck pending editor work/save status after backup. Test blocked save and edits during backup preserve original catalog/outbox/blob refs.
+- [x] Implement reason-specific status and guarded retry/backup cancellation. Never automatically discard or reorder dependent work. Run personal sync and import suites.
 
 ## Task 2: Video routing and bounded metadata
 
@@ -45,10 +45,10 @@
 
 **Interfaces:** Existing metadata/readiness public interfaces remain compatible. Healthy native status stays unchanged; known-unplayable native-fs desktop video yields existing VLC source descriptor after runtime availability check.
 
-- [ ] Add failing tests for metadata captured before load-reset, error/timeout cleanup, uncertainty not cached as permanent unplayable, and later retry.
-- [ ] Implement bounded probe and cleanup with current derived metadata contracts.
-- [ ] Add tests for unplayable MP4/MOV fallback, healthy native avoiding VLC lookup, native storage/runtime failure and web rejection.
-- [ ] Implement guarded readiness routing; run metadata/readiness suites.
+- [x] Add failing tests for metadata captured before load-reset, error/timeout cleanup, uncertainty not cached as permanent unplayable, and later retry.
+- [x] Implement bounded probe and cleanup with current derived metadata contracts.
+- [x] Add tests for unplayable MP4/MOV fallback, healthy native avoiding VLC lookup, native storage/runtime failure and web rejection.
+- [x] Implement guarded readiness routing; run metadata/readiness suites.
 
 ## Task 3: Late video error recovery
 
@@ -69,12 +69,12 @@
 
 **Interfaces:** Add `jumpToSlide(index: number): MediaProjectionActionResult` to store, reusing editable preflight and generation guards. Preserve `jumpTo` file semantics. Page grid consumes current presentation count/index and the guarded action; use one shared PPTX viewer per deck, not one archive parse per page.
 
-- [ ] Test unknown/invalid count blocks Next/End without ending and presents unknown progress; resolving count permits page 2; final page still ends normally.
-- [ ] Test 10-page PPTX/lpdeck grid, page 7 selection, Home/End, blocked editable saves and superseded navigation; ordinary file grid unchanged.
-- [ ] Implement minimal store/page-grid changes, with loading/error state and bounded thumbnail work. Reuse editable document/session data for editable previews. Dispose slide handles and destroy the shared viewer on close/source switch. Ignore late ready/error from obsolete sources; test bounded active handles for a large deck and close-during-load cleanup.
-- [ ] Fix the E2E-reproduced open-session editable payload selecting the workspace page instead of presenter page; regression asserts different editor/presenter page selections and preserves workspace selection.
-- [ ] Add real ten-page PPTX browser test: import, page 1→10, projection page correspondence, G→7, Home/End, and converted editable navigation if supported by existing UI test helpers. Check delayed load and page errors.
-- [ ] Run relevant tests and browser E2E.
+- [x] Test unknown/invalid count blocks Next/End without ending and presents unknown progress; resolving count permits page 2; final page still ends normally.
+- [x] Test 10-page PPTX/lpdeck grid, page 7 selection, Home/End, blocked editable saves and superseded navigation; ordinary file grid unchanged.
+- [x] Implement minimal store/page-grid changes, with loading/error state and bounded thumbnail work. Reuse editable document/session data for editable previews. Dispose slide handles and destroy the shared viewer on close/source switch. Ignore late ready/error from obsolete sources; test bounded active handles for a large deck and close-during-load cleanup.
+- [x] Fix the E2E-reproduced open-session editable payload selecting the workspace page instead of presenter page; regression asserts different editor/presenter page selections and preserves workspace selection.
+- [x] Add real ten-page PPTX browser test: import, page 1→10, projection page correspondence, G→7, Home/End, and converted editable navigation if supported by existing UI test helpers. Check delayed load and page errors.
+- [x] Run relevant tests and browser E2E.
 
 ## Task 5: Independent review and delivery
 
@@ -90,3 +90,6 @@
 - Three read-only investigations completed against latest main. Existing presentation fixture conversion retained 22 slides; slide/store/grid targeted baseline: 81 tests passed. Cloud targeted baseline: 57 tests passed.
 - Initial unconstrained local suite hit a timing failure in existing Ribbon test under high system load; restart uses `--maxWorkers=2` to establish reliable baseline. No product change yet.
 - Independent review round 1 found content/session ABA identity missing, editable-cancellation unsaved work guards missing, and size-poisoning wording inaccurate. All corrected; explicit viewer cleanup/large-deck tests added. Independent re-review: clean, no remaining actionable plan defects; coordinator baseline 24/24 passed.
+
+- Task 1 cloud import/recovery and Task 2 metadata/readiness independently approved. Task 4 reviewed twice: responsive thumbnail containment and close-during-pending-navigation races fixed with failing-to-passing regressions (11 grid tests). Real ten-page PPTX and editable projection traversal passed before final responsive recheck.
+- Full integration initially found an old editable-creation test MIME (`application/x-hhc-presentation+json`); fixture now uses the canonical `EDITABLE_PRESENTATION_MIME_TYPE`, matching real producers and server policy.

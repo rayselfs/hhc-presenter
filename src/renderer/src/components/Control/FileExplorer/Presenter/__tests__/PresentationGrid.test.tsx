@@ -42,6 +42,7 @@ const item = {
   expiresAt: null
 }
 const originalJump = useMediaProjectionStore.getState().jumpToSlide
+let resizeCallback: ResizeObserverCallback
 let observerCallback: IntersectionObserverCallback
 let observed: Element[]
 let disposed: ReturnType<typeof vi.fn>[]
@@ -65,6 +66,19 @@ beforeEach(() => {
       disconnect = vi.fn()
     }
   )
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback
+      }
+      observe = vi.fn()
+      unobserve = vi.fn()
+      disconnect = vi.fn()
+    }
+  )
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(180)
+  vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(100)
   mocks.read.mockResolvedValue(new ArrayBuffer(0))
   mocks.render.mockImplementation((_index: number, container: HTMLElement) => {
     const dispose = vi.fn()
@@ -90,6 +104,7 @@ beforeEach(() => {
   })
 })
 afterEach(() => {
+  vi.restoreAllMocks()
   vi.unstubAllGlobals()
   useMediaProjectionStore.setState({ jumpToSlide: originalJump })
 })
@@ -102,6 +117,41 @@ function intersect(elements: Element[], visible: boolean): void {
 }
 
 describe('presentation page grid', () => {
+  it('fits thumbnails to the card and recreates only active handles after resize', async () => {
+    const { unmount } = render(<PresenterGrid />)
+    await waitFor(() => expect(observed).toHaveLength(10))
+    await act(async () => intersect(observed.slice(0, 1), true))
+    expect(mocks.render).toHaveBeenLastCalledWith(0, observed[0], { width: 180, height: 100 })
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(140)
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(75)
+    await act(async () =>
+      resizeCallback([{ target: observed[0] }] as ResizeObserverEntry[], {} as ResizeObserver)
+    )
+    expect(disposed[0]).toHaveBeenCalledOnce()
+    expect(mocks.render).toHaveBeenLastCalledWith(0, observed[0], { width: 140, height: 75 })
+    expect(mocks.render).toHaveBeenCalledTimes(2)
+    unmount()
+  })
+
+  it('does not reopen or close a newer grid when a pending page jump finishes', async () => {
+    let finish!: (result: { status: 'success' }) => void
+    useMediaProjectionStore.setState({
+      jumpToSlide: vi.fn(
+        () =>
+          new Promise<{ status: 'success' }>((resolve) => {
+            finish = resolve
+          })
+      )
+    })
+    const { unmount } = render(<PresenterGrid />)
+    fireEvent.click(await screen.findByTestId('grid-slide-6'))
+    act(() => useMediaProjectionStore.getState().toggleGrid())
+    unmount()
+    act(() => useMediaProjectionStore.getState().toggleGrid())
+    await act(async () => finish({ status: 'success' }))
+    expect(useMediaProjectionStore.getState().showGrid).toBe(true)
+  })
+
   it('shows every page and selecting page 7 retains the source file', async () => {
     render(<PresenterGrid />)
     await waitFor(() => expect(screen.getAllByTestId(/^grid-slide-/)).toHaveLength(10))
