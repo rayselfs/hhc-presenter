@@ -65,13 +65,14 @@
 
 ## Task 4: Presentation page controls
 
-**Files:** `renderer/src/stores/media-projection.ts`, `components/Control/FileExplorer/Presenter/PresenterGrid.tsx`, `MediaPresenter.tsx`, existing presentation preview helpers as needed, corresponding tests, `e2e/pptx-thumbnail.spec.ts` or focused new E2E file with generated real ten-page fixture.
+**Files:** `renderer/src/stores/media-projection.ts`, `components/Control/FileExplorer/Presenter/PresenterGrid.tsx`, `MediaPresenter.tsx`, `lib/media-projection-sync.ts` and its tests (open-session payload must use presenter slide index), existing presentation preview helpers as needed, corresponding tests, `e2e/pptx-thumbnail.spec.ts` or focused new E2E file with generated real ten-page fixture.
 
 **Interfaces:** Add `jumpToSlide(index: number): MediaProjectionActionResult` to store, reusing editable preflight and generation guards. Preserve `jumpTo` file semantics. Page grid consumes current presentation count/index and the guarded action; use one shared PPTX viewer per deck, not one archive parse per page.
 
 - [ ] Test unknown/invalid count blocks Next/End without ending and presents unknown progress; resolving count permits page 2; final page still ends normally.
 - [ ] Test 10-page PPTX/lpdeck grid, page 7 selection, Home/End, blocked editable saves and superseded navigation; ordinary file grid unchanged.
 - [ ] Implement minimal store/page-grid changes, with loading/error state and bounded thumbnail work. Reuse editable document/session data for editable previews. Dispose slide handles and destroy the shared viewer on close/source switch. Ignore late ready/error from obsolete sources; test bounded active handles for a large deck and close-during-load cleanup.
+- [ ] Fix the E2E-reproduced open-session editable payload selecting the workspace page instead of presenter page; regression asserts different editor/presenter page selections and preserves workspace selection.
 - [ ] Add real ten-page PPTX browser test: import, page 1→10, projection page correspondence, G→7, Home/End, and converted editable navigation if supported by existing UI test helpers. Check delayed load and page errors.
 - [ ] Run relevant tests and browser E2E.
 

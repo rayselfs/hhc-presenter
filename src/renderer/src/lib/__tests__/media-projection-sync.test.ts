@@ -1133,7 +1133,8 @@ describe('media projection sync', () => {
       playlist: [editable, other],
       currentIndex: 0,
       isPresenting: true,
-      isEnded: false
+      isEnded: false,
+      typeStates: { presentation: { slideIndex: 0, slideCount: 1 } }
     })
     const advanced = await useMediaProjectionStore.getState().next()
     expect(advanced).toEqual({ status: 'blocked' })
@@ -1601,4 +1602,46 @@ describe('media projection sync', () => {
       text: 'Replacement document content'
     })
   })
+})
+
+it('projects the presenter page even when the open editor remains on its first page', async () => {
+  const document = createBlankEditablePresentationDocument('Two pages')
+  const firstId = document.slideOrder[0]
+  document.slideOrder.push('second-page')
+  document.slides['second-page'] = {
+    ...document.slides[firstId],
+    id: 'second-page',
+    name: 'Page 2'
+  }
+  const session = {
+    getSnapshot: () => ({ history: { present: document } })
+  } as unknown as PresentationEditorSession
+  registryMocks.get.mockReturnValue(session)
+  usePresentationWorkspaceStore.getState().setActiveSlideId('editable-deck', firstId)
+  useMediaProjectionStore.setState({
+    playlist: [makeFile('editable-deck', 'Two pages.lpdeck', EDITABLE_PRESENTATION_MIME_TYPE)],
+    currentIndex: 0,
+    isPresenting: true,
+    typeStates: { presentation: { slideIndex: 0, slideCount: 2 } }
+  })
+  renderSync()
+  await waitFor(() => expect(mockStartProjection).toHaveBeenCalledOnce())
+  mockProject.mockClear()
+  act(() =>
+    useMediaProjectionStore
+      .getState()
+      .setTypeState('presentation', { slideIndex: 1, slideCount: 2 })
+  )
+  await waitFor(() =>
+    expect(mockProject).toHaveBeenCalledWith(
+      'file:show',
+      expect.objectContaining({
+        presentation: { slideIndex: 1, slideCount: 2 },
+        editablePresentation: expect.objectContaining({
+          slide: expect.objectContaining({ id: 'second-page' })
+        })
+      })
+    )
+  )
+  expect(usePresentationWorkspaceStore.getState().getActiveSlideId('editable-deck')).toBe(firstId)
 })

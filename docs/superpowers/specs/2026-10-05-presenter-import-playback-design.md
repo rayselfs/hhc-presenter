@@ -20,7 +20,7 @@ References: [electron-vlc-player](https://github.com/ssnangua/electron-vlc-playe
 
 ### Presentation pages
 
-Raw import retains the entire file; the existing real PPTX conversion fixture passes with 22 pages. The confirmed defects are that G lists files, unknown slide count lets Next end the one-file playlist before preview finishes loading, and Home/End select files instead of presentation pages. A persistent one-page render after complete loading has not yet been reproduced. PPT is unsupported; PDF uses its existing separate navigation and is not silently reclassified as PPTX.
+Raw import retains the entire file; the existing real PPTX conversion fixture passes with 22 pages. The confirmed defects are that G lists files, unknown slide count lets Next end the one-file playlist before preview finishes loading, and Home/End select files instead of presentation pages. The ten-page browser E2E subsequently reproduced persistent first-page projection for an open editable session: the operator advanced to page 2 while `media-projection-sync.ts` built the projection payload from the editor workspace active slide. The presenter page state must be authoritative for this explicit projection navigation; workspace selection remains unchanged. PPT is unsupported; PDF uses its existing separate navigation and is not silently reclassified as PPTX.
 
 ## Required behavior
 

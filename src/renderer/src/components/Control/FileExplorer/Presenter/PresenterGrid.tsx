@@ -10,6 +10,8 @@ import {
 } from '@renderer/stores/media-projection'
 import { useThumbnails } from '@renderer/hooks/useThumbnails'
 import GlassDivider from '@renderer/components/Common/GlassDivider'
+import { getMediaType } from '@renderer/lib/presentability'
+import PresentationGrid from './PresentationGrid'
 import type { FileItemRecord } from '@shared/types/folder'
 
 interface GridItemProps {
@@ -75,7 +77,19 @@ export const GridItem = React.memo(function GridItem({
   )
 })
 
-export default function PresenterGrid({ previewCache }: PresenterGridProps): React.JSX.Element {
+export default function PresenterGrid(props: PresenterGridProps): React.JSX.Element {
+  const presentation = useMediaProjectionStore((state) => {
+    const item = state.currentItem()
+    return item && getMediaType(item.mimeType) === 'presentation' ? item : null
+  })
+  return presentation ? (
+    <PresentationGrid key={`${presentation.id}:${presentation.url}`} item={presentation} />
+  ) : (
+    <FileGrid {...props} />
+  )
+}
+
+function FileGrid({ previewCache }: PresenterGridProps): React.JSX.Element {
   const { t } = useTranslation()
   const playlist = useMediaProjectionStore((s) => s.playlist)
   const jumpTo = useMediaProjectionStore((s) => s.jumpTo)
