@@ -1,6 +1,7 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 import { openFileExplorerDB, resetFileExplorerDBForTests } from '../file-explorer-db'
 import {
+  createPersonalFile,
   createPersonalFolder,
   ensurePersonalLocalSpace,
   mutatePersonalNode,
@@ -156,4 +157,33 @@ it('queues a chosen restore name in the same operation as restoring the folder',
     name: 'Sunday restored',
     deletedAt: undefined
   })
+})
+
+it.each([
+  ['vector.svg', 'image/svg+xml', 3],
+  ['empty.png', 'image/png', 0],
+  ['large.png', 'image/png', 200 * 1024 * 1024 + 1]
+])(
+  'rejects invalid personal imports through the non-picker entry point: %s',
+  async (name, type, size) => {
+    const file = new File(['one'], name, { type })
+    Object.defineProperty(file, 'size', { value: size })
+    await expect(createPersonalFile(file, 'personal:space')).rejects.toThrow()
+    expect(await listPersonalOutbox('alice')).toEqual([])
+    expect(await (await openFileExplorerDB()).getAll('file-blobs')).toEqual([])
+  }
+)
+
+it('preserves the source bytes under a different immutable blob ID', async () => {
+  const id = await createPersonalFile(
+    new File(['one'], 'image.png', { type: 'image/png' }),
+    'personal:space'
+  )
+  const db = await openFileExplorerDB()
+  const item = await db.get('folder-items', id)
+  if (item?.type !== 'file') throw new Error('Missing file')
+  const blobId = item.url.slice(5)
+  expect(blobId).not.toBe(id)
+  expect((await listPersonalOutbox('alice'))[0].snapshotBlobId).toBe(blobId)
+  expect(await db.get('file-blobs', blobId)).toMatchObject({ refCount: 2, size: 3 })
 })

@@ -619,7 +619,8 @@
       "hhc-share": "与我分享",
       "onedrive": "OneDrive",
       "local-fs": "本地同步"
-    }
+    },
+    "uploadFailed": "导入“{{name}}”失败：{{reason}}"
   },
   "presentationWorkspace": {
     "saveDraftTitle": "保存演示文稿",
@@ -1322,7 +1323,7 @@
     "offline": "离线，可继续编辑",
     "backup": "另存本机副本",
     "keepCloud": "保留云端",
-    "retry": "重新同步",
+    "retry": "重试同步",
     "busy": "同步正在执行，请稍后重试",
     "backupFailed": "无法完成本机副本，原始数据已保留",
     "changed": "内容已变更，请重新查看冲突",
@@ -1333,6 +1334,14 @@
     "trashBytes": "回收站",
     "availableBytes": "可用空间",
     "quotaExceeded": "需要 {{required}} GiB；目前已使用 {{used}} / {{quota}} GiB，本机数据已保留",
-    "missingFonts": "此设备可能缺少字体：{{fonts}}。目前使用替代字体，原字体设置会保留。"
+    "missingFonts": "此设备可能缺少字体：{{fonts}}。目前使用替代字体，原字体设置会保留。",
+    "uploadErrors": {
+      "unsupported-mime": "个人云端不支持此格式",
+      "file-too-large": "个人云端文件上限为 200 MiB",
+      "empty-file": "无法上传空白文件"
+    },
+    "invalidFile": "文件上传被拒绝（{{reason}}）。保留原文件，或先备份至本机再取消上传。",
+    "backupCancel": "备份至本机并取消上传",
+    "backupCancelConfirm": "先建立永久本机副本，再取消此尚未提交的文件上传。如果文件已变更、仍有未保存编辑或依赖操作，会保留原数据并停止取消。"
   }
 }

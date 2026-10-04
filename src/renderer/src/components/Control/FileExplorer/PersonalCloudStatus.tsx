@@ -16,11 +16,13 @@ import {
   getPersonalConflictScope
 } from '@renderer/lib/personal-sync-conflicts'
 import {
+  listPersonalOutbox,
+  isPermanentPersonalFileFailure,
   acquirePersonalSyncLease,
   releasePersonalSyncLease,
   renewPersonalSyncLease
 } from '@renderer/lib/personal-sync-db'
-import { requestPersonalSync } from '@renderer/lib/personal-sync-runtime'
+import { recoverPersonalOperation, requestPersonalSync } from '@renderer/lib/personal-sync-runtime'
 import { formatPersonalGiB } from '@shared/personal-cloud'
 
 export function PersonalCloudStatus(): React.JSX.Element | null {
@@ -35,6 +37,8 @@ function PersonalCloudAccountStatus({ ownerId }: { ownerId: string }): React.JSX
     Object.values(state.itemStatuses).some((value) => value === 'conflict')
   )
   const accountStatus = usePersonalSyncStore((state) => state.accountStatus)
+  const errorCode = usePersonalSyncStore((state) => state.errorCode)
+  const permanentFileFailure = isPermanentPersonalFileFailure(errorCode ?? undefined)
   const quotaExceeded = usePersonalSyncStore((state) => state.quotaExceeded)
   const confirm = useConfirm()
   const sessions = usePresentationSessionRegistry()
@@ -110,6 +114,32 @@ function PersonalCloudAccountStatus({ ownerId }: { ownerId: string }): React.JSX
       setBusy(false)
     }
   }
+  const recover = async (action: 'retry' | 'backup-cancel'): Promise<void> => {
+    setBusy(true)
+    try {
+      const operation = (await listPersonalOutbox(ownerId))[0]
+      if (
+        action === 'backup-cancel' &&
+        !(await confirm({
+          title: t('personalCloud.backupCancel'),
+          description: t('personalCloud.backupCancelConfirm'),
+          confirmLabel: t('personalCloud.backupCancel')
+        }))
+      )
+        return
+      if (usePersonalSyncStore.getState().activeOwnerId !== ownerId) return
+      if (!operation?.failure && action === 'retry') {
+        requestPersonalSync(ownerId)
+        return
+      }
+      if (!operation) throw new Error(t('personalCloud.changed'))
+      await recoverPersonalOperation(ownerId, operation.id, action, sessions)
+    } catch (error) {
+      toast.danger(error instanceof Error ? error.message : t('personalCloud.failed'))
+    } finally {
+      setBusy(false)
+    }
+  }
   const displayedStatus = accountStatus === 'unavailable' ? 'offline' : status
   if (
     accountStatus === 'unavailable' ||
@@ -126,7 +156,9 @@ function PersonalCloudAccountStatus({ ownerId }: { ownerId: string }): React.JSX
               used: formatPersonalGiB(quotaExceeded.usedBytes),
               quota: formatPersonalGiB(quotaExceeded.quotaBytes)
             })
-          : t(`personalCloud.${displayedStatus}`)}
+          : permanentFileFailure
+            ? t('personalCloud.invalidFile', { reason: errorCode })
+            : `${t(`personalCloud.${displayedStatus}`)}${errorCode ? ` · ${errorCode}` : ''}`}
       </span>
       {status === 'conflict' || hasConflicts ? (
         <>
@@ -147,6 +179,15 @@ function PersonalCloudAccountStatus({ ownerId }: { ownerId: string }): React.JSX
             {t('personalCloud.keepCloud')}
           </Button>
         </>
+      ) : status === 'failed' ? (
+        <Button
+          size="sm"
+          variant="secondary"
+          isDisabled={busy}
+          onPress={() => void recover(permanentFileFailure ? 'backup-cancel' : 'retry')}
+        >
+          {t(`personalCloud.${permanentFileFailure ? 'backupCancel' : 'retry'}`)}
+        </Button>
       ) : null}
     </div>
   )

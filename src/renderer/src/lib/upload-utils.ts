@@ -1,3 +1,6 @@
+import { openFileExplorerDB } from './file-explorer-db'
+import { getBlobId } from './blob-identity'
+import { assertPersonalUploadPolicy, PersonalUploadPolicyError } from './personal-upload-policy'
 import { toast } from '@heroui/react/toast'
 import {
   addFileItemToStore,
@@ -23,6 +26,31 @@ import { enqueueCoverThumbnailJob } from '@renderer/lib/cover-thumbnail-jobs'
 import { ensurePdfPageJob } from '@renderer/lib/pdf-page-jobs'
 
 export { MAX_FILE_SIZE_WEB }
+
+export function reportUploadError(name: string, error: unknown): void {
+  const reason =
+    error instanceof PersonalUploadPolicyError
+      ? i18n.t(`personalCloud.uploadErrors.${error.code}`)
+      : error instanceof Error
+        ? error.message
+        : i18n.t('personalCloud.failed')
+  toast.danger(i18n.t('fileExplorer.uploadFailed', { name, reason }))
+}
+
+export async function importFromFileInput(
+  input: HTMLInputElement,
+  readOnly: boolean,
+  upload: (files: File[]) => Promise<number>
+): Promise<void> {
+  const files = Array.from(input.files ?? [])
+  try {
+    if (!readOnly && files.length) await upload(files)
+  } catch (error) {
+    reportUploadError(files.map((file) => file.name).join(', '), error)
+  } finally {
+    input.value = ''
+  }
+}
 
 type AcceptedMediaImportDecision = Extract<MediaImportDecision, { action: 'accept' }>
 
@@ -139,7 +167,13 @@ async function hasWebStorageCapacity(files: File[]): Promise<boolean> {
   }
 }
 
-async function prepareUploadCandidates(files: File[]): Promise<UploadCandidate[]> {
+async function prepareUploadCandidates(
+  files: File[],
+  parentId?: string
+): Promise<UploadCandidate[]> {
+  const personal = parentId
+    ? (await (await openFileExplorerDB()).get('folder-records', parentId))?.personalOwnerId
+    : undefined
   const candidates: UploadCandidate[] = []
   const platform = getUploadMediaPlatform()
   const budget = createRendererBudget()
@@ -155,6 +189,14 @@ async function prepareUploadCandidates(files: File[]): Promise<UploadCandidate[]
     if (classification.action === 'platform-unsupported') {
       unsupportedCount++
       continue
+    }
+    if (personal) {
+      try {
+        assertPersonalUploadPolicy(file.size, classification.mimeType)
+      } catch (error) {
+        reportUploadError(file.name, error)
+        continue
+      }
     }
     if (isWeb() && file.size > MAX_FILE_SIZE_WEB) {
       toast.danger(i18n.t('fileExplorer.uploadFileTooLarge', { name: file.name }))
@@ -176,6 +218,7 @@ async function prepareUploadCandidates(files: File[]): Promise<UploadCandidate[]
 
 async function enrichUploadedFile(
   id: string,
+  sourceBlobId: string,
   file: File,
   classification: AcceptedMediaImportDecision
 ): Promise<void> {
@@ -191,7 +234,7 @@ async function enrichUploadedFile(
         )
       } else if (classification.kind !== 'video') {
         await enqueueCoverThumbnailJob({
-          sourceBlobId: id,
+          sourceBlobId,
           itemId: id,
           mimeType: classification.mimeType
         })
@@ -199,11 +242,11 @@ async function enrichUploadedFile(
     }
 
     if (classification.kind === 'video' && !isWeb()) {
-      await enqueueVideoPosterJob({ sourceBlobId: id, itemId: id })
+      await enqueueVideoPosterJob({ sourceBlobId, itemId: id })
     }
 
     if (classification.kind === 'pdf') {
-      await ensurePdfPageJob({ sourceBlobId: id, itemId: id, priority: -1 })
+      await ensurePdfPageJob({ sourceBlobId, itemId: id, priority: -1 })
     }
   } catch (error) {
     console.warn('[media-enrichment] Failed to enqueue upload enrichment', { blobId: id, error })
@@ -221,11 +264,21 @@ async function uploadPreparedFiles(destinations: UploadDestination[]): Promise<n
       try {
         id = await addFileItemToStore(file, parentId, classification.mimeType)
         uploadedCount++
+      } catch (error) {
+        reportUploadError(file.name, error)
       } finally {
         release()
       }
       await yieldToMain()
-      if (id) void enrichUploadedFile(id, file, classification)
+      if (id) {
+        try {
+          const item = await (await openFileExplorerDB()).get('folder-items', id)
+          if (item?.type === 'file')
+            void enrichUploadedFile(id, getBlobId(item), file, classification)
+        } catch (error) {
+          console.warn('[media-enrichment] Failed to read persisted upload', { itemId: id, error })
+        }
+      }
     }
   }
   await Promise.all(
@@ -235,7 +288,7 @@ async function uploadPreparedFiles(destinations: UploadDestination[]): Promise<n
 }
 
 export async function uploadFiles(files: File[], parentId: string): Promise<number> {
-  const candidates = await prepareUploadCandidates(files)
+  const candidates = await prepareUploadCandidates(files, parentId)
   const destinations: UploadDestination[] = []
   const budget = createRendererBudget()
   for (const candidate of candidates) {
@@ -258,7 +311,9 @@ export async function uploadFilesForKind(
   parentId: string,
   kind: Exclude<MediaKind, 'document'>
 ): Promise<number> {
-  const candidates = await prepareUploadFilesForKind(files, kind)
+  const candidates = (await prepareUploadCandidates(files, parentId)).filter(
+    (candidate) => candidate.classification.kind === kind
+  )
   const destinations: UploadDestination[] = []
   const budget = createRendererBudget()
   for (const candidate of candidates) {
@@ -273,7 +328,7 @@ export async function uploadFolderFiles(
   currentFolderId: string,
   addFolder: (name: string, parentId: string) => string | Promise<string>
 ): Promise<number> {
-  const candidates = await prepareUploadCandidates(allFiles)
+  const candidates = await prepareUploadCandidates(allFiles, currentFolderId)
   if (candidates.length === 0) return 0
 
   const pathToFolderId = new Map<string, string>()
@@ -338,7 +393,10 @@ export async function uploadFromDataTransfer(
   }
 
   const filesWithPaths = (await Promise.all(entries.map((entry) => collectFromEntry(entry)))).flat()
-  const candidates = await prepareUploadCandidates(filesWithPaths.map(({ file }) => file))
+  const candidates = await prepareUploadCandidates(
+    filesWithPaths.map(({ file }) => file),
+    targetFolderId
+  )
   if (candidates.length === 0) return 0
 
   const relativePaths = new Map(

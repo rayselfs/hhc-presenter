@@ -20,7 +20,12 @@ import {
   FILE_EXPLORER_ROOT_ID
 } from '@renderer/stores/file-explorer'
 import { useSoundboardStore } from '@renderer/stores/soundboard'
-import { getUploadMediaPlatform, uploadFiles, uploadFolderFiles } from '@renderer/lib/upload-utils'
+import {
+  getUploadMediaPlatform,
+  importFromFileInput,
+  uploadFiles,
+  uploadFolderFiles
+} from '@renderer/lib/upload-utils'
 import { LogOut, Presentation, RefreshCw, Share2, Unlink } from 'lucide-react'
 import { createEditablePresentation } from '@renderer/lib/editable-presentation'
 import { connectLocalSyncFolder, refreshLocalSyncConnection } from '@renderer/lib/local-sync-import'
@@ -563,22 +568,18 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
 
   const handleFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
-      const files = Array.from(e.target.files ?? [])
-      if (files.length === 0) return
-      if (isCurrentFolderReadOnly) return
-      await uploadFiles(files, currentFolderId)
-      if (fileInputRef.current) fileInputRef.current.value = ''
+      await importFromFileInput(e.currentTarget, isCurrentFolderReadOnly, (files) =>
+        uploadFiles(files, currentFolderId)
+      )
     },
     [currentFolderId, isCurrentFolderReadOnly]
   )
 
   const handleFolderChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
-      const allFiles = Array.from(e.target.files ?? [])
-      if (allFiles.length === 0) return
-      if (isCurrentFolderReadOnly) return
-      await uploadFolderFiles(allFiles, currentFolderId, addFolder)
-      if (folderInputRef.current) folderInputRef.current.value = ''
+      await importFromFileInput(e.currentTarget, isCurrentFolderReadOnly, (files) =>
+        uploadFolderFiles(files, currentFolderId, addFolder)
+      )
     },
     [currentFolderId, addFolder, isCurrentFolderReadOnly]
   )
