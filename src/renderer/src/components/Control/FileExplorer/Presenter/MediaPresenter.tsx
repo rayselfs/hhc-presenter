@@ -137,10 +137,31 @@ export default function MediaPresenter({ onExit }: MediaPresenterProps): React.J
         }
       },
       { config: SHORTCUTS.MEDIA.PREV_SLIDE_ALT, handler: () => void navigate(prev) },
-      { config: SHORTCUTS.MEDIA.FIRST_SLIDE, handler: () => void navigate(() => jumpTo(0)) },
+      {
+        config: SHORTCUTS.MEDIA.FIRST_SLIDE,
+        handler: () =>
+          void navigate(() => {
+            const state = useMediaProjectionStore.getState()
+            const item = state.currentItem()
+            return item && getDescriptor(item.mimeType)?.type === 'presentation'
+              ? state.jumpToSlide(0)
+              : jumpTo(0)
+          })
+      },
       {
         config: SHORTCUTS.MEDIA.LAST_SLIDE,
-        handler: () => void navigate(() => jumpTo(playlist.length - 1))
+        handler: () =>
+          void navigate(() => {
+            const state = useMediaProjectionStore.getState()
+            const item = state.currentItem()
+            if (item && getDescriptor(item.mimeType)?.type === 'presentation') {
+              const count = state.typeStates.presentation?.slideCount
+              return count !== undefined && Number.isInteger(count) && count > 0
+                ? state.jumpToSlide(count - 1)
+                : false
+            }
+            return jumpTo(playlist.length - 1)
+          })
       },
       { config: SHORTCUTS.MEDIA.TOGGLE_GRID, handler: toggleGridWithMediaPause },
       {
