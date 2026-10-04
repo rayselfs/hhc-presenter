@@ -72,6 +72,7 @@ export interface MediaProjectionStore {
   setZoomLevel: (level: number) => void
   resetZoom: () => void
   setPan: (x: number, y: number) => void
+  promoteVideoPlayback: (snapshotId: string, itemId: string, blobId: string) => boolean
   updateNotes: (itemId: string, notes: string) => void
   startPresentationWithReadiness: (
     files: FileItemRecord[],
@@ -279,6 +280,31 @@ export const useMediaProjectionStore = create<MediaProjectionStore>()((set, get)
     if (presentation) return `${presentation.slideIndex + 1} / …`
     if (playlist.length === 0) return '0 / 0'
     return `${currentIndex + 1} / ${playlist.length}`
+  },
+
+  promoteVideoPlayback: (snapshotId, itemId, blobId) => {
+    const state = get()
+    const snapshot = state.snapshot
+    const entry = snapshot?.entries[state.currentIndex]
+    if (
+      !state.isPresenting ||
+      snapshot?.id !== snapshotId ||
+      entry?.itemId !== itemId ||
+      entry.blobId !== blobId ||
+      !entry.mimeType.startsWith('video/')
+    )
+      return false
+    set({
+      snapshot: {
+        ...snapshot,
+        entries: snapshot.entries.map((value) =>
+          value === entry
+            ? { ...value, playbackMode: 'vlc-embedded', playbackVariant: 'source' }
+            : value
+        )
+      }
+    })
+    return true
   },
 
   startPresentation: (files: FileItemRecord[], startIndex: number) => {

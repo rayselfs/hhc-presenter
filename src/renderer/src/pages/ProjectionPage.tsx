@@ -154,6 +154,7 @@ export default function ProjectionPage(): React.JSX.Element {
         initialBlobId={state.fileData.blobId}
         initialMimeType={state.fileData.mimeType}
         initialStreamUrl={state.fileData.streamUrl}
+        initialContentRevision={state.fileData.contentRevision}
         initialPlaybackMode={state.fileData.playbackMode}
         initialPlaybackVariant={state.fileData.playbackVariant}
         vlcStartRevision={state.vlcStartRevision}

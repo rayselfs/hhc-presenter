@@ -7,6 +7,11 @@ import type {
   ProjectionPayload
 } from '@shared/projection-messages'
 
+vi.mock('@renderer/lib/file-explorer-db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@renderer/lib/file-explorer-db')>()),
+  getFileBlobRecord: vi.fn(async () => ({ storage: 'native-fs' }))
+}))
+
 vi.mock('@renderer/lib/env', () => ({
   isElectron: vi.fn(() => false)
 }))
@@ -45,6 +50,8 @@ vi.mock('@renderer/lib/projection-adapter', () => ({
   createProjectionAdapter: vi.fn(() => mockAdapter)
 }))
 
+import { getFileBlobRecord } from '@renderer/lib/file-explorer-db'
+import { useMediaProjectionStore } from '@renderer/stores/media-projection'
 import { isElectron } from '@renderer/lib/env'
 import { ProjectionProvider, useProjection } from '../ProjectionContext'
 
@@ -596,7 +603,7 @@ describe('ProjectionContext Electron recovery', () => {
       expect.objectContaining({
         generation: 4,
         snapshot: expect.objectContaining({
-          media: expect.objectContaining({ show: media })
+          media: expect.objectContaining({ show: expect.objectContaining(media) })
         })
       })
     )
@@ -735,4 +742,304 @@ describe('ProjectionContext Electron recovery', () => {
     expect(unsubscribeVlcFailure).toHaveBeenCalledOnce()
     expect(unsubscribeVlcStarted).toHaveBeenCalledOnce()
   })
+})
+
+describe('late native decode recovery', () => {
+  const show: ProjectionPayload<'file:show'> = {
+    itemId: 'video-1',
+    blobId: 'blob-1',
+    fileName: 'video.mp4',
+    mimeType: 'video/mp4',
+    playlist: [],
+    currentIndex: 0,
+    playbackMode: 'native'
+  }
+  const runtime = vi.fn()
+  beforeEach(() => {
+    vi.mocked(isElectron).mockReturnValue(true)
+    vi.mocked(getFileBlobRecord).mockResolvedValue({ storage: 'native-fs' } as Awaited<
+      ReturnType<typeof getFileBlobRecord>
+    >)
+    runtime.mockReset().mockResolvedValue({ status: 'ready' })
+    Object.defineProperty(window, 'api', {
+      configurable: true,
+      value: {
+        nativeFs: { exists: vi.fn(async () => true) },
+        projection: {
+          check: vi.fn(async () => ({
+            exists: true,
+            lifecycle: { generation: 4, status: 'ready', reason: 'created' }
+          })),
+          onProjectionLifecycle: vi.fn(() => vi.fn())
+        },
+        projectionVlc: {
+          getInfo: runtime,
+          onFailure: vi.fn(() => vi.fn()),
+          onStarted: vi.fn(() => vi.fn())
+        }
+      }
+    })
+    useMediaProjectionStore.setState({ snapshot: null })
+  })
+  async function setup(): Promise<
+    ReturnType<typeof renderProjection> & { report: ProjectionPayload<'file:playback-error'> }
+  > {
+    const hook = renderProjection()
+    await act(async () => {
+      await Promise.resolve()
+      await hook.result.current.startProjection('media', [['file:show', show]])
+    })
+    const report: ProjectionPayload<'file:playback-error'> = {
+      itemId: show.itemId,
+      blobId: show.blobId,
+      contentRevision: hook.result.current.getProjectionSnapshot()!.media.show!.contentRevision!,
+      errorCode: 3,
+      currentTime: 23,
+      duration: 100,
+      transport: 'pause',
+      volume: 0.4
+    }
+    return { ...hook, report }
+  }
+  it('does not prepare VLC for healthy video and promotes only once on decode failure', async () => {
+    const { result, report } = await setup()
+    expect(runtime).not.toHaveBeenCalled()
+    await act(async () => {
+      mockAdapter._trigger('file:playback-error', report)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(result.current.getProjectionSnapshot()?.media.show?.playbackMode).toBe('vlc-embedded')
+    expect(result.current.getProjectionSnapshot()?.media.state).toMatchObject({
+      positionSeconds: 23,
+      isPlaying: false,
+      volume: 0.4
+    })
+    await act(async () => {
+      mockAdapter._trigger('file:playback-error', report)
+    })
+    expect(runtime).toHaveBeenCalledOnce()
+  })
+  it.each(['restart', 'owner-aba', 'session', 'generation', 'item'] as const)(
+    'discards %s while runtime awaits',
+    async (change) => {
+      let resolve!: (value: { status: string }) => void
+      runtime.mockReturnValue(
+        new Promise((done) => {
+          resolve = done
+        })
+      )
+      const { result, report } = await setup()
+      await act(async () => {
+        mockAdapter._trigger('file:playback-error', report)
+        await Promise.resolve()
+      })
+      expect(runtime).toHaveBeenCalledOnce()
+      await act(async () => {
+        if (change === 'restart') result.current.send('file:show', show)
+        if (change === 'owner-aba') {
+          result.current.claimProjection('timer')
+          result.current.claimProjection('media')
+        }
+        if (change === 'session')
+          await result.current.startProjection('media', [['file:show', show]])
+        if (change === 'generation') mockAdapter.setGeneration(5)
+        if (change === 'item') result.current.send('file:show', { ...show, itemId: 'other' })
+        resolve({ status: 'ready' })
+        await Promise.resolve()
+      })
+      expect(result.current.getProjectionSnapshot()?.media.show?.playbackMode).toBe('native')
+    }
+  )
+  it.each(['web', 'runtime', 'source'] as const)(
+    'reports actionable %s failure without promoting',
+    async (failure) => {
+      const { result, report } = await setup()
+      if (failure === 'web') vi.mocked(isElectron).mockReturnValue(false)
+      if (failure === 'runtime') runtime.mockResolvedValue({ status: 'missing' })
+      if (failure === 'source') vi.mocked(getFileBlobRecord).mockResolvedValue(undefined)
+      await act(async () => {
+        mockAdapter._trigger('file:playback-error', report)
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+      expect(result.current.vlcFailure?.message).toBeTruthy()
+      expect(result.current.getProjectionSnapshot()?.media.show?.playbackMode).toBe('native')
+    }
+  )
+  it('allows the new projection generation to recover after discarding an older attempt', async () => {
+    let resolve!: (value: { status: string }) => void
+    runtime.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done
+      })
+    )
+    const { result, report } = await setup()
+    await act(async () => {
+      mockAdapter._trigger('file:playback-error', report)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(runtime).toHaveBeenCalledOnce()
+    await act(async () => {
+      const lifecycle = vi.mocked(window.api.projection.onProjectionLifecycle).mock.calls[0][0]
+      lifecycle({ generation: 5, status: 'ready', reason: 'reload' })
+      resolve({ status: 'ready' })
+      await Promise.resolve()
+      mockAdapter._trigger('file:playback-error', report)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(runtime).toHaveBeenCalledTimes(2)
+    expect(result.current.getProjectionSnapshot()?.media.show?.playbackMode).toBe('vlc-embedded')
+  })
+  it('keeps newer seek and transport requested during runtime preparation', async () => {
+    let resolve!: (value: { status: string }) => void
+    runtime.mockReturnValue(
+      new Promise((done) => {
+        resolve = done
+      })
+    )
+    const { result, report } = await setup()
+    await act(async () => {
+      mockAdapter._trigger('file:playback-error', report)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(runtime).toHaveBeenCalledOnce()
+    await act(async () => {
+      result.current.send('file:control', { itemId: 'video-1', action: 'seek', value: 70 })
+      result.current.send('file:control', { itemId: 'video-1', action: 'play' })
+      resolve({ status: 'ready' })
+      await Promise.resolve()
+    })
+    expect(mockAdapter.send).toHaveBeenLastCalledWith(
+      '__system:replay',
+      expect.objectContaining({
+        pendingFileControls: { itemId: 'video-1', seekSeconds: 70, transport: 'play' }
+      })
+    )
+  })
+  it('reports an unavailable native file before initializing VLC', async () => {
+    const { result, report } = await setup()
+    vi.mocked(window.api.nativeFs.exists).mockResolvedValue(false)
+    await act(async () => {
+      mockAdapter._trigger('file:playback-error', report)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(result.current.vlcFailure?.code).toBe('media-open-failed')
+    expect(runtime).not.toHaveBeenCalled()
+    expect(result.current.getProjectionSnapshot()?.media.show?.playbackMode).toBe('native')
+    await act(async () => {
+      result.current.send('file:show', show)
+    })
+    expect(result.current.vlcFailure).toBeNull()
+  })
+  it('synchronizes the promoted snapshot for later file reprojection', async () => {
+    const { result, report } = await setup()
+    useMediaProjectionStore.setState({
+      isPresenting: true,
+      currentIndex: 0,
+      snapshot: {
+        id: 'session',
+        createdAt: 0,
+        entries: [
+          {
+            index: 0,
+            itemId: 'video-1',
+            blobId: 'blob-1',
+            name: 'video.mp4',
+            mimeType: 'video/mp4',
+            sourceUrl: 'blob:blob-1',
+            playbackMode: 'native'
+          }
+        ]
+      }
+    })
+    await act(async () => {
+      mockAdapter._trigger('file:playback-error', report)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(useMediaProjectionStore.getState().snapshot?.entries[0].playbackMode).toBe(
+      'vlc-embedded'
+    )
+    expect(result.current.getProjectionSnapshot()?.media.show?.playbackMode).toBe('vlc-embedded')
+  })
+  it('ignores network/abort and obsolete content reports', async () => {
+    const { report, result } = await setup()
+    await act(async () => {
+      mockAdapter._trigger('file:playback-error', { ...report, errorCode: 1 })
+      mockAdapter._trigger('file:playback-error', { ...report, errorCode: 2 })
+      mockAdapter._trigger('file:playback-error', {
+        ...report,
+        contentRevision: report.contentRevision + 1
+      })
+    })
+    expect(runtime).not.toHaveBeenCalled()
+    expect(result.current.vlcFailure).toBeNull()
+  })
+})
+
+it('does not promote from a stale storage await', async () => {
+  vi.mocked(isElectron).mockReturnValue(true)
+  let resolve!: (value: Awaited<ReturnType<typeof getFileBlobRecord>>) => void
+  vi.mocked(getFileBlobRecord).mockReturnValue(
+    new Promise((done) => {
+      resolve = done
+    })
+  )
+  const runtime = vi.fn(async () => ({ status: 'ready' }))
+  Object.defineProperty(window, 'api', {
+    configurable: true,
+    value: {
+      projection: {
+        check: vi.fn(async () => ({
+          exists: true,
+          lifecycle: { generation: 4, status: 'ready', reason: 'created' }
+        })),
+        onProjectionLifecycle: vi.fn(() => vi.fn())
+      },
+      nativeFs: { exists: vi.fn(async () => true) },
+      projectionVlc: {
+        getInfo: runtime,
+        onFailure: vi.fn(() => vi.fn()),
+        onStarted: vi.fn(() => vi.fn())
+      }
+    }
+  })
+  const { result } = renderProjection()
+  const show: ProjectionPayload<'file:show'> = {
+    itemId: 'video',
+    blobId: 'blob',
+    fileName: 'v.mp4',
+    mimeType: 'video/mp4',
+    playlist: [],
+    currentIndex: 0
+  }
+  await act(async () => {
+    await Promise.resolve()
+    await result.current.startProjection('media', [['file:show', show]])
+  })
+  const revision = result.current.getProjectionSnapshot()!.media.show!.contentRevision!
+  await act(async () => {
+    mockAdapter._trigger('file:playback-error', {
+      itemId: 'video',
+      blobId: 'blob',
+      contentRevision: revision,
+      errorCode: 3,
+      currentTime: 0,
+      duration: 0,
+      transport: 'pause',
+      volume: 1
+    })
+  })
+  await act(async () => {
+    result.current.send('file:show', show)
+    resolve({ storage: 'native-fs' } as Awaited<ReturnType<typeof getFileBlobRecord>>)
+    await Promise.resolve()
+  })
+  expect(runtime).not.toHaveBeenCalled()
+  expect(result.current.getProjectionSnapshot()?.media.show?.playbackMode).not.toBe('vlc-embedded')
 })

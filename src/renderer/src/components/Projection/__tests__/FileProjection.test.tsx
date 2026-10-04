@@ -162,6 +162,52 @@ describe('FileProjection copied media identity', () => {
     }
   })
 
+  it('reports decode errors once for the current load, excluding network and stale elements', async () => {
+    mockGetFileSource.mockResolvedValue({ url: 'blob:video', revoke: vi.fn() })
+    const props = {
+      initialItemId: 'video-1',
+      initialBlobId: 'blob-1',
+      initialMimeType: 'video/mp4',
+      initialContentRevision: 7
+    }
+    const { container, rerender } = render(<FileProjection {...props} />)
+    await waitFor(() => expect(container.querySelector('video')).not.toBeNull())
+    const video = container.querySelector('video')!
+    Object.defineProperty(video, 'error', { configurable: true, value: { code: 2 } })
+    fireEvent.error(video)
+    expect(mockProjectionSend).not.toHaveBeenCalledWith('file:playback-error', expect.anything())
+    Object.defineProperty(video, 'error', { configurable: true, value: { code: 3 } })
+    Object.defineProperty(video, 'currentTime', { configurable: true, value: 18 })
+    fireEvent.error(video)
+    fireEvent.error(video)
+    expect(
+      mockProjectionSend.mock.calls.filter(([channel]) => channel === 'file:playback-error')
+    ).toHaveLength(1)
+    expect(mockProjectionSend).toHaveBeenCalledWith(
+      'file:playback-error',
+      expect.objectContaining({
+        itemId: 'video-1',
+        blobId: 'blob-1',
+        contentRevision: 7,
+        errorCode: 3,
+        currentTime: 18
+      })
+    )
+    rerender(<FileProjection {...props} initialContentRevision={8} />)
+    await waitFor(() => expect(container.querySelector('video')).not.toBe(video))
+    fireEvent.error(video)
+    expect(
+      mockProjectionSend.mock.calls.filter(([channel]) => channel === 'file:playback-error')
+    ).toHaveLength(1)
+    const current = container.querySelector('video')!
+    Object.defineProperty(current, 'error', { value: { code: 4 } })
+    fireEvent.error(current)
+    expect(mockProjectionSend).toHaveBeenLastCalledWith(
+      'file:playback-error',
+      expect.objectContaining({ contentRevision: 8 })
+    )
+  })
+
   it('loads projection content with blobId while retaining itemId as UI identity', async () => {
     const { getByAltText } = render(
       <FileProjection

@@ -647,3 +647,16 @@ describe('presentation page navigation readiness', () => {
     }
   })
 })
+
+it('promotes only the exact current presentation snapshot and preserves its identity', () => {
+  const store = useMediaProjectionStore.getState()
+  store.startPresentation([makeFile('video', 'video.mp4', 'video/mp4')], 0)
+  const snapshot = useMediaProjectionStore.getState().snapshot!
+  expect(store.promoteVideoPlayback('stale', 'video', 'video')).toBe(false)
+  expect(store.promoteVideoPlayback(snapshot.id, 'video', 'wrong-blob')).toBe(false)
+  expect(store.promoteVideoPlayback(snapshot.id, 'video', 'video')).toBe(true)
+  expect(useMediaProjectionStore.getState().snapshot).toMatchObject({
+    id: snapshot.id,
+    entries: [{ playbackMode: 'vlc-embedded', playbackVariant: 'source' }]
+  })
+})

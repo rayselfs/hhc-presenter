@@ -29,6 +29,7 @@ type FileProjectionProps = {
   initialBlobId?: string
   initialMimeType?: string
   initialStreamUrl?: string
+  initialContentRevision?: number
   initialPlaybackMode?: 'native' | 'vlc-embedded'
   initialPlaybackVariant?: 'source' | 'matroska-remux'
   vlcStartRevision?: number
@@ -88,6 +89,7 @@ export default function FileProjection({
   initialBlobId,
   initialMimeType,
   initialStreamUrl,
+  initialContentRevision,
   initialPlaybackMode,
   initialPlaybackVariant,
   vlcStartRevision,
@@ -98,6 +100,7 @@ export default function FileProjection({
   controlEvent
 }: FileProjectionProps): React.JSX.Element {
   const [objectUrl, setObjectUrl] = useState<string | null>(null)
+  const [loadedContentRevision, setLoadedContentRevision] = useState<number | undefined>()
   const [mimeType, setMimeType] = useState<string | null>(null)
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
@@ -110,6 +113,8 @@ export default function FileProjection({
   const pdfContainerRef = useRef<HTMLDivElement | null>(null)
   const adapterSendRef = useRef<ReturnType<typeof createProjectionAdapter>['send'] | null>(null)
   const currentItemIdRef = useRef<string | null>(null)
+  const reportedErrorSequenceRef = useRef(0)
+  const [playbackError, setPlaybackError] = useState(false)
   const sourceRevokeRef = useRef<(() => void) | null>(null)
   const pendingVideoControlRef = useRef<PendingVideoControl | null>(null)
   const seekableRef = useRef(true)
@@ -292,6 +297,7 @@ export default function FileProjection({
     async (itemId: string, blobId: string, fileMimeType: string, options: LoadFileOptions = {}) => {
       const loadSequence = loadSequenceRef.current + 1
       loadSequenceRef.current = loadSequence
+      setPlaybackError(false)
       const previousPlaybackMode = playbackModeRef.current
       const nextPlaybackMode = options.playbackMode ?? 'native'
       const liveVideo = currentItemIdRef.current === itemId ? mediaRef.current : null
@@ -347,6 +353,7 @@ export default function FileProjection({
           await loadPdf(options.streamUrl, itemId, loadSequence)
           return
         }
+        setLoadedContentRevision(initialContentRevision)
         setObjectUrl(options.streamUrl)
         return
       }
@@ -367,10 +374,11 @@ export default function FileProjection({
       if (fileMimeType === 'application/pdf') {
         await loadPdf(source.url, itemId, loadSequence)
       } else {
+        setLoadedContentRevision(initialContentRevision)
         setObjectUrl(source.url)
       }
     },
-    [disposePdf, loadPdf, loadPdfPreviews]
+    [disposePdf, initialContentRevision, loadPdf, loadPdfPreviews]
   )
 
   useEffect(
@@ -614,6 +622,7 @@ export default function FileProjection({
     initialItemId,
     initialMimeType,
     initialPlaybackMode,
+    initialContentRevision,
     initialSeekable,
     initialDurationMs,
     initialStreamUrl,
@@ -801,10 +810,41 @@ export default function FileProjection({
     )
   }
 
+  const renderedLoadSequence = loadSequenceRef.current
+
   if (mimeType?.startsWith('video/') && objectUrl) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-black overflow-hidden">
         <video
+          key={`${loadedContentRevision ?? 0}:${renderedLoadSequence}`}
+          onError={(event) => {
+            const video = event.currentTarget
+            const errorCode = video.error?.code
+            if (
+              loadedContentRevision !== initialContentRevision ||
+              video !== mediaRef.current ||
+              renderedLoadSequence !== loadSequenceRef.current ||
+              reportedErrorSequenceRef.current === renderedLoadSequence ||
+              (errorCode !== 3 && errorCode !== 4) ||
+              !initialItemId ||
+              !initialBlobId ||
+              !initialContentRevision ||
+              playbackModeRef.current === 'vlc-embedded'
+            )
+              return
+            reportedErrorSequenceRef.current = renderedLoadSequence
+            setPlaybackError(true)
+            adapterSendRef.current?.('file:playback-error', {
+              itemId: initialItemId,
+              blobId: initialBlobId,
+              contentRevision: initialContentRevision,
+              errorCode,
+              currentTime: Number.isFinite(video.currentTime) ? Math.max(0, video.currentTime) : 0,
+              duration: Number.isFinite(video.duration) ? Math.max(0, video.duration) : 0,
+              transport: video.paused ? 'pause' : 'play',
+              volume: video.volume
+            })
+          }}
           ref={mediaRef as React.RefObject<HTMLVideoElement>}
           src={objectUrl}
           preload={seekableRef.current ? 'metadata' : 'none'}
@@ -829,6 +869,11 @@ export default function FileProjection({
           onPause={() => sendVideoPlaybackState({ isPlaying: false })}
           onEnded={() => sendVideoPlaybackState({ isPlaying: false, isEnded: true })}
         />
+        {playbackError && (
+          <p role="alert" className="absolute text-white">
+            Video playback failed. Check the operator window for recovery.
+          </p>
+        )}
       </div>
     )
   }

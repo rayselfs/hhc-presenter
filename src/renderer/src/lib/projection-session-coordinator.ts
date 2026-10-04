@@ -1,3 +1,4 @@
+import { isFilePlaybackError } from '@shared/projection-messages'
 import type {
   ProjectionChannel,
   ProjectionContentMessageTuple,
@@ -13,7 +14,12 @@ import type {
 
 export type ReplayableProjectionChannel = Exclude<
   ProjectionChannel,
-  `__system:${string}` | 'file:playback-state' | 'file:end' | 'camera:signal' | 'camera:ready'
+  | `__system:${string}`
+  | 'file:playback-state'
+  | 'file:playback-error'
+  | 'file:end'
+  | 'camera:signal'
+  | 'camera:ready'
 >
 
 export interface ProjectionRecoveryState {
@@ -35,6 +41,8 @@ export interface ProjectionSessionCoordinator {
   project<C extends ReplayableProjectionChannel>(channel: C, data: ProjectionPayload<C>): void
   sendOneShot<C extends 'file:end'>(channel: C, data: ProjectionPayload<C>): void
   recordPlayback(generation: number, data: ProjectionPayload<'file:playback-state'>): void
+  isCurrentVideo(generation: number, data: ProjectionPayload<'file:playback-error'>): boolean
+  promoteVideo(generation: number, data: ProjectionPayload<'file:playback-error'>): boolean
   replay(generation: number): void
   beginGeneration(event: ProjectionLifecycleEvent): void
   ready(generation: number): void
@@ -246,6 +254,7 @@ export function createProjectionSessionCoordinator(
     generation: 0,
     failure: null
   }
+  let contentRevision = 0
   let replayedGeneration = 0
   let pendingFileControls: ProjectionPendingFileControls | null = null
   let disposed = false
@@ -299,7 +308,9 @@ export function createProjectionSessionCoordinator(
     startSession(owner, payloads) {
       snapshot = createEmptySnapshot(owner)
       pendingFileControls = null
-      for (const [channel, data] of payloads) {
+      for (const [channel, original] of payloads) {
+        const data =
+          channel === 'file:show' ? { ...original, contentRevision: ++contentRevision } : original
         if (channel === 'file:end') continue
         snapshot = reduceReplayableMessage(
           snapshot,
@@ -315,6 +326,19 @@ export function createProjectionSessionCoordinator(
 
     claim(owner, unblank = false) {
       if (!snapshot) snapshot = createEmptySnapshot(owner)
+      const ownerChanged = snapshot.owner !== owner
+      if (ownerChanged && snapshot.media.show) {
+        snapshot = {
+          ...snapshot,
+          media: {
+            ...snapshot.media,
+            show: {
+              ...snapshot.media.show,
+              contentRevision: ++contentRevision
+            }
+          }
+        }
+      }
       snapshot = {
         ...snapshot,
         owner,
@@ -323,6 +347,7 @@ export function createProjectionSessionCoordinator(
       }
       if (recovery.status === 'ready') {
         send('__system:active-owner', { owner })
+        if (ownerChanged && owner === 'media') sendReplay(recovery.generation)
         if (unblank) {
           send('__system:blank', { showDefault: false })
           send('__system:blackout', { enabled: false })
@@ -359,6 +384,9 @@ export function createProjectionSessionCoordinator(
 
     project(channel, data) {
       if (!snapshot) return
+      if (channel === 'file:show') {
+        data = { ...data, contentRevision: ++contentRevision }
+      }
       if (channel === 'file:show') {
         const show = data as ProjectionPayload<'file:show'>
         if (pendingFileControls?.itemId !== show.itemId) pendingFileControls = null
@@ -436,6 +464,46 @@ export function createProjectionSessionCoordinator(
             : pending
       }
       notify()
+    },
+
+    isCurrentVideo(generation, data) {
+      const show = snapshot?.media.show
+      return (
+        isFilePlaybackError(data) &&
+        (data.errorCode === 3 || data.errorCode === 4) &&
+        recovery.status === 'ready' &&
+        recovery.generation === generation &&
+        snapshot?.owner === 'media' &&
+        !snapshot.showDefault &&
+        !snapshot.isBlackout &&
+        show?.itemId === data.itemId &&
+        show.blobId === data.blobId &&
+        show.contentRevision === data.contentRevision &&
+        show.playbackMode !== 'vlc-embedded' &&
+        show.mimeType.startsWith('video/')
+      )
+    },
+
+    promoteVideo(generation, data) {
+      if (!api.isCurrentVideo(generation, data) || !snapshot?.media.show || !snapshot.media.state)
+        return false
+      snapshot = {
+        ...snapshot,
+        media: {
+          show: { ...snapshot.media.show, playbackMode: 'vlc-embedded', playbackVariant: 'source' },
+          state: {
+            ...snapshot.media.state,
+            positionSeconds: data.currentTime,
+            durationSeconds: data.duration,
+            isPlaying: data.transport === 'play',
+            isEnded: false,
+            volume: data.volume
+          }
+        }
+      }
+      sendReplay(generation)
+      notify()
+      return true
     },
 
     replay(generation) {

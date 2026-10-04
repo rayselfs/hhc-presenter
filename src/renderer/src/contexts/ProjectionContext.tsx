@@ -1,3 +1,5 @@
+import { getFileBlobRecord } from '@renderer/lib/file-explorer-db'
+import { useMediaProjectionStore } from '@renderer/stores/media-projection'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { createProjectionAdapter, type ProjectionAdapter } from '@renderer/lib/projection-adapter'
 import { isElectron } from '@renderer/lib/env'
@@ -115,6 +117,7 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
   const projectionDisplayId = useSettingsStore((state) => state.projectionDisplayId)
   const [browserSessionId] = useState(() => crypto.randomUUID())
   const adapterRef = useRef<ProjectionAdapter | null>(null)
+  const playbackFailureRevisionRef = useRef<number | null>(null)
   const coordinatorRef = useRef<ProjectionSessionCoordinator | null>(null)
   const projectionWindowRef = useRef<Window | null>(null)
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -165,7 +168,16 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
         failure: next.failure ? { ...next.failure } : null
       })
       setProjectionSnapshot(coordinator.getSnapshot())
-      const vlcItemId = getReadyVlcItemId(coordinator)
+      const failedShow = coordinator.getSnapshot()
+      const nativeFailureCurrent =
+        next.status === 'ready' &&
+        failedShow?.owner === 'media' &&
+        !failedShow.showDefault &&
+        !failedShow.isBlackout &&
+        failedShow.media.show?.contentRevision === playbackFailureRevisionRef.current
+      const vlcItemId =
+        getReadyVlcItemId(coordinator) ??
+        (nativeFailureCurrent ? failedShow?.media.show?.itemId : null)
       setVlcFailure((failure) =>
         failure && (!vlcItemId || (failure.itemId && failure.itemId !== vlcItemId)) ? null : failure
       )
@@ -190,8 +202,87 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
       coordinator.recordPlayback(adapter.getGeneration(), data)
     })
 
+    let active = true
+    let attemptedRevision = 0
+    let attemptedGeneration = 0
+    const unsubscribePlaybackError = adapter.on('file:playback-error', (data) => {
+      const generation = adapter.getGeneration()
+      if (
+        !coordinator.isCurrentVideo(generation, data) ||
+        (attemptedRevision === data.contentRevision && attemptedGeneration === generation)
+      )
+        return
+      attemptedRevision = data.contentRevision
+      attemptedGeneration = generation
+      const show = coordinator.getSnapshot()!.media.show
+      const mediaSnapshotId = useMediaProjectionStore.getState().snapshot?.id
+      const isCurrent = (): boolean =>
+        active &&
+        adapter.getGeneration() === generation &&
+        coordinator.isCurrentVideo(generation, data) &&
+        coordinator.getSnapshot()?.media.show === show &&
+        useMediaProjectionStore.getState().snapshot?.id === mediaSnapshotId
+      const fail = (code: ProjectionVlcFailure['code'], message: string): void => {
+        if (!isCurrent()) return
+        playbackFailureRevisionRef.current = data.contentRevision
+        setVlcFailure({ itemId: data.itemId, code, recoverable: false, message })
+      }
+      void (async () => {
+        if (!isElectron()) {
+          fail(
+            'runtime-missing',
+            'This video cannot play in the browser. Open HHC Presenter desktop or convert it to a supported MP4.'
+          )
+          return
+        }
+        try {
+          const source = await getFileBlobRecord(data.blobId)
+          if (!isCurrent()) return
+          if (source?.storage !== 'native-fs') {
+            fail(
+              'media-open-failed',
+              'Desktop playback requires a local copy. Download or import this video, then present it again.'
+            )
+            return
+          }
+          const exists = await window.api.nativeFs.exists(data.blobId)
+          if (!isCurrent()) return
+          if (!exists) {
+            fail(
+              'media-open-failed',
+              'The local video source is missing. Import this video again before presenting it.'
+            )
+            return
+          }
+          const info = await window.api.projectionVlc.getInfo()
+          if (!isCurrent()) return
+          if (info.status !== 'ready') {
+            fail(
+              'runtime-missing',
+              info.message ??
+                'Desktop video playback is unavailable. Install the packaged HHC Presenter or convert this video to a supported MP4.'
+            )
+            return
+          }
+          if (
+            mediaSnapshotId &&
+            !useMediaProjectionStore
+              .getState()
+              .promoteVideoPlayback(mediaSnapshotId, data.itemId, data.blobId)
+          )
+            return
+          playbackFailureRevisionRef.current = null
+          coordinator.promoteVideo(generation, data)
+        } catch {
+          fail(
+            'playback-failed',
+            'Video recovery failed. Check the local video source or convert it to a supported MP4, then present it again.'
+          )
+        }
+      })()
+    })
+
     if (isElectron()) {
-      let active = true
       void window.api.projection.check().then((state) => {
         if (!active) return
         updateOpen(state.exists)
@@ -239,6 +330,7 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
         unsubscribeVlcStarted()
         unsubscribeReady()
         unsubscribePlayback()
+        unsubscribePlaybackError()
         unsubscribeCoordinator()
         coordinator.dispose()
         coordinatorRef.current = null
@@ -256,6 +348,8 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
     window.addEventListener('beforeunload', handleBeforeUnload)
 
     return () => {
+      active = false
+      unsubscribePlaybackError()
       unsubscribePong()
       unsubscribeClosed()
       unsubscribeReady()
@@ -451,6 +545,8 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
           getAdapter(adapterRef, browserSessionId).getGeneration(),
           data as ProjectionPayload<'file:playback-state'>
         )
+      } else if (channel === 'file:playback-error') {
+        return
       } else if (channel === 'file:end') {
         coordinator.sendOneShot('file:end', null)
       } else if (!channel.startsWith('__system:')) {
