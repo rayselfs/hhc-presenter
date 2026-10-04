@@ -153,7 +153,8 @@ describe('startPresentation', () => {
       playlist: editableFiles,
       currentIndex: 0,
       isPresenting: true,
-      sessionRevision: 4
+      sessionRevision: 4,
+      typeStates: { presentation: { slideIndex: 0, slideCount: 1 } }
     })
 
     const next = useMediaProjectionStore.getState().next()
@@ -566,5 +567,83 @@ describe('updateNotes', () => {
     expect(after[2]).toBe(before[2])
     expect(after[1]).not.toBe(before[1])
     expect(after[1]).toMatchObject({ id: 'b', notes: 'new notes' })
+  })
+})
+
+describe('presentation page navigation readiness', () => {
+  it.each([undefined, 0, -1, NaN])(
+    'does not end a deck with unknown/invalid count %s',
+    (slideCount) => {
+      useMediaProjectionStore.getState().startPresentation([pptxFile], 0)
+      useMediaProjectionStore.getState().setTypeState('presentation', { slideIndex: 0, slideCount })
+      expect(useMediaProjectionStore.getState().canNext()).toBe(false)
+      expect(useMediaProjectionStore.getState().progress()).toBe('1 / …')
+      expect(useMediaProjectionStore.getState().next()).toBe(false)
+      expect(useMediaProjectionStore.getState().isEnded).toBe(false)
+      useMediaProjectionStore
+        .getState()
+        .setTypeState('presentation', { slideIndex: 0, slideCount: 10 })
+      useMediaProjectionStore.getState().next()
+      expect(useMediaProjectionStore.getState().typeStates.presentation?.slideIndex).toBe(1)
+    }
+  )
+
+  it('jumps to pages without replacing the file and rejects invalid page indices', () => {
+    useMediaProjectionStore.getState().startPresentation([pptxFile], 0)
+    useMediaProjectionStore
+      .getState()
+      .setTypeState('presentation', { slideIndex: 4, slideCount: 10 })
+    expect(useMediaProjectionStore.getState().jumpToSlide(6)).toBe(true)
+    expect(useMediaProjectionStore.getState().currentItem()?.id).toBe('deck')
+    expect(useMediaProjectionStore.getState().typeStates.presentation?.slideIndex).toBe(6)
+    expect(useMediaProjectionStore.getState().jumpToSlide(0)).toBe(true)
+    expect(useMediaProjectionStore.getState().typeStates.presentation?.slideIndex).toBe(0)
+    expect(useMediaProjectionStore.getState().jumpToSlide(9)).toBe(true)
+    expect(useMediaProjectionStore.getState().typeStates.presentation?.slideIndex).toBe(9)
+    for (const invalid of [-1, 10, NaN, 2.5]) {
+      expect(useMediaProjectionStore.getState().jumpToSlide(invalid)).toBe(false)
+    }
+    useMediaProjectionStore.getState().next()
+    expect(useMediaProjectionStore.getState().isEnded).toBe(true)
+  })
+
+  it('preserves current page when editable preflight blocks a jump', async () => {
+    const editable = makeFile('editable', 'editable.lpdeck', 'application/vnd.hhc.presenter+json')
+    useMediaProjectionStore.setState({
+      playlist: [editable],
+      currentIndex: 0,
+      isPresenting: true,
+      typeStates: { presentation: { slideIndex: 4, slideCount: 10 } }
+    })
+    const unregister = registerMediaProjectionPreflight(() => false)
+    try {
+      expect(await useMediaProjectionStore.getState().jumpToSlide(6)).toBe(false)
+      expect(useMediaProjectionStore.getState().typeStates.presentation?.slideIndex).toBe(4)
+    } finally {
+      unregister()
+    }
+  })
+
+  it('does not apply an older page jump after a newer jump', async () => {
+    const editable = makeFile('editable', 'editable.lpdeck', 'application/vnd.hhc.presenter+json')
+    useMediaProjectionStore.setState({
+      playlist: [editable],
+      currentIndex: 0,
+      isPresenting: true,
+      typeStates: { presentation: { slideIndex: 0, slideCount: 10 } }
+    })
+    const pending = deferred<boolean>()
+    const unregister = registerMediaProjectionPreflight(
+      vi.fn().mockReturnValueOnce(pending.promise).mockReturnValue(true)
+    )
+    try {
+      const older = useMediaProjectionStore.getState().jumpToSlide(4)
+      await useMediaProjectionStore.getState().jumpToSlide(6)
+      pending.resolve(true)
+      expect(await older).toEqual({ status: 'superseded' })
+      expect(useMediaProjectionStore.getState().typeStates.presentation?.slideIndex).toBe(6)
+    } finally {
+      unregister()
+    }
   })
 })
