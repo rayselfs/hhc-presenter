@@ -56,12 +56,12 @@
 
 **Interfaces:** Add `file:playback-error` as a non-content event carrying item/blob identity, current content/load revision, media error code and observed playback state. Bind sender to the current projection origin; lifecycle generation is not content identity. Strictly validate IDs, numeric time/volume and transport. Coordinator promotion preserves replay/pending controls and uses existing system replay; snapshot engine state must match coordinator.
 
-- [ ] Test strict event validation and exclusion from content replay.
-- [ ] Test only current native element/load reports error, once; stale and network/abort errors never force VLC.
-- [ ] Test owner/generation/item/content-revision checks before and after native-storage/runtime awaits; capture coordinator show/session identity and require it unchanged. Test same-item restart and media→timer→media ABA while fallback awaits, old content reports and non-projection senders; healthy video stays native.
-- [ ] Test fallback preserves position, paused/playing, volume and newer pending seek/transport; replay and re-projection retain VLC; no loops.
-- [ ] Implement event/report/coordinator promotion and snapshot synchronization. Web/runtime-missing/native-source-missing failure is visible and does not fake success.
-- [ ] Run IPC validation, projection context/coordinator, FileProjection and media store suites.
+- [x] Test strict event validation and exclusion from content replay.
+- [x] Test only current native element/load reports error, once; stale and network/abort errors never force VLC.
+- [x] Test owner/generation/item/content-revision checks before and after native-storage/runtime awaits; capture coordinator show/session identity and require it unchanged. Test same-item restart and media→timer→media ABA while fallback awaits, old content reports and non-projection senders; healthy video stays native.
+- [x] Test fallback preserves position, paused/playing, volume and newer pending seek/transport; replay and re-projection retain VLC; no loops.
+- [x] Implement event/report/coordinator promotion and snapshot synchronization. Web/runtime-missing/native-source-missing failure is visible and does not fake success.
+- [x] Run IPC validation, projection context/coordinator, FileProjection and media store suites.
 
 ## Task 4: Presentation page controls
 
@@ -79,11 +79,11 @@
 ## Task 5: Independent review and delivery
 
 - [x] Review this plan in a fresh agent before implementation; correct findings and repeat until no unresolved actionable plan defects.
-- [ ] Run full lint, typecheck, Vitest, desktop build and browser E2E; bound local test workers if shared machine load causes timeouts without changing assertions.
-- [ ] Perform feasible Electron smoke using isolated user data and existing VLC fixtures; distinguish host/device limitations.
-- [ ] Obtain independent whole-diff review, fix findings and verify changed behavior.
-- [ ] Commit scoped changes, push task branch, create PR with problem/behavior/test evidence. Watch all PR CI checks and repair failures until green.
-- [ ] Keep worktree and branch for unmerged PR; report remaining physical Windows/macOS acceptance separately.
+- [x] Run full lint, typecheck, Vitest, desktop build and browser E2E; bound local test workers if shared machine load causes timeouts without changing assertions.
+- [x] Perform feasible Electron smoke using isolated user data and existing VLC fixtures; distinguish host/device limitations.
+- [x] Obtain independent whole-diff review, fix findings and verify changed behavior.
+- PR delivery gate: commit scoped changes, push the task branch and create a PR with behavior/test evidence. All checks must pass on the final PR head; the live PR checks record remote CI status.
+- [x] Keep worktree and branch for unmerged PR; report remaining physical Windows/macOS acceptance separately.
 
 ## Investigation/verification ledger
 
@@ -93,3 +93,9 @@
 
 - Task 1 cloud import/recovery and Task 2 metadata/readiness independently approved. Task 4 reviewed twice: responsive thumbnail containment and close-during-pending-navigation races fixed with failing-to-passing regressions (11 grid tests). Real ten-page PPTX and editable projection traversal passed before final responsive recheck.
 - Full integration initially found an old editable-creation test MIME (`application/x-hhc-presentation+json`); fixture now uses the canonical `EDITABLE_PRESENTATION_MIME_TYPE`, matching real producers and server policy.
+- Task 3 independent review found that playback acknowledged during asynchronous VLC preparation could be replaced by the original error observation. The receipt now records observed state immediately; engine promotion preserves subsequent acknowledgements and remaining pending controls. Correction independently approved; 117 focused playback tests passed.
+- Local integration: 285 unit suites / 3,394 tests passed before the final acknowledged-control regression; desktop build and lint passed. Responsive ten-page browser E2E passed for both PPTX and editable copies at 1024/1366 widths. Full browser suite and final packaged acceptance are tracked separately.
+- Final whole-branch review identified recovery after explicit `file:end`; coordinator/context/store now invalidate or reject ended recovery. Test-first correction independently approved, with no remaining actionable findings.
+- Final local verification: lint; node/web typecheck; 285 Vitest suites / 3,398 tests; web and desktop builds including bundle limits; macOS arm64 package and runtime check; 3/3 packaged Electron lifecycle/VLC/native-storage smoke tests.
+- Browser verification: full suite 56 passed, 2 platform-specific skips, one resize-assertion retry. The assertion now tolerates detached thumbnails during resize; final rebuilt-app integration rerun passed 17/17 with no retries, including cloud sync and both ten-page presentation paths.
+- Acceptance limits: no authenticated production cloud import or physical Windows projector acceptance. No merge, release tag or release deployment; retain the isolated worktree for the unmerged PR.
