@@ -2,7 +2,6 @@ import type { FileItemRecord } from '@shared/types/folder'
 import { getBlobId } from './blob-identity'
 import { listFileBlobRecords, openFileExplorerDB } from './file-explorer-db'
 import { listDerivedAssets } from './media-work-db'
-import { deferMediaResourceCleanup, isMediaResourceLocked } from './media-resource-locks'
 import { createResourceCleanupRecord, retryResourceCleanup } from './resource-cleanup-journal'
 import { dispatchRecoverySourceChanged } from './recovery-source-events'
 import { listSyncEntries } from './sync-db'
@@ -137,10 +136,11 @@ export async function repairMediaStorageIntegrity(): Promise<MediaStorageIntegri
     ['file-blobs', 'folder-items', 'personal-sync-outbox', 'resource-cleanup-journal'],
     'readwrite'
   )
-  const [fileBlobs, folderItems, outbox] = await Promise.all([
+  const [fileBlobs, folderItems, outbox, pendingCleanups] = await Promise.all([
     tx.objectStore('file-blobs').getAll(),
     tx.objectStore('folder-items').getAll(),
-    tx.objectStore('personal-sync-outbox').getAll()
+    tx.objectStore('personal-sync-outbox').getAll(),
+    tx.objectStore('resource-cleanup-journal').getAll()
   ])
   const expectedRefCounts = new Map<string, number>()
   const syncBlobIds = new Set(syncEntries.flatMap((entry) => (entry.blobId ? [entry.blobId] : [])))
@@ -152,7 +152,6 @@ export async function repairMediaStorageIntegrity(): Promise<MediaStorageIntegri
   }
   const correctedRefCounts: string[] = []
   const cleanupRecords = []
-  const deferredBlobIds: string[] = []
   const blobStore = tx.objectStore('file-blobs')
   const journalStore = tx.objectStore('resource-cleanup-journal')
 
@@ -166,16 +165,11 @@ export async function repairMediaStorageIntegrity(): Promise<MediaStorageIntegri
       }
       continue
     }
-    if (syncBlobIds.has(record.id)) continue
-
-    if (isMediaResourceLocked(record.id)) {
-      if (actualRefCount !== 0) {
-        await blobStore.put({ ...record, refCount: 0 })
-        correctedRefCounts.push(record.id)
-      }
-      deferredBlobIds.push(record.id)
+    if (
+      syncBlobIds.has(record.id) ||
+      pendingCleanups.some((pending) => pending.blobId === record.id)
+    )
       continue
-    }
 
     const cleanupRecord = createResourceCleanupRecord({
       blobId: record.id,
@@ -183,20 +177,15 @@ export async function repairMediaStorageIntegrity(): Promise<MediaStorageIntegri
       deleteNativeFile: record.storage === 'native-fs',
       deleteDerivedAssets: true,
       deletePdfPageThumbs: true,
-      itemThumbnailIds: []
+      itemThumbnailIds: [],
+      deleteBlobRecord: true
     })
-    await blobStore.delete(record.id)
+    await blobStore.put({ ...record, refCount: 0 })
     await journalStore.put(cleanupRecord)
     cleanupRecords.push(cleanupRecord)
   }
   await tx.done
 
-  for (const blobId of deferredBlobIds) {
-    const deferred = deferMediaResourceCleanup(blobId, async () => {
-      await repairMediaStorageIntegrity()
-    })
-    if (!deferred) await repairMediaStorageIntegrity()
-  }
   await Promise.all(cleanupRecords.map((record) => retryResourceCleanup(record.id)))
 
   if (correctedRefCounts.length > 0 && cleanupRecords.length === 0) {

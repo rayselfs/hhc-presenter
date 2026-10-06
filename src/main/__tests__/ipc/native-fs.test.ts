@@ -32,6 +32,8 @@ const mockWindowManager = {
 }
 
 vi.mock('../../ipc/video-remux', () => ({
+  getVideoCacheUsage: vi.fn(async () => ({ cacheBytes: 50, temporaryBytes: 4 })),
+  clearVideoCache: vi.fn(async () => undefined),
   mutateVideoSource: vi.fn((_sourceFileId: string, mutation: () => Promise<unknown>) => mutation())
 }))
 
@@ -115,6 +117,22 @@ beforeEach(() => {
 })
 
 describe('native file import', () => {
+  it('restricts cache inspection and cleanup to the main window', async () => {
+    vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockProjectionWindow as never)
+    await expect(getHandler('native-fs:video-cache-usage')(makeEvent())).rejects.toThrow(
+      'Unauthorized'
+    )
+    await expect(getHandler('native-fs:clear-video-cache')(makeEvent())).rejects.toThrow(
+      'Unauthorized'
+    )
+    vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockMainWindow as never)
+    await expect(getHandler('native-fs:video-cache-usage')(makeEvent())).resolves.toEqual({
+      cacheBytes: 50,
+      temporaryBytes: 4
+    })
+    await expect(getHandler('native-fs:clear-video-cache')(makeEvent())).resolves.toBeUndefined()
+  })
+
   it('stages generated document bytes before publishing the native file', async () => {
     const bytes = new Uint8Array(new TextEncoder().encode('{"schemaVersion":1}'))
     mockStat.mockResolvedValueOnce({ isFile: () => true, size: bytes.byteLength })

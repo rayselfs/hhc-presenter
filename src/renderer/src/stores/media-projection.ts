@@ -1,9 +1,9 @@
 import { create } from 'zustand'
 import type { StoreApi } from 'zustand'
-import type { FileItemRecord } from '@shared/types/folder'
+import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 import { getBlobId } from '@renderer/lib/blob-identity'
 import { getMediaType, type MediaType, type MediaTypeStateMap } from '@renderer/lib/presentability'
-import { useFileExplorerStore } from '@renderer/stores/file-explorer'
+import { FILE_EXPLORER_ROOT_ID, useFileExplorerStore } from '@renderer/stores/file-explorer'
 import { lockMediaResources } from '@renderer/lib/media-resource-locks'
 import {
   prepareMediaProjection,
@@ -39,7 +39,22 @@ export async function resolveMediaProjectionAction(
 }
 
 export interface MediaProjectionStore {
+  projectionRenderStatus: {
+    itemId: string
+    blobId: string
+    contentRevision: number
+    status: 'preparing' | 'ready' | 'failed'
+    reason?: 'source-unavailable' | 'decode-failed' | 'render-failed'
+  } | null
+  projectionRetryRevision: number
+  retryCurrentProjection: () => void
   playlist: FileItemRecord[]
+  readinessCandidates: FileItemRecord[]
+  skippedReadinessIds: string[]
+  repairingReadinessIds: string[]
+  retryReadiness: (itemId: string) => Promise<boolean>
+  addRepairedItem: (itemId: string) => Promise<boolean>
+  skipReadinessItem: (itemId: string) => void
   currentIndex: number
   isPresenting: boolean
   sessionRevision: number
@@ -86,7 +101,12 @@ const initialTypeStates: Partial<{ [K in MediaType]: MediaTypeStateMap[K] }> = {
 }
 
 const initialState = {
+  projectionRenderStatus: null as MediaProjectionStore['projectionRenderStatus'],
+  projectionRetryRevision: 0,
   playlist: [] as FileItemRecord[],
+  readinessCandidates: [] as FileItemRecord[],
+  skippedReadinessIds: [] as string[],
+  repairingReadinessIds: [] as string[],
   currentIndex: 0,
   isPresenting: false,
   sessionRevision: 0,
@@ -111,6 +131,34 @@ function isCurrentProjectionAction(generation: number): boolean {
   return generation === projectionActionGeneration
 }
 
+function isRepairCandidateAvailable(candidate: FileItemRecord): boolean {
+  const catalog = useFileExplorerStore.getState()
+  const item = catalog.items[candidate.id]
+  if (
+    !item ||
+    item.type !== 'file' ||
+    item.deletedAt ||
+    !isPersonalRecordVisible(item) ||
+    getBlobId(item) !== getBlobId(candidate)
+  )
+    return false
+  const seen = new Set<string>()
+  let parentId: string | null = item.parentId
+  while (parentId && !seen.has(parentId)) {
+    seen.add(parentId)
+    const folder: FolderRecord | undefined = catalog.folders[parentId]
+    if (!folder) return parentId === FILE_EXPLORER_ROOT_ID
+    if (
+      folder.deletedAt ||
+      !isPersonalRecordVisible(folder) ||
+      folder.syncLink?.status === 'access-revoked'
+    )
+      return false
+    parentId = folder.parentId
+  }
+  return parentId === null
+}
+
 function clearLiveSession(set: StoreApi<MediaProjectionStore>['setState']): void {
   releaseProjectionLocks?.()
   releaseProjectionLocks = null
@@ -123,6 +171,7 @@ function withoutTransientMediaRuntimeState(
   const next = { ...typeStates }
   delete next.video
   delete next.presentation
+  if (next.pdf) next.pdf = { ...next.pdf, itemId: undefined, currentPage: 1, scrollPage: 0 }
   return next
 }
 
@@ -211,7 +260,10 @@ function isSameNavigationState(
 
 function blockedReadinessReport(
   item: FileItemRecord | undefined,
-  reason: 'presentation-finalization-blocked' | 'presentation-projection-superseded'
+  reason:
+    | 'presentation-finalization-blocked'
+    | 'presentation-projection-superseded'
+    | 'missing-source'
 ): PresentationReadinessReport {
   return {
     summary: { ready: 0, preparing: 0, unsupported: 0, missing: 0, failed: 1 },
@@ -296,6 +348,8 @@ export const useMediaProjectionStore = create<MediaProjectionStore>()((set, get)
     )
       return false
     set({
+      zoomLevel: 1,
+      pan: { x: 0, y: 0 },
       snapshot: {
         ...snapshot,
         entries: snapshot.entries.map((value) =>
@@ -308,14 +362,162 @@ export const useMediaProjectionStore = create<MediaProjectionStore>()((set, get)
     return true
   },
 
+  retryCurrentProjection: () => {
+    if (!get().isPresenting || get().isEnded) return
+    set({ projectionRetryRevision: get().projectionRetryRevision + 1 })
+  },
+
+  skipReadinessItem: (itemId) => {
+    if (!get().skippedReadinessIds.includes(itemId))
+      set({ skippedReadinessIds: [...get().skippedReadinessIds, itemId] })
+  },
+
+  retryReadiness: async (itemId) => {
+    const origin = get()
+    const candidate = origin.readinessCandidates.find((item) => item.id === itemId)
+    if (!candidate || origin.repairingReadinessIds.includes(itemId)) return false
+    const ownerId = usePersonalSyncStore.getState().activeOwnerId
+    let invalidated = false
+    const valid = (): boolean =>
+      !invalidated &&
+      get().snapshot?.id === origin.snapshot?.id &&
+      get().readinessCandidates === origin.readinessCandidates &&
+      get().isPresenting &&
+      !get().isEnded &&
+      usePersonalSyncStore.getState().activeOwnerId === ownerId &&
+      isRepairCandidateAvailable(candidate)
+    if (!valid()) return false
+    set({ repairingReadinessIds: [...get().repairingReadinessIds, itemId] })
+    const unsubscribeCatalog = useFileExplorerStore.subscribe(() => {
+      if (!isRepairCandidateAvailable(candidate)) invalidated = true
+    })
+    const unsubscribeAccount = usePersonalSyncStore.subscribe((account) => {
+      if (account.activeOwnerId !== ownerId) invalidated = true
+    })
+    try {
+      const previous = origin.lastReadinessReport?.items.find((item) => item.itemId === itemId)
+      if (previous?.reason.startsWith('sync-')) {
+        await ensureSyncItemAvailableForPresentation(candidate)
+        if (!valid()) return false
+      }
+      const refreshed = await analyzePresentationReadiness([candidate])
+      if (!valid()) return false
+      const report = get().lastReadinessReport
+      const replacement = refreshed.items[0]
+      if (!report || !replacement) return false
+      const items = report.items.map((item) => (item.itemId === itemId ? replacement : item))
+      const summary = { ready: 0, preparing: 0, unsupported: 0, missing: 0, failed: 0 }
+      for (const item of items) summary[item.status]++
+      set({ lastReadinessReport: { items, summary } })
+      return replacement.status === 'ready'
+    } finally {
+      unsubscribeCatalog()
+      unsubscribeAccount()
+      if (get().readinessCandidates === origin.readinessCandidates)
+        set({ repairingReadinessIds: get().repairingReadinessIds.filter((id) => id !== itemId) })
+    }
+  },
+
+  addRepairedItem: async (itemId) => {
+    const origin = get()
+    if (origin.playlist.some((item) => item.id === itemId)) return false
+    if (!(await get().retryReadiness(itemId))) return false
+    let state = get()
+    const candidate = state.readinessCandidates.find((item) => item.id === itemId)
+    let snapshot = state.snapshot
+    if (
+      !candidate ||
+      !snapshot ||
+      snapshot.id !== origin.snapshot?.id ||
+      state.playlist.some((item) => item.id === itemId) ||
+      !isRepairCandidateAvailable(candidate)
+    )
+      return false
+    const entry = createPresentationSnapshot([candidate], state.lastReadinessReport?.items)
+      .entries[0]
+    const releaseAdded = lockMediaResources(
+      getPresentationSnapshotResourceIds({ ...snapshot, entries: [entry] })
+    )
+    let invalidated = false
+    const ownerId = usePersonalSyncStore.getState().activeOwnerId
+    const unsubscribeCatalog = useFileExplorerStore.subscribe(() => {
+      if (!isRepairCandidateAvailable(candidate)) invalidated = true
+    })
+    const unsubscribeAccount = usePersonalSyncStore.subscribe((account) => {
+      if (account.activeOwnerId !== ownerId) invalidated = true
+    })
+    try {
+      await releaseAdded.ready
+      if (
+        releaseAdded.ready &&
+        (await analyzePresentationReadiness([candidate])).summary.ready !== 1
+      ) {
+        releaseAdded()
+        return false
+      }
+    } catch {
+      releaseAdded()
+      return false
+    } finally {
+      unsubscribeCatalog()
+      unsubscribeAccount()
+    }
+    state = get()
+    snapshot = state.snapshot
+    if (
+      invalidated ||
+      !snapshot ||
+      snapshot.id !== origin.snapshot?.id ||
+      !state.isPresenting ||
+      state.isEnded ||
+      state.playlist.some((item) => item.id === itemId) ||
+      !isRepairCandidateAvailable(candidate)
+    ) {
+      releaseAdded()
+      return false
+    }
+    const releasePrevious = releaseProjectionLocks
+    releaseProjectionLocks = () => {
+      releasePrevious?.()
+      releaseAdded()
+    }
+    const order = new Map(state.readinessCandidates.map((item, index) => [item.id, index]))
+    const playlist = [...state.playlist, candidate].sort(
+      (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)
+    )
+    const currentId = state.currentItem()?.id
+    const entries = new Map([...snapshot.entries, entry].map((value) => [value.itemId, value]))
+    set({
+      playlist,
+      currentIndex: playlist.findIndex((item) => item.id === currentId),
+      snapshot: {
+        ...snapshot,
+        entries: playlist.map((item, index) => ({ ...entries.get(item.id)!, index }))
+      },
+      skippedReadinessIds: state.skippedReadinessIds.filter((id) => id !== itemId)
+    })
+    return true
+  },
+
   startPresentation: (files: FileItemRecord[], startIndex: number) => {
     if (files.some((item) => !isPersonalRecordVisible(item))) return false
     const generation = beginProjectionAction()
-    return commitAfterPreflight(generation, prepareEditableProjection(files[startIndex]), () => {
+    const preflight = prepareEditableProjection(files[startIndex])
+    const snapshot = createPresentationSnapshot(files)
+    const release = lockMediaResources(getPresentationSnapshotResourceIds(snapshot))
+    const ready = release.ready
+      ? Promise.all([preflight, release.ready]).then(async ([result]) => {
+          const confirmed = await analyzePresentationReadiness(files)
+          return confirmed.summary.ready === files.length ? result : false
+        })
+      : preflight
+    const result = commitAfterPreflight(generation, ready, () => {
       releaseProjectionLocks?.()
-      const snapshot = createPresentationSnapshot(files)
-      releaseProjectionLocks = lockMediaResources(getPresentationSnapshotResourceIds(snapshot))
+      releaseProjectionLocks = release
       set({
+        readinessCandidates: files.map((file) => ({ ...file })),
+        skippedReadinessIds: [],
+        repairingReadinessIds: [],
         playlist: files,
         currentIndex: startIndex,
         isPresenting: true,
@@ -325,6 +527,13 @@ export const useMediaProjectionStore = create<MediaProjectionStore>()((set, get)
         typeStates: initialTypeStates
       })
     })
+    if (result instanceof Promise)
+      return result.then((outcome) => {
+        if (outcome.status !== 'success') release()
+        return outcome
+      })
+    if (!result) release()
+    return result
   },
 
   startPresentationWithReadiness: async (
@@ -394,10 +603,31 @@ export const useMediaProjectionStore = create<MediaProjectionStore>()((set, get)
       return blockedReadinessReport(readyFiles[resolvedIndex], 'presentation-projection-superseded')
     }
 
-    releaseProjectionLocks?.()
     const snapshot = createPresentationSnapshot(readyFiles, report.items)
-    releaseProjectionLocks = lockMediaResources(getPresentationSnapshotResourceIds(snapshot))
+    const release = lockMediaResources(getPresentationSnapshotResourceIds(snapshot))
+    try {
+      await release.ready
+      if (
+        release.ready &&
+        (await analyzePresentationReadiness(readyFiles)).summary.ready !== readyFiles.length
+      ) {
+        release()
+        return blockedReadinessReport(requestedItem, 'missing-source')
+      }
+    } catch {
+      release()
+      return blockedReadinessReport(requestedItem, 'presentation-finalization-blocked')
+    }
+    if (!isCurrentProjectionAction(generation) || !validatesPreflight(preflight)) {
+      release()
+      return blockedReadinessReport(requestedItem, 'presentation-projection-superseded')
+    }
+    releaseProjectionLocks?.()
+    releaseProjectionLocks = release
     set({
+      readinessCandidates: files.map((file) => ({ ...file })),
+      skippedReadinessIds: [],
+      repairingReadinessIds: [],
       playlist: readyFiles,
       currentIndex: resolvedIndex,
       isPresenting: true,
@@ -608,6 +838,7 @@ export const useMediaProjectionStore = create<MediaProjectionStore>()((set, get)
   },
 
   setZoomLevel: (level: number) => {
+    if (get().snapshot?.entries[get().currentIndex]?.playbackMode === 'vlc-embedded') return
     if (level <= 1) {
       set({ zoomLevel: 1, pan: { x: 0, y: 0 } })
     } else {
@@ -620,6 +851,7 @@ export const useMediaProjectionStore = create<MediaProjectionStore>()((set, get)
   },
 
   setPan: (x: number, y: number) => {
+    if (get().snapshot?.entries[get().currentIndex]?.playbackMode === 'vlc-embedded') return
     set({ pan: { x, y } })
   },
 

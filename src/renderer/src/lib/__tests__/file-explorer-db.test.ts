@@ -250,79 +250,49 @@ describe('file-explorer-db blob refCount', () => {
 })
 
 describe('copyItem blob sharing', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    mockSaveItem.mockResolvedValue(undefined)
-  })
-
-  it('copyItem increments the existing blob ref instead of storing a duplicate blob', async () => {
-    vi.resetModules()
-    const db = new FakeFileExplorerDB()
-    const incrementBlobRef = vi.fn(async (targetDb: FakeFileExplorerDB, id: string) => {
-      const record = await targetDb.get('file-blobs', id)
-      if (!record) throw new Error(`File blob not found: ${id}`)
-      await targetDb.put('file-blobs', { ...record, refCount: (record.refCount ?? 1) + 1 })
-    })
-    const storeFileBlob = vi.fn()
-
-    vi.doMock('@renderer/lib/file-explorer-db', () => ({
-      openFileExplorerDB: async () => db as never,
-      incrementBlobRef,
-      storeFileBlob,
-      deleteFileBlob: vi.fn(),
-      getFileBlob: vi.fn()
-    }))
-
+  it('commits shared blob references and copy metadata together', async () => {
+    const { openFileExplorerDB, resetFileExplorerDBForTests } = await import('../file-explorer-db')
+    await resetFileExplorerDBForTests()
+    const db = await openFileExplorerDB()
     const { useFileExplorerStore } = await import('@renderer/stores/file-explorer')
-    const blob = new Blob(['hello'])
-
-    await db.put('file-blobs', { id: 'file-1', blob, refCount: 1 })
-
+    const source = {
+      id: 'file-1',
+      parentId: 'file-root',
+      type: 'file' as const,
+      sortIndex: 0,
+      createdAt: 1,
+      expiresAt: null,
+      name: 'original.txt',
+      url: 'blob:file-1',
+      size: 5,
+      mimeType: 'text/plain'
+    }
+    const target = {
+      id: 'target-folder',
+      parentId: 'file-root',
+      name: 'Target',
+      sortIndex: 0,
+      createdAt: 1,
+      expiresAt: null
+    }
+    await db.put('folder-records', target)
+    await db.put('folder-items', source)
+    await db.put('file-blobs', { id: 'file-1', blob: new Blob(['hello']), refCount: 1 })
     useFileExplorerStore.setState({
-      folders: {},
-      items: {
-        'file-1': {
-          id: 'file-1',
-          parentId: 'file-root',
-          type: 'file',
-          sortIndex: 0,
-          createdAt: 1,
-          expiresAt: null,
-          name: 'original.txt',
-          url: 'blob:file-1',
-          size: 5,
-          mimeType: 'text/plain'
-        }
-      },
-      _foldersArray: [],
-      _itemsArray: [
-        {
-          id: 'file-1',
-          parentId: 'file-root',
-          type: 'file',
-          sortIndex: 0,
-          createdAt: 1,
-          expiresAt: null,
-          name: 'original.txt',
-          url: 'blob:file-1',
-          size: 5,
-          mimeType: 'text/plain'
-        }
-      ],
-      loadedParents: new Set(['file-root']),
-      currentFolderId: 'file-root',
+      folders: { 'target-folder': target },
+      items: { 'file-1': source },
+      _itemsArray: [source],
+      _foldersArray: [target],
+      _itemsByParent: { 'file-root': [source] },
       isLoading: false
     })
-
     const copiedId = await useFileExplorerStore.getState().copyItem('file-1', 'target-folder')
-
     expect(copiedId).toEqual(expect.any(String))
-    expect(db.records.get('file-1')?.refCount).toBe(2)
-    expect(db.records.has(copiedId ?? '')).toBe(false)
-    expect(incrementBlobRef).toHaveBeenCalledWith(db, 'file-1')
-    expect(storeFileBlob).not.toHaveBeenCalled()
-    expect(mockSaveItem).toHaveBeenCalledWith(
-      expect.objectContaining({ id: copiedId, parentId: 'target-folder', url: 'blob:file-1' })
-    )
-  }, 30_000)
+    expect((await db.get('file-blobs', 'file-1'))?.refCount).toBe(2)
+    expect(await db.get('folder-items', copiedId!)).toMatchObject({
+      parentId: 'target-folder',
+      url: 'blob:file-1'
+    })
+    expect(await db.get('file-blobs', copiedId!)).toBeUndefined()
+  })
 })

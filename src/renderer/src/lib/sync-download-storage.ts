@@ -1,3 +1,4 @@
+import { lockMediaResources } from './media-resource-locks'
 import { pendingHhcSyncReceipt } from './hhc-sync-receipts'
 import { toast } from '@heroui/react/toast'
 import i18n from '@renderer/i18n'
@@ -167,39 +168,151 @@ async function saveWebDownloadedContent(
   maxFileSize = MAX_FILE_SIZE_WEB,
   recordHhcReceipt = maxFileSize === HHC_MAX_FILE_SIZE_WEB
 ): Promise<SyncDownloadResult> {
-  if (isElectron()) {
-    throw new Error('Electron OneDrive downloads must use native streaming storage')
-  }
-
-  const contentLength = Number(response.headers.get('Content-Length') ?? metadata.size ?? 0)
-  const size = Number.isFinite(contentLength) && contentLength > 0 ? contentLength : 0
+  const release = lockMediaResources([request.targetBlobId])
   try {
-    const sizeError =
-      maxFileSize === HHC_MAX_FILE_SIZE_WEB
-        ? 'HHC file exceeds the Web 256MiB limit'
-        : 'OneDrive file exceeds the Web 2GB limit'
-    await ensureWebCapacity(size, maxFileSize, sizeError)
+    await release.ready
+    if (isElectron()) {
+      throw new Error('Electron OneDrive downloads must use native streaming storage')
+    }
 
-    const blob = await readResponseBlobWithProgress(
-      request,
-      response,
-      metadata,
-      size,
-      canCommit,
-      maxFileSize,
-      sizeError
-    )
-    await ensureWebCapacity(blob.size, maxFileSize, sizeError)
+    const contentLength = Number(response.headers.get('Content-Length') ?? metadata.size ?? 0)
+    const size = Number.isFinite(contentLength) && contentLength > 0 ? contentLength : 0
+    try {
+      const sizeError =
+        maxFileSize === HHC_MAX_FILE_SIZE_WEB
+          ? 'HHC file exceeds the Web 256MiB limit'
+          : 'OneDrive file exceeds the Web 2GB limit'
+      await ensureWebCapacity(size, maxFileSize, sizeError)
 
+      const blob = await readResponseBlobWithProgress(
+        request,
+        response,
+        metadata,
+        size,
+        canCommit,
+        maxFileSize,
+        sizeError
+      )
+      await ensureWebCapacity(blob.size, maxFileSize, sizeError)
+
+      const db = await openFileExplorerDB()
+      let syncEntryId: string | undefined
+      try {
+        await ensureCanCommit(canCommit)
+        await db.put('file-blobs', {
+          id: request.targetBlobId,
+          blob,
+          storage: 'indexed-db',
+          size: blob.size,
+          refCount: 1
+        })
+        await ensureCanCommit(canCommit)
+        const syncEntry = await putSyncEntry({
+          providerConnectionId: request.providerConnectionId,
+          remoteItemId: request.remoteItemId,
+          parentRemoteItemId: metadata.parentRemoteItemId,
+          kind: metadata.kind,
+          name: metadata.name,
+          itemId: request.targetBlobId,
+          blobId: request.targetBlobId,
+          mimeType: metadata.mimeType,
+          size: blob.size,
+          etag: metadata.etag,
+          contentHash: metadata.contentHash,
+          status: 'available-offline',
+          syncReceipt: recordHhcReceipt ? pendingHhcSyncReceipt(request, metadata) : undefined,
+          downloadedBytes: blob.size,
+          downloadTotalBytes: blob.size
+        })
+        syncEntryId = syncEntry.id
+        await ensureCanCommit(canCommit)
+      } catch (error) {
+        if (error instanceof SyncDownloadCancelledError) {
+          const cleanup = await Promise.allSettled([
+            syncEntryId
+              ? deleteSyncEntries([syncEntryId], { notifyRecovery: false })
+              : Promise.resolve(),
+            db.delete('file-blobs', request.targetBlobId)
+          ])
+          dispatchRecoverySourceChanged()
+          const cleanupFailure = cleanup.find(
+            (result): result is PromiseRejectedResult => result.status === 'rejected'
+          )
+          if (cleanupFailure) throw cleanupFailure.reason
+        }
+        throw error
+      }
+
+      return {
+        blobId: request.targetBlobId,
+        size: blob.size,
+        mimeType: metadata.mimeType ?? blob.type
+      }
+    } catch (error) {
+      if (isSyncStorageLimitError(error))
+        await markInsufficientStorage(request, metadata, canCommit)
+      throw error
+    }
+  } finally {
+    release()
+  }
+}
+
+export async function saveElectronOneDriveDownloadedContent(
+  request: SyncDownloadRequest,
+  clientId: string,
+  metadata: RemoteSyncItem,
+  canCommit: SyncDownloadCommitGuard = alwaysCanCommit
+): Promise<SyncDownloadResult> {
+  const release = lockMediaResources([request.targetBlobId])
+  try {
+    await release.ready
+    if (!isElectron()) {
+      throw new Error('Native OneDrive downloads are only available in Electron')
+    }
+
+    let downloaded: Awaited<ReturnType<typeof window.api.oneDrive.downloadFile>>
+    try {
+      const token = await window.api.oneDrive.getAccessToken({
+        connectionId: request.providerConnectionId,
+        clientId
+      })
+      const unsubscribe = window.api.oneDrive.onDownloadProgress((progress) => {
+        if (progress.targetFileId !== request.targetBlobId) return
+        void updateSyncDownloadProgress(
+          {
+            providerConnectionId: request.providerConnectionId,
+            remoteItemId: request.remoteItemId
+          },
+          progress.downloadedBytes,
+          progress.downloadTotalBytes,
+          canCommit
+        )
+      })
+      try {
+        downloaded = await window.api.oneDrive.downloadFile({
+          remoteItemId: request.remoteItemId,
+          targetFileId: request.targetBlobId,
+          accessToken: token.accessToken,
+          expectedSize: metadata.size,
+          mimeType: metadata.mimeType
+        })
+      } finally {
+        unsubscribe()
+      }
+    } catch (error) {
+      if (isSyncStorageLimitError(error))
+        await markInsufficientStorage(request, metadata, canCommit)
+      throw error
+    }
     const db = await openFileExplorerDB()
     let syncEntryId: string | undefined
     try {
       await ensureCanCommit(canCommit)
       await db.put('file-blobs', {
         id: request.targetBlobId,
-        blob,
-        storage: 'indexed-db',
-        size: blob.size,
+        storage: 'native-fs',
+        size: downloaded.size,
         refCount: 1
       })
       await ensureCanCommit(canCommit)
@@ -211,138 +324,40 @@ async function saveWebDownloadedContent(
         name: metadata.name,
         itemId: request.targetBlobId,
         blobId: request.targetBlobId,
-        mimeType: metadata.mimeType,
-        size: blob.size,
+        mimeType: metadata.mimeType ?? downloaded.mimeType,
+        size: downloaded.size,
         etag: metadata.etag,
         contentHash: metadata.contentHash,
         status: 'available-offline',
-        syncReceipt: recordHhcReceipt ? pendingHhcSyncReceipt(request, metadata) : undefined,
-        downloadedBytes: blob.size,
-        downloadTotalBytes: blob.size
+        downloadedBytes: downloaded.size,
+        downloadTotalBytes: downloaded.size
       })
       syncEntryId = syncEntry.id
       await ensureCanCommit(canCommit)
     } catch (error) {
+      const cleanup = await Promise.allSettled([
+        error instanceof SyncDownloadCancelledError && syncEntryId
+          ? deleteSyncEntries([syncEntryId], { notifyRecovery: false })
+          : Promise.resolve(),
+        db.delete('file-blobs', request.targetBlobId),
+        window.api.nativeFs.delete(request.targetBlobId)
+      ])
       if (error instanceof SyncDownloadCancelledError) {
-        const cleanup = await Promise.allSettled([
-          syncEntryId
-            ? deleteSyncEntries([syncEntryId], { notifyRecovery: false })
-            : Promise.resolve(),
-          db.delete('file-blobs', request.targetBlobId)
-        ])
         dispatchRecoverySourceChanged()
-        const cleanupFailure = cleanup.find(
-          (result): result is PromiseRejectedResult => result.status === 'rejected'
-        )
-        if (cleanupFailure) throw cleanupFailure.reason
       }
+      const cleanupFailure = cleanup.find(
+        (result): result is PromiseRejectedResult => result.status === 'rejected'
+      )
+      if (cleanupFailure) throw cleanupFailure.reason
       throw error
     }
 
     return {
       blobId: request.targetBlobId,
-      size: blob.size,
-      mimeType: metadata.mimeType ?? blob.type
-    }
-  } catch (error) {
-    if (isSyncStorageLimitError(error)) await markInsufficientStorage(request, metadata, canCommit)
-    throw error
-  }
-}
-
-export async function saveElectronOneDriveDownloadedContent(
-  request: SyncDownloadRequest,
-  clientId: string,
-  metadata: RemoteSyncItem,
-  canCommit: SyncDownloadCommitGuard = alwaysCanCommit
-): Promise<SyncDownloadResult> {
-  if (!isElectron()) {
-    throw new Error('Native OneDrive downloads are only available in Electron')
-  }
-
-  let downloaded: Awaited<ReturnType<typeof window.api.oneDrive.downloadFile>>
-  try {
-    const token = await window.api.oneDrive.getAccessToken({
-      connectionId: request.providerConnectionId,
-      clientId
-    })
-    const unsubscribe = window.api.oneDrive.onDownloadProgress((progress) => {
-      if (progress.targetFileId !== request.targetBlobId) return
-      void updateSyncDownloadProgress(
-        {
-          providerConnectionId: request.providerConnectionId,
-          remoteItemId: request.remoteItemId
-        },
-        progress.downloadedBytes,
-        progress.downloadTotalBytes,
-        canCommit
-      )
-    })
-    try {
-      downloaded = await window.api.oneDrive.downloadFile({
-        remoteItemId: request.remoteItemId,
-        targetFileId: request.targetBlobId,
-        accessToken: token.accessToken,
-        expectedSize: metadata.size,
-        mimeType: metadata.mimeType
-      })
-    } finally {
-      unsubscribe()
-    }
-  } catch (error) {
-    if (isSyncStorageLimitError(error)) await markInsufficientStorage(request, metadata, canCommit)
-    throw error
-  }
-  const db = await openFileExplorerDB()
-  let syncEntryId: string | undefined
-  try {
-    await ensureCanCommit(canCommit)
-    await db.put('file-blobs', {
-      id: request.targetBlobId,
-      storage: 'native-fs',
       size: downloaded.size,
-      refCount: 1
-    })
-    await ensureCanCommit(canCommit)
-    const syncEntry = await putSyncEntry({
-      providerConnectionId: request.providerConnectionId,
-      remoteItemId: request.remoteItemId,
-      parentRemoteItemId: metadata.parentRemoteItemId,
-      kind: metadata.kind,
-      name: metadata.name,
-      itemId: request.targetBlobId,
-      blobId: request.targetBlobId,
-      mimeType: metadata.mimeType ?? downloaded.mimeType,
-      size: downloaded.size,
-      etag: metadata.etag,
-      contentHash: metadata.contentHash,
-      status: 'available-offline',
-      downloadedBytes: downloaded.size,
-      downloadTotalBytes: downloaded.size
-    })
-    syncEntryId = syncEntry.id
-    await ensureCanCommit(canCommit)
-  } catch (error) {
-    const cleanup = await Promise.allSettled([
-      error instanceof SyncDownloadCancelledError && syncEntryId
-        ? deleteSyncEntries([syncEntryId], { notifyRecovery: false })
-        : Promise.resolve(),
-      db.delete('file-blobs', request.targetBlobId),
-      window.api.nativeFs.delete(request.targetBlobId)
-    ])
-    if (error instanceof SyncDownloadCancelledError) {
-      dispatchRecoverySourceChanged()
+      mimeType: metadata.mimeType ?? downloaded.mimeType ?? ''
     }
-    const cleanupFailure = cleanup.find(
-      (result): result is PromiseRejectedResult => result.status === 'rejected'
-    )
-    if (cleanupFailure) throw cleanupFailure.reason
-    throw error
-  }
-
-  return {
-    blobId: request.targetBlobId,
-    size: downloaded.size,
-    mimeType: metadata.mimeType ?? downloaded.mimeType ?? ''
+  } finally {
+    release()
   }
 }

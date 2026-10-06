@@ -347,8 +347,8 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
       if (
         sequence !== projectSequenceRef.current ||
         latest.sessionRevision !== state.sessionRevision ||
-        latest.playlist !== state.playlist ||
-        latest.currentIndex !== state.currentIndex ||
+        latest.currentItem()?.url !== item?.url ||
+        latest.currentItem()?.mimeType !== item?.mimeType ||
         latest.currentItem()?.id !== item?.id ||
         latest.isPresenting !== state.isPresenting
       ) {
@@ -426,16 +426,29 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
       const started =
         (!prev.isPresenting && state.isPresenting) || state.sessionRevision !== prev.sessionRevision
       if (!started && activeOwner !== 'media') return
-      const indexChanged = state.currentIndex !== prev.currentIndex
-      const playlistChanged = playlistContentChanged(prev.playlist, state.playlist)
+      const retryRequested = state.projectionRetryRevision !== prev.projectionRetryRevision
+      const indexChanged = state.currentItem()?.id !== prev.playlist[prev.currentIndex]?.id
+      const playlistChanged =
+        playlistContentChanged(prev.playlist, state.playlist) &&
+        (indexChanged ||
+          state.currentItem()?.url !== prev.playlist[prev.currentIndex]?.url ||
+          state.currentItem()?.mimeType !== prev.playlist[prev.currentIndex]?.mimeType ||
+          state.currentItem()?.name !== prev.playlist[prev.currentIndex]?.name)
       const endedCleared = prev.isEnded && !state.isEnded
       const presentationChanged =
         isPresentationMimeType(state.currentItem()?.mimeType) &&
         state.typeStates.presentation !== prev.typeStates.presentation
 
-      if (started || indexChanged || playlistChanged || endedCleared || presentationChanged) {
+      if (
+        started ||
+        indexChanged ||
+        playlistChanged ||
+        endedCleared ||
+        presentationChanged ||
+        retryRequested
+      ) {
         if (indexChanged || playlistChanged) clearRemoteSource()
-        void projectCurrentItem(state, started).catch(() => undefined)
+        void projectCurrentItem(state, started, retryRequested).catch(() => undefined)
       }
     })
     return () => {

@@ -36,10 +36,12 @@ function formatTime(seconds: number): string {
 
 export default function VideoPreview({ item }: VideoPreviewProps): React.JSX.Element {
   const { t } = useTranslation()
-  const { sendCommand } = usePresenterCommands()
+  const { sendCommand, cancelPreparation, thumbnails } = usePresenterCommands()
   const videoRef = useRef<HTMLMediaElement>(null)
   const seekInputRef = useRef<HTMLInputElement>(null)
   const [videoSrc, setVideoSrc] = useState<string | null>(null)
+  const [liveFrame, setLiveFrame] = useState<{ key: string; imageDataUrl: string } | null>(null)
+  const [livePreviewFailed, setLivePreviewFailed] = useState(false)
   const [error, setError] = useState(false)
   const [retryToken, setRetryToken] = useState(0)
   const blobId = getBlobId(item)
@@ -102,11 +104,49 @@ export default function VideoPreview({ item }: VideoPreviewProps): React.JSX.Ele
   const displayedHasStarted = projectionPlaybackState?.hasStarted ?? hasStarted
   const displayedIsPlaying = projectionPlaybackState?.isPlaying ?? isPlaying
   const displayedIsEnded = projectionPlaybackState?.isEnded ?? isEnded
+  const sessionRevision = useMediaProjectionStore((s) => s.sessionRevision)
+  const retryRevision = useMediaProjectionStore((s) => s.projectionRetryRevision)
+  const previewKey = `${item.id}:${blobId}:${sessionRevision}:${retryRevision}`
   const isPreparing = usesProjectionVlc && projectionPlaybackState?.phase === 'preparing'
   const transform =
-    zoomLevel !== 1
+    !usesProjectionVlc && zoomLevel !== 1
       ? `scale(${zoomLevel}) translate(${(pan.x / zoomLevel) * 100}%, ${(pan.y / zoomLevel) * 100}%)`
       : undefined
+
+  useEffect(() => {
+    setLiveFrame(null)
+    setLivePreviewFailed(false)
+    if (!usesProjectionVlc || isPreparing) return
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const refresh = async (): Promise<void> => {
+      const started = performance.now()
+      try {
+        const capture = window.api?.projectionVlc?.getPreviewFrame
+        if (!capture) throw new Error('Live preview unavailable')
+        const frame = await capture(item.id)
+        if (cancelled) return
+        if (frame?.itemId === item.id) {
+          setLiveFrame({ key: previewKey, imageDataUrl: frame.imageDataUrl })
+          setLivePreviewFailed(false)
+        } else {
+          setLiveFrame(null)
+        }
+      } catch {
+        if (!cancelled) {
+          setLiveFrame(null)
+          setLivePreviewFailed(true)
+        }
+      }
+      if (!cancelled)
+        timer = setTimeout(() => void refresh(), Math.max(250, (performance.now() - started) * 3))
+    }
+    void refresh()
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [item.id, previewKey, usesProjectionVlc, isPreparing])
 
   const setPlaybackState = useCallback(
     (next: { hasStarted?: boolean; isPlaying?: boolean; isEnded?: boolean }): void => {
@@ -153,6 +193,7 @@ export default function VideoPreview({ item }: VideoPreviewProps): React.JSX.Ele
 
     async function load(): Promise<void> {
       setError(false)
+      if (usesProjectionVlc) return
       if (remoteSourceUrl !== undefined) {
         if (remoteSourceUrl) setVideoSrc(remoteSourceUrl)
         return
@@ -183,7 +224,7 @@ export default function VideoPreview({ item }: VideoPreviewProps): React.JSX.Ele
       if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current)
       if (seekFlashTimeoutRef.current) clearTimeout(seekFlashTimeoutRef.current)
     }
-  }, [blobId, item.mimeType, remoteSourceUrl, retryToken, t])
+  }, [blobId, item.mimeType, remoteSourceUrl, retryToken, t, usesProjectionVlc])
 
   const triggerFlash = useCallback((icon: 'play' | 'pause'): void => {
     if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current)
@@ -370,7 +411,7 @@ export default function VideoPreview({ item }: VideoPreviewProps): React.JSX.Ele
     }
   }, [])
 
-  if (error) {
+  if (error && !usesProjectionVlc) {
     return (
       <PreviewLoadError
         message={t('presenter.videoLoadFailed')}
@@ -394,7 +435,31 @@ export default function VideoPreview({ item }: VideoPreviewProps): React.JSX.Ele
           transition: 'transform 0.15s ease'
         }}
       >
-        {videoSrc ? (
+        {usesProjectionVlc ? (
+          <div className="relative flex h-full w-full items-center justify-center">
+            {(liveFrame?.key === previewKey || thumbnails?.[item.id]) && (
+              <img
+                data-vlc-live-preview={liveFrame?.key === previewKey ? 'true' : 'false'}
+                src={
+                  liveFrame?.key === previewKey
+                    ? liveFrame.imageDataUrl
+                    : (thumbnails?.[item.id] ?? undefined)
+                }
+                alt=""
+                className="h-full w-full object-contain"
+              />
+            )}
+            <p className="absolute bottom-20 rounded bg-black/70 px-3 py-2 text-sm text-white/80">
+              {t(
+                livePreviewFailed
+                  ? 'presenter.videoLivePreviewFailed'
+                  : liveFrame?.key === previewKey
+                    ? 'presenter.videoLivePreview'
+                    : 'presenter.videoLivePreviewWaiting'
+              )}
+            </p>
+          </div>
+        ) : videoSrc ? (
           <MediaElement
             ref={(element) => {
               videoRef.current = element
@@ -424,9 +489,34 @@ export default function VideoPreview({ item }: VideoPreviewProps): React.JSX.Ele
       {isPreparing && (
         <div
           role="status"
-          className="absolute inset-0 z-20 flex items-center justify-center bg-black/45 text-white pointer-events-none"
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/75 text-white"
         >
-          {t('presenter.videoPreparing')}
+          <p>
+            {t(
+              projectionPlaybackState?.preparationPhase === 'inspection'
+                ? 'presenter.videoInspecting'
+                : projectionPlaybackState?.preparationPhase === 'remux'
+                  ? 'presenter.videoRemuxing'
+                  : 'presenter.videoInitializing'
+            )}
+          </p>
+          {cancelPreparation && (
+            <>
+              <button
+                type="button"
+                className="rounded border border-white/50 px-3 py-2 focus-visible:outline-2 focus-visible:outline-white"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  cancelPreparation()
+                }}
+              >
+                {t('presenter.videoCancelPreparation')}
+              </button>
+              <p className="max-w-sm px-4 text-center text-xs text-white/70">
+                {t('presenter.videoCancelKeepsCache')}
+              </p>
+            </>
+          )}
         </div>
       )}
 

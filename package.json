@@ -1,6 +1,6 @@
 {
   "name": "hhc-presenter",
-  "version": "2.6.5",
+  "version": "2.6.6",
   "description": "A projection system designed for church services.",
   "license": "GPL-3.0-or-later",
   "main": "./out/main/index.js",
@@ -19,7 +19,7 @@
     "check:web-build": "node scripts/check-web-build.mjs",
     "check:bundle": "node scripts/check-bundle-budget.mjs",
     "check:desktop-native": "node scripts/check-desktop-native.mjs",
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "electron-builder install-app-deps && npm run rebuild:vlc",
     "build:unpack": "npm run build && npm run check:desktop-native && npm run prepare:video-engine:strict && electron-builder --dir && npm run check:packaged-runtime -- --unpacked-only",
     "package:desktop": "npm run build && npm run check:desktop-native && npm run prepare:video-engine:strict && electron-builder",
     "build:win": "npm run package:desktop -- --win",
@@ -35,7 +35,8 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "npm run build && npm run test:e2e:browser",
     "test:e2e:browser": "playwright test --project=chromium",
-    "test:e2e:packaged": "playwright test --config playwright.electron.config.ts"
+    "test:e2e:packaged": "playwright test --config playwright.electron.config.ts",
+    "rebuild:vlc": "node scripts/patch-vlc-projection-runtime.mjs && electron-rebuild -f -w electron-vlc-player --build-from-source"
   },
   "dependencies": {
     "@aiden0z/pptx-renderer": "^1.2.4",
@@ -58,7 +59,7 @@
     "axios": "^1.19.0",
     "camelcase-keys": "^10.0.2",
     "electron-updater": "^6.8.9",
-    "electron-vlc-player": "^1.0.2",
+    "electron-vlc-player": "1.0.2",
     "flexsearch": "^0.8.212",
     "i18next": "^26.0.3",
     "idb": "^8.0.3",

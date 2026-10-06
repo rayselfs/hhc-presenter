@@ -335,3 +335,40 @@ describe('scanMediaStorageIntegrity', () => {
     await expect(db.get('file-blobs', 'blob-1')).resolves.toMatchObject({ refCount: 1 })
   })
 })
+
+it('journals zero-reference repair before releasing a live projection source', async () => {
+  const { lockMediaResources } = await import('../media-resource-locks')
+  const db = await openFileExplorerDB()
+  await db.put('file-blobs', { id: 'live', blob: new Blob(['frame']), refCount: 0 })
+  const release = lockMediaResources(['live'])
+  try {
+    const result = await repairMediaStorageIntegrity()
+    expect(result.cleanupJournalIds).toHaveLength(1)
+    expect(await db.get('file-blobs', 'live')).toBeDefined()
+    expect(await db.get('resource-cleanup-journal', result.cleanupJournalIds[0])).toMatchObject({
+      deleteBlobRecord: true
+    })
+  } finally {
+    release()
+  }
+  await vi.waitFor(async () => expect(await db.get('file-blobs', 'live')).toBeUndefined())
+})
+
+it('does not replace an active import staging cleanup intent during integrity repair', async () => {
+  const { createResourceCleanupRecord } = await import('../resource-cleanup-journal')
+  const db = await openFileExplorerDB()
+  await db.put('file-blobs', { id: 'staging', blob: new Blob(['source']), refCount: 0 })
+  const intent = createResourceCleanupRecord({
+    blobId: 'staging',
+    deleteNativeFile: false,
+    deleteDerivedAssets: true,
+    deletePdfPageThumbs: true,
+    itemThumbnailIds: [],
+    deleteBlobRecord: true,
+    stagingLock: 'local-blob:staging'
+  })
+  await db.put('resource-cleanup-journal', intent)
+  expect((await repairMediaStorageIntegrity()).cleanupJournalIds).toEqual([])
+  expect(await db.get('file-blobs', 'staging')).toBeDefined()
+  expect(await db.getAll('resource-cleanup-journal')).toEqual([intent])
+})

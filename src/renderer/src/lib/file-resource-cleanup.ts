@@ -1,7 +1,7 @@
+import { publishCatalogDeletion } from './file-catalog-events'
 import type { AnyItemRecord, FileItemRecord, FolderRecord } from '@shared/types/folder'
 import { getBlobId } from './blob-identity'
 import { openFileExplorerDB, type ResourceCleanupJournalRecord } from './file-explorer-db'
-import { deferMediaResourceCleanup, isMediaResourceLocked } from './media-resource-locks'
 import { createResourceCleanupRecord, retryResourceCleanup } from './resource-cleanup-journal'
 import { mediaJobQueue } from './media-job-queue'
 import type { MediaJobRecord, MediaJobType } from './media-work-db'
@@ -110,25 +110,9 @@ function makeCleanupRecord(
     deleteNativeFile: deleteSourceResources && storage === 'native-fs',
     deleteDerivedAssets: deleteSourceResources,
     deletePdfPageThumbs: deleteSourceResources,
-    itemThumbnailIds
+    itemThumbnailIds,
+    deleteBlobRecord: deleteSourceResources
   })
-}
-
-async function finalizeDeferredBlobCleanup(blobId: string): Promise<void> {
-  const db = await openFileExplorerDB()
-  const tx = db.transaction(['file-blobs', 'resource-cleanup-journal'], 'readwrite')
-  const blobStore = tx.objectStore('file-blobs')
-  const journalStore = tx.objectStore('resource-cleanup-journal')
-  const record = await blobStore.get(blobId)
-  if (!record || (record.refCount ?? 0) > 0) {
-    await tx.done
-    return
-  }
-  const cleanupRecord = makeCleanupRecord(blobId, record.storage, [], true)
-  await blobStore.delete(blobId)
-  await journalStore.put(cleanupRecord)
-  await tx.done
-  await retryResourceCleanup(cleanupRecord.id)
 }
 
 let cleanupTail: Promise<void> = Promise.resolve()
@@ -178,7 +162,8 @@ async function cleanupFileResourcesAfterJobFence(request: CleanupRequest): Promi
       'file-blobs',
       'resource-cleanup-journal',
       'personal-sync-nodes',
-      'personal-sync-outbox'
+      'personal-sync-outbox',
+      'catalog-deletions'
     ],
     'readwrite'
   )
@@ -216,35 +201,37 @@ async function cleanupFileResourcesAfterJobFence(request: CleanupRequest): Promi
     thumbnailIdsByBlob.set(blobId, [...(thumbnailIdsByBlob.get(blobId) ?? []), item.id])
   }
 
-  const deferredBlobIds: string[] = []
   const cleanupRecords: ResourceCleanupJournalRecord[] = []
-  for (const [blobId, removedReferences] of blobReferenceRemovals) {
+  for (const blobId of blobReferenceRemovals.keys()) {
     const record = await blobStore.get(blobId)
     const itemThumbnailIds = thumbnailIdsByBlob.get(blobId) ?? []
     if (!record) {
       cleanupRecords.push(makeCleanupRecord(blobId, undefined, itemThumbnailIds, true))
       continue
     }
-    const remainingReferences = (record.refCount ?? 1) - removedReferences
+    const remainingReferences = items.filter(
+      (item) =>
+        item.type === 'file' &&
+        getBlobId(item) === blobId &&
+        !targetItems.some((target) => target.id === item.id)
+    ).length
     if (remainingReferences <= 0) {
-      if (isMediaResourceLocked(blobId)) {
-        await blobStore.put({ ...record, refCount: 0 })
-        deferredBlobIds.push(blobId)
-        cleanupRecords.push(makeCleanupRecord(blobId, record.storage, itemThumbnailIds, false))
-      } else {
-        await blobStore.delete(blobId)
-        cleanupRecords.push(makeCleanupRecord(blobId, record.storage, itemThumbnailIds, true))
-      }
+      await blobStore.put({ ...record, refCount: 0 })
+      cleanupRecords.push(makeCleanupRecord(blobId, record.storage, itemThumbnailIds, true))
     } else {
       await blobStore.put({ ...record, refCount: remainingReferences })
       cleanupRecords.push(makeCleanupRecord(blobId, record.storage, itemThumbnailIds, false))
     }
   }
+
   cleanupRecords.push(
     ...nonFileThumbnailIds.map((itemId) => makeCleanupRecord(itemId, undefined, [itemId], false))
   )
 
   await Promise.all([
+    ...[...targetItems.map((item) => item.id), ...folderIds].map((id) =>
+      tx.objectStore('catalog-deletions').put({ id, deletedAt: Date.now() })
+    ),
     ...targetItems.map((item) => itemStore.delete(item.id)),
     ...targetItems.map((item) => nodeStore.delete(item.id)),
     ...[...folderIds].map((folderId) => folderStore.delete(folderId)),
@@ -252,12 +239,10 @@ async function cleanupFileResourcesAfterJobFence(request: CleanupRequest): Promi
     ...cleanupRecords.map((record) => journalStore.put(record))
   ])
   await tx.done
+  publishCatalogDeletion({ folderIds: [...folderIds], itemIds: targetItems.map((item) => item.id) })
 
-  for (const blobId of deferredBlobIds) {
-    const deferred = deferMediaResourceCleanup(blobId, () => finalizeDeferredBlobCleanup(blobId))
-    if (!deferred) await finalizeDeferredBlobCleanup(blobId)
-  }
-  await Promise.all(cleanupRecords.map((record) => retryResourceCleanup(record.id)))
+  // Catalog deletion is committed. Failed physical cleanup remains in the durable journal.
+  await Promise.allSettled(cleanupRecords.map((record) => retryResourceCleanup(record.id)))
 
   return {
     folderIds: [...folderIds],

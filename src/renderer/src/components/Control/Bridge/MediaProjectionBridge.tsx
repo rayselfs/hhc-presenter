@@ -35,6 +35,7 @@ export default function MediaProjectionBridge({
       const current = state.typeStates.video
       state.setTypeState('video', {
         phase: data.phase,
+        preparationPhase: data.preparationPhase,
         hasStarted: (current?.hasStarted ?? false) || data.currentTime > 0 || data.isPlaying,
         isPlaying: data.isPlaying,
         isEnded: data.isEnded,

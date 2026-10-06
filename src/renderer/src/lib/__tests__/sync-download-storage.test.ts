@@ -645,3 +645,46 @@ describe('saveWebOneDriveDownloadedContent', () => {
     ).rejects.toThrow('Native OneDrive downloads are only available in Electron')
   })
 })
+
+it.each([false, true])(
+  'protects an incomplete download commit from repair (native=%s)',
+  async (native) => {
+    vi.mocked(isElectron).mockReturnValue(native)
+    const { repairMediaStorageIntegrity } = await import('../media-storage-integrity')
+    const { retryPendingResourceCleanups } = await import('../resource-cleanup-journal')
+    const { isMediaResourceLocked } = await import('../media-resource-locks')
+    const db = await openFileExplorerDB()
+    const written = deferred<void>()
+    const resume = deferred<void>()
+    let blocked = false
+    const canCommit = async (): Promise<boolean> => {
+      if (!blocked && (await db.get('file-blobs', request.targetBlobId))) {
+        blocked = true
+        written.resolve()
+        await resume.promise
+      }
+      return true
+    }
+    const pending = native
+      ? saveElectronOneDriveDownloadedContent(request, 'client-id', metadata, canCommit)
+      : saveWebOneDriveDownloadedContent(
+          request,
+          new Response(new Uint8Array([1])),
+          metadata,
+          canCommit
+        )
+    await written.promise
+    expect(isMediaResourceLocked(request.targetBlobId)).toBe(true)
+    await repairMediaStorageIntegrity()
+    expect(await db.get('file-blobs', request.targetBlobId)).toBeDefined()
+    expect(window.api.nativeFs.delete).not.toHaveBeenCalled()
+    resume.resolve()
+    await pending
+    await retryPendingResourceCleanups()
+    expect(await db.get('file-blobs', request.targetBlobId)).toBeDefined()
+    expect(
+      (await getSyncEntryByRemoteItem(request.providerConnectionId, request.remoteItemId))?.blobId
+    ).toBe(request.targetBlobId)
+    expect(isMediaResourceLocked(request.targetBlobId)).toBe(false)
+  }
+)

@@ -1137,3 +1137,103 @@ it('does not promote from a stale storage await', async () => {
   expect(runtime).not.toHaveBeenCalled()
   expect(result.current.getProjectionSnapshot()?.media.show?.playbackMode).not.toBe('vlc-embedded')
 })
+
+it('accepts only render status for the current requested content revision', async () => {
+  vi.mocked(isElectron).mockReturnValue(false)
+  useMediaProjectionStore.setState({ isEnded: false, projectionRenderStatus: null })
+  const { result } = renderProjection()
+  act(() => {
+    void result.current.startProjection('media', [
+      [
+        'file:show',
+        {
+          itemId: 'image',
+          blobId: 'image',
+          mimeType: 'image/png',
+          fileName: 'image',
+          currentIndex: 0,
+          playlist: []
+        }
+      ]
+    ])
+  })
+  act(() => mockAdapter._trigger('__system:ready', { generation: 1 }))
+  const show = result.current.getProjectionSnapshot()!.media.show!
+  act(() =>
+    mockAdapter._trigger('file:render-status', {
+      itemId: 'image',
+      blobId: 'image',
+      contentRevision: show.contentRevision! - 1,
+      status: 'failed'
+    })
+  )
+  expect(useMediaProjectionStore.getState().projectionRenderStatus?.status).toBe('preparing')
+  act(() =>
+    mockAdapter._trigger('file:render-status', {
+      itemId: 'image',
+      blobId: 'image',
+      contentRevision: show.contentRevision!,
+      status: 'ready'
+    })
+  )
+  expect(useMediaProjectionStore.getState().projectionRenderStatus?.status).toBe('ready')
+  act(() => mockAdapter._trigger('__system:ready', { generation: 1 }))
+  expect(useMediaProjectionStore.getState().projectionRenderStatus?.status).toBe('preparing')
+  act(() => result.current.claimProjection('timer'))
+  act(() =>
+    mockAdapter._trigger('file:render-status', {
+      itemId: 'image',
+      blobId: 'image',
+      contentRevision: show.contentRevision!,
+      status: 'failed'
+    })
+  )
+  expect(useMediaProjectionStore.getState().projectionRenderStatus).toBeNull()
+})
+
+it.each(['video/mp4', 'audio/mpeg'])(
+  'clears document render status for %s transport',
+  (mimeType) => {
+    vi.mocked(isElectron).mockReturnValue(false)
+    useMediaProjectionStore.setState({ isEnded: false, projectionRenderStatus: null })
+    const { result } = renderProjection()
+    act(() => {
+      void result.current.startProjection('media', [
+        [
+          'file:show',
+          {
+            itemId: 'image',
+            blobId: 'image',
+            mimeType: 'image/png',
+            fileName: 'image',
+            currentIndex: 0,
+            playlist: []
+          }
+        ]
+      ])
+    })
+    act(() => mockAdapter._trigger('__system:ready', { generation: 1 }))
+    expect(useMediaProjectionStore.getState().projectionRenderStatus?.status).toBe('preparing')
+    act(() =>
+      result.current.send('file:show', {
+        itemId: 'transport',
+        blobId: 'transport',
+        mimeType,
+        fileName: 'transport',
+        currentIndex: 0,
+        playlist: []
+      })
+    )
+    expect(useMediaProjectionStore.getState().projectionRenderStatus).toBeNull()
+    const show = result.current.getProjectionSnapshot()!.media.show!
+    act(() =>
+      mockAdapter._trigger('file:render-status', {
+        itemId: show.itemId,
+        blobId: show.blobId,
+        contentRevision: show.contentRevision!,
+        status: 'ready'
+      })
+    )
+    expect(useMediaProjectionStore.getState().projectionRenderStatus).toBeNull()
+  }
+)

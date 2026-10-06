@@ -93,6 +93,14 @@ export function buildFileProjectionPayload({
   if (snapshotEntry?.sourceUrl && snapshotEntry.sourceUrl !== item.url) {
     payload.streamUrl = snapshotEntry.sourceUrl
   }
+  if (item.mimeType === 'application/pdf') {
+    const pdf = typeStates?.pdf
+    payload.pdf = {
+      page: pdf?.itemId === item.id ? (pdf.currentPage ?? 1) : 1,
+      scroll: pdf?.itemId === item.id ? (pdf.scrollPage ?? 0) : 0,
+      viewMode: pdf?.viewMode === 'scroll' ? 'continuous' : 'single'
+    }
+  }
   if (presentation) payload.presentation = presentation
   return payload
 }

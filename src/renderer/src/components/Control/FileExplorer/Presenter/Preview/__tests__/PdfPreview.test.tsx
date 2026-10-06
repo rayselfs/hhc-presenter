@@ -8,7 +8,7 @@ import PdfPreview from '../PdfPreview'
 const { getPageMock, mockGetDocument, mockGetFileSource, mockSendCommand } = vi.hoisted(() => {
   const getPageMock = vi.fn().mockResolvedValue({
     getViewport: vi.fn().mockReturnValue({ width: 100, height: 140 }),
-    render: vi.fn().mockReturnValue({ promise: Promise.resolve() })
+    render: vi.fn().mockReturnValue({ promise: Promise.resolve(), cancel: vi.fn() })
   })
   const mockGetDocument = vi.fn().mockReturnValue({
     promise: Promise.resolve({
@@ -45,7 +45,13 @@ vi.mock('@renderer/lib/pdfjs-loader', () => ({
 }))
 
 const mockStoreState = {
-  typeStates: { pdf: { viewMode: 'scroll' as 'scroll' | 'slide' } },
+  typeStates: {
+    pdf: {
+      viewMode: 'scroll' as 'scroll' | 'slide',
+      itemId: undefined as string | undefined,
+      currentPage: undefined as number | undefined
+    }
+  },
   zoomLevel: 1,
   pan: { x: 0, y: 0 },
   snapshot: null as null | {
@@ -56,6 +62,7 @@ const mockStoreState = {
       remoteItem?: { remoteItemId: string }
     }>
   },
+  setTypeState: vi.fn(),
   canNext: vi.fn().mockReturnValue(false),
   next: vi.fn(),
   exit: vi.fn(),
@@ -299,7 +306,36 @@ describe('PdfPreview slide sidebar', () => {
     act(() => window.dispatchEvent(new CustomEvent('media:pdfNextPage')))
 
     expect(mockSendCommand).toHaveBeenCalledOnce()
-    expect(mockSendCommand).toHaveBeenCalledWith({ action: 'pdfPage', value: 2 })
+    expect(mockSendCommand).toHaveBeenCalledWith({
+      action: 'pdfPage',
+      itemId: 'pdf-item-1',
+      value: 2
+    })
+  })
+
+  it('restores the same document page when the operator preview remounts', async () => {
+    mockStoreState.typeStates.pdf.itemId = 'pdf-item-1'
+    mockStoreState.typeStates.pdf.currentPage = 7
+    const { unmount } = render(<PdfPreview item={makeItem()} />)
+    await waitFor(() => expect(getPageMock).toHaveBeenCalledWith(7))
+    unmount()
+    mockStoreState.typeStates.pdf.itemId = undefined
+    mockStoreState.typeStates.pdf.currentPage = undefined
+  })
+
+  it('cancels an unfinished canvas render before rendering the next page', async () => {
+    const cancel = vi.fn()
+    getPageMock.mockResolvedValueOnce({
+      getViewport: () => ({ width: 100, height: 140 }),
+      render: () => ({ promise: new Promise(() => {}), cancel })
+    })
+    render(<PdfPreview item={makeItem()} />)
+    await waitFor(() => expect(getPageMock).toHaveBeenCalled())
+    await act(async () => {
+      await Promise.resolve()
+    })
+    act(() => window.dispatchEvent(new CustomEvent('media:pdfNextPage')))
+    await waitFor(() => expect(cancel).toHaveBeenCalledOnce())
   })
 
   it('sends the latest page for rapid next commands', async () => {
@@ -312,7 +348,15 @@ describe('PdfPreview slide sidebar', () => {
       window.dispatchEvent(new CustomEvent('media:pdfNextPage'))
     })
 
-    expect(mockSendCommand).toHaveBeenNthCalledWith(1, { action: 'pdfPage', value: 2 })
-    expect(mockSendCommand).toHaveBeenNthCalledWith(2, { action: 'pdfPage', value: 3 })
+    expect(mockSendCommand).toHaveBeenNthCalledWith(1, {
+      action: 'pdfPage',
+      itemId: 'pdf-item-1',
+      value: 2
+    })
+    expect(mockSendCommand).toHaveBeenNthCalledWith(2, {
+      action: 'pdfPage',
+      itemId: 'pdf-item-1',
+      value: 3
+    })
   })
 })

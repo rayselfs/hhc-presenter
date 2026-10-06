@@ -1,12 +1,16 @@
 import { EventEmitter } from 'node:events'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockResolveVideoPlaybackPath } = vi.hoisted(() => ({
-  mockResolveVideoPlaybackPath: vi.fn()
+const { mockResolveVideoPlaybackPath, mockCapturePreview } = vi.hoisted(() => ({
+  mockResolveVideoPlaybackPath: vi.fn(),
+  mockCapturePreview: vi.fn()
 }))
 
+vi.mock('../../vlc-live-preview', () => ({ createVlcLivePreview: () => mockCapturePreview }))
+
 vi.mock('../../ipc/video-remux', () => ({
-  resolveVideoPlaybackPath: mockResolveVideoPlaybackPath
+  resolveVideoPlaybackPath: mockResolveVideoPlaybackPath,
+  lockVideoPlaybackSource: vi.fn(() => vi.fn())
 }))
 
 const mockMainWindow = { id: 1 }
@@ -145,7 +149,7 @@ vi.mock('../../ipc/native-fs', () => ({
   getNativeFilePath: vi.fn(() => '/media/source')
 }))
 
-import { ipcMain } from 'electron'
+import { ipcMain, BrowserWindow } from 'electron'
 import * as electronVlcPlayer from 'electron-vlc-player'
 import { registerProjectionVlcHandlers } from '../../ipc/projection-vlc'
 import { resolveVlcRuntime } from '../../video-engine-runtime'
@@ -194,6 +198,37 @@ beforeEach(() => {
 })
 
 describe('projection-vlc listener cleanup', () => {
+  it('allows live frame reads only from the main window and rejects stale completions', async () => {
+    const preview = getHandler('projection-vlc:preview')
+    vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockProjectionWindow as never)
+    await expect(preview(makeEvent(), 'item-1')).rejects.toThrow('Unauthorized')
+    vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockMainWindow as never)
+    await expect(preview(makeEvent(), '../path')).rejects.toThrow('Invalid')
+    await getHandler('projection-vlc:start')(makeEvent(), {
+      itemId: 'live-item',
+      sourceFileId: '550e8400-e29b-41d4-a716-446655440000',
+      container: '#vlc-player'
+    })
+    expect(await preview(makeEvent(), 'live-item')).toBeNull()
+    mockVlcPlayers[0].emit('playing')
+    mockVlcPlayers[0].emit('paused')
+    expect(await preview(makeEvent(), 'other-item')).toBeNull()
+    const frame = deferred<{
+      imageDataUrl: string
+      capturedAt: number
+      captureDurationMs: number
+    }>()
+    mockCapturePreview.mockReturnValueOnce(frame.promise)
+    const pending = preview(makeEvent(), 'live-item')
+    await getHandler('projection-vlc:stop')(makeEvent(), { force: true })
+    frame.resolve({
+      imageDataUrl: 'data:image/png;base64,eA==',
+      capturedAt: 1,
+      captureDurationMs: 1
+    })
+    expect(await pending).toBeNull()
+  })
+
   it('owns and queues controls while resolving a Matroska derivative', async () => {
     const derivative = deferred<string>()
     mockResolveVideoPlaybackPath.mockReturnValueOnce(derivative.promise)
@@ -218,12 +253,75 @@ describe('projection-vlc listener cleanup', () => {
     await starting
     expect(mockResolveVideoPlaybackPath).toHaveBeenCalledWith(
       '550e8400-e29b-41d4-a716-446655440000',
-      'matroska-remux'
+      'matroska-remux',
+      expect.any(Function)
     )
     expect(mockVlcPlayers[0].setSource).toHaveBeenCalledWith('/cache/item-1.mkv', {
       autoplay: false
     })
-    expect(mockVlcPlayers[0].setVolume).toHaveBeenCalledWith(40)
+    expect(mockVlcPlayers[0].setVolume).toHaveBeenCalledWith(0)
+  })
+
+  it.each(['paused', 'playing'] as const)(
+    'keeps recovery silent until seek and final %s transport are confirmed',
+    async (initialPlaybackState) => {
+      await getHandler('projection-vlc:start')(makeEvent(), {
+        itemId: 'silent-start',
+        sourceFileId: '550e8400-e29b-41d4-a716-446655440000',
+        container: '#vlc-player',
+        initialPositionSeconds: 12,
+        initialVolume: 0.7,
+        initialPlaybackState
+      })
+      const player = mockVlcPlayers[0]
+      expect(player.setVolume.mock.calls).toEqual([[0]])
+      expect(player.setVolume.mock.invocationCallOrder[0]).toBeLessThan(
+        player.play.mock.invocationCallOrder[0]
+      )
+      getHandler('projection-vlc:control')(makeEvent(), {
+        itemId: 'silent-start',
+        action: 'volume',
+        value: 0.4
+      })
+      player.emit('playing')
+      expect(player.setTime).toHaveBeenCalledWith(12_000)
+      player.getTime.mockReturnValue(12_000)
+      player.emit('timeChanged')
+      expect(player.setVolume.mock.calls.every(([volume]) => volume === 0)).toBe(true)
+      player.emit(initialPlaybackState === 'playing' ? 'playing' : 'paused')
+      expect(player.setVolume).toHaveBeenLastCalledWith(40)
+    }
+  )
+
+  it('cancels presentation during preparation and ignores later cache progress/completion', async () => {
+    const derivative = deferred<string>()
+    mockResolveVideoPlaybackPath.mockReturnValueOnce(derivative.promise)
+    const starting = getHandler('projection-vlc:start')(makeEvent(), {
+      itemId: 'cancelled',
+      attemptId: 'cancelled-attempt',
+      sourceFileId: '550e8400-e29b-41d4-a716-446655440000',
+      container: '#vlc-player',
+      playbackVariant: 'matroska-remux'
+    }) as Promise<void>
+    await vi.waitFor(() => expect(mockResolveVideoPlaybackPath).toHaveBeenCalledOnce())
+    const publishPhase = mockResolveVideoPlaybackPath.mock.calls[0][2] as (phase: 'remux') => void
+    publishPhase('remux')
+    expect(mockWindowManager.sendToMain).toHaveBeenLastCalledWith(
+      'projection:message',
+      4,
+      'file:playback-state',
+      expect.objectContaining({ phase: 'preparing', preparationPhase: 'remux' })
+    )
+    await getHandler('projection-vlc:stop')(makeEvent(), {
+      itemId: 'cancelled',
+      attemptId: 'cancelled-attempt'
+    })
+    mockWindowManager.sendToMain.mockClear()
+    publishPhase('remux')
+    derivative.resolve('/cache/finished-in-background.mkv')
+    await starting
+    expect(mockVlcPlayers).toHaveLength(0)
+    expect(mockWindowManager.sendToMain).not.toHaveBeenCalled()
   })
 
   it('publishes a stable recoverable remux failure without embedding VLC', async () => {
@@ -911,7 +1009,7 @@ describe('projection-vlc listener cleanup', () => {
     await startPromise
 
     const current = mockVlcPlayers[0]
-    expect(current.setVolume).toHaveBeenCalledWith(70)
+    expect(current.setVolume).toHaveBeenCalledWith(0)
     expect(current.setTime).not.toHaveBeenCalled()
     expect(current.pause).not.toHaveBeenCalled()
 
@@ -956,7 +1054,7 @@ describe('projection-vlc listener cleanup', () => {
     await startPromise
 
     const current = mockVlcPlayers[0]
-    expect(current.setVolume).toHaveBeenCalledWith(45)
+    expect(current.setVolume).toHaveBeenCalledWith(0)
     expect(current.setTime).not.toHaveBeenCalled()
     current.emit('playing')
     expect(current.setTime).toHaveBeenCalledWith(12_000)
@@ -996,7 +1094,7 @@ describe('projection-vlc listener cleanup', () => {
     await startPromise
 
     const current = mockVlcPlayers[0]
-    expect(current.setVolume).toHaveBeenCalledWith(20)
+    expect(current.setVolume).toHaveBeenCalledWith(0)
     current.emit('playing')
     expect(current.setTime).toHaveBeenCalledWith(5_000)
     current.getTime.mockReturnValue(5_000)
@@ -1214,7 +1312,7 @@ describe('projection-vlc listener cleanup', () => {
     })
     const current = mockVlcPlayers[0]
 
-    expect(current.setVolume).toHaveBeenCalledWith(35)
+    expect(current.setVolume).toHaveBeenCalledWith(0)
     expect(current.play).toHaveBeenCalledOnce()
     expect(current.setTime).not.toHaveBeenCalled()
     expect(current.setSource.mock.invocationCallOrder[0]).toBeLessThan(
@@ -1337,6 +1435,6 @@ describe('projection-vlc listener cleanup', () => {
       'Invalid VLC control request'
     )
     expect(current.setTime).not.toHaveBeenCalled()
-    expect(current.setVolume).not.toHaveBeenCalled()
+    expect(current.setVolume).toHaveBeenCalledExactlyOnceWith(0)
   })
 })

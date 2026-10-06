@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from '@heroui/react/toast'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, AlignJustify, Maximize2 } from 'lucide-react'
-import type { PDFDocumentProxy } from 'pdfjs-dist'
+import type { PDFDocumentLoadingTask, PDFDocumentProxy, RenderTask } from 'pdfjs-dist'
 import type { FileItemRecord } from '@shared/types/folder'
 import { getFileSource, openFileExplorerDB } from '@renderer/lib/file-explorer-db'
 import { getBlobId } from '@renderer/lib/blob-identity'
@@ -17,23 +17,33 @@ interface PdfPreviewProps {
 
 import { loadPdfjsLib } from '@renderer/lib/pdfjs-loader'
 
-async function renderPage(
+function renderPage(
   pdf: PDFDocumentProxy,
   pageNum: number,
   canvas: HTMLCanvasElement,
-  scale = 1.5
-): Promise<void> {
-  const page = await pdf.getPage(pageNum)
-  const viewport = page.getViewport({ scale })
-  canvas.width = viewport.width
-  canvas.height = viewport.height
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
-  try {
-    await page.render({ canvasContext: ctx, viewport, canvas }).promise
-  } catch (e) {
-    if ((e as { name?: string })?.name === 'RenderingCancelledException') return
-    throw e
+  onError: () => void
+): () => void {
+  let cancelled = false
+  let task: RenderTask | undefined
+  void pdf
+    .getPage(pageNum)
+    .then(async (page) => {
+      if (cancelled) return
+      const viewport = page.getViewport({ scale: 1.5 })
+      canvas.width = viewport.width
+      canvas.height = viewport.height
+      const context = canvas.getContext('2d')
+      if (!context) return
+      task = page.render({ canvasContext: context, viewport, canvas })
+      await task.promise
+    })
+    .catch((error: unknown) => {
+      if (!cancelled && (error as { name?: string })?.name !== 'RenderingCancelledException')
+        onError()
+    })
+  return () => {
+    cancelled = true
+    task?.cancel()
   }
 }
 
@@ -42,14 +52,17 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
   const { sendCommand } = usePresenterCommands()
   const { pdfPageThumbs } = usePreviewCacheContext()
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [currentPage, setCurrentPage] = useState(() => {
+    const saved = useMediaProjectionStore.getState().typeStates.pdf
+    return saved?.itemId === item.id ? (saved.currentPage ?? 1) : 1
+  })
   const [pageCount, setPageCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [retryToken, setRetryToken] = useState(0)
   const blobId = getBlobId(item)
 
-  const currentPageRef = useRef(1)
+  const currentPageRef = useRef(currentPage)
   const slideCanvasRef = useRef<HTMLCanvasElement>(null)
   const scrollCanvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -71,15 +84,24 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
   const thumbs = pdfPageThumbs[item.id] ?? []
 
   const setPdfState = useCallback(
-    (partial: Partial<{ viewMode: 'slide' | 'scroll'; thumbsCollapsed: boolean }>) => {
+    (
+      partial: Partial<{
+        viewMode: 'slide' | 'scroll'
+        thumbsCollapsed: boolean
+        currentPage: number
+        scrollPage: number
+      }>
+    ) => {
       const current = useMediaProjectionStore.getState().typeStates['pdf']
       useMediaProjectionStore.getState().setTypeState('pdf', {
         viewMode: current?.viewMode ?? 'slide',
         thumbsCollapsed: current?.thumbsCollapsed ?? false,
+        ...(current?.itemId === item.id ? current : {}),
+        itemId: item.id,
         ...partial
       })
     },
-    []
+    [item.id]
   )
 
   const selectPage = useCallback(
@@ -89,15 +111,17 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
       if (nextPage === currentPageRef.current) return
       currentPageRef.current = nextPage
       setCurrentPage(nextPage)
-      sendCommand({ action: 'pdfPage', value: nextPage })
+      setPdfState({ currentPage: nextPage })
+      sendCommand({ action: 'pdfPage', itemId: item.id, value: nextPage })
     },
-    [pageCount, sendCommand]
+    [item.id, pageCount, sendCommand, setPdfState]
   )
 
   useEffect(() => {
     let cancelled = false
     let revokeSource: (() => void) | null = null
     let doc: PDFDocumentProxy | null = null
+    let loadingTask: PDFDocumentLoadingTask | null = null
 
     async function load(): Promise<void> {
       setLoading(true)
@@ -122,7 +146,10 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
 
         revokeSource = source.revoke
         const pdfjsLib = await loadPdfjsLib()
-        const pdf = await pdfjsLib.getDocument({ url: source.url }).promise
+        if (cancelled) return
+        loadingTask = pdfjsLib.getDocument({ url: source.url })
+        const pdf = await loadingTask.promise
+        loadingTask = null
         if (cancelled) {
           void pdf.loadingTask.destroy()
           return
@@ -130,8 +157,20 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
         doc = pdf
         setPdfDoc(pdf)
         setPageCount(pdf.numPages)
-        currentPageRef.current = 1
-        setCurrentPage(1)
+        const saved = useMediaProjectionStore.getState().typeStates.pdf
+        const page = Math.min(
+          pdf.numPages,
+          Math.max(1, saved?.itemId === item.id ? (saved.currentPage ?? 1) : 1)
+        )
+        currentPageRef.current = page
+        setCurrentPage(page)
+        setPdfState({
+          currentPage: page,
+          scrollPage: Math.min(
+            Math.max(0, pdf.numPages - 0.000001),
+            Math.max(0, saved?.itemId === item.id ? (saved.scrollPage ?? 0) : 0)
+          )
+        })
         setLoading(false)
       } catch {
         if (!cancelled) {
@@ -146,24 +185,17 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
     return () => {
       cancelled = true
       revokeSource?.()
+      void loadingTask?.destroy?.()
       if (doc) void doc.loadingTask.destroy()
       setPdfDoc(null)
     }
-  }, [blobId, item.mimeType, remoteSourceUrl, retryToken, t])
+  }, [blobId, item.id, item.mimeType, remoteSourceUrl, retryToken, setPdfState, t])
 
   useEffect(() => {
     if (!pdfDoc || pdfViewMode !== 'slide') return
     const canvas = slideCanvasRef.current
     if (!canvas) return
-    let cancelled = false
-
-    void renderPage(pdfDoc, currentPage, canvas).then(() => {
-      if (cancelled) return
-    })
-
-    return () => {
-      cancelled = true
-    }
+    return renderPage(pdfDoc, currentPage, canvas, () => setError(true))
   }, [pdfDoc, currentPage, pdfViewMode])
 
   const renderedPagesRef = useRef<Set<number>>(new Set())
@@ -173,10 +205,11 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
 
     renderedPagesRef.current = new Set()
 
+    const cancellations: Array<() => void> = []
     const firstCanvas = scrollCanvasRefs.current[0]
     if (firstCanvas) {
       renderedPagesRef.current.add(0)
-      void renderPage(pdfDoc, 1, firstCanvas)
+      cancellations.push(renderPage(pdfDoc, 1, firstCanvas, () => setError(true)))
     }
 
     const observer = new IntersectionObserver(
@@ -187,7 +220,7 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
             const pageIndex = Number(canvas.dataset.pageIndex)
             if (!renderedPagesRef.current.has(pageIndex)) {
               renderedPagesRef.current.add(pageIndex)
-              void renderPage(pdfDoc!, pageIndex + 1, canvas)
+              cancellations.push(renderPage(pdfDoc, pageIndex + 1, canvas, () => setError(true)))
             }
             observer.unobserve(canvas)
           }
@@ -200,8 +233,45 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
       if (canvas) observer.observe(canvas)
     })
 
-    return () => observer.disconnect()
-  }, [pdfDoc, pdfViewMode, pageCount])
+    let cancelled = false
+    const saved = useMediaProjectionStore.getState().typeStates.pdf
+    const scroll = saved?.itemId === item.id ? (saved.scrollPage ?? 0) : 0
+    const targetIndex = Math.min(pageCount - 1, Math.floor(scroll))
+    // Restore geometry before scrolling: unrendered canvases still have the browser's default size.
+    if (scroll > 0) {
+      void Promise.all(
+        Array.from({ length: targetIndex + 1 }, async (_, index) => {
+          const page = await pdfDoc.getPage(index + 1)
+          if (cancelled) return
+          const canvas = scrollCanvasRefs.current[index]
+          if (!canvas) return
+          const viewport = page.getViewport({ scale: 1.5 })
+          Object.assign(canvas.style, {
+            width: '100%',
+            maxWidth: `${viewport.width}px`,
+            height: 'auto',
+            aspectRatio: `${viewport.width} / ${viewport.height}`
+          })
+        })
+      )
+        .then(() => {
+          if (cancelled) return
+          const target = scrollCanvasRefs.current[targetIndex]
+          if (target && scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop =
+              target.offsetTop + (scroll % 1) * target.clientHeight
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setError(true)
+        })
+    }
+    return () => {
+      cancelled = true
+      observer.disconnect()
+      cancellations.forEach((cancel) => cancel())
+    }
+  }, [item.id, pdfDoc, pdfViewMode, pageCount])
 
   useEffect(() => {
     const handleNext = (): void => selectPage(currentPageRef.current + 1)
@@ -228,13 +298,16 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
         const rect = canvas.getBoundingClientRect()
         if (rect.bottom > containerTop && rect.height > 0) {
           const fraction = Math.max(0, containerTop - rect.top) / rect.height
-          sendCommand({ action: 'pdfScroll', value: i + fraction })
+          setPdfState({ scrollPage: i + fraction })
+          sendCommand({ action: 'pdfScroll', itemId: item.id, value: i + fraction })
           return
         }
       }
-      sendCommand({ action: 'pdfScroll', value: Math.max(0, canvases.length - 1) })
+      const scrollPage = Math.max(0, canvases.length - 1)
+      setPdfState({ scrollPage })
+      sendCommand({ action: 'pdfScroll', itemId: item.id, value: scrollPage })
     })
-  }, [sendCommand])
+  }, [item.id, sendCommand, setPdfState])
 
   useEffect(() => {
     return () => {
@@ -260,7 +333,7 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
     return (
       <PreviewLoadError
         message={t('presenter.pdfLoadFailed')}
-        retryLabel={t('presenter.retry')}
+        retryLabel={t('presenter.retryPreview', 'Retry preview')}
         onRetry={() => setRetryToken((value) => value + 1)}
       />
     )
@@ -287,13 +360,14 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
         </div>
         <div className="absolute bottom-2 left-2 z-20" onMouseDown={(e) => e.stopPropagation()}>
           <button
+            aria-label={t('presenter.pdfSinglePage', 'Single page')}
             className="inline-flex items-center rounded-full p-2 pdf-sidebar-bg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
             onClick={() => {
               setPdfState({ viewMode: 'slide' })
-              sendCommand({ action: 'pdfViewMode', value: 'single' })
+              sendCommand({ action: 'pdfViewMode', itemId: item.id, value: 'single' })
             }}
           >
-            <Maximize2 size={20} />
+            <Maximize2 size={20} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -357,6 +431,7 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
           <div className="shrink-0 flex items-center justify-center gap-1 p-1.5 border-t border-white/10">
             <button
               className="text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1.5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label={t('presenter.previousPage', 'Previous page')}
               onClick={() => window.dispatchEvent(new CustomEvent('media:pdfPrevPage'))}
               disabled={currentPage <= 1}
             >
@@ -367,6 +442,7 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
             </span>
             <button
               className="text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1.5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label={t('presenter.nextPage', 'Next page')}
               onClick={() => window.dispatchEvent(new CustomEvent('media:pdfNextPage'))}
               disabled={currentPage >= pageCount}
             >
@@ -375,12 +451,13 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
             <div className="w-px h-4 bg-white/20 mx-1" />
             <button
               className="text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1.5 transition-colors"
+              aria-label={t('presenter.pdfContinuous', 'Continuous scrolling')}
               onClick={() => {
                 setPdfState({ viewMode: 'scroll' })
-                sendCommand({ action: 'pdfViewMode', value: 'continuous' })
+                sendCommand({ action: 'pdfViewMode', itemId: item.id, value: 'continuous' })
               }}
             >
-              <AlignJustify size={20} />
+              <AlignJustify size={20} aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -393,6 +470,8 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
       >
         <button
           className="flex items-center justify-center w-5 h-10 pdf-sidebar-bg rounded-r-lg text-white/70 hover:text-white transition-colors"
+          aria-label={t('presenter.toggleThumbnails', 'Toggle page thumbnails')}
+          aria-expanded={!thumbsCollapsed}
           onClick={() => setPdfState({ thumbsCollapsed: !thumbsCollapsed })}
         >
           {thumbsCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
@@ -409,6 +488,7 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
           <div className="inline-flex items-center gap-1 pl-2 pr-3 py-1.5 rounded-full pdf-sidebar-bg">
             <button
               className="text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1.5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label={t('presenter.previousPage', 'Previous page')}
               onClick={() => window.dispatchEvent(new CustomEvent('media:pdfPrevPage'))}
               disabled={currentPage <= 1}
             >
@@ -419,6 +499,7 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
             </span>
             <button
               className="text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1.5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label={t('presenter.nextPage', 'Next page')}
               onClick={() => window.dispatchEvent(new CustomEvent('media:pdfNextPage'))}
               disabled={currentPage >= pageCount}
             >
@@ -427,12 +508,13 @@ export default function PdfPreview({ item }: PdfPreviewProps): React.JSX.Element
             <div className="w-px h-4 bg-white/20 mx-1" />
             <button
               className="text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1.5 transition-colors"
+              aria-label={t('presenter.pdfContinuous', 'Continuous scrolling')}
               onClick={() => {
                 setPdfState({ viewMode: 'scroll' })
-                sendCommand({ action: 'pdfViewMode', value: 'continuous' })
+                sendCommand({ action: 'pdfViewMode', itemId: item.id, value: 'continuous' })
               }}
             >
-              <AlignJustify size={20} />
+              <AlignJustify size={20} aria-hidden="true" />
             </button>
           </div>
         </div>

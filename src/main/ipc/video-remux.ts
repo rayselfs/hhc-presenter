@@ -1,4 +1,5 @@
 import { app } from 'electron'
+import type { VideoCacheUsage } from '../../shared/ipc-channels'
 import { createHash, randomUUID } from 'crypto'
 import { createReadStream, promises as fs } from 'fs'
 import { join, resolve } from 'path'
@@ -30,6 +31,63 @@ interface SourceState {
 const REMUX_TIMEOUT_MS = 30 * 60 * 1000
 const TEMP_MAX_AGE_MS = 24 * 60 * 60 * 1000
 const states = new Map<string, SourceState>()
+const playbackSources = new Map<string, number>()
+
+export function lockVideoPlaybackSource(sourceFileId: string): () => void {
+  playbackSources.set(sourceFileId, (playbackSources.get(sourceFileId) ?? 0) + 1)
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    const count = (playbackSources.get(sourceFileId) ?? 1) - 1
+    if (count > 0) playbackSources.set(sourceFileId, count)
+    else playbackSources.delete(sourceFileId)
+  }
+}
+
+async function listCacheArtifacts(): Promise<
+  { name: string; sourceId: string; temporary: boolean }[]
+> {
+  let names: string[]
+  try {
+    names = await fs.readdir(cacheDir())
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return []
+    throw error
+  }
+  return names.flatMap((name) => {
+    const temporary = name.startsWith('.') && name.endsWith('.tmp.mkv')
+    const sourceId = temporary ? name.slice(1).split('.')[0] : name.replace(/\.(mkv|json)$/, '')
+    return isValidNativeFileId(sourceId) && (temporary || /\.(mkv|json)$/.test(name))
+      ? [{ name, sourceId, temporary }]
+      : []
+  })
+}
+
+export async function getVideoCacheUsage(): Promise<VideoCacheUsage> {
+  const usage: VideoCacheUsage = { cacheBytes: 0, temporaryBytes: 0 }
+  for (const artifact of await listCacheArtifacts()) {
+    try {
+      const stat = await fs.lstat(join(cacheDir(), artifact.name))
+      if (stat.isFile()) usage[artifact.temporary ? 'temporaryBytes' : 'cacheBytes'] += stat.size
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+    }
+  }
+  return usage
+}
+
+export async function clearVideoCache(): Promise<void> {
+  const sourceIds = new Set((await listCacheArtifacts()).map((artifact) => artifact.sourceId))
+  for (const sourceId of sourceIds) {
+    const state = stateFor(sourceId)
+    if (playbackSources.has(sourceId) || state.ensure || state.controller) continue
+    await serialize(state, async () => {
+      if (playbackSources.has(sourceId) || state.ensure || state.controller) return
+      await removeCacheArtifacts(sourceId)
+    })
+  }
+}
 
 function cacheDir(): string {
   return resolve(app.getPath('userData'), 'video-remux-cache')
@@ -115,13 +173,19 @@ async function removeCacheArtifacts(sourceFileId: string): Promise<void> {
   )
 }
 
-async function ensureRemux(sourceFileId: string, state: SourceState): Promise<string> {
+async function ensureRemux(
+  sourceFileId: string,
+  state: SourceState,
+  onPhase?: (phase: 'inspection' | 'remux') => void
+): Promise<string> {
+  onPhase?.('inspection')
   const sourcePath = getNativeFilePath(sourceFileId)
   const identity = await sourceIdentity(sourceFileId)
   await fs.mkdir(cacheDir(), { recursive: true })
   const reusable = await readReusableCache(sourceFileId, identity)
   if (reusable) return reusable
 
+  onPhase?.('remux')
   const requiredBytes = Math.ceil(identity.size * 1.2) + 256 * 1024 * 1024
   const storage = await fs.statfs(cacheDir())
   if (storage.bavail * storage.bsize < requiredBytes) throw new Error('insufficient-storage')
@@ -220,13 +284,17 @@ async function ensureRemux(sourceFileId: string, state: SourceState): Promise<st
 
 export function resolveVideoPlaybackPath(
   sourceFileId: string,
-  variant: VideoPlaybackVariant
+  variant: VideoPlaybackVariant,
+  onPhase?: (phase: 'inspection' | 'remux') => void
 ): Promise<string> {
   if (!isValidNativeFileId(sourceFileId)) return Promise.reject(new Error('Invalid native file id'))
   if (variant === 'source') return Promise.resolve(getNativeFilePath(sourceFileId))
   const state = stateFor(sourceFileId)
-  if (state.ensure) return state.ensure
-  const task = serialize(state, () => ensureRemux(sourceFileId, state))
+  if (state.ensure) {
+    onPhase?.('remux')
+    return state.ensure
+  }
+  const task = serialize(state, () => ensureRemux(sourceFileId, state, onPhase))
   state.ensure = task
   void task.then(
     () => {

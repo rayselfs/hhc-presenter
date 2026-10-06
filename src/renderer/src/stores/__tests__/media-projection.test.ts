@@ -334,7 +334,7 @@ describe('next / prev', () => {
     useMediaProjectionStore.getState().next()
 
     expect(useMediaProjectionStore.getState().typeStates).toEqual({
-      pdf: { viewMode: 'scroll' }
+      pdf: { viewMode: 'scroll', itemId: undefined, currentPage: 1, scrollPage: 0 }
     })
   })
 
@@ -458,7 +458,7 @@ describe('jumpTo', () => {
 
     useMediaProjectionStore.getState().jumpTo(1)
     expect(useMediaProjectionStore.getState().typeStates).toEqual({
-      pdf: { viewMode: 'slide' }
+      pdf: { viewMode: 'slide', itemId: undefined, currentPage: 1, scrollPage: 0 }
     })
   })
 
@@ -654,7 +654,13 @@ it('promotes only the exact current presentation snapshot and preserves its iden
   const snapshot = useMediaProjectionStore.getState().snapshot!
   expect(store.promoteVideoPlayback('stale', 'video', 'video')).toBe(false)
   expect(store.promoteVideoPlayback(snapshot.id, 'video', 'wrong-blob')).toBe(false)
+  store.setZoomLevel(2)
+  store.setPan(20, 30)
   expect(store.promoteVideoPlayback(snapshot.id, 'video', 'video')).toBe(true)
+  store.setZoomLevel(3)
+  store.setPan(40, 50)
+  expect(useMediaProjectionStore.getState().zoomLevel).toBe(1)
+  expect(useMediaProjectionStore.getState().pan).toEqual({ x: 0, y: 0 })
   expect(useMediaProjectionStore.getState().snapshot).toMatchObject({
     id: snapshot.id,
     entries: [{ playbackMode: 'vlc-embedded', playbackVariant: 'source' }]

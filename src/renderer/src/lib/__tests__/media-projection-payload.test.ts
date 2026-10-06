@@ -30,6 +30,21 @@ function makeFile(id: string, url = `blob:${id}`): FileItemRecord {
 }
 
 describe('buildFileProjectionPayload', () => {
+  it('carries PDF mode across items without carrying another document page', () => {
+    const file = { ...makeFile('pdf'), mimeType: 'application/pdf' }
+    const pdf = { itemId: 'other', currentPage: 7, scrollPage: 6.5, viewMode: 'scroll' as const }
+    expect(
+      buildFileProjectionPayload({ playlist: [file], currentIndex: 0, typeStates: { pdf } })?.pdf
+    ).toEqual({ page: 1, scroll: 0, viewMode: 'continuous' })
+    expect(
+      buildFileProjectionPayload({
+        playlist: [file],
+        currentIndex: 0,
+        typeStates: { pdf: { ...pdf, itemId: 'pdf' } }
+      })?.pdf
+    ).toEqual({ page: 7, scroll: 6.5, viewMode: 'continuous' })
+  })
+
   it('projects an ephemeral snapshot source without mutating the file item', () => {
     const item = makeFile('remote')
     const payload = buildFileProjectionPayload({

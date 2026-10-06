@@ -1,3 +1,6 @@
+import { listSyncEntries } from './sync-db'
+import { getBlobId } from './blob-identity'
+import { withMediaResourceCleanup } from './media-resource-locks'
 import { openFileExplorerDB, type ResourceCleanupJournalRecord } from './file-explorer-db'
 import { isElectron } from './env'
 import { deleteDerivedAssetsForSource } from './media-work-db'
@@ -72,7 +75,7 @@ async function processResourceCleanup(record: ResourceCleanupJournalRecord): Pro
 export async function retryResourceCleanup(id: string): Promise<void> {
   const db = await openFileExplorerDB()
   const record = await db.get('resource-cleanup-journal', id)
-  if (record?.stagingLock) {
+  if (record?.stagingLock && navigator.locks) {
     await navigator.locks.request(record.stagingLock, () => retryResourceCleanupUnlocked(id))
     return
   }
@@ -84,21 +87,41 @@ async function retryResourceCleanupUnlocked(id: string): Promise<void> {
   const record = await db.get('resource-cleanup-journal', id)
   if (!record) return
 
-  try {
-    await processResourceCleanup(record)
-    await db.delete('resource-cleanup-journal', id)
-    dispatchRecoverySourceChanged()
-  } catch (error) {
-    await db.put('resource-cleanup-journal', {
-      ...record,
-      status: 'failed',
-      attempt: record.attempt + 1,
-      lastError: getErrorMessage(error),
-      updatedAt: Date.now()
-    })
-    dispatchRecoverySourceChanged()
-    throw error
-  }
+  await withMediaResourceCleanup(record.blobId, async () => {
+    const record = await db.get('resource-cleanup-journal', id)
+    if (!record) return
+    try {
+      if (record.deleteBlobRecord) {
+        const [items, outbox, syncEntries] = await Promise.all([
+          db.getAll('folder-items'),
+          db.getAll('personal-sync-outbox'),
+          listSyncEntries()
+        ])
+        if (
+          items.some((item) => item.type === 'file' && getBlobId(item) === record.blobId) ||
+          outbox.some((operation) => operation.snapshotBlobId === record.blobId) ||
+          syncEntries.some(
+            (entry) => entry.blobId === record.blobId && entry.status !== 'deleted-pending-release'
+          )
+        )
+          return
+      }
+      await processResourceCleanup(record)
+      if (record.deleteBlobRecord) await db.delete('file-blobs', record.blobId)
+      await db.delete('resource-cleanup-journal', id)
+      dispatchRecoverySourceChanged()
+    } catch (error) {
+      await db.put('resource-cleanup-journal', {
+        ...record,
+        status: 'failed',
+        attempt: record.attempt + 1,
+        lastError: getErrorMessage(error),
+        updatedAt: Date.now()
+      })
+      dispatchRecoverySourceChanged()
+      throw error
+    }
+  })
 }
 
 export async function retryPendingResourceCleanups(): Promise<ResourceCleanupRetryResult> {

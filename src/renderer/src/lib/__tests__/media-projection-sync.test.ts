@@ -1645,3 +1645,69 @@ it('projects the presenter page even when the open editor remains on its first p
   )
   expect(usePresentationWorkspaceStore.getState().getActiveSlideId('editable-deck')).toBe(firstId)
 })
+
+it('keeps current content and remote lease intact for a queue-only insertion before it', async () => {
+  const item = setRemotePresentationItem()
+  renderSync()
+  await act(async () => Promise.resolve())
+  mockProject.mockClear()
+  mockStartProjection.mockClear()
+  const before = useMediaProjectionStore.getState()
+  const entry = before.snapshot!.entries[0]
+  const inserted = makeFile('inserted', 'inserted.png')
+  act(() =>
+    useMediaProjectionStore.setState({
+      playlist: [inserted, item],
+      currentIndex: 1,
+      snapshot: {
+        ...before.snapshot!,
+        entries: [
+          { ...entry, index: 0, itemId: inserted.id, blobId: inserted.id },
+          { ...entry, index: 1 }
+        ]
+      }
+    })
+  )
+  await act(async () => Promise.resolve())
+  expect(mockProject).not.toHaveBeenCalled()
+  expect(mockStartProjection).not.toHaveBeenCalled()
+  expect(useMediaProjectionStore.getState().snapshot?.entries[1]).toEqual({ ...entry, index: 1 })
+})
+
+it('finishes current source acquisition when a queue insertion shifts its index', async () => {
+  const item = setRemotePresentationItem()
+  const pending = deferred<{
+    providerConnectionId: string
+    remoteItemId: string
+    rootRemoteFolderId: string
+    source: { kind: 'native-lease'; url: string; leaseId: string; etag: string }
+  }>()
+  remoteMocks.prepare.mockReturnValueOnce(pending.promise)
+  renderSync({
+    auth: {
+      getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
+      getAccessToken: vi.fn(),
+      refreshAfterUnauthorized: vi.fn(),
+      endSession: vi.fn()
+    }
+  })
+  await waitFor(() => expect(remoteMocks.prepare).toHaveBeenCalledOnce())
+  const inserted = makeFile('inserted', 'inserted.png')
+  act(() => useMediaProjectionStore.setState({ playlist: [inserted, item], currentIndex: 1 }))
+  await act(async () =>
+    pending.resolve({
+      providerConnectionId: 'hhc-line:user-1',
+      remoteItemId: 'asset-1',
+      rootRemoteFolderId: 'collection-1',
+      source: {
+        kind: 'native-lease',
+        url: 'https://example.com/current',
+        leaseId: 'lease',
+        etag: 'etag'
+      }
+    })
+  )
+  expect(mockStartProjection).toHaveBeenCalledWith('media', [
+    ['file:show', expect.objectContaining({ itemId: item.id })]
+  ])
+})

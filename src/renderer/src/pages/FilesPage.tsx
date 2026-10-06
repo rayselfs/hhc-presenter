@@ -1,3 +1,4 @@
+import { MediaImportStatus } from '@renderer/components/Control/FileExplorer/MediaImportStatus'
 import PresentationDraftRecovery from '@renderer/components/Control/Presentation/PresentationDraftRecovery'
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -1055,6 +1056,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
         selectedCount={selectedCount}
         endContent={cloud ? <PersonalCloudUsage /> : undefined}
       >
+        <MediaImportStatus />
         <PresentationDraftRecovery />
         {cloud && <PersonalCloudStatus />}
         <FolderPersistenceStatus

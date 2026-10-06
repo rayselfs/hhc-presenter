@@ -66,6 +66,20 @@ export interface VideoPosterInfo {
   message?: string
 }
 
+export interface ProjectionVlcPreviewFrame {
+  itemId: string
+  attemptId: string
+  generation: number
+  imageDataUrl: string
+  capturedAt: number
+  captureDurationMs: number
+}
+
+export interface VideoCacheUsage {
+  cacheBytes: number
+  temporaryBytes: number
+}
+
 export type ProjectionVlcStatus = 'ready' | 'missing' | 'error'
 
 export type ProjectionVlcFailureCode =
@@ -276,8 +290,11 @@ export interface IpcInvokeMap {
   'native-fs:import-file': { args: [string, string | Uint8Array]; result: { size: number } }
   'native-fs:file-exists': { args: [string]; result: boolean }
   'native-fs:delete-file': { args: [string]; result: void }
+  'native-fs:video-cache-usage': { args: []; result: VideoCacheUsage }
+  'native-fs:clear-video-cache': { args: []; result: void }
   'video-poster:get-info': { args: []; result: VideoPosterInfo }
   'video-poster:generate': { args: [VideoPosterRequest]; result: VideoPosterResult }
+  'projection-vlc:preview': { args: [string]; result: ProjectionVlcPreviewFrame | null }
   'projection-vlc:get-info': { args: []; result: ProjectionVlcInfo }
   'projection-vlc:start': { args: [ProjectionVlcStartRequest]; result: void }
   'projection-vlc:control': { args: [ProjectionVlcControlRequest]; result: void }

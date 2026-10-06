@@ -119,7 +119,9 @@ const nativeFsApi = {
   getUrl: (id: string, mimeType: string) =>
     `hhc-media://file/${encodeURIComponent(id)}?type=${encodeURIComponent(mimeType)}`,
   exists: (id: string) => typedInvoke('native-fs:file-exists', id),
-  delete: (id: string) => typedInvoke('native-fs:delete-file', id)
+  delete: (id: string) => typedInvoke('native-fs:delete-file', id),
+  getVideoCacheUsage: () => typedInvoke('native-fs:video-cache-usage'),
+  clearVideoCache: () => typedInvoke('native-fs:clear-video-cache')
 }
 
 const videoPosterApi = {
@@ -129,6 +131,7 @@ const videoPosterApi = {
 }
 
 const projectionVlcApi = {
+  getPreviewFrame: (itemId: string) => typedInvoke('projection-vlc:preview', itemId),
   getInfo: () => typedInvoke('projection-vlc:get-info'),
   start: (request: IpcInvokeMap['projection-vlc:start']['args'][0]) =>
     typedInvoke('projection-vlc:start', request),

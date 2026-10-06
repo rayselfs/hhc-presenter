@@ -539,13 +539,28 @@
       "skippedItems": "已跳过 {{count}} 个",
       "readinessSummary": "{{ready}} 个就绪，{{preparing}} 个准备中，{{unsupported}} 个不支持，{{missing}} 个缺失，{{failed}} 个失败",
       "readinessIssues": "待处理项目",
-      "readinessHelp": "这些项目会保留在此播放会话，直到您修复或选择跳过。",
+      "readinessHelp": "修复后可加入播放列表，跳过只影响本次播放。",
       "noReadinessIssues": "没有待处理项目",
       "retryPreparation": "重试",
       "openRecovery": "打开修复中心",
       "skipItem": "跳过",
       "progress": "播放进度",
-      "togglePlay": "播放或暂停"
+      "togglePlay": "播放或暂停",
+      "repairNotReady": "尚未准备完成，请检查来源后重试。",
+      "addRepairedItem": "加入播放列表",
+      "readinessReasonFallback": "请检查来源，或打开修复中心。",
+      "pendingItems": "{{count}} 个项目需要处理",
+      "projectionStatus": {
+        "preparing": "正在准备投影",
+        "ready": "已确认投影",
+        "failed": "投影失败，可重试"
+      },
+      "retryProjection": "重试投影",
+      "projectionFailure": {
+        "source-unavailable": "无法取得来源。请检查连接或还原文件后重试。",
+        "decode-failed": "无法加载或解码文件。请重试，或重新导入有效文件。",
+        "render-failed": "无法绘制文档。请重试，或重新导出文件。"
+      }
     },
     "noProjectableFiles": "没有可投影的文件",
     "invalidName": "名称无效",
@@ -620,7 +635,19 @@
       "onedrive": "OneDrive",
       "local-fs": "本地同步"
     },
-    "uploadFailed": "导入“{{name}}”失败：{{reason}}"
+    "uploadFailed": "导入“{{name}}”失败：{{reason}}",
+    "importProgress": {
+      "retry": "重试失败文件",
+      "title": "导入文件",
+      "busy": "这批文件正在导入，请勿重复提交。",
+      "working": "已处理 {{completed}} / {{total}} 个文件",
+      "cancelling": "正在完成处理中的文件，其余文件将跳过",
+      "complete": "已导入 {{succeeded}} 个 · 失败 {{failed}} 个 · 跳过 {{cancelled}} 个",
+      "cancel": "停止剩余导入",
+      "cancelHelp": "正在保存的文件会完成，已完成的文件会保留。云端同步会另外继续。",
+      "failures": "导入失败的文件",
+      "legacyPpt": "{{name}}：不支持旧版 .ppt，请在 PowerPoint 另存为 .pptx 后再导入。"
+    }
   },
   "presentationWorkspace": {
     "saveDraftTitle": "保存演示文稿",
@@ -1025,7 +1052,8 @@
         "coversAndPreviews": "封面与预览图",
         "pdfPreviews": "PDF 页面预览",
         "offlineSyncFiles": "同步离线文件",
-        "temporaryFiles": "临时与失败任务文件"
+        "temporaryFiles": "临时与失败任务文件",
+        "videoPlaybackCache": "视频播放缓存"
       },
       "cleanup": {
         "title": "缓存清理",
@@ -1268,7 +1296,23 @@
     "imageLoadFailed": "无法加载图片",
     "videoPreparing": "视频准备中…",
     "videoLoadFailed": "无法加载视频",
-    "pdfLoadFailed": "无法加载 PDF"
+    "pdfLoadFailed": "无法加载 PDF",
+    "pdfSinglePage": "单页模式",
+    "previousPage": "上一页",
+    "nextPage": "下一页",
+    "pdfContinuous": "连续页面",
+    "toggleThumbnails": "显示或隐藏缩略图",
+    "videoInspecting": "正在检查视频",
+    "videoRemuxing": "正在准备视频播放",
+    "videoInitializing": "正在启动播放器",
+    "videoCancelPreparation": "取消准备",
+    "videoCancelKeepsCache": "取消本次投影准备；后台播放缓存可能继续完成。",
+    "videoPreviewUnavailable": "视频显示于投影画面；此处为海报预览。",
+    "videoLivePreview": "实时投影画面",
+    "videoLivePreviewWaiting": "等待实时画面",
+    "videoLivePreviewFailed": "暂时无法获取实时画面，正在重试",
+    "previewUnavailable": "操作端预览无法显示",
+    "retryPreview": "重试预览"
   },
   "camera": {
     "resetTitle": "重置取景？",

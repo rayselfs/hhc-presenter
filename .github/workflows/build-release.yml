@@ -87,10 +87,12 @@ jobs:
           - os: macos-15
             target: --mac
             artifact: macos
+            live_preview: '0' # Hosted macOS cannot create VLC OpenGL output.
             smoke_executable: dist/mac-arm64/HHC Presenter.app/Contents/MacOS/HHC Presenter
           - os: windows-2025
             target: --win
             artifact: windows
+            live_preview: '1'
             smoke_executable: dist/win-unpacked/hhc-presenter.exe
 
     steps:
@@ -195,6 +197,7 @@ jobs:
       - name: Packaged projection smoke
         env:
           PACKAGED_APP_PATH: ${{ matrix.smoke_executable }}
+          PACKAGED_VLC_LIVE_PREVIEW: ${{ matrix.live_preview }}
         run: npm run test:e2e:packaged
 
       - name: Upload packaged smoke evidence

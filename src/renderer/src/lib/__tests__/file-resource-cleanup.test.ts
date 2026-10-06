@@ -375,12 +375,13 @@ describe('file resource cleanup', () => {
       refCount: 1
     })
 
-    await expect(cleanupFileResources({ itemIds: ['native-item'] })).rejects.toThrow(
-      'native file busy'
-    )
+    await expect(cleanupFileResources({ itemIds: ['native-item'] })).resolves.toEqual({
+      folderIds: [],
+      itemIds: ['native-item']
+    })
 
     await expect(db.get('folder-items', 'native-item')).resolves.toBeUndefined()
-    await expect(db.get('file-blobs', nativeBlobId)).resolves.toBeUndefined()
+    await expect(db.get('file-blobs', nativeBlobId)).resolves.toMatchObject({ refCount: 0 })
     await expect(listResourceCleanupRecords()).resolves.toEqual([
       expect.objectContaining({
         blobId: nativeBlobId,
@@ -394,7 +395,7 @@ describe('file resource cleanup', () => {
     await expect(listResourceCleanupRecords()).resolves.toEqual([])
   })
 
-  it('journals source cleanup only after a projection lock is released', async () => {
+  it('durably journals source cleanup before a projection lock is released', async () => {
     const release = lockMediaResources([originalBlobId])
     const db = await openFileExplorerDB()
     await db.put('folder-items', {
@@ -418,7 +419,10 @@ describe('file resource cleanup', () => {
     await cleanupFileResources({ itemIds: ['locked-item'] })
 
     await expect(db.get('file-blobs', originalBlobId)).resolves.toMatchObject({ refCount: 0 })
-    expect(mockDeleteThumbnail).toHaveBeenCalledWith('locked-item')
+    await expect(listResourceCleanupRecords()).resolves.toEqual([
+      expect.objectContaining({ blobId: originalBlobId, deleteBlobRecord: true })
+    ])
+    expect(mockDeleteThumbnail).not.toHaveBeenCalled()
     expect(mockDeleteDerivedAssets).not.toHaveBeenCalled()
 
     release()

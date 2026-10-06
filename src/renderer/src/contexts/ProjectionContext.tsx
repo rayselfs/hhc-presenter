@@ -1,3 +1,4 @@
+import { isPresentationMimeType } from '@renderer/lib/presentation-media'
 import { getFileBlobRecord } from '@renderer/lib/file-explorer-db'
 import { useMediaProjectionStore } from '@renderer/stores/media-projection'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
@@ -105,6 +106,14 @@ function getReadyVlcItemId(coordinator: ProjectionSessionCoordinator): string | 
     : null
 }
 
+function usesDocumentRenderStatus(mimeType: string | undefined): boolean {
+  return Boolean(
+    mimeType?.startsWith('image/') ||
+    mimeType === 'application/pdf' ||
+    isPresentationMimeType(mimeType)
+  )
+}
+
 export function ProjectionProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   const [isProjectionOpen, setIsProjectionOpen] = useState(false)
   const [projectionReadyCount, setProjectionReadyCount] = useState(0)
@@ -168,6 +177,33 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
         failure: next.failure ? { ...next.failure } : null
       })
       setProjectionSnapshot(coordinator.getSnapshot())
+      const renderSnapshot = coordinator.getSnapshot()
+      const show = renderSnapshot?.media.show
+      const media = useMediaProjectionStore.getState()
+      if (
+        renderSnapshot?.owner === 'media' &&
+        show &&
+        usesDocumentRenderStatus(show.mimeType) &&
+        show.contentRevision !== undefined
+      ) {
+        if (
+          media.projectionRenderStatus?.contentRevision !== show.contentRevision ||
+          media.projectionRenderStatus?.itemId !== show.itemId ||
+          ((next.status === 'opening' || next.status === 'recovering') &&
+            media.projectionRenderStatus?.status !== 'preparing')
+        ) {
+          useMediaProjectionStore.setState({
+            projectionRenderStatus: {
+              itemId: show.itemId,
+              blobId: show.blobId,
+              contentRevision: show.contentRevision,
+              status: 'preparing'
+            }
+          })
+        }
+      } else if (media.projectionRenderStatus) {
+        useMediaProjectionStore.setState({ projectionRenderStatus: null })
+      }
       const failedShow = coordinator.getSnapshot()
       const nativeFailureCurrent =
         next.status === 'ready' &&
@@ -197,6 +233,23 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
       }
       coordinator.ready(data.generation)
       setProjectionReadyCount((count) => count + 1)
+    })
+    const unsubscribeRenderStatus = adapter.on('file:render-status', (data) => {
+      const snapshot = coordinator.getSnapshot()
+      const show = snapshot?.media.show
+      if (
+        coordinator.getRecoveryState().status !== 'ready' ||
+        snapshot?.showDefault ||
+        snapshot?.isBlackout ||
+        snapshot?.owner !== 'media' ||
+        !usesDocumentRenderStatus(show?.mimeType) ||
+        show?.itemId !== data.itemId ||
+        show.blobId !== data.blobId ||
+        show.contentRevision !== data.contentRevision ||
+        useMediaProjectionStore.getState().isEnded
+      )
+        return
+      useMediaProjectionStore.setState({ projectionRenderStatus: data })
     })
     const unsubscribePlayback = adapter.on('file:playback-state', (data) => {
       coordinator.recordPlayback(adapter.getGeneration(), data)
@@ -340,6 +393,7 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
         unsubscribeVlcStarted()
         unsubscribeReady()
         unsubscribePlayback()
+        unsubscribeRenderStatus()
         unsubscribePlaybackError()
         unsubscribeCoordinator()
         coordinator.dispose()
@@ -364,6 +418,7 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
       unsubscribeClosed()
       unsubscribeReady()
       unsubscribePlayback()
+      unsubscribeRenderStatus()
       unsubscribeCoordinator()
       stopPolling()
       window.removeEventListener('beforeunload', handleBeforeUnload)

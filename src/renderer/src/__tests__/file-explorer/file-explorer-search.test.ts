@@ -52,6 +52,7 @@ function makeStoreState(items: AnyItemRecord[], folders: FolderRecord[] = []): F
     pendingPersistenceCount: 0,
     initialize: vi.fn(),
     retryInitialization: vi.fn(),
+    flushPersistence: vi.fn(),
     retryPersistence: vi.fn(),
     addFolder: vi.fn(),
     updateFolder: vi.fn(),

@@ -80,6 +80,7 @@ vi.mock('@renderer/stores/folder', () => ({
 }))
 
 vi.mock('@renderer/stores/file-explorer', () => ({
+  removeCleanedEntriesFromStore: vi.fn(),
   useFileExplorerStore: Object.assign(
     (selector: (s: typeof fileExplorerState) => unknown) => selector(fileExplorerState),
     {

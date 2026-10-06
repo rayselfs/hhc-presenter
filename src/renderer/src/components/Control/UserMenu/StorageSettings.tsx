@@ -25,6 +25,7 @@ type StorageUsageLabelKey =
   | 'preferences.storage.usage.pdfPreviews'
   | 'preferences.storage.usage.offlineSyncFiles'
   | 'preferences.storage.usage.temporaryFiles'
+  | 'preferences.storage.usage.videoPlaybackCache'
 
 interface StorageUsageGroup {
   key: string
@@ -33,6 +34,11 @@ interface StorageUsageGroup {
 }
 
 const STORAGE_USAGE_GROUPS: StorageUsageGroup[] = [
+  {
+    key: 'videoPlaybackCache',
+    labelKey: 'preferences.storage.usage.videoPlaybackCache',
+    buckets: ['videoRemuxCache']
+  },
   {
     key: 'sourceMedia',
     labelKey: 'preferences.storage.usage.sourceMedia',
@@ -96,13 +102,17 @@ export default function StorageSettings({
 }: StorageSettingsProps): React.JSX.Element {
   const { t } = useTranslation()
   const [storageReport, setStorageReport] = useState<MediaStorageAccountingReport | null>(null)
+  const [storageError, setStorageError] = useState(false)
   const [isLoadingStorage, setIsLoadingStorage] = useState(false)
   const [isCleaningStorage, setIsCleaningStorage] = useState(false)
 
   const refreshStorageReport = useCallback(async (): Promise<void> => {
     setIsLoadingStorage(true)
+    setStorageError(false)
     try {
       setStorageReport(await getMediaStorageAccounting())
+    } catch {
+      setStorageError(true)
     } finally {
       setIsLoadingStorage(false)
     }
@@ -115,9 +125,12 @@ export default function StorageSettings({
 
   async function runStorageCleanup(action: () => Promise<unknown>): Promise<void> {
     setIsCleaningStorage(true)
+    setStorageError(false)
     try {
       await action()
       await refreshStorageReport()
+    } catch {
+      setStorageError(true)
     } finally {
       setIsCleaningStorage(false)
     }
@@ -126,6 +139,11 @@ export default function StorageSettings({
   if (section === 'cleanup') {
     return (
       <section className="p-5">
+        {storageError && (
+          <p role="alert" className="text-sm text-danger">
+            {t('error.somethingWentWrong')}
+          </p>
+        )}
         <div>
           {CLEANUP_ACTIONS.map((item) => (
             <div key={item.key} className="border-t border-default-200 py-4 first:border-t-0">
@@ -156,6 +174,11 @@ export default function StorageSettings({
 
   return (
     <section className="p-2 relative space-y-3">
+      {storageError && (
+        <p role="alert" className="text-sm text-danger">
+          {t('error.somethingWentWrong')}
+        </p>
+      )}
       <div className="flex justify-end">
         <Button
           variant="ghost"

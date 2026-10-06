@@ -135,21 +135,62 @@ export function reduceProjectionRenderState(
       }
     case 'bible:settings':
       return { ...state, bibleSettings: data as ProjectionPayload<'bible:settings'> }
-    case 'file:show':
+    case 'file:show': {
+      const nextFile = data as ProjectionPayload<'file:show'>
+      const earlyControl =
+        !state.fileData &&
+        state.fileControlEvent &&
+        'itemId' in state.fileControlEvent.data &&
+        state.fileControlEvent.data.itemId === nextFile.itemId
+          ? state.fileControlEvent
+          : null
       return {
         ...state,
         activeContent: 'file',
         fileData: data as ProjectionPayload<'file:show'>,
+        fileControlEvent: earlyControl,
         mediaReplayState: null
       }
-    case 'file:control':
+    }
+    case 'file:control': {
+      const control = data as FileControlPayload
+      if (
+        state.fileData &&
+        'itemId' in control &&
+        control.itemId !== undefined &&
+        control.itemId !== state.fileData?.itemId
+      )
+        return state
+      const pdf = state.fileData?.pdf ?? { page: 1, scroll: 0, viewMode: 'single' as const }
+      const nextPdf =
+        control.action === 'pdfPage'
+          ? { ...pdf, page: control.value }
+          : control.action === 'pdfScroll'
+            ? { ...pdf, scroll: control.value }
+            : control.action === 'pdfViewMode'
+              ? { ...pdf, viewMode: control.value }
+              : null
       return {
         ...state,
+        ...(nextPdf && state.fileData?.mimeType === 'application/pdf'
+          ? {
+              fileData: { ...state.fileData, pdf: nextPdf },
+              mediaReplayState: state.mediaReplayState
+                ? {
+                    ...state.mediaReplayState,
+                    pdfPage: nextPdf.page,
+                    pdfScroll: nextPdf.scroll,
+                    pdfViewMode: nextPdf.viewMode
+                  }
+                : null
+            }
+          : {}),
         fileControlEvent: {
           id: (state.fileControlEvent?.id ?? 0) + 1,
-          data: data as ProjectionPayload<'file:control'>
+          data: control
         }
       }
+    }
     case 'settings:timer-ring-color':
       return {
         ...state,

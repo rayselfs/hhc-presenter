@@ -17,6 +17,7 @@ export type ReplayableProjectionChannel = Exclude<
   | `__system:${string}`
   | 'file:playback-state'
   | 'file:playback-error'
+  | 'file:render-status'
   | 'file:end'
   | 'camera:signal'
   | 'camera:ready'
@@ -208,7 +209,14 @@ function reduceReplayableMessage(
         ...snapshot,
         media: {
           show,
-          state: replayState
+          state: show.pdf
+            ? {
+                ...replayState,
+                pdfPage: show.pdf.page,
+                pdfScroll: show.pdf.scroll,
+                pdfViewMode: show.pdf.viewMode
+              }
+            : replayState
         }
       }
     }

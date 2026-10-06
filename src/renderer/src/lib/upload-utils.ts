@@ -1,3 +1,4 @@
+import { useMediaImportStore } from '@renderer/stores/media-import'
 import { openFileExplorerDB } from './file-explorer-db'
 import { getBlobId } from './blob-identity'
 import { assertPersonalUploadPolicy, PersonalUploadPolicyError } from './personal-upload-policy'
@@ -183,11 +184,17 @@ async function prepareUploadCandidates(
     if (isIgnoredSystemFile(file)) continue
     const classification = classifyMediaImport(file, platform)
     if (classification.action === 'skip') {
-      if (classification.reason === 'app-unsupported') unsupportedCount++
+      if (classification.reason === 'app-unsupported') {
+        if (file.name.toLowerCase().endsWith('.ppt'))
+          toast.warning(i18n.t('fileExplorer.importProgress.legacyPpt', { name: file.name }))
+        else unsupportedCount++
+      }
       continue
     }
     if (classification.action === 'platform-unsupported') {
-      unsupportedCount++
+      if (file.name.toLowerCase().endsWith('.ppt'))
+        toast.warning(i18n.t('fileExplorer.importProgress.legacyPpt', { name: file.name }))
+      else unsupportedCount++
       continue
     }
     if (personal) {
@@ -253,20 +260,97 @@ async function enrichUploadedFile(
   }
 }
 
+let failedImports: UploadDestination[] = []
+const activeImportBatches = new Set<string>()
+
+export function dismissImportResults(): void {
+  if (useMediaImportStore.getState().running) return
+  failedImports = []
+  useMediaImportStore.getState().dismiss()
+}
+
+export async function retryFailedImports(): Promise<number> {
+  return uploadPreparedFiles([...failedImports])
+}
+
 async function uploadPreparedFiles(destinations: UploadDestination[]): Promise<number> {
+  if (!destinations.length) return 0
+  const fingerprint = JSON.stringify(
+    destinations
+      .map(({ file, parentId }) => [parentId, file.name, file.size, file.lastModified, file.type])
+      .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
+  )
+  if (activeImportBatches.has(fingerprint)) {
+    toast.warning(i18n.t('fileExplorer.importProgress.busy'))
+    return 0
+  }
+  const folders = useFileExplorerStore.getState().folders
+  const destinationNames = [
+    ...new Set(
+      destinations.map(({ parentId }) => {
+        const parts: string[] = []
+        const seen = new Set<string>()
+        let id: string | null = parentId
+        while (id && folders?.[id] && !seen.has(id)) {
+          seen.add(id)
+          parts.unshift(folders[id].name)
+          id = folders[id].parentId
+        }
+        return parts.join(' / ') || i18n.t('nav.files')
+      })
+    )
+  ]
+  const firstBatch = activeImportBatches.size === 0
+  activeImportBatches.add(fingerprint)
+  if (firstBatch) {
+    failedImports = []
+    useMediaImportStore.setState({
+      running: true,
+      cancelRequested: false,
+      total: destinations.length,
+      completed: 0,
+      succeeded: 0,
+      currentNames: [],
+      destinationNames,
+      failures: []
+    })
+  } else {
+    useMediaImportStore.setState((state) => ({
+      total: state.total + destinations.length,
+      destinationNames: [...new Set([...state.destinationNames, ...destinationNames])]
+    }))
+  }
   let uploadedCount = 0
   let nextIndex = 0
   const uploadNext = async (): Promise<void> => {
-    while (nextIndex < destinations.length) {
+    while (nextIndex < destinations.length && !useMediaImportStore.getState().cancelRequested) {
       const { file, classification, parentId } = destinations[nextIndex++]
       const release = await uploadSemaphore.acquire()
+      if (useMediaImportStore.getState().cancelRequested) {
+        release()
+        break
+      }
+      useMediaImportStore.setState((state) => ({
+        currentNames: [...state.currentNames, file.name]
+      }))
       let id: string | undefined
       try {
         id = await addFileItemToStore(file, parentId, classification.mimeType)
         uploadedCount++
+        useMediaImportStore.setState((state) => ({ succeeded: state.succeeded + 1 }))
       } catch (error) {
+        failedImports.push({ file, classification, parentId })
+        const reason = error instanceof Error ? error.message : i18n.t('personalCloud.failed')
+        useMediaImportStore.setState((state) => ({
+          failures: [...state.failures, { name: file.name, reason }]
+        }))
         reportUploadError(file.name, error)
       } finally {
+        useMediaImportStore.setState((state) => {
+          const names = [...state.currentNames]
+          names.splice(names.indexOf(file.name), 1)
+          return { completed: state.completed + 1, currentNames: names }
+        })
         release()
       }
       await yieldToMain()
@@ -281,9 +365,15 @@ async function uploadPreparedFiles(destinations: UploadDestination[]): Promise<n
       }
     }
   }
-  await Promise.all(
-    Array.from({ length: Math.min(UPLOAD_CONCURRENCY, destinations.length) }, uploadNext)
-  )
+  try {
+    await Promise.all(
+      Array.from({ length: Math.min(UPLOAD_CONCURRENCY, destinations.length) }, uploadNext)
+    )
+  } finally {
+    activeImportBatches.delete(fingerprint)
+    if (activeImportBatches.size === 0)
+      useMediaImportStore.setState({ running: false, currentNames: [] })
+  }
   return uploadedCount
 }
 
