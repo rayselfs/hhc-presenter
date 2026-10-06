@@ -375,3 +375,35 @@ describe('validateProjectionMessageTuple', () => {
     expect(validateProjectionMessageTuple(['__system:ready', null])).toBe(false)
   })
 })
+
+describe('late playback error validation', () => {
+  const report = {
+    itemId: 'video-1',
+    blobId: 'blob-1',
+    contentRevision: 1,
+    errorCode: 3,
+    currentTime: 24,
+    duration: 120,
+    transport: 'pause',
+    volume: 0.6
+  }
+  it('accepts a current decode report', () => {
+    expect(validateProjectionTransportTuple([1, 'file:playback-error', report])).toBe(true)
+  })
+  it.each([
+    { itemId: '' },
+    { blobId: ' ' },
+    { contentRevision: 0 },
+    { contentRevision: 1.5 },
+    { errorCode: 5 },
+    { currentTime: -1 },
+    { currentTime: Infinity },
+    { duration: NaN },
+    { volume: 2 },
+    { transport: 'stop' }
+  ])('rejects invalid fields %j', (invalid) => {
+    expect(
+      validateProjectionTransportTuple([1, 'file:playback-error', { ...report, ...invalid }])
+    ).toBe(false)
+  })
+})

@@ -1,7 +1,14 @@
 import { PersonalCloudHttpError, type PersonalMutationRequest } from '@shared/personal-cloud'
 import type { HhcAuthAdapter } from '@shared/hhc-auth'
 import { createPersonalCloudProvider, type PersonalCloudProvider } from './personal-cloud-provider'
-import { openFileExplorerDB } from './file-explorer-db'
+import type { PresentationSessionRegistry } from '@renderer/contexts/PresentationSessionRegistryContext'
+import {
+  addFileItemToStore,
+  publishPersistedFileItem,
+  FILE_EXPLORER_ROOT_ID
+} from '@renderer/stores/file-explorer'
+import { getBlobId } from './blob-identity'
+import { openFileExplorerDB, getFileSource, isFileBlobRecordAvailable } from './file-explorer-db'
 import { ensurePersonalLocalSpace } from './personal-file-actions'
 import { pullPersonalChanges } from './personal-sync-pull'
 import { refreshPersonalCatalog } from '@renderer/stores/file-explorer'
@@ -10,6 +17,9 @@ import { preservePersonalContentConflict } from './personal-sync-conflicts'
 import { toast } from '@heroui/react/toast'
 import i18n from '@renderer/i18n'
 import {
+  cancelPersonalFailedFile,
+  getPersonalFailedFileScope,
+  retryPersonalOperation,
   acknowledgePersonalOperation,
   acquirePersonalSyncLease,
   assertPersonalSyncLease,
@@ -321,5 +331,124 @@ export function startPersonalSync(
     window.removeEventListener('focus', wake)
     window.removeEventListener('hhc:personal-sync', requested)
     document.removeEventListener('visibilitychange', visible)
+  }
+}
+
+// Explicit operator recovery. Scheduler and recovery share the same account lease.
+export async function recoverPersonalOperation(
+  ownerId: string,
+  operationId: string,
+  action: 'retry' | 'backup-cancel',
+  sessions: Pick<PresentationSessionRegistry, 'finalizeAndFlush' | 'get' | 'hasPendingEditorWork'> &
+    Partial<Pick<PresentationSessionRegistry, 'subscribe' | 'close'>>
+): Promise<void> {
+  const workerId = crypto.randomUUID()
+  const controller = new AbortController()
+  const assertAccount = (): void => {
+    const account = usePersonalSyncStore.getState()
+    if (account.activeOwnerId !== ownerId || account.accountStatus !== 'authenticated')
+      controller.abort()
+    controller.signal.throwIfAborted()
+  }
+  const unsubscribe = usePersonalSyncStore.subscribe((state) => {
+    if (state.activeOwnerId !== ownerId || state.accountStatus !== 'authenticated')
+      controller.abort()
+  })
+  let renewal: ReturnType<typeof setInterval> | undefined
+  let unsubscribeEditor: (() => void) | undefined
+  try {
+    assertAccount()
+    if (!(await acquirePersonalSyncLease(ownerId, workerId)))
+      throw new Error(i18n.t('personalCloud.busy'))
+    renewal = setInterval(() => {
+      void renewPersonalSyncLease(ownerId, workerId)
+        .then((owned) => {
+          if (!owned) controller.abort()
+        })
+        .catch(() => controller.abort())
+    }, 10_000)
+    const operation = (await listPersonalOutbox(ownerId))[0]
+    if (!operation || operation.id !== operationId) throw new Error(i18n.t('personalCloud.changed'))
+    if (action === 'retry') {
+      await retryPersonalOperation(ownerId, workerId, operation, controller.signal)
+    } else {
+      await sessions.finalizeAndFlush(operation.nodeId)
+      const editorIsSaved = (): boolean => {
+        const session = sessions.get(operation.nodeId)
+        return (
+          !sessions.hasPendingEditorWork?.(operation.nodeId) &&
+          (!session ||
+            (session.getSnapshot().save.status === 'saved' &&
+              session.getSnapshot().draftKind === null))
+        )
+      }
+      assertAccount()
+      if (!editorIsSaved()) throw new Error(i18n.t('personalCloud.changed'))
+      unsubscribeEditor = sessions.subscribe?.(() => {
+        if (!editorIsSaved()) controller.abort()
+      })
+      // Capture only after editor finalization, and recapture transactionally after backup.
+      const scope = await getPersonalFailedFileScope(
+        ownerId,
+        workerId,
+        operationId,
+        controller.signal
+      )
+      const db = await openFileExplorerDB()
+      const sourceBlob = await db.get('file-blobs', getBlobId(scope.item))
+      if (!(await isFileBlobRecordAvailable(sourceBlob)))
+        throw new Error(i18n.t('personalCloud.backupFailed'))
+      let bytes = sourceBlob?.blob
+      if (!bytes) {
+        const source = await getFileSource(db, getBlobId(scope.item), scope.item.mimeType)
+        if (!source) throw new Error(i18n.t('personalCloud.backupFailed'))
+        try {
+          const response = await fetch(source.url, { signal: controller.signal })
+          if (!response.ok) throw new Error(i18n.t('personalCloud.backupFailed'))
+          bytes = await response.blob()
+        } finally {
+          source.revoke()
+        }
+      }
+      if (bytes.size !== scope.item.size) throw new Error(i18n.t('personalCloud.backupFailed'))
+      assertAccount()
+      const backupId = await addFileItemToStore(
+        new File([bytes], scope.item.name, { type: scope.item.mimeType }),
+        FILE_EXPLORER_ROOT_ID,
+        scope.item.mimeType
+      )
+      const backup = await db.get('folder-items', backupId)
+      if (
+        backup?.type !== 'file' ||
+        !(await isFileBlobRecordAvailable(await db.get('file-blobs', getBlobId(backup))))
+      )
+        throw new Error(i18n.t('personalCloud.backupFailed'))
+      const durableBackup = { ...backup, expiresAt: null }
+      await db.put('folder-items', durableBackup)
+      publishPersistedFileItem(durableBackup)
+      assertAccount()
+      if (!editorIsSaved()) throw new Error(i18n.t('personalCloud.changed'))
+      if (sessions.close && !(await sessions.close(operation.nodeId)))
+        throw new Error(i18n.t('personalCloud.changed'))
+      assertAccount()
+      await cancelPersonalFailedFile(
+        ownerId,
+        workerId,
+        scope,
+        backupId,
+        controller.signal,
+        editorIsSaved
+      )
+    }
+    assertAccount()
+    await refreshPersonalCatalog(ownerId)
+    assertAccount()
+    usePersonalSyncStore.setState({ syncStatus: 'pending', errorCode: null, quotaExceeded: null })
+    requestPersonalSync(ownerId)
+  } finally {
+    unsubscribe()
+    unsubscribeEditor?.()
+    if (renewal) clearInterval(renewal)
+    await releasePersonalSyncLease(ownerId, workerId).catch(() => undefined)
   }
 }

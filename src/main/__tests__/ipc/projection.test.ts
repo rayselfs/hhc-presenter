@@ -347,3 +347,45 @@ it('relays camera offers only from main and answers only from current projection
   getOnHandler('projection:send-to-main')(makeEvent(), 4, 'camera:signal', offer)
   expect(mockWindowManager.sendToMain).toHaveBeenCalledOnce()
 })
+
+it('rejects playback errors sent by the operator window', () => {
+  vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockMainWindow as never)
+  mockWindowManager.getProjectionState.mockReturnValue({
+    exists: true,
+    lifecycle: { generation: 4, status: 'ready', reason: 'created' }
+  } as never)
+  getOnHandler('projection:send')(makeEvent(), 4, 'file:playback-error', {
+    itemId: 'video',
+    blobId: 'blob',
+    contentRevision: 1,
+    errorCode: 3,
+    currentTime: 0,
+    duration: 0,
+    transport: 'pause',
+    volume: 1
+  })
+  expect(mockWindowManager.sendToProjection).not.toHaveBeenCalled()
+})
+
+it('relays playback errors only from the current projection sender', () => {
+  const report = {
+    itemId: 'video',
+    blobId: 'blob',
+    contentRevision: 1,
+    errorCode: 3,
+    currentTime: 0,
+    duration: 0,
+    transport: 'pause',
+    volume: 1
+  }
+  mockWindowManager.isCurrentProjectionSender.mockReturnValueOnce(false)
+  getOnHandler('projection:send-to-main')(makeEvent(), 4, 'file:playback-error', report)
+  expect(mockWindowManager.sendToMain).not.toHaveBeenCalled()
+  getOnHandler('projection:send-to-main')(makeEvent(), 4, 'file:playback-error', report)
+  expect(mockWindowManager.sendToMain).toHaveBeenCalledWith(
+    'projection:message',
+    4,
+    'file:playback-error',
+    report
+  )
+})

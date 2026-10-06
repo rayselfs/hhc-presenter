@@ -619,7 +619,8 @@
       "hhc-share": "與我分享",
       "onedrive": "OneDrive",
       "local-fs": "本地同步"
-    }
+    },
+    "uploadFailed": "匯入「{{name}}」失敗：{{reason}}"
   },
   "presentationWorkspace": {
     "saveDraftTitle": "儲存簡報",
@@ -1322,7 +1323,7 @@
     "offline": "離線，可繼續編輯",
     "backup": "另存本機副本",
     "keepCloud": "保留雲端",
-    "retry": "重新同步",
+    "retry": "重試同步",
     "busy": "同步正在執行，請稍後重試",
     "backupFailed": "無法完成本機副本，原始資料已保留",
     "changed": "內容已變更，請重新檢視衝突",
@@ -1333,6 +1334,14 @@
     "trashBytes": "垃圾桶",
     "availableBytes": "可用空間",
     "quotaExceeded": "需要 {{required}} GiB；目前已使用 {{used}} / {{quota}} GiB，本機資料已保留",
-    "missingFonts": "此裝置可能缺少字型：{{fonts}}。目前使用替代字型，原字型設定會保留。"
+    "missingFonts": "此裝置可能缺少字型：{{fonts}}。目前使用替代字型，原字型設定會保留。",
+    "uploadErrors": {
+      "unsupported-mime": "個人雲端不支援此格式",
+      "file-too-large": "個人雲端檔案上限為 200 MiB",
+      "empty-file": "無法上傳空白檔案"
+    },
+    "invalidFile": "檔案上傳被拒絕（{{reason}}）。保留原檔，或先備份至本機再取消上傳。",
+    "backupCancel": "備份至本機並取消上傳",
+    "backupCancelConfirm": "先建立永久本機副本，再取消此尚未提交的檔案上傳。如果檔案已變更、仍有未儲存編輯或相依操作，會保留原資料並停止取消。"
   }
 }

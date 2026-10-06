@@ -422,3 +422,23 @@ it.each(['bad/name', 'bad\\name', '', 'e\u0301'])(
     expect(await (await openFileExplorerDB()).get('file-blobs', 'snapshot-1')).toBeUndefined()
   }
 )
+
+it.each([
+  ['image/svg+xml', 3],
+  ['image/png', 0],
+  ['image/png', 200 * 1024 * 1024 + 1]
+])(
+  'rejects personal upload policy bypass through the transaction (%s, %s)',
+  async (mimeType, size) => {
+    const write = createWrite()
+    await expect(
+      commitPersonalLocalMutation({
+        ...write,
+        catalog: { ...item, mimeType, size },
+        snapshot: { id: 'snapshot-1', storage: 'native-fs', size }
+      })
+    ).rejects.toThrow()
+    expect(await listPersonalOutbox('alice')).toEqual([])
+    expect(await (await openFileExplorerDB()).get('folder-items', item.id)).toBeUndefined()
+  }
+)

@@ -12,6 +12,7 @@ import { openFileExplorerDB, type FileBlobRecord } from './file-explorer-db'
 import { getBlobId } from './blob-identity'
 import { isElectron } from './env'
 import { createResourceCleanupRecord } from './resource-cleanup-journal'
+import { assertPersonalUploadPolicy } from './personal-upload-policy'
 import { EDITABLE_PRESENTATION_MIME_TYPE } from './presentation-media'
 
 export type PersonalLocalMutation =
@@ -91,6 +92,7 @@ export async function commitPersonalFileMutation(
   file: File
 ): Promise<void> {
   if (!('type' in write.catalog)) throw new Error('Personal upload requires a file catalog item')
+  assertPersonalUploadPolicy(file.size, write.catalog.mimeType)
   if (write.catalog.size !== file.size || file.size > 200 * 1024 * 1024) {
     throw new Error('Personal file size does not match the catalog or exceeds 200 MiB')
   }
@@ -163,6 +165,10 @@ export async function commitPersonalLocalMutation(
   }
   if (write.snapshot && !write.snapshot.blob && write.snapshot.storage !== 'native-fs') {
     throw new Error('Personal snapshot content is missing')
+  }
+
+  if (needsSnapshot && 'mimeType' in write.catalog) {
+    assertPersonalUploadPolicy(write.catalog.size, write.catalog.mimeType)
   }
 
   const db = await openFileExplorerDB()
@@ -707,5 +713,258 @@ export async function updatePersonalOperationTransfer(
     }
     await tx.done.catch(() => undefined)
     throw error
+  }
+}
+
+export function isPermanentPersonalFileFailure(failure: string | undefined): boolean {
+  return [
+    'invalid-content',
+    'AST_INVALID_UPLOAD',
+    'AST_INVALID_REQUEST',
+    'AST_TOO_LARGE',
+    'unsupported-mime',
+    'file-too-large',
+    'empty-file',
+    'source-missing'
+  ].includes(failure ?? '')
+}
+
+export interface PersonalFailedFileScope {
+  operation: PersonalOutboxRecord
+  node: PersonalSyncNode
+  item: FileItemRecord
+}
+
+function failedFileScope(
+  ownerId: string,
+  workerId: string,
+  state: PersonalSyncState | undefined,
+  operationId: string,
+  pending: PersonalOutboxRecord[],
+  node: PersonalSyncNode | undefined,
+  item: FileItemRecord | undefined,
+  snapshot: FileBlobRecord | undefined
+): PersonalFailedFileScope {
+  if (!state) throw new Error('Personal owner is missing')
+  assertPersonalSyncLease(state, workerId)
+  const operation = pending
+    .filter((entry) => entry.ownerId === ownerId)
+    .sort((a, b) => a.sequence - b.sequence)[0]
+  if (
+    !operation ||
+    operation.id !== operationId ||
+    !isPermanentPersonalFileFailure(operation.failure)
+  )
+    throw new Error('Personal failed operation changed or is not a permanent file failure')
+  if (
+    operation.mutation.type !== 'create-file' ||
+    operation.submittedRequest ||
+    operation.dependsOn ||
+    operation.subtree?.length
+  )
+    throw new Error('Personal failed upload was submitted or cannot be cancelled safely')
+  if (
+    !node ||
+    !item ||
+    node.ownerId !== ownerId ||
+    item.personalOwnerId !== ownerId ||
+    node.kind !== 'file' ||
+    node.remoteId !== operation.remoteId ||
+    node.remoteRevision !== 0 ||
+    node.syncedLocalRevision !== 0 ||
+    node.remoteHead ||
+    node.remoteAssetId ||
+    node.localRevision !== operation.localRevision ||
+    node.lastOperationId !== operation.id ||
+    item.deletedAt ||
+    getBlobId(item) !== operation.snapshotBlobId ||
+    !snapshot ||
+    snapshot.id !== operation.snapshotBlobId ||
+    item.size !== operation.sizeBytes ||
+    (snapshot.size ?? snapshot.blob?.size) !== item.size
+  )
+    throw new Error('Personal failed file changed or its immutable source is missing')
+  if (
+    pending.some(
+      (entry) =>
+        entry.id !== operation.id &&
+        (entry.nodeId === node.id ||
+          entry.remoteId === node.remoteId ||
+          entry.dependsOn === operation.id ||
+          entry.subtree?.some((member) => member.nodeId === node.id) ||
+          ('parentId' in entry.mutation && entry.mutation.parentId === node.remoteId))
+    )
+  )
+    throw new Error('Personal failed upload has dependent or unknown work; nothing was cancelled')
+  return { operation, node, item }
+}
+
+export async function getPersonalFailedFileScope(
+  ownerId: string,
+  workerId: string,
+  operationId: string,
+  signal: AbortSignal
+): Promise<PersonalFailedFileScope> {
+  signal.throwIfAborted()
+  const db = await openFileExplorerDB()
+  const tx = db.transaction([
+    'personal-sync-state',
+    'personal-sync-outbox',
+    'personal-sync-nodes',
+    'folder-items',
+    'file-blobs'
+  ])
+  const operation = await tx.objectStore('personal-sync-outbox').get(operationId)
+  const item = operation ? await tx.objectStore('folder-items').get(operation.nodeId) : undefined
+  const scope = failedFileScope(
+    ownerId,
+    workerId,
+    await tx.objectStore('personal-sync-state').get(ownerId),
+    operationId,
+    await tx.objectStore('personal-sync-outbox').getAll(),
+    operation ? await tx.objectStore('personal-sync-nodes').get(operation.nodeId) : undefined,
+    item?.type === 'file' ? item : undefined,
+    operation?.snapshotBlobId
+      ? await tx.objectStore('file-blobs').get(operation.snapshotBlobId)
+      : undefined
+  )
+  await tx.done
+  signal.throwIfAborted()
+  return scope
+}
+
+export async function retryPersonalOperation(
+  ownerId: string,
+  workerId: string,
+  expected: PersonalOutboxRecord,
+  signal: AbortSignal
+): Promise<void> {
+  const db = await openFileExplorerDB()
+  const tx = db.transaction(['personal-sync-state', 'personal-sync-outbox'], 'readwrite')
+  try {
+    signal.throwIfAborted()
+    const state = await tx.objectStore('personal-sync-state').get(ownerId)
+    if (!state) throw new Error('Personal owner is missing')
+    assertPersonalSyncLease(state, workerId)
+    const pending = (
+      await tx.objectStore('personal-sync-outbox').index('by-owner').getAll(ownerId)
+    ).sort((a, b) => a.sequence - b.sequence)
+    const current = pending[0]
+    if (
+      !current ||
+      current.id !== expected.id ||
+      JSON.stringify(current) !== JSON.stringify(expected) ||
+      current.failure !== 'quota-exceeded'
+    )
+      throw new Error('Personal operation changed or does not support retry')
+    // Preserve request, idempotency key, upload and snapshot; only clear the explicit block.
+    await tx
+      .objectStore('personal-sync-outbox')
+      .put({ ...current, failure: undefined, failureData: undefined })
+    signal.throwIfAborted()
+    assertPersonalSyncLease(state, workerId)
+    await tx.done
+  } catch (error) {
+    try {
+      tx.abort()
+    } catch {
+      /* Already aborted. */
+    }
+    await tx.done.catch(() => undefined)
+    throw error
+  }
+}
+
+export async function cancelPersonalFailedFile(
+  ownerId: string,
+  workerId: string,
+  expected: PersonalFailedFileScope,
+  backupId: string,
+  signal: AbortSignal,
+  editorIsSaved: () => boolean
+): Promise<void> {
+  const db = await openFileExplorerDB()
+  const tx = db.transaction(
+    [
+      'personal-sync-state',
+      'personal-sync-outbox',
+      'personal-sync-nodes',
+      'folder-items',
+      'file-blobs'
+    ],
+    'readwrite'
+  )
+  const abort = (): void => {
+    try {
+      tx.abort()
+    } catch {
+      /* Already completed. */
+    }
+  }
+  signal.addEventListener('abort', abort, { once: true })
+  try {
+    signal.throwIfAborted()
+    const operationId = expected.operation.id
+    const item = await tx.objectStore('folder-items').get(expected.node.id)
+    const scope = failedFileScope(
+      ownerId,
+      workerId,
+      await tx.objectStore('personal-sync-state').get(ownerId),
+      operationId,
+      await tx.objectStore('personal-sync-outbox').getAll(),
+      await tx.objectStore('personal-sync-nodes').get(expected.node.id),
+      item?.type === 'file' ? item : undefined,
+      await tx.objectStore('file-blobs').get(expected.operation.snapshotBlobId ?? '')
+    )
+    if (JSON.stringify(scope) !== JSON.stringify(expected))
+      throw new Error('Personal failed file changed; review again')
+    const backup = await tx.objectStore('folder-items').get(backupId)
+    const backupBlob =
+      backup?.type === 'file'
+        ? await tx.objectStore('file-blobs').get(getBlobId(backup))
+        : undefined
+    if (
+      !backup ||
+      backup.type !== 'file' ||
+      backup.id === item?.id ||
+      backup.personalOwnerId ||
+      backup.sharedRecipientId ||
+      backup.deletedAt ||
+      backup.parentId !== 'file-root' ||
+      backup.expiresAt !== null ||
+      backup.mimeType !== scope.item.mimeType ||
+      backup.size !== scope.item.size ||
+      !backupBlob ||
+      getBlobId(backup) === scope.operation.snapshotBlobId ||
+      (backupBlob.size ?? backupBlob.blob?.size) !== backup.size ||
+      (!backupBlob.blob && backupBlob.storage !== 'native-fs')
+    )
+      throw new Error('Personal failed upload needs a verified durable local backup')
+    if (!editorIsSaved())
+      throw new Error('Personal editor has unsaved changes; nothing was cancelled')
+    const source = await tx.objectStore('file-blobs').get(scope.operation.snapshotBlobId ?? '')
+    if (!source || (source.refCount ?? 0) < 2)
+      throw new Error('Personal snapshot references changed')
+    await tx.objectStore('file-blobs').put({ ...source, refCount: (source.refCount ?? 0) - 2 })
+    await tx.objectStore('folder-items').delete(scope.item.id)
+    await tx.objectStore('personal-sync-nodes').delete(scope.node.id)
+    await tx.objectStore('personal-sync-outbox').delete(operationId)
+    signal.throwIfAborted()
+    if (!editorIsSaved())
+      throw new Error('Personal editor changed during recovery; nothing was cancelled')
+    const state = await tx.objectStore('personal-sync-state').get(ownerId)
+    if (!state) throw new Error('Personal owner is missing')
+    assertPersonalSyncLease(state, workerId)
+    await tx.done
+  } catch (error) {
+    try {
+      tx.abort()
+    } catch {
+      /* Already aborted. */
+    }
+    await tx.done.catch(() => undefined)
+    throw error
+  } finally {
+    signal.removeEventListener('abort', abort)
   }
 }

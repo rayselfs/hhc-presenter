@@ -54,6 +54,7 @@ export function registerProjectionHandlers(windowManager: WindowManager): void {
     if (!isMainWindow(windowManager, event)) return
     if (!validateProjectionTransportTuple(args)) return
     const [generation, channel, data] = args
+    if (channel === 'file:playback-error') return
     if (!isCameraMessageFrom(channel, data, 'main')) return
     if (windowManager.getProjectionState().lifecycle.generation !== generation) return
     windowManager.sendToProjection('projection:message', ...args)

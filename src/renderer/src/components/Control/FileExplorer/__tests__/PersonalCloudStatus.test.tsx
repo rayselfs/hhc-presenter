@@ -29,7 +29,7 @@ it('shows failures before a root exists without offering destructive conflict ac
   })
   render(<PersonalCloudStatus />)
   expect(screen.getByRole('status')).toHaveTextContent('personalCloud.failed')
-  expect(screen.queryByRole('button', { name: 'personalCloud.retry' })).toBeNull()
+  expect(screen.getByRole('button', { name: 'personalCloud.retry' })).toBeEnabled()
   expect(screen.queryByRole('button', { name: 'personalCloud.keepCloud' })).toBeNull()
 })
 
@@ -50,10 +50,28 @@ it('does not offer conflict actions for quota-blocked items', () => {
     accountStatus: 'authenticated',
     syncStatus: 'failed',
     itemStatuses: { item: 'failed' },
+    errorCode: 'quota-exceeded',
     quotaExceeded: { usedBytes: 90, quotaBytes: 100, requiredBytes: 20 }
   })
   render(<PersonalCloudStatus />)
   expect(screen.getByRole('status')).toHaveTextContent('personalCloud.quotaExceeded')
   expect(screen.queryByRole('button', { name: 'personalCloud.keepCloud' })).toBeNull()
   expect(screen.queryByRole('button', { name: 'personalCloud.backup' })).toBeNull()
+  expect(screen.getByRole('button', { name: 'personalCloud.retry' })).toBeEnabled()
+})
+
+it('shows invalid-file reason and explicit backup cancellation without conflict discard', () => {
+  usePersonalSyncStore.setState({
+    activeOwnerId: 'owner',
+    accountStatus: 'authenticated',
+    syncStatus: 'failed',
+    errorCode: 'invalid-content',
+    quotaExceeded: null,
+    itemStatuses: {}
+  })
+  render(<PersonalCloudStatus />)
+  expect(screen.getByRole('status')).toHaveTextContent('personalCloud.invalidFile')
+  expect(screen.getByRole('button', { name: 'personalCloud.backupCancel' })).toBeEnabled()
+  expect(screen.queryByRole('button', { name: 'personalCloud.keepCloud' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'personalCloud.retry' })).toBeNull()
 })

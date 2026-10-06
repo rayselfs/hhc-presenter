@@ -29,12 +29,15 @@ export default function PresenterNavigation({ onNext }: { onNext: () => void }):
   }
 
   const isPresentation = getMediaType(currentItem?.mimeType ?? '') === 'presentation'
-  const progressPercent =
-    isPresentation && presentation?.slideCount
+  const progressPercent = isPresentation
+    ? presentation?.slideCount &&
+      Number.isInteger(presentation.slideCount) &&
+      presentation.slideCount > 0
       ? ((presentation.slideIndex + 1) / presentation.slideCount) * 100
-      : total > 0
-        ? ((currentIndex + 1) / total) * 100
-        : 0
+      : 0
+    : total > 0
+      ? ((currentIndex + 1) / total) * 100
+      : 0
   const [progressCurrent = '0', progressTotal = '0'] = progress
     .split('/')
     .map((part) => part.trim())

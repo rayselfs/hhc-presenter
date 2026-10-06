@@ -1,3 +1,4 @@
+import { isFilePlaybackError } from '@shared/projection-messages'
 import { isCameraSignal, isCameraState, isCameraMessageFrom } from '@shared/camera'
 import { BrowserWindow } from 'electron'
 import { MAX_DURATION_SECONDS } from '@shared/constants/timer'
@@ -130,6 +131,7 @@ function validateProjectionPayload(channel: string, data: unknown): boolean {
         typeof obj.blobId === 'string' &&
         typeof obj.fileName === 'string' &&
         typeof obj.mimeType === 'string' &&
+        (obj.contentRevision === undefined || isValidProjectionGeneration(obj.contentRevision)) &&
         Array.isArray(obj.playlist) &&
         typeof obj.currentIndex === 'number' &&
         Number.isInteger(obj.currentIndex) &&
@@ -159,6 +161,8 @@ function validateProjectionPayload(channel: string, data: unknown): boolean {
         )
       }
       return false
+    case 'file:playback-error':
+      return isFilePlaybackError(data)
     case 'file:playback-state':
       return (
         typeof obj.itemId === 'string' &&

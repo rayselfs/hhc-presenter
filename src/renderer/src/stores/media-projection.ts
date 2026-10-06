@@ -65,12 +65,14 @@ export interface MediaProjectionStore {
   next: () => MediaProjectionActionResult
   prev: () => MediaProjectionActionResult
   jumpTo: (index: number) => MediaProjectionActionResult
+  jumpToSlide: (index: number) => MediaProjectionActionResult
   toggleGrid: () => void
   getTypeState: <K extends MediaType>(type: K) => MediaTypeStateMap[K] | undefined
   setTypeState: <K extends MediaType>(type: K, value: MediaTypeStateMap[K]) => void
   setZoomLevel: (level: number) => void
   resetZoom: () => void
   setPan: (x: number, y: number) => void
+  promoteVideoPlayback: (snapshotId: string, itemId: string, blobId: string) => boolean
   updateNotes: (itemId: string, notes: string) => void
   startPresentationWithReadiness: (
     files: FileItemRecord[],
@@ -246,8 +248,14 @@ export const useMediaProjectionStore = create<MediaProjectionStore>()((set, get)
   },
 
   canNext: () => {
-    const { playlist, isEnded } = get()
-    return !isEnded && playlist.length > 0
+    const state = get()
+    const presentation = getCurrentPresentationState(state)
+    return (
+      !state.isEnded &&
+      state.playlist.length > 0 &&
+      (!presentation ||
+        (Number.isInteger(presentation.slideCount) && (presentation.slideCount ?? 0) > 0))
+    )
   },
 
   canPrev: () => {
@@ -262,11 +270,42 @@ export const useMediaProjectionStore = create<MediaProjectionStore>()((set, get)
     const state = get()
     const { playlist, currentIndex } = state
     const presentation = getCurrentPresentationState(state)
-    if (presentation?.slideCount !== undefined && presentation.slideCount > 0) {
+    if (
+      presentation &&
+      Number.isInteger(presentation.slideCount) &&
+      (presentation.slideCount ?? 0) > 0
+    ) {
       return `${presentation.slideIndex + 1} / ${presentation.slideCount}`
     }
+    if (presentation) return `${presentation.slideIndex + 1} / …`
     if (playlist.length === 0) return '0 / 0'
     return `${currentIndex + 1} / ${playlist.length}`
+  },
+
+  promoteVideoPlayback: (snapshotId, itemId, blobId) => {
+    const state = get()
+    const snapshot = state.snapshot
+    const entry = snapshot?.entries[state.currentIndex]
+    if (
+      !state.isPresenting ||
+      state.isEnded ||
+      snapshot?.id !== snapshotId ||
+      entry?.itemId !== itemId ||
+      entry.blobId !== blobId ||
+      !entry.mimeType.startsWith('video/')
+    )
+      return false
+    set({
+      snapshot: {
+        ...snapshot,
+        entries: snapshot.entries.map((value) =>
+          value === entry
+            ? { ...value, playbackMode: 'vlc-embedded', playbackVariant: 'source' }
+            : value
+        )
+      }
+    })
+    return true
   },
 
   startPresentation: (files: FileItemRecord[], startIndex: number) => {
@@ -398,6 +437,11 @@ export const useMediaProjectionStore = create<MediaProjectionStore>()((set, get)
     const presentation = getCurrentPresentationState(s)
     if (
       presentation &&
+      (!Number.isInteger(presentation.slideCount) || (presentation.slideCount ?? 0) < 1)
+    )
+      return false
+    if (
+      presentation &&
       presentation.slideCount !== undefined &&
       presentation.slideIndex < presentation.slideCount - 1
     ) {
@@ -520,6 +564,30 @@ export const useMediaProjectionStore = create<MediaProjectionStore>()((set, get)
         })
       },
       () => isSameNavigationState(s, get)
+    )
+  },
+
+  jumpToSlide: (index: number) => {
+    const generation = beginProjectionAction()
+    const state = get()
+    const presentation = getCurrentPresentationState(state)
+    if (
+      !presentation ||
+      !Number.isInteger(index) ||
+      !Number.isInteger(presentation.slideCount) ||
+      index < 0 ||
+      index >= (presentation.slideCount ?? 0)
+    )
+      return false
+    return commitAfterPreflight(
+      generation,
+      prepareEditableProjection(state.currentItem()),
+      () =>
+        set({
+          isEnded: false,
+          typeStates: { ...state.typeStates, presentation: { ...presentation, slideIndex: index } }
+        }),
+      () => isSameNavigationState(state, get)
     )
   },
 

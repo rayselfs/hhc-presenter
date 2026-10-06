@@ -1,3 +1,4 @@
+import { isFilePlaybackError } from '@shared/projection-messages'
 import { isCameraMessageFrom } from '@shared/camera'
 import { isElectron } from '@renderer/lib/env'
 import type { ProjectionChannel, ProjectionPayload } from '@shared/projection-messages'
@@ -35,6 +36,11 @@ class ElectronProjectionAdapter implements ProjectionAdapter {
     this.unsubscribeProjectionMessage = this.api.onProjectionMessage(
       (generation, channel, data) => {
         if (generation !== this.generation) return
+        if (
+          channel === 'file:playback-error' &&
+          (this.role !== 'main' || !isFilePlaybackError(data))
+        )
+          return
         if (!isCameraMessageFrom(channel, data, this.role === 'main' ? 'projection' : 'main'))
           return
         this.handlers.get(channel)?.forEach((handler) => handler(data))
@@ -52,6 +58,11 @@ class ElectronProjectionAdapter implements ProjectionAdapter {
 
   send<C extends ProjectionChannel>(channel: C, data: ProjectionPayload<C>): void {
     if (this.generation <= 0) return
+    if (
+      channel === 'file:playback-error' &&
+      (this.role !== 'projection' || !isFilePlaybackError(data))
+    )
+      return
     if (!isCameraMessageFrom(channel, data, this.role)) return
     if (this.role === 'projection') {
       this.api.sendToMain(this.generation, channel, data)
@@ -112,6 +123,11 @@ class BroadcastChannelAdapter implements ProjectionAdapter {
 
   send<C extends ProjectionChannel>(channel: C, data: ProjectionPayload<C>): void {
     if (this.disposed || this.generation <= 0 || !this.sessionId) return
+    if (
+      channel === 'file:playback-error' &&
+      (this.role !== 'projection' || !isFilePlaybackError(data))
+    )
+      return
     if (!isCameraMessageFrom(channel, data, this.role)) return
     this.bc.postMessage({
       generation: this.generation,
@@ -144,6 +160,11 @@ class BroadcastChannelAdapter implements ProjectionAdapter {
       if (msg.sessionId !== this.sessionId) return
       if (msg.senderRole !== (this.role === 'main' ? 'projection' : 'main')) return
       if (msg.sender === this.windowId) return
+      if (
+        msg.channel === 'file:playback-error' &&
+        (this.role !== 'main' || !isFilePlaybackError(msg.data))
+      )
+        return
       if (!isCameraMessageFrom(msg.channel, msg.data, msg.senderRole)) return
       if (msg.channel === channel) handler(msg.data as ProjectionPayload<C>)
     }

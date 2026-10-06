@@ -136,6 +136,103 @@ describe('analyzePresentationReadiness', () => {
     expect(probe).not.toHaveBeenCalled()
   })
 
+  it.each(['mp4', 'mov'])(
+    'falls back to VLC for a known unplayable native %s',
+    async (extension) => {
+      const getInfo = vi.fn().mockResolvedValue({ status: 'ready' })
+      vi.stubGlobal('window', {
+        api: {
+          nativeFs: { exists: vi.fn().mockResolvedValue(true) },
+          projectionVlc: { getInfo }
+        }
+      })
+      await (
+        await openFileExplorerDB()
+      ).put('file-blobs', {
+        id: 'codec-video',
+        storage: 'native-fs',
+        refCount: 1
+      })
+      await putSourceMediaMetadata('codec-video', { kind: 'video', browserPlayback: 'unplayable' })
+      const report = await analyzePresentationReadiness(
+        [
+          file(
+            'codec-item',
+            `codec.${extension}`,
+            extension === 'mp4' ? 'video/mp4' : 'video/quicktime',
+            'blob:codec-video'
+          )
+        ],
+        'electron'
+      )
+      expect(report.items[0]).toMatchObject({
+        status: 'ready',
+        playbackMode: 'vlc-embedded',
+        playbackVariant: 'source'
+      })
+      expect(getInfo).toHaveBeenCalledOnce()
+    }
+  )
+
+  it.each(['missing', 'indexed-db'])(
+    'reports unavailable fallback for %s',
+    async (availability) => {
+      const getInfo = vi.fn().mockResolvedValue({ status: availability })
+      vi.stubGlobal('window', {
+        api: {
+          nativeFs: { exists: vi.fn().mockResolvedValue(true) },
+          projectionVlc: { getInfo }
+        }
+      })
+      await (
+        await openFileExplorerDB()
+      ).put('file-blobs', {
+        id: 'codec-video',
+        storage: availability === 'indexed-db' ? 'indexed-db' : 'native-fs',
+        ...(availability === 'indexed-db' ? { blob: new Blob(['video']) } : {}),
+        refCount: 1
+      })
+      await putSourceMediaMetadata('codec-video', { kind: 'video', browserPlayback: 'unplayable' })
+      const report = await analyzePresentationReadiness(
+        [file('codec-item', 'codec.mp4', 'video/mp4', 'blob:codec-video')],
+        'electron'
+      )
+      expect(report.items[0]).toMatchObject({
+        status: 'failed',
+        reason: 'video-engine-unavailable'
+      })
+      if (availability === 'indexed-db') expect(getInfo).not.toHaveBeenCalled()
+    }
+  )
+
+  it('keeps healthy native video independent of VLC runtime', async () => {
+    const getInfo = vi.fn()
+    vi.stubGlobal('window', {
+      api: {
+        nativeFs: { exists: vi.fn().mockResolvedValue(true) },
+        projectionVlc: { getInfo }
+      }
+    })
+    await (
+      await openFileExplorerDB()
+    ).put('file-blobs', { id: 'healthy-video', storage: 'native-fs', refCount: 1 })
+    await putSourceMediaMetadata('healthy-video', {
+      kind: 'video',
+      browserPlayback: 'playable',
+      durationMs: 8000
+    })
+    const report = await analyzePresentationReadiness(
+      [file('healthy-item', 'healthy.mp4', 'video/mp4', 'blob:healthy-video')],
+      'electron'
+    )
+    expect(report.items[0]).toMatchObject({
+      status: 'ready',
+      playbackMode: 'native',
+      durationMs: 8000
+    })
+    expect(getInfo).not.toHaveBeenCalled()
+  })
+
   it('omits inferred seekability for remote desktop-engine video', async () => {
     await putProviderConnection({
       id: 'hhc-line:user-1',

@@ -307,7 +307,9 @@ async function analyzePresentationItem(
     }
   }
 
-  if (support === 'desktop-engine') {
+  const needsCodecFallback =
+    capability.kind === 'video' && metadata?.browserPlayback === 'unplayable'
+  if (support === 'desktop-engine' || needsCodecFallback) {
     if (await canUseVlcEmbedded(platform, blobId)) {
       return {
         itemId: item.id,
@@ -318,7 +320,7 @@ async function analyzePresentationItem(
         playbackMode: 'vlc-embedded',
         ...(capability.canonicalMimeType === 'video/x-matroska'
           ? { playbackVariant: 'matroska-remux' as const }
-          : {})
+          : { playbackVariant: 'source' as const })
       }
     }
 

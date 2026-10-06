@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  importFromFileInput,
   MAX_FILE_SIZE_WEB,
   prepareUploadFilesForKind,
   uploadFiles,
@@ -30,6 +31,16 @@ vi.mock('@renderer/lib/thumbnail-db', () => ({
   getPdfPageThumbs: vi.fn(),
   saveThumbnail: vi.fn(),
   savePdfPageThumbs: vi.fn()
+}))
+
+vi.mock('@renderer/lib/file-explorer-db', () => ({
+  openFileExplorerDB: async () => ({
+    get: async (table: string, id: string) => {
+      const state = useFileExplorerStore.getState()
+      if (table === 'folder-records') return state.folders?.[id]
+      return { ...(state.items?.[id] ?? { id, url: `blob:${id}` }), type: 'file' }
+    }
+  })
 }))
 
 vi.mock('@renderer/lib/env', () => ({
@@ -94,6 +105,8 @@ beforeEach(async () => {
   vi.clearAllMocks()
   vi.mocked(addFileItemToStore).mockResolvedValue('mock-id')
   vi.mocked(useFileExplorerStore.getState).mockReturnValue({
+    items: { 'mock-id': { id: 'mock-id', url: 'blob:mock-id' } },
+    folders: {},
     addFolder: vi.fn(),
     getChildFolders: vi.fn(() => [])
   } as never)
@@ -527,4 +540,100 @@ describe('uploadFiles concurrency', () => {
     expect(maxActive).toBeLessThanOrEqual(3)
     expect(addFileItemToStore).toHaveBeenCalledTimes(10)
   })
+})
+
+describe('upload identities and partial failures', () => {
+  it.each([
+    ['slide.png', 'image/png', 'cover-thumbnail'],
+    ['slides.pdf', 'application/pdf', 'pdf-pages'],
+    ['movie.mp4', 'video/mp4', 'video-poster']
+  ])('uses the stored blob identity for %s enrichment', async (name, type, jobType) => {
+    vi.mocked(isWeb).mockReturnValue(false)
+    vi.mocked(useFileExplorerStore.getState).mockReturnValue({
+      items: { 'mock-id': { id: 'mock-id', url: 'blob:immutable-source' } },
+      folders: {},
+      getChildFolders: () => []
+    } as never)
+    await uploadFiles([makeFile(name, 3, type)], 'parent-1')
+    await vi.waitFor(() =>
+      expect(mediaJobQueue.enqueue).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: jobType,
+          itemId: 'mock-id',
+          sourceBlobId: 'immutable-source'
+        })
+      )
+    )
+  })
+
+  it('reports a failed file and continues importing the remaining batch', async () => {
+    vi.mocked(isWeb).mockReturnValue(false)
+    vi.mocked(addFileItemToStore).mockRejectedValueOnce(new Error('Disk full'))
+    await expect(
+      uploadFiles([makeFile('bad.png', 3), makeFile('good.png', 3)], 'parent-1')
+    ).resolves.toBe(1)
+    expect(toast.danger).toHaveBeenCalledWith(expect.stringContaining('bad.png'))
+    expect(addFileItemToStore).toHaveBeenCalledTimes(2)
+  })
+
+  it('rejects personal SVG, oversized and empty files before persisting accepted entries', async () => {
+    vi.mocked(isWeb).mockReturnValue(false)
+    vi.mocked(useFileExplorerStore.getState).mockReturnValue({
+      items: { 'mock-id': { id: 'mock-id', url: 'blob:mock-id' } },
+      folders: { personal: { personalOwnerId: 'alice' } },
+      getChildFolders: () => []
+    } as never)
+    const accepted = makeFile('good.png', 3)
+    await expect(
+      uploadFiles(
+        [
+          makeFile('vector.svg', 3, 'image/svg+xml'),
+          makeFile('large.png', 200 * 1024 * 1024 + 1),
+          makeFile('empty.png', 0),
+          accepted
+        ],
+        'personal'
+      )
+    ).resolves.toBe(1)
+    expect(addFileItemToStore).toHaveBeenCalledExactlyOnceWith(accepted, 'personal', 'image/png')
+    expect(toast.danger).toHaveBeenCalledTimes(3)
+  })
+
+  it('continues supporting local SVG imports', async () => {
+    vi.mocked(isWeb).mockReturnValue(false)
+    await expect(
+      uploadFiles([makeFile('vector.svg', 3, 'image/svg+xml')], 'parent-1')
+    ).resolves.toBe(1)
+  })
+})
+
+it.each(['file', 'folder'])(
+  'resets the %s picker after failure and allows reselecting the same files',
+  async () => {
+    const input = document.createElement('input')
+    const file = makeFile('same.png', 3)
+    Object.defineProperty(input, 'files', { value: [file] })
+    input.value = 'selected'
+    const upload = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Storage unavailable'))
+      .mockResolvedValueOnce(1)
+    await expect(importFromFileInput(input, false, upload)).resolves.toBeUndefined()
+    expect(input.value).toBe('')
+    expect(toast.danger).toHaveBeenCalledWith(expect.stringContaining('Storage unavailable'))
+    input.value = 'selected'
+    await importFromFileInput(input, false, upload)
+    expect(upload).toHaveBeenNthCalledWith(2, [file])
+    expect(input.value).toBe('')
+  }
+)
+
+it('resets a read-only picker without importing', async () => {
+  const input = document.createElement('input')
+  Object.defineProperty(input, 'files', { value: [makeFile('same.png', 3)] })
+  input.value = 'selected'
+  const upload = vi.fn()
+  await importFromFileInput(input, true, upload)
+  expect(upload).not.toHaveBeenCalled()
+  expect(input.value).toBe('')
 })

@@ -56,13 +56,15 @@ const {
       currentFile: videoItem,
       typeStates: {
         video: { hasStarted: false, isPlaying: false, isEnded: false },
-        pdf: { viewMode: 'slide' as const }
+        pdf: { viewMode: 'slide' as const },
+        presentation: undefined as { slideIndex: number; slideCount?: number } | undefined
       },
       currentItem: () => videoItem,
       exit: vi.fn(),
       next: vi.fn(),
       prev: vi.fn(),
       jumpTo: vi.fn(),
+      jumpToSlide: vi.fn(),
       toggleGrid: vi.fn(),
       setZoomLevel: vi.fn(),
       resetZoom: vi.fn()
@@ -176,10 +178,13 @@ beforeEach(() => {
   storeState.isEnded = false
   storeState.showGrid = false
   storeState.zoomLevel = 1
+  storeState.typeStates.presentation = undefined
   storeState.currentItem = () => storeState.currentFile
   storeState.typeStates.video = { hasStarted: false, isPlaying: false, isEnded: false }
   mockNext.mockReturnValue(true)
   mockPrev.mockReturnValue(true)
+  storeState.jumpTo.mockReturnValue(true)
+  storeState.jumpToSlide.mockReturnValue(true)
 })
 
 describe('MediaPresenter video keyboard behavior', () => {
@@ -370,4 +375,30 @@ it('exits the projection session when advancing from its end screen', () => {
   findShortcut('ArrowRight').handler(new KeyboardEvent('keydown', { code: 'ArrowRight' }))
   expect(mockExit).toHaveBeenCalledOnce()
   expect(mockNext).not.toHaveBeenCalled()
+})
+
+it('Home and End select presentation pages instead of playlist files', () => {
+  storeState.currentItem = () => ({
+    ...storeState.currentFile,
+    mimeType: 'application/vnd.hhc.presenter+json'
+  })
+  storeState.typeStates.presentation = { slideIndex: 4, slideCount: 10 }
+  render(<MediaPresenter onExit={mockExit} />)
+  findShortcut('Home').handler(new KeyboardEvent('keydown', { code: 'Home' }))
+  findShortcut('End').handler(new KeyboardEvent('keydown', { code: 'End' }))
+  expect(storeState.jumpToSlide).toHaveBeenNthCalledWith(1, 0)
+  expect(storeState.jumpToSlide).toHaveBeenNthCalledWith(2, 9)
+  expect(storeState.jumpTo).not.toHaveBeenCalled()
+})
+
+it('End does not navigate a presentation while its count is unknown', () => {
+  storeState.currentItem = () => ({
+    ...storeState.currentFile,
+    mimeType: 'application/vnd.hhc.presenter+json'
+  })
+  storeState.typeStates.presentation = { slideIndex: 0 }
+  render(<MediaPresenter onExit={mockExit} />)
+  findShortcut('End').handler(new KeyboardEvent('keydown', { code: 'End' }))
+  expect(storeState.jumpToSlide).not.toHaveBeenCalled()
+  expect(storeState.jumpTo).not.toHaveBeenCalled()
 })

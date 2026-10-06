@@ -586,3 +586,88 @@ it('caches passive timer updates without sending them over an active camera', ()
   expect(coordinator.getSnapshot()?.timer.tick?.mode).toBe('clock')
   coordinator.dispose()
 })
+
+describe('late video promotion', () => {
+  function setup(): {
+    coordinator: ReturnType<typeof createProjectionSessionCoordinator>
+    send: ReturnType<typeof vi.fn>
+    error: ProjectionPayload<'file:playback-error'>
+  } {
+    const send = vi.fn()
+    const coordinator = createProjectionSessionCoordinator(send)
+    coordinator.beginGeneration({ generation: 1, status: 'opening', reason: 'created' })
+    coordinator.startSession('media', [['file:show', fileShow]])
+    coordinator.ready(1)
+    const error = {
+      itemId: fileShow.itemId,
+      blobId: fileShow.blobId,
+      contentRevision: coordinator.getSnapshot()!.media.show!.contentRevision!,
+      errorCode: 3 as const,
+      currentTime: 24,
+      duration: 120,
+      transport: 'pause' as const,
+      volume: 0.6
+    }
+    coordinator.recordPlayback(1, {
+      ...playback,
+      phase: 'paused',
+      currentTime: error.currentTime,
+      isPlaying: false,
+      volume: error.volume
+    })
+    return { coordinator, send, error }
+  }
+  it('promotes through replay while retaining newer pending controls', () => {
+    const { coordinator, send, error } = setup()
+    coordinator.project('file:control', { action: 'seek', itemId: 'video-1', value: 80 })
+    coordinator.project('file:control', { action: 'play', itemId: 'video-1' })
+    coordinator.project('file:control', { action: 'volume', itemId: 'video-1', value: 0.2 })
+    expect(coordinator.promoteVideo(1, error)).toBe(true)
+    expect(send).toHaveBeenLastCalledWith(
+      '__system:replay',
+      expect.objectContaining({
+        snapshot: expect.objectContaining({
+          media: expect.objectContaining({
+            show: expect.objectContaining({ playbackMode: 'vlc-embedded' }),
+            state: expect.objectContaining({ positionSeconds: 24, isPlaying: false, volume: 0.6 })
+          })
+        }),
+        pendingFileControls: { itemId: 'video-1', seekSeconds: 80, transport: 'play', volume: 0.2 }
+      })
+    )
+    expect(coordinator.promoteVideo(1, error)).toBe(false)
+    coordinator.replay(1)
+    expect(coordinator.getSnapshot()?.media.show?.playbackMode).toBe('vlc-embedded')
+  })
+  it('invalidates recovery immediately on file:end without a media store', () => {
+    const { coordinator, send, error } = setup()
+    coordinator.sendOneShot('file:end', null)
+    send.mockClear()
+    expect(coordinator.isCurrentVideo(1, error)).toBe(false)
+    expect(coordinator.promoteVideo(1, error)).toBe(false)
+    expect(send).not.toHaveBeenCalled()
+    coordinator.project('file:show', fileShow)
+    expect(
+      coordinator.isCurrentVideo(1, {
+        ...error,
+        contentRevision: coordinator.getSnapshot()!.media.show!.contentRevision!
+      })
+    ).toBe(true)
+  })
+  it.each(['restart', 'owner-aba', 'session', 'generation', 'item'] as const)(
+    'rejects obsolete %s report',
+    (change) => {
+      const { coordinator, error } = setup()
+      if (change === 'restart') coordinator.project('file:show', fileShow)
+      if (change === 'owner-aba') {
+        coordinator.claim('timer')
+        coordinator.claim('media')
+      }
+      if (change === 'session') coordinator.startSession('media', [['file:show', fileShow]])
+      if (change === 'generation')
+        coordinator.beginGeneration({ generation: 2, status: 'opening', reason: 'reload' })
+      if (change === 'item') coordinator.project('file:show', { ...fileShow, itemId: 'other' })
+      expect(coordinator.promoteVideo(1, error)).toBe(false)
+    }
+  )
+})

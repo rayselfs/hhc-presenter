@@ -174,6 +174,7 @@ export interface AppMessages {
     mimeType: string
     playlist: Array<{ id: string; name: string; mimeType: string }>
     currentIndex: number
+    contentRevision?: number
     playbackMode?: 'native' | 'vlc-embedded'
     playbackVariant?: 'source' | 'matroska-remux'
     streamUrl?: string
@@ -203,6 +204,17 @@ export interface AppMessages {
     playbackRate?: number
     seekable?: boolean
     volume?: number
+  }
+  /** A native element failed for this exact coordinator content revision. */
+  'file:playback-error': {
+    itemId: string
+    blobId: string
+    contentRevision: number
+    errorCode: 1 | 2 | 3 | 4
+    currentTime: number
+    duration: number
+    transport: 'play' | 'pause'
+    volume: number
   }
   /** Presentation ended — show end screen on projection */
   'file:end': null
@@ -344,9 +356,41 @@ export type ProjectionTransportTuple = {
 
 export type ProjectionContentChannel = Exclude<
   ProjectionChannel,
-  `__system:${string}` | 'file:playback-state' | 'camera:signal' | 'camera:ready'
+  | `__system:${string}`
+  | 'file:playback-state'
+  | 'file:playback-error'
+  | 'camera:signal'
+  | 'camera:ready'
 >
 
 export type ProjectionContentMessageTuple = {
   [C in ProjectionContentChannel]: [channel: C, data: ProjectionPayload<C>]
 }[ProjectionContentChannel]
+
+export function isFilePlaybackError(value: unknown): value is AppMessages['file:playback-error'] {
+  if (!value || typeof value !== 'object') return false
+  const data = value as Record<string, unknown>
+  return (
+    typeof data.itemId === 'string' &&
+    data.itemId.trim().length > 0 &&
+    data.itemId.length <= 256 &&
+    typeof data.blobId === 'string' &&
+    data.blobId.trim().length > 0 &&
+    data.blobId.length <= 256 &&
+    Number.isSafeInteger(data.contentRevision) &&
+    Number(data.contentRevision) > 0 &&
+    typeof data.errorCode === 'number' &&
+    [1, 2, 3, 4].includes(data.errorCode) &&
+    typeof data.currentTime === 'number' &&
+    Number.isFinite(data.currentTime) &&
+    data.currentTime >= 0 &&
+    typeof data.duration === 'number' &&
+    Number.isFinite(data.duration) &&
+    data.duration >= 0 &&
+    (data.transport === 'play' || data.transport === 'pause') &&
+    typeof data.volume === 'number' &&
+    Number.isFinite(data.volume) &&
+    data.volume >= 0 &&
+    data.volume <= 1
+  )
+}

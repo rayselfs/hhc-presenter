@@ -1,6 +1,7 @@
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 import type { PersonalSpace } from '@shared/personal-cloud'
 import type { HhcAuthAdapter } from '@shared/hhc-auth'
+import { assertPersonalUploadPolicy } from './personal-upload-policy'
 import { openFileExplorerDB } from './file-explorer-db'
 import {
   commitPersonalFileMutation,
@@ -142,6 +143,7 @@ export async function createPersonalFile(
   parentId: string,
   mimeType = file.type
 ): Promise<string> {
+  assertPersonalUploadPolicy(file.size, mimeType)
   const { ownerId, remoteParentId } = await personalParent(parentId)
   const id = crypto.randomUUID()
   const catalog: FileItemRecord = {

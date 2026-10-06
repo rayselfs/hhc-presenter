@@ -5,7 +5,6 @@ import {
   useMediaProjectionStore,
   type MediaProjectionStore
 } from '@renderer/stores/media-projection'
-import { usePresentationWorkspaceStore } from '@renderer/stores/presentation-workspace'
 import { useFileExplorerStore } from '@renderer/stores/file-explorer'
 import { isElectron } from '@renderer/lib/env'
 import type { HhcLineCloudAuth } from '@renderer/lib/cloud-provider'
@@ -379,7 +378,7 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
           payload = buildEditableSlideProjectionPayload(
             basePayload,
             ownership.document,
-            usePresentationWorkspaceStore.getState().getActiveSlideId(item.id) ?? ''
+            ownership.document.slideOrder[basePayload.presentation?.slideIndex ?? 0] ?? ''
           )
         } else if (ownership?.kind === 'none') {
           if (session) return
