@@ -198,6 +198,7 @@ jobs:
         env:
           PACKAGED_APP_PATH: ${{ matrix.smoke_executable }}
           PACKAGED_VLC_LIVE_PREVIEW: ${{ matrix.live_preview }}
+          PACKAGED_NATIVE_AUDIO: '0' # Hosted runners do not provide reliable audio devices.
         run: npm run test:e2e:packaged
 
       - name: Upload packaged smoke evidence
