@@ -870,8 +870,8 @@ export function registerProjectionVlcHandlers(
       return frame && ownsSession(wm, session)
         ? { ...frame, itemId, generation: session.generation, attemptId: session.attemptId }
         : null
-    } catch {
-      throw new Error('VLC live preview is unavailable')
+    } catch (cause) {
+      throw new Error('VLC live preview is unavailable', { cause })
     }
   })
 

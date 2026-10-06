@@ -15,6 +15,8 @@ it('applies silent snapshot defaults idempotently and rejects unsupported source
   const patched = script.patchVlcProjectionRuntime(original, '1.0.2')
   expect(patched).toContain('for (const auto &arg : g_vlc_argv_storage)')
   expect(patched).not.toContain('g_vlc_argv_storage.back().c_str()')
+  expect(patched).toContain('pushArg("--verbose=0")')
+  expect(patched).not.toContain('pushArg("--quiet")')
   expect(patched).toContain('pushArg("--no-osd")')
   expect(patched).toContain('pushArg("--no-snapshot-preview")')
   expect(script.patchVlcProjectionRuntime(patched, '1.0.2')).toBe(patched)

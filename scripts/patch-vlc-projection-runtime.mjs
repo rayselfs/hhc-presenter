@@ -18,6 +18,8 @@ export function patchVlcProjectionRuntime(source, version) {
     if (source.split(pointer).length !== 2) throw new Error('Unexpected VLC argument storage')
     source = source.replace(`${pointer}\n`, '').replace(initialize, stablePointers)
   }
+  // Keep native errors visible for runtime diagnosis, without enabling verbose logs.
+  source = source.replace('  pushArg("--quiet");', '  pushArg("--verbose=0");')
   if (source.includes(patched)) return source
   if (source.split(original).length !== 2) throw new Error('Unexpected VLC initialization source')
   // VLC snapshots show both a PIP and a filename OSD unless disabled at instance initialization.
