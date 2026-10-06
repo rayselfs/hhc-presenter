@@ -539,13 +539,28 @@
       "skippedItems": "{{count}} skipped",
       "readinessSummary": "{{ready}} ready, {{preparing}} preparing, {{unsupported}} unsupported, {{missing}} missing, {{failed}} failed",
       "readinessIssues": "Readiness issues",
-      "readinessHelp": "These items remain in this session until you repair or explicitly skip them.",
+      "readinessHelp": "Repair an item to add it to this playlist. Skip applies only to this session.",
       "noReadinessIssues": "No unresolved readiness issues",
       "retryPreparation": "Retry",
       "openRecovery": "Open Recovery Center",
       "skipItem": "Skip",
       "progress": "Playback progress",
-      "togglePlay": "Toggle play"
+      "togglePlay": "Toggle play",
+      "repairNotReady": "Not ready yet. Check the item and try again.",
+      "addRepairedItem": "Add to playlist",
+      "readinessReasonFallback": "Check the source or open Recovery Center.",
+      "pendingItems": "{{count}} items need attention",
+      "projectionStatus": {
+        "preparing": "Preparing projection",
+        "ready": "Projection confirmed",
+        "failed": "Projection failed — retry available"
+      },
+      "retryProjection": "Retry projection",
+      "projectionFailure": {
+        "source-unavailable": "Source unavailable. Check the connection or restore the file, then retry.",
+        "decode-failed": "Unable to load or decode this file. Retry, or import a valid copy.",
+        "render-failed": "Unable to render this document. Retry, or export a new copy."
+      }
     },
     "noProjectableFiles": "No presentable files found",
     "invalidName": "Invalid name",
@@ -620,7 +635,19 @@
       "onedrive": "OneDrive",
       "local-fs": "Local sync"
     },
-    "uploadFailed": "Failed to import \"{{name}}\": {{reason}}"
+    "uploadFailed": "Failed to import \"{{name}}\": {{reason}}",
+    "importProgress": {
+      "retry": "Retry failed files",
+      "title": "Import files",
+      "busy": "This batch is already being imported. Wait before submitting the same files again.",
+      "working": "Imported {{completed}} / {{total}} files",
+      "cancelling": "Finishing active files; remaining files will be skipped",
+      "complete": "{{succeeded}} imported · {{failed}} failed · {{cancelled}} skipped",
+      "cancel": "Stop remaining files",
+      "cancelHelp": "Files already being saved will finish. Completed files are kept. Cloud synchronization continues separately.",
+      "failures": "Files that could not be imported",
+      "legacyPpt": "{{name}}: legacy .ppt is not supported. Save it as .pptx in PowerPoint and import again."
+    }
   },
   "presentationWorkspace": {
     "saveDraftTitle": "Save presentation",
@@ -1025,7 +1052,8 @@
         "coversAndPreviews": "Covers and previews",
         "pdfPreviews": "PDF page previews",
         "offlineSyncFiles": "Offline sync files",
-        "temporaryFiles": "Temporary and failed job files"
+        "temporaryFiles": "Temporary and failed job files",
+        "videoPlaybackCache": "Video playback cache"
       },
       "cleanup": {
         "title": "Cache Cleanup",
@@ -1268,7 +1296,23 @@
     "imageLoadFailed": "Failed to load image",
     "videoPreparing": "Preparing video...",
     "videoLoadFailed": "Failed to load video",
-    "pdfLoadFailed": "Failed to load PDF"
+    "pdfLoadFailed": "Failed to load PDF",
+    "pdfSinglePage": "Single page",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "pdfContinuous": "Continuous pages",
+    "toggleThumbnails": "Toggle thumbnails",
+    "videoInspecting": "Inspecting video",
+    "videoRemuxing": "Preparing video for playback",
+    "videoInitializing": "Starting video player",
+    "videoCancelPreparation": "Cancel preparation",
+    "videoCancelKeepsCache": "Cancels projection preparation. Background playback cache may still finish.",
+    "videoPreviewUnavailable": "Video playback is shown on the projection display; this is a poster preview.",
+    "videoLivePreview": "Live projection preview",
+    "videoLivePreviewWaiting": "Waiting for a live frame",
+    "videoLivePreviewFailed": "Live preview is temporarily unavailable. Retrying…",
+    "previewUnavailable": "Operator preview unavailable",
+    "retryPreview": "Retry preview"
   },
   "camera": {
     "resetTitle": "Reset framing?",

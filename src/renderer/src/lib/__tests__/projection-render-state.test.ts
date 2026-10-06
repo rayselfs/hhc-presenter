@@ -163,3 +163,30 @@ it('replays camera framing and never lets a late camera state take another owner
   })
   expect(late.activeContent).toBe('timer')
 })
+
+it('retains PDF controls for remounts without accepting another item controls', () => {
+  const shown = reduceProjectionRenderState(initialProjectionRenderState, {
+    type: 'message',
+    channel: 'file:show',
+    data: {
+      itemId: 'pdf',
+      blobId: 'blob',
+      fileName: 'test.pdf',
+      mimeType: 'application/pdf',
+      playlist: [],
+      currentIndex: 0
+    }
+  })
+  const paged = reduceProjectionRenderState(shown, {
+    type: 'message',
+    channel: 'file:control',
+    data: { action: 'pdfPage', itemId: 'pdf', value: 7 }
+  })
+  expect(paged.fileData?.pdf?.page).toBe(7)
+  const stale = reduceProjectionRenderState(paged, {
+    type: 'message',
+    channel: 'file:control',
+    data: { action: 'pdfPage', itemId: 'old', value: 2 }
+  })
+  expect(stale).toBe(paged)
+})

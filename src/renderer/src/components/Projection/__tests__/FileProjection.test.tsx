@@ -961,6 +961,234 @@ describe('FileProjection copied media identity', () => {
     expect(pdf.getPage).toHaveBeenCalledWith(50)
   })
 
+  it('keeps a decoded image through source renewal and rejects late completion after replacement', async () => {
+    const props = { initialItemId: 'image', initialBlobId: 'blob', initialMimeType: 'image/png' }
+    const { container, rerender } = render(
+      <FileProjection {...props} initialStreamUrl="https://source/old" initialContentRevision={1} />
+    )
+    await waitFor(() => expect(container.querySelector('img')).not.toBeNull())
+    fireEvent.load(container.querySelector('img')!)
+    const preloads: HTMLImageElement[] = []
+    const mockImage = vi.spyOn(globalThis, 'Image').mockImplementation(function () {
+      const image = document.createElement('img')
+      preloads.push(image)
+      return image
+    })
+    try {
+      rerender(
+        <FileProjection
+          {...props}
+          initialStreamUrl="https://source/new"
+          initialContentRevision={2}
+        />
+      )
+      await waitFor(() => expect(preloads).toHaveLength(1))
+      expect(container.querySelector('img')).toHaveAttribute('src', 'https://source/old')
+      await act(async () => fireEvent.load(preloads[0]))
+      expect(container.querySelector('img')).toHaveAttribute('src', 'https://source/new')
+      rerender(
+        <FileProjection
+          {...props}
+          initialStreamUrl="https://source/later"
+          initialContentRevision={3}
+        />
+      )
+      await waitFor(() => expect(preloads).toHaveLength(2))
+      rerender(
+        <FileProjection
+          initialItemId="different"
+          initialBlobId="different"
+          initialMimeType="image/png"
+          initialStreamUrl="https://source/different"
+          initialContentRevision={4}
+        />
+      )
+      await act(async () => fireEvent.load(preloads[1]))
+      await waitFor(() =>
+        expect(container.querySelector('img')).toHaveAttribute('src', 'https://source/different')
+      )
+    } finally {
+      mockImage.mockRestore()
+    }
+  })
+
+  it('keeps the previous PDF on renewal failure and cannot resurrect it after end', async () => {
+    mockPdf(3)
+    const props = {
+      initialItemId: 'pdf',
+      initialBlobId: 'blob',
+      initialMimeType: 'application/pdf'
+    }
+    const { container, rerender } = render(
+      <FileProjection {...props} initialStreamUrl="https://source/old" initialContentRevision={1} />
+    )
+    await waitFor(() => expect(container.querySelector('canvas')).not.toBeNull())
+    const originalCanvas = container.querySelector('canvas')
+    mockLoadPdfjsLib.mockResolvedValue({
+      getDocument: () => ({ promise: Promise.reject(new Error('network')) })
+    })
+    rerender(
+      <FileProjection
+        {...props}
+        initialStreamUrl="https://source/failed"
+        initialContentRevision={2}
+      />
+    )
+    await waitFor(() =>
+      expect(mockProjectionSend).toHaveBeenCalledWith('file:render-status', {
+        itemId: 'pdf',
+        blobId: 'blob',
+        contentRevision: 2,
+        status: 'failed',
+        reason: 'decode-failed'
+      })
+    )
+    expect(container.querySelector('canvas')).toBe(originalCanvas)
+    const next = mockPdf(3, true)
+    rerender(
+      <FileProjection
+        {...props}
+        initialStreamUrl="https://source/retry"
+        initialContentRevision={3}
+      />
+    )
+    await waitFor(() => expect(next.renderResolves.has(1)).toBe(true))
+    act(() => mockProjectionHandlers.get('file:end')?.forEach((handler) => handler(null)))
+    await act(async () => next.renderResolves.get(1)?.())
+    expect(container.querySelector('canvas')).toBeNull()
+    expect(container.textContent).toContain('投影結束')
+    expect(mockProjectionSend).not.toHaveBeenCalledWith(
+      'file:render-status',
+      expect.objectContaining({ contentRevision: 3, status: 'ready' })
+    )
+  })
+
+  it('retains a usable PDF while its same-item source renewal loads and renders', async () => {
+    const first = mockPdf(3)
+    const props = {
+      initialItemId: 'pdf',
+      initialBlobId: 'blob',
+      initialMimeType: 'application/pdf'
+    }
+    const { container, rerender } = render(
+      <FileProjection {...props} initialStreamUrl="https://source/old" initialContentRevision={1} />
+    )
+    await waitFor(() => expect(container.querySelector('canvas')).not.toBeNull())
+    const originalCanvas = container.querySelector('canvas')
+    const next = mockPdf(3, true)
+    rerender(
+      <FileProjection {...props} initialStreamUrl="https://source/new" initialContentRevision={2} />
+    )
+    await waitFor(() => expect(next.renderResolves.has(1)).toBe(true))
+    expect(container.querySelector('canvas')).toBe(originalCanvas)
+    expect(first.pdf.loadingTask.destroy).not.toHaveBeenCalled()
+    await act(async () => next.renderResolves.get(1)?.())
+    await waitFor(() => expect(container.querySelector('canvas')).not.toBe(originalCanvas))
+    expect(first.pdf.loadingTask.destroy).toHaveBeenCalledOnce()
+  })
+
+  it('retains the latest page controls while the document is loading', async () => {
+    const { pdf } = mockPdf(10)
+    let resolvePdf!: (value: typeof pdf) => void
+    mockLoadPdfjsLib.mockResolvedValue({
+      getDocument: vi.fn(() => ({
+        promise: new Promise((resolve) => {
+          resolvePdf = resolve
+        })
+      }))
+    })
+    const props = {
+      initialItemId: 'pdf-id',
+      initialBlobId: 'pdf-blob',
+      initialMimeType: 'application/pdf'
+    }
+    const { container, rerender } = render(<FileProjection {...props} />)
+    await waitFor(() => expect(resolvePdf).toBeDefined())
+    rerender(
+      <FileProjection {...props} controlEvent={{ id: 1, data: { action: 'pdfPage', value: 7 } }} />
+    )
+    await act(async () => resolvePdf(pdf))
+    await waitFor(() => expect(container.querySelector('canvas')?.dataset.pdfPage).toBe('7'))
+  })
+
+  it('starts a new PDF in the selected reading mode and clamps its page', async () => {
+    mockPdf(3)
+    const { container } = render(
+      <FileProjection
+        initialItemId="pdf"
+        initialBlobId="blob"
+        initialMimeType="application/pdf"
+        initialPdf={{ page: 50, scroll: 99, viewMode: 'continuous' }}
+      />
+    )
+    await waitFor(() =>
+      expect(container.querySelector('[data-pdf-canvas-host="3"]')).not.toBeNull()
+    )
+    expect(container.querySelector('.overflow-y-auto')).not.toBeNull()
+  })
+
+  it('does not publish a failed old document after replacement or end', async () => {
+    let rejectPdf!: (reason: Error) => void
+    const destroyLoading = vi.fn().mockResolvedValue(undefined)
+    mockLoadPdfjsLib.mockResolvedValue({
+      getDocument: () => ({
+        destroy: destroyLoading,
+        promise: new Promise((_resolve, reject) => {
+          rejectPdf = reject
+        })
+      })
+    })
+    const { container, rerender } = render(
+      <FileProjection
+        initialItemId="pdf"
+        initialBlobId="blob"
+        initialMimeType="application/pdf"
+        initialContentRevision={1}
+      />
+    )
+    await waitFor(() => expect(rejectPdf).toBeDefined())
+    rerender(
+      <FileProjection
+        initialItemId="image"
+        initialBlobId="image"
+        initialMimeType="image/png"
+        initialContentRevision={2}
+      />
+    )
+    await waitFor(() => expect(container.querySelector('img')).not.toBeNull())
+    expect(destroyLoading).toHaveBeenCalledOnce()
+    await act(async () => rejectPdf(new Error('obsolete')))
+    expect(mockProjectionSend).not.toHaveBeenCalledWith(
+      'file:render-status',
+      expect.objectContaining({ status: 'failed' })
+    )
+    act(() => mockProjectionHandlers.get('file:end')?.forEach((handler) => handler(null)))
+    expect(container.querySelector('img')).toBeNull()
+  })
+
+  it('reports image decode failure to the operator without showing diagnostics to the audience', async () => {
+    const { container } = render(
+      <FileProjection
+        initialItemId="image"
+        initialBlobId="blob"
+        initialMimeType="image/png"
+        fileName="private.png"
+        initialContentRevision={4}
+      />
+    )
+    await waitFor(() => expect(container.querySelector('img')).not.toBeNull())
+    fireEvent.error(container.querySelector('img')!)
+    expect(mockProjectionSend).toHaveBeenCalledWith('file:render-status', {
+      itemId: 'image',
+      blobId: 'blob',
+      contentRevision: 4,
+      status: 'failed',
+      reason: 'decode-failed'
+    })
+    expect(container.textContent).not.toContain('private.png')
+    expect(container.querySelector('img')).toBeNull()
+  })
+
   it('shows the cached PDF page while the full-resolution document is loading', async () => {
     const { pdf, renderResolves } = mockPdf(1, true)
     let resolvePdf: ((value: typeof pdf) => void) | undefined

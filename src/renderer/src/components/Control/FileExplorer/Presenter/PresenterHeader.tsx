@@ -28,11 +28,16 @@ export default function PresenterHeader({ onExit }: PresenterHeaderProps): React
   const [elapsed, setElapsed] = useState(0)
   const [clockTime, setClockTime] = useState(() => new Date())
   const [isReadinessOpen, setIsReadinessOpen] = useState(false)
+  const isEnded = useMediaProjectionStore((state) => state.isEnded)
+  const renderStatus = useMediaProjectionStore((state) => state.projectionRenderStatus)
   const readinessReport = useMediaProjectionStore((state) => state.lastReadinessReport)
-  const readiness = readinessReport?.summary
-  const skippedCount = readiness
-    ? readiness.preparing + readiness.unsupported + readiness.missing + readiness.failed
-    : 0
+  const playlist = useMediaProjectionStore((state) => state.playlist)
+  const skippedIds = useMediaProjectionStore((state) => state.skippedReadinessIds)
+  const skippedCount =
+    readinessReport?.items.filter(
+      (item) =>
+        !playlist.some((entry) => entry.id === item.itemId) && !skippedIds.includes(item.itemId)
+    ).length ?? 0
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -49,8 +54,8 @@ export default function PresenterHeader({ onExit }: PresenterHeaderProps): React
   }, [])
 
   return (
-    <div className="relative flex h-12 shrink-0 items-center justify-between px-3">
-      <div className="flex items-center gap-2">
+    <div className="relative flex min-h-12 shrink-0 items-center justify-between gap-2 px-3 py-1">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         <Button
           variant="ghost"
           isIconOnly
@@ -62,7 +67,37 @@ export default function PresenterHeader({ onExit }: PresenterHeaderProps): React
           <X size={20} />
         </Button>
         <span className="text-foreground/70 text-lg font-mono">{formatElapsed(elapsed)}</span>
-        {readinessReport && skippedCount > 0 && (
+        {renderStatus && !isEnded && (
+          <span role="status" className="min-w-0 break-words text-xs text-default-500">
+            {t(
+              `fileExplorer.presenter.projectionStatus.${renderStatus.status}`,
+              renderStatus.status === 'ready'
+                ? 'Projected'
+                : renderStatus.status === 'failed'
+                  ? 'Projection failed'
+                  : 'Preparing projection'
+            )}
+            {renderStatus.status === 'failed' && (
+              <>
+                <span>
+                  {' '}
+                  · {playlist.find((item) => item.id === renderStatus.itemId)?.name} ·{' '}
+                  {t(
+                    `fileExplorer.presenter.projectionFailure.${renderStatus.reason ?? 'render-failed'}`
+                  )}
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onPress={() => useMediaProjectionStore.getState().retryCurrentProjection()}
+                >
+                  {t('fileExplorer.presenter.retryProjection', 'Retry projection')}
+                </Button>
+              </>
+            )}
+          </span>
+        )}
+        {readinessReport && (skippedCount > 0 || isReadinessOpen) && (
           <button
             type="button"
             className="flex items-center gap-1 rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning-700 hover:bg-warning/20"
@@ -79,7 +114,7 @@ export default function PresenterHeader({ onExit }: PresenterHeaderProps): React
             aria-expanded={isReadinessOpen}
           >
             <AlertTriangle size={12} />
-            {t('fileExplorer.presenter.skippedItems', '{{count}} skipped', {
+            {t('fileExplorer.presenter.pendingItems', '{{count}} need attention', {
               count: skippedCount
             })}
           </button>

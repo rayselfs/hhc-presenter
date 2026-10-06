@@ -3,8 +3,7 @@ import type { FolderRecord, AnyItemRecord, FolderStoreConfig } from '@shared/typ
 import { FOLDER_DURATION_MS } from '@shared/types/folder'
 import { createFolderDB } from '@renderer/lib/folder-db'
 import { openBibleDB } from '@renderer/lib/bible-db'
-import { incrementBlobRef, openFileExplorerDB } from '@renderer/lib/file-explorer-db'
-import { getBlobId } from '@renderer/lib/blob-identity'
+import { commitLocalFileItem } from '@renderer/lib/file-catalog-mutations'
 import { resolveUniqueName } from '@renderer/lib/file-naming'
 import { isFolderReadOnlyBySyncLink } from '@renderer/lib/sync-readonly'
 import { createPersistenceOperationQueue } from '@renderer/lib/persistence-operation-queue'
@@ -29,6 +28,7 @@ export interface FolderStoreState {
   initialize: () => Promise<void>
   retryInitialization: () => Promise<void>
   retryPersistence: () => Promise<void>
+  flushPersistence: () => Promise<void>
   addFolder: (name: string, parentId?: string, expiresAt?: number | null) => string
   updateFolder: (id: string, updates: { name?: string; expiresAt?: number | null }) => void
   updateItem?: (id: string, updates: Partial<AnyItemRecord>) => void
@@ -196,6 +196,7 @@ export function createFolderStore(config: FolderStoreConfig) {
 
     retryInitialization: () => get().initialize(),
     retryPersistence: () => persistenceQueue.retry(),
+    flushPersistence: () => persistenceQueue.flush(),
 
     ensureItemsLoaded: async (parentId: string) => {
       const { loadedParents } = get()
@@ -486,7 +487,6 @@ export function createFolderStore(config: FolderStoreConfig) {
       if (!sourceItem || sourceItem.type !== 'file') return null
       if (isFolderReadOnly(targetFolderId, get().folders)) return null
 
-      const blobId = getBlobId(sourceItem)
       const newId = crypto.randomUUID()
       const targetSiblings = get().getItems(targetFolderId)
       const now = Date.now()
@@ -501,8 +501,8 @@ export function createFolderStore(config: FolderStoreConfig) {
         originalParentId: undefined
       }
 
-      const db = await openFileExplorerDB()
-      await incrementBlobRef(db, blobId)
+      await persistenceQueue.flush()
+      await commitLocalFileItem({ ...copiedItem, type: 'file' }, { copyFromId: itemId })
 
       set((state) => ({
         items: { ...state.items, [copiedItem.id]: copiedItem },
@@ -515,7 +515,6 @@ export function createFolderStore(config: FolderStoreConfig) {
           ])
         }
       }))
-      persistenceQueue.enqueue(() => ops.saveItem(copiedItem))
       return newId
     },
 

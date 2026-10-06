@@ -1,4 +1,7 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+const { mockIsElectron } = vi.hoisted(() => ({ mockIsElectron: vi.fn(() => false) }))
+vi.mock('../env', () => ({ isElectron: mockIsElectron }))
+
 import { openFileExplorerDB, resetFileExplorerDBForTests } from '../file-explorer-db'
 import { lockMediaResources, resetMediaResourceLocksForTests } from '../media-resource-locks'
 import { getDerivedAsset, putDerivedAsset, resetMediaWorkDBForTests } from '../media-work-db'
@@ -17,6 +20,7 @@ import {
 } from '../sync-db'
 
 beforeEach(async () => {
+  mockIsElectron.mockReturnValue(false)
   await resetFileExplorerDBForTests()
   await resetMediaWorkDBForTests()
   await resetSyncDBForTests()
@@ -24,6 +28,21 @@ beforeEach(async () => {
 })
 
 describe('media storage cleanup', () => {
+  it('clears desktop playback caches and surfaces failures for retry', async () => {
+    mockIsElectron.mockReturnValue(true)
+    const clearVideoCache = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('cache busy'))
+      .mockResolvedValue(undefined)
+    Object.defineProperty(window, 'api', {
+      configurable: true,
+      value: { nativeFs: { clearVideoCache } }
+    })
+    await expect(clearRegenerableDerivedAssets()).rejects.toThrow('cache busy')
+    await expect(clearRegenerableDerivedAssets()).resolves.toEqual({ deletedAssetIds: [] })
+    expect(clearVideoCache).toHaveBeenCalledTimes(2)
+  })
+
   it('removes derived assets whose source blob no longer exists', async () => {
     const db = await openFileExplorerDB()
     await db.put('file-blobs', {

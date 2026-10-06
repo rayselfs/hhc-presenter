@@ -28,9 +28,11 @@ export interface ResourceCleanupJournalRecord {
   createdAt: number
   updatedAt: number
   stagingLock?: string
+  deleteBlobRecord?: boolean
 }
 
 export interface FileExplorerDBSchema extends DBSchema {
+  'catalog-deletions': { key: string; value: { id: string; deletedAt: number } }
   'presentation-drafts': { key: string; value: PresentationDraftRecord }
   'personal-sync-outbox': {
     key: string
@@ -67,7 +69,7 @@ export interface FileExplorerDBSchema extends DBSchema {
 }
 
 const DB_NAME = 'hhc-file-explorer'
-export const FILE_EXPLORER_DB_VERSION = 7
+export const FILE_EXPLORER_DB_VERSION = 8
 
 let fileExplorerDBPromise: Promise<IDBPDatabase<FileExplorerDBSchema>> | null = null
 
@@ -75,6 +77,8 @@ function getFileExplorerDB(): Promise<IDBPDatabase<FileExplorerDBSchema>> {
   if (!fileExplorerDBPromise) {
     fileExplorerDBPromise = openDB<FileExplorerDBSchema>(DB_NAME, FILE_EXPLORER_DB_VERSION, {
       upgrade(db, oldVersion, _newVersion, tx) {
+        if (!db.objectStoreNames.contains('catalog-deletions'))
+          db.createObjectStore('catalog-deletions', { keyPath: 'id' })
         if (!db.objectStoreNames.contains('presentation-drafts'))
           db.createObjectStore('presentation-drafts', { keyPath: 'id' })
         if (!db.objectStoreNames.contains('personal-sync-outbox')) {

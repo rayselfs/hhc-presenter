@@ -1,7 +1,7 @@
 import { groupItemsByDate } from './file-explorer-grouping'
 import type { AnyItemRecord, FileItemRecord } from '@shared/types/folder'
 import { isFileItem } from '@shared/types/folder'
-import type { FilePlaybackPhase } from '@shared/projection-messages'
+import type { FilePlaybackPhase, VideoPreparationPhase } from '@shared/projection-messages'
 import {
   getMediaSupport,
   resolveMediaCapability,
@@ -14,6 +14,7 @@ export type MediaTypeStateMap = {
   image: Record<string, never>
   video: {
     phase?: FilePlaybackPhase
+    preparationPhase?: VideoPreparationPhase
     hasStarted?: boolean
     isPlaying?: boolean
     isEnded?: boolean
@@ -22,7 +23,13 @@ export type MediaTypeStateMap = {
     seekable?: boolean
     volume?: number
   }
-  pdf: { viewMode: 'slide' | 'scroll'; thumbsCollapsed?: boolean }
+  pdf: {
+    viewMode: 'slide' | 'scroll'
+    thumbsCollapsed?: boolean
+    itemId?: string
+    currentPage?: number
+    scrollPage?: number
+  }
   presentation: { slideIndex: number; slideCount?: number }
 }
 

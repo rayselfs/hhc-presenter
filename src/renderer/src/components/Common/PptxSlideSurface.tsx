@@ -69,11 +69,6 @@ export default function PptxSlideSurface({
         viewerRef.current = handle
         setViewer(handle)
         setStatus('ready')
-        onReady?.({
-          slideCount: handle.slideCount,
-          width: handle.slideWidth,
-          height: handle.slideHeight
-        })
       } catch (loadError) {
         if (cancelled) return
         const nextError = loadError instanceof Error ? loadError : new Error(String(loadError))
@@ -89,19 +84,35 @@ export default function PptxSlideSurface({
       viewerRef.current?.destroy()
       viewerRef.current = null
     }
-  }, [onError, onReady, sourceId, sourceMimeType, sourceUrl, verifyNativeFile])
+  }, [onError, sourceId, sourceMimeType, sourceUrl, verifyNativeFile])
 
   useEffect(() => {
     const current = viewerRef.current
     if (!current || status !== 'ready') return
     const clampedSlideIndex = Math.max(0, Math.min(slideIndex, current.slideCount - 1))
-    void current.viewer.renderSlide(clampedSlideIndex).catch((renderError) => {
-      const nextError = renderError instanceof Error ? renderError : new Error(String(renderError))
-      setStatus('failed')
-      setError(nextError.message)
-      onError?.(nextError)
-    })
-  }, [onError, slideIndex, status, viewer])
+    let cancelled = false
+    void current.viewer
+      .renderSlide(clampedSlideIndex)
+      .then(() => {
+        if (cancelled || viewerRef.current !== current) return
+        onReady?.({
+          slideCount: current.slideCount,
+          width: current.slideWidth,
+          height: current.slideHeight
+        })
+      })
+      .catch((renderError) => {
+        if (cancelled || viewerRef.current !== current) return
+        const nextError =
+          renderError instanceof Error ? renderError : new Error(String(renderError))
+        setStatus('failed')
+        setError(nextError.message)
+        onError?.(nextError)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [onError, onReady, slideIndex, status, viewer])
 
   return (
     <div className={`relative h-full w-full overflow-hidden bg-black ${className ?? ''}`}>

@@ -1,8 +1,13 @@
+import { listenForCatalogDeletions } from './file-catalog-events'
 import { useBibleStore } from '@renderer/stores/bible'
 import { useBibleFolderStore } from '@renderer/stores/folder'
 import { useBibleSettingsStore } from '@renderer/stores/bible-settings'
 import { useSettingsStore } from '@renderer/stores/settings'
-import { purgeExpiredTrashFromStore, useFileExplorerStore } from '@renderer/stores/file-explorer'
+import {
+  purgeExpiredTrashFromStore,
+  removeCleanedEntriesFromStore,
+  useFileExplorerStore
+} from '@renderer/stores/file-explorer'
 import { initializeSearchIndexes } from '@renderer/lib/bible-search'
 import { isElectron } from '@renderer/lib/env'
 import { toast } from '@heroui/react/toast'
@@ -97,6 +102,7 @@ export function initializeApp(options: SyncRuntimeOptions = {}): () => void {
 
   if (subscriptionsInitialized) return () => {}
   subscriptionsInitialized = true
+  const stopCatalogEvents = listenForCatalogDeletions(removeCleanedEntriesFromStore)
 
   void initWhisperModelDir()
   let disposed = false
@@ -180,6 +186,7 @@ export function initializeApp(options: SyncRuntimeOptions = {}): () => void {
     unsubWhisper()
     unsubBibleFolders()
     unsubFileExplorer()
+    stopCatalogEvents()
     disposed = true
     stopSyncRuntime()
     window.removeEventListener('online', handleOnline)

@@ -58,7 +58,12 @@ export default function ImagePreview({ item }: ImagePreviewProps): React.JSX.Ele
       setLoading(false)
     }
 
-    void load()
+    void load().catch(() => {
+      if (!cancelled) {
+        setError(true)
+        setLoading(false)
+      }
+    })
 
     return () => {
       cancelled = true
@@ -79,7 +84,7 @@ export default function ImagePreview({ item }: ImagePreviewProps): React.JSX.Ele
     return (
       <PreviewLoadError
         message={t('presenter.imageLoadFailed')}
-        retryLabel={t('presenter.retry')}
+        retryLabel={t('presenter.retryPreview', 'Retry preview')}
         onRetry={() => setRetryToken((value) => value + 1)}
       />
     )
@@ -95,6 +100,7 @@ export default function ImagePreview({ item }: ImagePreviewProps): React.JSX.Ele
       <div className="w-full h-full overflow-hidden relative">
         <img
           src={imgSrc}
+          onError={() => setError(true)}
           style={{
             width: '100%',
             height: '100%',
@@ -122,6 +128,7 @@ export default function ImagePreview({ item }: ImagePreviewProps): React.JSX.Ele
     <div className="w-full h-full overflow-hidden">
       <img
         src={imgSrc}
+        onError={() => setError(true)}
         style={{
           width: '100%',
           height: '100%',

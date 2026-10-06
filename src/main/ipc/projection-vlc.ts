@@ -1,4 +1,5 @@
 import { BrowserWindow, ipcMain } from 'electron'
+import { createVlcLivePreview, type VlcLiveFrame } from '../vlc-live-preview'
 import type { VlcPlayer } from 'electron-vlc-player'
 import type {
   ProjectionVlcControlRequest,
@@ -8,9 +9,10 @@ import type {
   ProjectionVlcStartRequest,
   ProjectionVlcStopRequest
 } from '@shared/ipc-channels'
+import type { VideoPreparationPhase } from '../../shared/projection-messages'
 import type { WindowManager } from '../windowManager'
-import { isKnownWindow } from './validate'
-import { resolveVideoPlaybackPath } from './video-remux'
+import { isKnownWindow, isMainWindow } from './validate'
+import { lockVideoPlaybackSource, resolveVideoPlaybackPath } from './video-remux'
 import { isValidNativeFileId } from '../../shared/native-media'
 import { resolveVlcRuntime } from '../video-engine-runtime'
 import {
@@ -27,6 +29,8 @@ interface PendingVlcControls {
 
 interface OwnedVlcSession {
   itemId: string
+  releaseSource: () => void
+  preview: (() => Promise<VlcLiveFrame | null>) | null
   attemptId: string
   generation: number
   lifecycleVersion: number
@@ -43,6 +47,7 @@ interface OwnedVlcSession {
   lastProgressPublicationMs: number | null
   listenerCleanup: (() => void) | null
   resizeCleanup: (() => void) | null
+  closeCleanup: (() => void) | null
   watchdog: ReturnType<typeof setTimeout> | null
 }
 
@@ -403,6 +408,7 @@ function didPlaybackEndPrematurely(session: OwnedVlcSession): boolean {
 function destroySessionResources(session: OwnedVlcSession): void {
   if (session.watchdog) clearTimeout(session.watchdog)
   session.watchdog = null
+  session.preview = null
   const currentPlayer = session.player
   session.player = null
   if (currentPlayer) {
@@ -425,6 +431,9 @@ function destroySessionResources(session: OwnedVlcSession): void {
     // Keep invalidation authoritative when listener teardown races window destruction.
   }
   session.resizeCleanup = null
+  session.closeCleanup?.()
+  session.closeCleanup = null
+  session.releaseSource()
 }
 
 function invalidateSession(session: OwnedVlcSession): void {
@@ -469,8 +478,8 @@ async function stopVlc(request?: ProjectionVlcStopRequest): Promise<void> {
 }
 
 function applyPendingVolume(wm: WindowManager, session: OwnedVlcSession): boolean {
-  const volume = session.pending.volume
-  if (!session.sourceInstalled || volume === undefined) return true
+  const volume = session.phase === 'ready' ? (session.pending.volume ?? 1) : 0
+  if (!session.sourceInstalled) return true
   return runOwnedNativeAction(wm, session, (player) => {
     player.setVolume(Math.round(Math.max(0, Math.min(1, volume)) * 100))
   })
@@ -480,6 +489,7 @@ function finishStartup(wm: WindowManager, session: OwnedVlcSession, isPlaying: b
   const ownerPlayer = session.player
   if (!ownerPlayer || !ownsSession(wm, session, ownerPlayer)) return
   session.phase = 'ready'
+  if (!applyPendingVolume(wm, session)) return
   session.pending.seekSeconds = undefined
   session.pending.transport = undefined
   if (session.watchdog) clearTimeout(session.watchdog)
@@ -534,10 +544,13 @@ async function startVlc(
   if (!projectionWindow || projectionWindow.isDestroyed())
     throw new Error('Projection window not open')
   const generation = wm.getProjectionState().lifecycle.generation
+  if (generation <= 0) return
   const previousSession = activeSession
   const startVersion = ++lifecycleVersion
   const session: OwnedVlcSession = {
     itemId: request.itemId,
+    releaseSource: lockVideoPlaybackSource(request.sourceFileId),
+    preview: null,
     attemptId: request.attemptId ?? `${request.itemId}-${startVersion}`,
     generation,
     lifecycleVersion: startVersion,
@@ -562,14 +575,20 @@ async function startVlc(
     lastProgressPublicationMs: null,
     listenerCleanup: null,
     resizeCleanup: null,
+    closeCleanup: null,
     watchdog: null
   }
   activeSession = session
+  const onClose = (): void => invalidateSession(session)
+  projectionWindow.once('close', onClose)
+  session.closeCleanup = () => projectionWindow.removeListener('close', onClose)
   if (previousSession) destroySessionResources(previousSession)
-  if (ownsSession(wm, session)) {
+  const publishPreparing = (preparationPhase: VideoPreparationPhase): void => {
+    if (!ownsSession(wm, session)) return
     wm.sendToMain('projection:message', session.generation, 'file:playback-state', {
       itemId: session.itemId,
       phase: 'preparing',
+      preparationPhase,
       currentTime: request.initialPositionSeconds ?? 0,
       duration: request.durationMs ? request.durationMs / 1000 : 0,
       isPlaying: false,
@@ -577,11 +596,13 @@ async function startVlc(
       ...(request.initialVolume !== undefined ? { volume: request.initialVolume } : {})
     })
   }
+  publishPreparing('inspection')
   let playbackPath: string
   try {
     playbackPath = await resolveVideoPlaybackPath(
       request.sourceFileId,
-      request.playbackVariant ?? 'source'
+      request.playbackVariant ?? 'source',
+      publishPreparing
     )
   } catch (error) {
     if (ownsSession(wm, session)) publishFailure(wm, remuxFailureCode(error), session)
@@ -589,6 +610,7 @@ async function startVlc(
     throw error
   }
   if (!ownsSession(wm, session)) return
+  publishPreparing('player')
   session.watchdog = setTimeout(() => {
     if (!ownsSession(wm, session)) return
     publishFailure(wm, 'media-open-failed', session)
@@ -629,6 +651,10 @@ async function startVlc(
       autoAdvancePlaylist: false
     })
     session.player = nextPlayer
+    const previewPlayer = nextPlayer
+    session.preview = createVlcLivePreview(previewPlayer, () =>
+      ownsSession(wm, session, previewPlayer)
+    )
     await nextPlayer.embed()
     if (!ownsSession(wm, session, nextPlayer)) {
       createListenerCleanup(projectionWindow, beforeWindowListeners, beforeWebContentsListeners)()
@@ -830,6 +856,23 @@ export function registerProjectionVlcHandlers(
   ipcMain.handle('projection-vlc:get-info', async (event): Promise<ProjectionVlcInfo> => {
     if (!isKnownWindow(wm, event)) return { status: 'error', message: 'Unauthorized VLC access' }
     return (await resolveVlcInfo(loadRuntime)).info
+  })
+
+  ipcMain.handle('projection-vlc:preview', async (event, itemId: unknown) => {
+    if (!isMainWindow(wm, event)) throw new Error('Unauthorized VLC preview access')
+    if (typeof itemId !== 'string' || !getSafeItemId(itemId))
+      throw new Error('Invalid VLC preview item')
+    const session = activeSession
+    if (!session || session.itemId !== itemId || session.phase !== 'ready' || !session.preview)
+      return null
+    try {
+      const frame = await session.preview()
+      return frame && ownsSession(wm, session)
+        ? { ...frame, itemId, generation: session.generation, attemptId: session.attemptId }
+        : null
+    } catch {
+      throw new Error('VLC live preview is unavailable')
+    }
   })
 
   ipcMain.handle('projection-vlc:start', async (event, request: unknown) => {

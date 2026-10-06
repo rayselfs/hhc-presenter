@@ -12,9 +12,11 @@ import type {
   WhisperDownloadProgress,
   WhisperDirInfo,
   VideoPosterInfo,
+  VideoCacheUsage,
   VideoPosterRequest,
   VideoPosterResult,
   ProjectionVlcControlRequest,
+  ProjectionVlcPreviewFrame,
   ProjectionVlcFailure,
   ProjectionVlcInfo,
   ProjectionVlcStartRequest,
@@ -134,6 +136,8 @@ interface NativeFsAPI {
   getUrl: (id: string, mimeType: string) => string
   exists: (id: string) => Promise<boolean>
   delete: (id: string) => Promise<void>
+  getVideoCacheUsage: () => Promise<VideoCacheUsage>
+  clearVideoCache: () => Promise<void>
 }
 
 interface VideoPosterAPI {
@@ -142,6 +146,7 @@ interface VideoPosterAPI {
 }
 
 interface ProjectionVlcAPI {
+  getPreviewFrame: (itemId: string) => Promise<ProjectionVlcPreviewFrame | null>
   getInfo: () => Promise<ProjectionVlcInfo>
   start: (request: ProjectionVlcStartRequest) => Promise<void>
   control: (command: ProjectionVlcControlRequest) => Promise<void>

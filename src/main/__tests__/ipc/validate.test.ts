@@ -407,3 +407,36 @@ describe('late playback error validation', () => {
     ).toBe(false)
   })
 })
+
+it('validates bounded document render reports and PDF initial state', () => {
+  const report = { itemId: 'pdf', blobId: 'blob', contentRevision: 1, status: 'failed' }
+  expect(validateProjectionMessageTuple(['file:render-status', report])).toBe(true)
+  for (const data of [
+    { ...report, contentRevision: 0 },
+    { ...report, status: 'unknown' },
+    { ...report, reason: 'unbounded-server-message' },
+    { ...report, itemId: '' }
+  ]) {
+    expect(validateProjectionMessageTuple(['file:render-status', data])).toBe(false)
+  }
+  const show = {
+    itemId: 'pdf',
+    blobId: 'blob',
+    fileName: 'test.pdf',
+    mimeType: 'application/pdf',
+    playlist: [],
+    currentIndex: 0
+  }
+  expect(
+    validateProjectionMessageTuple([
+      'file:show',
+      { ...show, pdf: { page: 3, scroll: 2.5, viewMode: 'continuous' } }
+    ])
+  ).toBe(true)
+  expect(
+    validateProjectionMessageTuple([
+      'file:show',
+      { ...show, pdf: { page: 0, scroll: Infinity, viewMode: 'continuous' } }
+    ])
+  ).toBe(false)
+})

@@ -3,6 +3,8 @@ import type { FileControlPayload } from '@shared/projection-messages'
 
 interface PresenterCommandContextValue {
   sendCommand: (command: FileControlPayload) => void
+  cancelPreparation?: () => void
+  thumbnails?: Record<string, string | null>
 }
 
 export const PresenterCommandContext = createContext<PresenterCommandContextValue | null>(null)

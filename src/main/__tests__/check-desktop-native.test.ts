@@ -15,10 +15,10 @@ async function createTempRoot(): Promise<string> {
   return root
 }
 
-async function writeFileIn(root: string, path: string): Promise<void> {
+async function writeFileIn(root: string, path: string, content = ''): Promise<void> {
   const absolutePath = join(root, path)
   await mkdir(dirname(absolutePath), { recursive: true })
-  await writeFile(absolutePath, '')
+  await writeFile(absolutePath, content)
 }
 
 async function runChecker(root: string): Promise<void> {
@@ -35,13 +35,33 @@ describe('check desktop native script', () => {
 
     await expect(runChecker(root)).rejects.toMatchObject({
       code: 1,
-      stderr: expect.stringContaining('electron-rebuild -f -w electron-vlc-player')
+      stderr: expect.stringContaining('npm run rebuild:vlc')
     })
   })
 
+  it.each(['unpatched', '--no-snapshot-preview'])(
+    'rejects an incompletely patched compiled VLC binding (%s)',
+    async (content) => {
+      const root = await createTempRoot()
+      await writeFileIn(
+        root,
+        'node_modules/electron-vlc-player/build/Release/vlc_binding.node',
+        content
+      )
+      await expect(runChecker(root)).rejects.toMatchObject({
+        code: 1,
+        stderr: expect.stringContaining('unpatched')
+      })
+    }
+  )
+
   it('accepts a compiled VLC binding', async () => {
     const root = await createTempRoot()
-    await writeFileIn(root, 'node_modules/electron-vlc-player/build/Release/vlc_binding.node')
+    await writeFileIn(
+      root,
+      'node_modules/electron-vlc-player/build/Release/vlc_binding.node',
+      '--no-snapshot-preview hhc_vlc_event_dispatch_main'
+    )
 
     await expect(runChecker(root)).resolves.toBeUndefined()
   })

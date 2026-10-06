@@ -15,7 +15,11 @@ export default function MediaToolbar({ onToggleGrid }: MediaToolbarProps): React
   const pdfViewMode = useMediaProjectionStore((s) => s.typeStates['pdf']?.viewMode ?? 'slide')
   const { resetZoom, setZoomLevel } = useMediaProjectionStore.getState()
 
-  const zoomDisabled = currentMimeType === 'application/pdf' && pdfViewMode === 'scroll'
+  const usesVlc = useMediaProjectionStore(
+    (s) => s.snapshot?.entries[s.currentIndex]?.playbackMode === 'vlc-embedded'
+  )
+  const zoomDisabled =
+    usesVlc || (currentMimeType === 'application/pdf' && pdfViewMode === 'scroll')
 
   return (
     <div className="presenter-toolbar flex w-full items-center gap-2 py-2 shrink-0">

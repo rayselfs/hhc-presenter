@@ -7,6 +7,7 @@ export type PersistenceQueueSnapshot = {
 export type PersistenceOperationQueue = {
   enqueue: (operation: () => Promise<void>) => void
   retry: () => Promise<void>
+  flush: () => Promise<void>
   snapshot: () => PersistenceQueueSnapshot
   subscribe: (listener: (snapshot: PersistenceQueueSnapshot) => void) => () => void
 }
@@ -66,6 +67,11 @@ export function createPersistenceOperationQueue(): PersistenceOperationQueue {
       operations.push(operation)
       emit()
       void drain()
+    },
+
+    async flush(): Promise<void> {
+      await drain()
+      if (status === 'failed') throw new Error(error ?? 'Unable to save pending changes')
     },
 
     async retry(): Promise<void> {

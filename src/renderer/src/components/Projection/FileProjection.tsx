@@ -17,7 +17,7 @@ import {
   isEditablePresentationMimeType,
   isPresentationMimeType
 } from '@renderer/lib/presentation-media'
-import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from 'pdfjs-dist'
+import type { PDFDocumentLoadingTask, PDFDocumentProxy, PDFPageProxy, RenderTask } from 'pdfjs-dist'
 import { getPdfPageThumbs } from '@renderer/lib/thumbnail-db'
 
 type FileProjectionProps = {
@@ -35,6 +35,7 @@ type FileProjectionProps = {
   vlcStartRevision?: number
   initialSeekable?: boolean
   initialDurationMs?: number
+  initialPdf?: ProjectionPayload<'file:show'>['pdf']
   initialPresentation?: {
     slideIndex: number
     slideCount?: number
@@ -95,6 +96,7 @@ export default function FileProjection({
   vlcStartRevision,
   initialSeekable,
   initialDurationMs,
+  initialPdf,
   initialPresentation,
   initialEditablePresentation,
   controlEvent
@@ -113,6 +115,13 @@ export default function FileProjection({
   const pdfContainerRef = useRef<HTMLDivElement | null>(null)
   const adapterSendRef = useRef<ReturnType<typeof createProjectionAdapter>['send'] | null>(null)
   const currentItemIdRef = useRef<string | null>(null)
+  const currentBlobIdRef = useRef<string | null>(null)
+  const imageReadyRef = useRef(false)
+  const objectUrlRef = useRef(objectUrl)
+  objectUrlRef.current = objectUrl
+  const retainedSurfaceSequenceRef = useRef<number | null>(null)
+  const cancelPendingImageRef = useRef<(() => void) | null>(null)
+  const pendingPdfRenderRef = useRef<RenderTask | null>(null)
   const reportedErrorSequenceRef = useRef(0)
   const [playbackError, setPlaybackError] = useState(false)
   const sourceRevokeRef = useRef<(() => void) | null>(null)
@@ -121,7 +130,57 @@ export default function FileProjection({
   const playbackModeRef = useRef<FileProjectionProps['initialPlaybackMode']>('native')
   const durationMsRef = useRef<number | undefined>(initialDurationMs)
   const loadSequenceRef = useRef(0)
+  const endedRef = useRef(false)
+  const pendingPdfRef = useRef({
+    page: 1,
+    scroll: 0,
+    viewMode: 'single' as 'single' | 'continuous'
+  })
+  const initialPdfRef = useRef(initialPdf)
+  initialPdfRef.current = initialPdf
+  const [documentFailed, setDocumentFailed] = useState(false)
+  const renderIdentityRef = useRef({
+    itemId: initialItemId,
+    blobId: initialBlobId,
+    contentRevision: initialContentRevision
+  })
+  renderIdentityRef.current = {
+    itemId: initialItemId,
+    blobId: initialBlobId,
+    contentRevision: initialContentRevision
+  }
+  const reportRenderStatus = useCallback(
+    (
+      status: 'ready' | 'failed',
+      sequence = loadSequenceRef.current,
+      reason: ProjectionPayload<'file:render-status'>['reason'] = 'render-failed'
+    ): void => {
+      if (sequence !== loadSequenceRef.current || endedRef.current) return
+      if (status === 'ready' && retainedSurfaceSequenceRef.current === sequence) return
+      const { itemId, blobId, contentRevision } = renderIdentityRef.current
+      if (status === 'failed' && retainedSurfaceSequenceRef.current !== sequence)
+        setDocumentFailed(true)
+      if (!itemId || !blobId || !contentRevision) return
+      adapterSendRef.current?.('file:render-status', {
+        itemId,
+        blobId,
+        contentRevision,
+        status,
+        ...(status === 'failed' ? { reason } : {})
+      })
+    },
+    []
+  )
+  const reportPresentationReady = useCallback(
+    () => reportRenderStatus('ready'),
+    [reportRenderStatus]
+  )
+  const reportPresentationFailure = useCallback(
+    () => reportRenderStatus('failed'),
+    [reportRenderStatus]
+  )
   const pdfDocumentRef = useRef<PDFDocumentProxy | null>(null)
+  const pdfLoadingTaskRef = useRef<PDFDocumentLoadingTask | null>(null)
   const pdfPagePromisesRef = useRef<Map<number, Promise<PDFPageProxy>>>(new Map())
   const pdfRenderTasksRef = useRef<Map<number, RenderTask>>(new Map())
   const pdfWindowRef = useRef<Set<number>>(new Set())
@@ -213,6 +272,10 @@ export default function FileProjection({
   )
 
   const disposePdf = useCallback((): void => {
+    pendingPdfRenderRef.current?.cancel()
+    pendingPdfRenderRef.current = null
+    void pdfLoadingTaskRef.current?.destroy?.()
+    pdfLoadingTaskRef.current = null
     for (const task of pdfRenderTasksRef.current.values()) task.cancel()
     pdfRenderTasksRef.current.clear()
     pdfPagePromisesRef.current.clear()
@@ -223,28 +286,91 @@ export default function FileProjection({
     if (document) void document.loadingTask.destroy()
   }, [])
 
-  const loadPdf = useCallback(async (sourceUrl: string, itemId: string, loadSequence: number) => {
-    const pdfjsLib = await loadPdfjsLib()
-    if (loadSequenceRef.current !== loadSequence) return
-    const document = await pdfjsLib.getDocument({ url: sourceUrl }).promise
-    if (loadSequenceRef.current !== loadSequence || currentItemIdRef.current !== itemId) {
-      await document.loadingTask.destroy()
-      return
-    }
-
-    pdfDocumentRef.current = document
-    const replay = replayStateRef.current?.itemId === itemId ? replayStateRef.current : null
-    setPdfState({
-      document,
-      pages: new Array<HTMLCanvasElement | undefined>(document.numPages).fill(undefined),
-      pageSizes: new Array<{ width: number; height: number } | undefined>(document.numPages).fill(
-        undefined
-      ),
-      currentPage: replay?.pdfPage ?? 1,
-      scrollPage: replay?.pdfScroll ?? 0,
-      viewMode: replay?.pdfViewMode ?? 'single'
-    })
-  }, [])
+  const loadPdf = useCallback(
+    async (
+      sourceUrl: string,
+      itemId: string,
+      loadSequence: number,
+      retainSurface = false
+    ): Promise<boolean> => {
+      const pdfjsLib = await loadPdfjsLib()
+      if (loadSequenceRef.current !== loadSequence) return false
+      const loadingTask = pdfjsLib.getDocument({ url: sourceUrl })
+      pdfLoadingTaskRef.current = loadingTask
+      const document = await loadingTask.promise
+      if (pdfLoadingTaskRef.current === loadingTask) pdfLoadingTaskRef.current = null
+      const isCurrent = (): boolean =>
+        loadSequenceRef.current === loadSequence &&
+        currentItemIdRef.current === itemId &&
+        !endedRef.current
+      if (!isCurrent()) {
+        await document.loadingTask.destroy()
+        return false
+      }
+      const pages = new Array<HTMLCanvasElement | undefined>(document.numPages).fill(undefined)
+      const pageSizes = new Array<{ width: number; height: number } | undefined>(
+        document.numPages
+      ).fill(undefined)
+      try {
+        if (retainSurface) {
+          let readyPage = 0
+          const desiredPage = (): number =>
+            Math.min(
+              document.numPages,
+              Math.max(
+                1,
+                pendingPdfRef.current.viewMode === 'continuous'
+                  ? Math.floor(pendingPdfRef.current.scroll) + 1
+                  : Math.floor(pendingPdfRef.current.page)
+              )
+            )
+          while (isCurrent() && readyPage !== desiredPage()) {
+            const pageNumber = desiredPage()
+            const page = await document.getPage(pageNumber)
+            if (!isCurrent()) break
+            const viewport = page.getViewport({ scale: 2 })
+            const canvas = window.document.createElement('canvas')
+            canvas.width = Math.ceil(viewport.width)
+            canvas.height = Math.ceil(viewport.height)
+            const context = canvas.getContext('2d')
+            if (!context) throw new Error('PDF canvas unavailable')
+            const task = page.render({ canvas, canvasContext: context, viewport })
+            pendingPdfRenderRef.current = task
+            await task.promise
+            if (pendingPdfRenderRef.current === task) pendingPdfRenderRef.current = null
+            pages[pageNumber - 1] = canvas
+            pageSizes[pageNumber - 1] = { width: canvas.width, height: canvas.height }
+            readyPage = pageNumber
+          }
+        }
+        if (!isCurrent()) {
+          await document.loadingTask.destroy()
+          return false
+        }
+        disposePdf()
+        pdfDocumentRef.current = document
+        retainedSurfaceSequenceRef.current = null
+        const pending = pendingPdfRef.current
+        setPdfState({
+          document,
+          pages,
+          pageSizes,
+          currentPage: Math.min(document.numPages, Math.max(1, Math.floor(pending.page))),
+          scrollPage: Math.min(
+            Math.max(0, document.numPages - 0.000001),
+            Math.max(0, pending.scroll)
+          ),
+          viewMode: pending.viewMode
+        })
+        if (retainSurface) reportRenderStatus('ready', loadSequence)
+        return true
+      } catch (error) {
+        await document.loadingTask.destroy()
+        throw error
+      }
+    },
+    [disposePdf, reportRenderStatus]
+  )
 
   const loadPdfPreviews = useCallback(
     async (blobId: string, itemId: string, loadSequence: number): Promise<void> => {
@@ -297,11 +423,29 @@ export default function FileProjection({
     async (itemId: string, blobId: string, fileMimeType: string, options: LoadFileOptions = {}) => {
       const loadSequence = loadSequenceRef.current + 1
       loadSequenceRef.current = loadSequence
+      cancelPendingImageRef.current?.()
+      cancelPendingImageRef.current = null
+      pendingPdfRenderRef.current?.cancel()
+      pendingPdfRenderRef.current = null
+      void pdfLoadingTaskRef.current?.destroy?.()
+      pdfLoadingTaskRef.current = null
+      const retainSurface =
+        currentItemIdRef.current === itemId &&
+        currentBlobIdRef.current === blobId &&
+        !endedRef.current &&
+        ((fileMimeType.startsWith('image/') &&
+          objectUrlRef.current !== null &&
+          imageReadyRef.current) ||
+          (fileMimeType === 'application/pdf' && pdfDocumentRef.current !== null))
+      retainedSurfaceSequenceRef.current = retainSurface ? loadSequence : null
       setPlaybackError(false)
+      setDocumentFailed(false)
+      endedRef.current = false
       const previousPlaybackMode = playbackModeRef.current
       const nextPlaybackMode = options.playbackMode ?? 'native'
       const liveVideo = currentItemIdRef.current === itemId ? mediaRef.current : null
       currentItemIdRef.current = itemId
+      currentBlobIdRef.current = blobId
       playbackModeRef.current = nextPlaybackMode
       seekableRef.current = options.seekable !== false
       durationMsRef.current = options.durationMs
@@ -332,53 +476,99 @@ export default function FileProjection({
             playbackRate: videoReplay.playbackRate ?? 1
           }
         : null
-      sourceRevokeRef.current?.()
-      sourceRevokeRef.current = null
-      disposePdf()
-      setObjectUrl(null)
-      setZoom(replay?.zoom ?? 1)
-      setPan(replay ? { ...replay.pan } : { x: 0, y: 0 })
-      setPdfState(null)
-      setPdfPreviewUrls([])
+      pendingPdfRef.current = {
+        page: replay?.pdfPage ?? initialPdfRef.current?.page ?? 1,
+        scroll: replay?.pdfScroll ?? initialPdfRef.current?.scroll ?? 0,
+        viewMode: replay?.pdfViewMode ?? initialPdfRef.current?.viewMode ?? 'single'
+      }
+      if (!retainSurface) {
+        imageReadyRef.current = false
+        sourceRevokeRef.current?.()
+        sourceRevokeRef.current = null
+        disposePdf()
+        setObjectUrl(null)
+        setPdfState(null)
+        setPdfPreviewUrls([])
+        setZoom(replay?.zoom ?? 1)
+        setPan(replay ? { ...replay.pan } : { x: 0, y: 0 })
+      }
       setIsEnded(replay?.isEnded ?? false)
       setMimeType(fileMimeType)
       if (fileMimeType === 'application/pdf') {
-        void loadPdfPreviews(blobId, itemId, loadSequence)
+        void loadPdfPreviews(blobId, itemId, loadSequence).catch((error) => {
+          console.warn('[file-projection] PDF previews unavailable', error)
+        })
       }
       if (options.playbackMode === 'vlc-embedded') {
         return
       }
-      if (options.streamUrl) {
-        if (fileMimeType === 'application/pdf') {
-          await loadPdf(options.streamUrl, itemId, loadSequence)
-          return
-        }
-        setLoadedContentRevision(initialContentRevision)
-        setObjectUrl(options.streamUrl)
+      if (isPresentationMimeType(fileMimeType)) return
+      let source: { url: string; revoke: () => void } | null
+      try {
+        source = options.streamUrl
+          ? { url: options.streamUrl, revoke: (): void => undefined }
+          : await getFileSource(await openFileExplorerDB(), blobId, fileMimeType, {
+              verifyNativeFile: false
+            })
+      } catch {
+        reportRenderStatus('failed', loadSequence, 'source-unavailable')
         return
       }
-      if (isPresentationMimeType(fileMimeType)) return
-      const db = await openFileExplorerDB()
-      if (loadSequenceRef.current !== loadSequence) return
-      const source = await getFileSource(db, blobId, fileMimeType, { verifyNativeFile: false })
       if (
         !source ||
         loadSequenceRef.current !== loadSequence ||
         currentItemIdRef.current !== itemId
       ) {
         source?.revoke()
+        if (!source) reportRenderStatus('failed', loadSequence, 'source-unavailable')
         return
       }
-
-      sourceRevokeRef.current = source.revoke
-      if (fileMimeType === 'application/pdf') {
-        await loadPdf(source.url, itemId, loadSequence)
-      } else {
-        setLoadedContentRevision(initialContentRevision)
-        setObjectUrl(source.url)
+      let installed = false
+      try {
+        if (fileMimeType === 'application/pdf') {
+          installed = await loadPdf(source.url, itemId, loadSequence, retainSurface)
+        } else {
+          if (retainSurface && fileMimeType.startsWith('image/')) {
+            await new Promise<void>((resolve, reject) => {
+              const image = new Image()
+              const clear = (): void => {
+                image.onload = null
+                image.onerror = null
+              }
+              const cancel = (): void => {
+                clear()
+                image.src = ''
+                reject(new Error('Image load cancelled'))
+              }
+              cancelPendingImageRef.current = cancel
+              image.onload = () => {
+                clear()
+                if (cancelPendingImageRef.current === cancel) cancelPendingImageRef.current = null
+                resolve()
+              }
+              image.onerror = () => {
+                clear()
+                if (cancelPendingImageRef.current === cancel) cancelPendingImageRef.current = null
+                reject(new Error('Image decode failed'))
+              }
+              image.src = source.url
+            })
+          }
+          if (loadSequenceRef.current !== loadSequence || endedRef.current) return
+          retainedSurfaceSequenceRef.current = null
+          setLoadedContentRevision(initialContentRevision)
+          setObjectUrl(source.url)
+          installed = true
+        }
+        if (installed) {
+          sourceRevokeRef.current?.()
+          sourceRevokeRef.current = source.revoke
+        }
+      } finally {
+        if (!installed) source.revoke()
       }
     },
-    [disposePdf, initialContentRevision, loadPdf, loadPdfPreviews]
+    [disposePdf, initialContentRevision, loadPdf, loadPdfPreviews, reportRenderStatus]
   )
 
   useEffect(
@@ -486,6 +676,7 @@ export default function FileProjection({
           pages[pageNumber - 1] = canvas
           return { ...previous, pages }
         })
+        if (pageNumber === pdfWindowCenter) reportRenderStatus('ready')
       } catch (error) {
         const errorName = (error as { name?: string })?.name
         if (
@@ -494,6 +685,7 @@ export default function FileProjection({
           errorName !== 'AbortException'
         ) {
           console.error('[file-projection] PDF page render failed', error)
+          reportRenderStatus('failed')
         }
       } finally {
         if (task && pdfRenderTasksRef.current.get(pageNumber) === task) {
@@ -502,7 +694,9 @@ export default function FileProjection({
       }
     }
 
-    for (const pageNumber of wantedPages) void renderPage(pageNumber)
+    for (const pageNumber of wantedPages) {
+      if (!pdfState.pages[pageNumber - 1]) void renderPage(pageNumber)
+    }
 
     if (pdfState.viewMode === 'continuous' && pdfMeasuredDocumentRef.current !== document) {
       pdfMeasuredDocumentRef.current = document
@@ -526,10 +720,20 @@ export default function FileProjection({
           }
         })
     }
-  }, [pdfPageCount, pdfState?.document, pdfState?.viewMode, pdfWindowEnd, pdfWindowStart])
+  }, [
+    pdfPageCount,
+    pdfState?.document,
+    pdfState?.viewMode,
+    pdfState?.pages,
+    pdfWindowEnd,
+    pdfWindowStart,
+    pdfWindowCenter,
+    reportRenderStatus
+  ])
 
   const handleControl = useCallback(
     (data: FileControlPayload) => {
+      if (endedRef.current || !isControlForCurrentItem(data)) return
       switch (data.action) {
         case 'play':
           if (playbackModeRef.current === 'vlc-embedded') {
@@ -565,13 +769,33 @@ export default function FileProjection({
           setPan(data.value)
           break
         case 'pdfPage':
-          setPdfState((prev) => (prev ? { ...prev, currentPage: data.value } : prev))
+          pendingPdfRef.current.page = data.value
+          setPdfState((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  currentPage: Math.min(prev.document.numPages, Math.max(1, Math.floor(data.value)))
+                }
+              : prev
+          )
           break
         case 'pdfScroll': {
-          setPdfState((prev) => (prev ? { ...prev, scrollPage: data.value } : prev))
+          pendingPdfRef.current.scroll = data.value
+          setPdfState((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  scrollPage: Math.min(
+                    Math.max(0, prev.document.numPages - 0.000001),
+                    Math.max(0, data.value)
+                  )
+                }
+              : prev
+          )
           break
         }
         case 'pdfViewMode':
+          pendingPdfRef.current.viewMode = data.value
           setPdfState((prev) => (prev ? { ...prev, viewMode: data.value } : prev))
           break
         case 'volume':
@@ -587,7 +811,7 @@ export default function FileProjection({
           break
       }
     },
-    [queueVideoControl]
+    [queueVideoControl, isControlForCurrentItem]
   )
 
   useEffect(() => {
@@ -596,6 +820,11 @@ export default function FileProjection({
     adapterSendRef.current = adapter.send.bind(adapter)
 
     const unsubEnd = adapter.on('file:end', () => {
+      endedRef.current = true
+      cancelPendingImageRef.current?.()
+      cancelPendingImageRef.current = null
+      loadSequenceRef.current += 1
+      disposePdf()
       setIsEnded(true)
     })
 
@@ -604,17 +833,29 @@ export default function FileProjection({
       adapter.dispose()
       adapterSendRef.current = null
     }
-  }, [generation, projectionSessionId])
+  }, [generation, projectionSessionId, disposePdf])
 
   useEffect(() => {
     if (initialItemId && initialBlobId && initialMimeType) {
       setDisplayName(fileName ?? '')
-      loadFile(initialItemId, initialBlobId, initialMimeType, {
+      const loading = loadFile(initialItemId, initialBlobId, initialMimeType, {
         streamUrl: initialStreamUrl,
         playbackMode: initialPlaybackMode,
         seekable: initialSeekable,
         durationMs: initialDurationMs
       })
+      const sequence = loadSequenceRef.current
+      void loading.catch((error: unknown) =>
+        reportRenderStatus(
+          'failed',
+          sequence,
+          ['MissingPDFException', 'UnexpectedResponseException'].includes(
+            (error as { name?: string })?.name ?? ''
+          )
+            ? 'source-unavailable'
+            : 'decode-failed'
+        )
+      )
     }
   }, [
     fileName,
@@ -626,8 +867,34 @@ export default function FileProjection({
     initialSeekable,
     initialDurationMs,
     initialStreamUrl,
-    loadFile
+    loadFile,
+    reportRenderStatus
   ])
+
+  useEffect(() => {
+    if (!initialPdf || endedRef.current) return
+    const replay = initialReplayState?.itemId === initialItemId ? initialReplayState : null
+    const desired = replay
+      ? { page: replay.pdfPage, scroll: replay.pdfScroll, viewMode: replay.pdfViewMode }
+      : initialPdf
+    pendingPdfRef.current = { ...desired }
+    setPdfState((previous) =>
+      previous
+        ? {
+            ...previous,
+            currentPage: Math.min(
+              previous.document.numPages,
+              Math.max(1, Math.floor(desired.page))
+            ),
+            scrollPage: Math.min(
+              Math.max(0, previous.document.numPages - 0.000001),
+              Math.max(0, desired.scroll)
+            ),
+            viewMode: desired.viewMode
+          }
+        : previous
+    )
+  }, [initialItemId, initialPdf, initialReplayState])
 
   useEffect(() => {
     if (controlEvent) handleControl(controlEvent.data)
@@ -674,6 +941,8 @@ export default function FileProjection({
   useEffect(
     () => () => {
       loadSequenceRef.current += 1
+      cancelPendingImageRef.current?.()
+      cancelPendingImageRef.current = null
       sourceRevokeRef.current?.()
       sourceRevokeRef.current = null
       disposePdf()
@@ -692,6 +961,8 @@ export default function FileProjection({
       ? `scale(${zoom}) translate(${(-pan.x / zoom) * 100}%, ${(-pan.y / zoom) * 100}%)`
       : undefined
 
+  const renderedLoadSequence = loadSequenceRef.current
+
   if (isEnded) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-black">
@@ -699,6 +970,8 @@ export default function FileProjection({
       </div>
     )
   }
+
+  if (documentFailed) return <div className="h-screen w-screen bg-black" />
 
   if (pdfState) {
     if (pdfState.viewMode === 'continuous') {
@@ -775,10 +1048,7 @@ export default function FileProjection({
   }
 
   if (mimeType === 'application/pdf' && pdfPreviewUrls.length > 0) {
-    const replayPage =
-      replayStateRef.current?.itemId === currentItemIdRef.current
-        ? replayStateRef.current.pdfPage
-        : 1
+    const replayPage = pendingPdfRef.current.page
     const pageNumber = Math.min(pdfPreviewUrls.length, Math.max(1, Math.floor(replayPage)))
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-black overflow-hidden">
@@ -796,7 +1066,18 @@ export default function FileProjection({
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-black overflow-hidden">
         <img
+          key={`${initialItemId}:${loadedContentRevision}`}
           src={objectUrl}
+          onLoad={() => {
+            imageReadyRef.current = true
+            if (loadedContentRevision === initialContentRevision)
+              reportRenderStatus('ready', renderedLoadSequence)
+          }}
+          onError={() => {
+            imageReadyRef.current = false
+            if (loadedContentRevision === initialContentRevision)
+              reportRenderStatus('failed', renderedLoadSequence, 'decode-failed')
+          }}
           alt={displayName}
           style={{
             width: '100%',
@@ -809,8 +1090,6 @@ export default function FileProjection({
       </div>
     )
   }
-
-  const renderedLoadSequence = loadSequenceRef.current
 
   if (mimeType?.startsWith('video/') && objectUrl) {
     return (
@@ -925,6 +1204,8 @@ export default function FileProjection({
         fileName={displayName}
         slideIndex={initialPresentation?.slideIndex ?? 0}
         editablePresentation={initialEditablePresentation}
+        onReady={reportPresentationReady}
+        onError={reportPresentationFailure}
       />
     )
   }
@@ -943,17 +1224,15 @@ export default function FileProjection({
             }}
             slideIndex={initialPresentation?.slideIndex ?? 0}
             verifyNativeFile={false}
+            onReady={reportPresentationReady}
+            onError={reportPresentationFailure}
           />
         </div>
       </div>
     )
   }
 
-  return (
-    <div className="flex h-screen w-screen items-center justify-center bg-black">
-      <p className="text-white/30 text-sm">{displayName || 'No file loaded'}</p>
-    </div>
-  )
+  return <div className="h-screen w-screen bg-black" />
 }
 
 function EditableProjectionSurface({
@@ -961,8 +1240,12 @@ function EditableProjectionSurface({
   blobId,
   fileName,
   slideIndex,
-  editablePresentation
+  editablePresentation,
+  onReady,
+  onError
 }: {
+  onReady: () => void
+  onError: () => void
   itemId: string
   blobId: string
   fileName: string
@@ -1023,13 +1306,12 @@ function EditableProjectionSurface({
   const slideId =
     document?.slideOrder[Math.min(slideIndex, Math.max(0, document.slideOrder.length - 1))]
 
-  if (error) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-black p-6 text-center">
-        <p className="text-sm text-danger">{error}</p>
-      </div>
-    )
-  }
+  useEffect(() => {
+    if (error) onError()
+    else if (document && slideId) onReady()
+  }, [document, error, onError, onReady, slideId])
+
+  if (error) return <div className="h-screen w-screen bg-black" />
 
   if (!document || !slideId) {
     return <div className="h-screen w-screen bg-black" />

@@ -1,3 +1,4 @@
+import { lockMediaResources } from './media-resource-locks'
 import type { HhcSession } from '@shared/hhc-auth'
 import type { SharedFolderRoot, SharedFolderSnapshot } from '@shared/personal-cloud'
 import { openFileExplorerDB, type FileBlobRecord } from './file-explorer-db'
@@ -81,41 +82,47 @@ async function saveNative(
   metadata: RemoteSyncItem,
   canCommit: SyncDownloadCommitGuard
 ): Promise<SyncDownloadResult> {
-  if (!(await canCommit())) {
-    if (content.storage === 'native-fs') await window.api.nativeFs.delete(content.id)
-    throw new SyncDownloadCancelledError()
-  }
-  const db = await openFileExplorerDB()
-  let entryId: string | undefined
+  const release = lockMediaResources([request.targetBlobId])
   try {
-    await db.put('file-blobs', content)
-    if (!(await canCommit())) throw new SyncDownloadCancelledError()
-    entryId = (
-      await putSyncEntry({
-        providerConnectionId: request.providerConnectionId,
-        remoteItemId: request.remoteItemId,
-        parentRemoteItemId: metadata.parentRemoteItemId,
-        kind: 'file',
-        name: metadata.name,
-        itemId: request.targetBlobId,
-        blobId: request.targetBlobId,
-        mimeType: metadata.mimeType ?? content.mimeType,
-        size: content.size,
-        etag: metadata.etag,
-        contentHash: metadata.contentHash,
-        status: 'available-offline',
-        downloadedBytes: content.size,
-        downloadTotalBytes: content.size
-      })
-    ).id
-    if (!(await canCommit())) throw new SyncDownloadCancelledError()
-  } catch (error) {
-    if (entryId) await deleteSyncEntries([entryId], { notifyRecovery: false })
-    await db.delete('file-blobs', request.targetBlobId)
-    if (content.storage === 'native-fs') await window.api.nativeFs.delete(content.id)
-    throw error
+    await release.ready
+    if (!(await canCommit())) {
+      if (content.storage === 'native-fs') await window.api.nativeFs.delete(content.id)
+      throw new SyncDownloadCancelledError()
+    }
+    const db = await openFileExplorerDB()
+    let entryId: string | undefined
+    try {
+      await db.put('file-blobs', content)
+      if (!(await canCommit())) throw new SyncDownloadCancelledError()
+      entryId = (
+        await putSyncEntry({
+          providerConnectionId: request.providerConnectionId,
+          remoteItemId: request.remoteItemId,
+          parentRemoteItemId: metadata.parentRemoteItemId,
+          kind: 'file',
+          name: metadata.name,
+          itemId: request.targetBlobId,
+          blobId: request.targetBlobId,
+          mimeType: metadata.mimeType ?? content.mimeType,
+          size: content.size,
+          etag: metadata.etag,
+          contentHash: metadata.contentHash,
+          status: 'available-offline',
+          downloadedBytes: content.size,
+          downloadTotalBytes: content.size
+        })
+      ).id
+      if (!(await canCommit())) throw new SyncDownloadCancelledError()
+    } catch (error) {
+      if (entryId) await deleteSyncEntries([entryId], { notifyRecovery: false })
+      await db.delete('file-blobs', request.targetBlobId)
+      if (content.storage === 'native-fs') await window.api.nativeFs.delete(content.id)
+      throw error
+    }
+    return { blobId: request.targetBlobId, size: content.size, mimeType: content.mimeType }
+  } finally {
+    release()
   }
-  return { blobId: request.targetBlobId, size: content.size, mimeType: content.mimeType }
 }
 
 async function saveDownloaded(

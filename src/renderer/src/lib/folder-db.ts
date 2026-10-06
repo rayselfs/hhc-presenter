@@ -1,3 +1,4 @@
+import { saveCatalogRecords } from './file-catalog-mutations'
 import type { FolderRecord, AnyItemRecord } from '@shared/types/folder'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,6 +38,7 @@ export function createFolderDB(
   }
 
   async function saveFolder(folder: FolderRecord): Promise<void> {
+    if (rootId === 'file-root') return saveCatalogRecords('folder-records', [folder])
     try {
       const db = await getDB()
       await db.put('folder-records', folder)
@@ -47,6 +49,7 @@ export function createFolderDB(
   }
 
   async function saveFolders(folders: FolderRecord[]): Promise<void> {
+    if (rootId === 'file-root') return saveCatalogRecords('folder-records', folders)
     try {
       const db = await getDB()
       const tx = db.transaction('folder-records', 'readwrite')
@@ -79,6 +82,7 @@ export function createFolderDB(
   }
 
   async function saveItem(item: AnyItemRecord): Promise<void> {
+    if (rootId === 'file-root') return saveCatalogRecords('folder-items', [item])
     try {
       const db = await getDB()
       await db.put('folder-items', item)
@@ -89,6 +93,7 @@ export function createFolderDB(
   }
 
   async function saveItems(items: AnyItemRecord[]): Promise<void> {
+    if (rootId === 'file-root') return saveCatalogRecords('folder-items', items)
     try {
       const db = await getDB()
       const tx = db.transaction('folder-items', 'readwrite')

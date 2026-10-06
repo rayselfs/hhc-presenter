@@ -6,7 +6,7 @@ import { Readable } from 'stream'
 import { isValidNativeFileId } from '../../shared/native-media'
 import type { WindowManager } from '../windowManager'
 import { isMainWindow } from './validate'
-import { mutateVideoSource } from './video-remux'
+import { clearVideoCache, getVideoCacheUsage, mutateVideoSource } from './video-remux'
 
 const NATIVE_MEDIA_SCHEME = 'hhc-media:'
 const NATIVE_MEDIA_HOST = 'file'
@@ -221,6 +221,16 @@ export function registerNativeFsHandlers(wm: WindowManager): void {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false
       throw error
     }
+  })
+
+  ipcMain.handle('native-fs:video-cache-usage', async (event) => {
+    if (!isMainWindow(wm, event)) throw new Error('Unauthorized native cache access')
+    return getVideoCacheUsage()
+  })
+
+  ipcMain.handle('native-fs:clear-video-cache', async (event) => {
+    if (!isMainWindow(wm, event)) throw new Error('Unauthorized native cache cleanup')
+    await clearVideoCache()
   })
 
   ipcMain.handle('native-fs:delete-file', async (event, id: unknown): Promise<void> => {

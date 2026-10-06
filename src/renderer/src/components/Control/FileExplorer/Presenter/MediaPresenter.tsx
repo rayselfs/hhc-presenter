@@ -234,7 +234,9 @@ export default function MediaPresenter({ onExit }: MediaPresenterProps): React.J
   )
 
   return (
-    <PresenterCommandContext.Provider value={{ sendCommand }}>
+    <PresenterCommandContext.Provider
+      value={{ sendCommand, cancelPreparation: onExit, thumbnails: coverThumbnails }}
+    >
       <PreviewCacheProvider pdfPageThumbs={pdfPageThumbs}>
         <div className="media-presenter h-full min-h-0 bg-surface" data-testid="media-presenter">
           <div className="flex h-full">

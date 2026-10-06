@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   importFromFileInput,
+  retryFailedImports,
   MAX_FILE_SIZE_WEB,
   prepareUploadFilesForKind,
   uploadFiles,
@@ -59,6 +60,7 @@ vi.mock('@renderer/lib/media-job-queue', () => ({
   }
 }))
 
+import { useMediaImportStore } from '@renderer/stores/media-import'
 import { toast } from '@heroui/react/toast'
 import { addFileItemToStore } from '@renderer/stores/file-explorer'
 import { generateThumbnail } from '@renderer/lib/thumbnail-generator'
@@ -636,4 +638,67 @@ it('resets a read-only picker without importing', async () => {
   await importFromFileInput(input, true, upload)
   expect(upload).not.toHaveBeenCalled()
   expect(input.value).toBe('')
+})
+
+describe('import progress and recovery', () => {
+  it('deduplicates only the identical active batch and aggregates independent work', async () => {
+    vi.mocked(isWeb).mockReturnValue(false)
+    const completions: Array<() => void> = []
+    vi.mocked(addFileItemToStore).mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          completions.push(() => resolve(crypto.randomUUID()))
+        })
+    )
+    const files = [makeFile('same.png', 10)]
+    const first = uploadFiles(files, 'parent-1')
+    await vi.waitFor(() => expect(completions).toHaveLength(1))
+    expect(await uploadFiles(files, 'parent-1')).toBe(0)
+    const second = uploadFiles(files, 'parent-2')
+    await vi.waitFor(() => expect(completions).toHaveLength(2))
+    expect(useMediaImportStore.getState()).toMatchObject({ total: 2, completed: 0, running: true })
+    completions[0]()
+    await first
+    expect(useMediaImportStore.getState()).toMatchObject({ total: 2, completed: 1, running: true })
+    completions[1]()
+    await second
+    expect(useMediaImportStore.getState()).toMatchObject({
+      total: 2,
+      completed: 2,
+      succeeded: 2,
+      running: false
+    })
+  })
+
+  it('cancels unstarted files, settles in-flight writes and retries only failures', async () => {
+    vi.mocked(isWeb).mockReturnValue(false)
+    const completions: Array<{ resolve: (id: string) => void; reject: (error: Error) => void }> = []
+    vi.mocked(addFileItemToStore).mockImplementation(
+      () =>
+        new Promise<string>((resolve, reject) => {
+          completions.push({ resolve, reject })
+        })
+    )
+    const files = Array.from({ length: 5 }, (_, index) => makeFile(`${index}.png`, 10))
+    const batch = uploadFiles(files, 'parent-1')
+    await vi.waitFor(() => expect(completions).toHaveLength(3))
+    useMediaImportStore.getState().cancel()
+    expect(useMediaImportStore.getState()).toMatchObject({ running: true, cancelRequested: true })
+    completions[0].resolve('ok-0')
+    completions[1].reject(new Error('Disk full'))
+    completions[2].resolve('ok-2')
+    expect(await batch).toBe(2)
+    expect(useMediaImportStore.getState()).toMatchObject({
+      total: 5,
+      completed: 3,
+      succeeded: 2,
+      running: false,
+      failures: [{ name: '1.png', reason: 'Disk full' }]
+    })
+    vi.mocked(addFileItemToStore).mockClear().mockResolvedValue('retried')
+    expect(await retryFailedImports()).toBe(1)
+    expect(addFileItemToStore).toHaveBeenCalledTimes(1)
+    expect(addFileItemToStore).toHaveBeenCalledWith(files[1], 'parent-1', 'image/png')
+    expect(useMediaImportStore.getState()).toMatchObject({ total: 1, succeeded: 1, failures: [] })
+  })
 })

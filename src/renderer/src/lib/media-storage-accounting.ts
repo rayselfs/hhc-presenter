@@ -16,6 +16,7 @@ export interface MediaStorageUsage {
   customCoverOverrides: number
   pdfPageThumbnails: number
   videoPosters: number
+  videoRemuxCache: number
   presentationDocuments: number
   syncCache: number
   temporaryAndFailedJobFiles: number
@@ -41,6 +42,7 @@ const EMPTY_USAGE: MediaStorageUsage = {
   customCoverOverrides: 0,
   pdfPageThumbnails: 0,
   videoPosters: 0,
+  videoRemuxCache: 0,
   presentationDocuments: 0,
   syncCache: 0,
   temporaryAndFailedJobFiles: 0
@@ -58,9 +60,27 @@ export async function getMediaStorageAccounting(): Promise<MediaStorageAccountin
     ])
 
   const usage: MediaStorageUsage = { ...EMPTY_USAGE }
+  if (isElectron()) {
+    const videoCache = await window.api.nativeFs.getVideoCacheUsage()
+    usage.videoRemuxCache = videoCache.cacheBytes
+    usage.temporaryAndFailedJobFiles = videoCache.temporaryBytes
+  }
 
+  const tombstoneBlobIds = new Set(
+    syncTombstones.map((tombstone) => tombstone.blobId).filter((id): id is string => !!id)
+  )
+  const cachedBlobSizes = new Map<string, number>()
+  for (const entry of syncEntries) {
+    if (!entry.blobId || tombstoneBlobIds.has(entry.blobId)) continue
+    if (['available-offline', 'outdated', 'deleted-pending-release'].includes(entry.status))
+      cachedBlobSizes.set(entry.blobId, entry.size ?? 0)
+  }
   for (const record of fileBlobs) {
     const size = getFileBlobRecordSize(record)
+    if (cachedBlobSizes.has(record.id)) {
+      cachedBlobSizes.set(record.id, size)
+      continue
+    }
     if (record.storage === 'native-fs') {
       usage.electronNativeSourceMedia += size
     } else if (isElectron()) {
@@ -69,6 +89,8 @@ export async function getMediaStorageAccounting(): Promise<MediaStorageAccountin
       usage.webIndexedDbSourceBlobs += size
     }
   }
+
+  usage.syncCache = [...cachedBlobSizes.values()].reduce((sum, size) => sum + size, 0)
 
   for (const asset of derivedAssets) {
     const size = getDerivedAssetSize(asset)
@@ -82,17 +104,6 @@ export async function getMediaStorageAccounting(): Promise<MediaStorageAccountin
 
   for (const cover of customCovers) {
     usage.customCoverOverrides += cover.blob.size ?? 0
-  }
-
-  const tombstoneBlobIds = new Set(
-    syncTombstones.map((tombstone) => tombstone.blobId).filter((id): id is string => !!id)
-  )
-  for (const entry of syncEntries) {
-    if (!entry.blobId || tombstoneBlobIds.has(entry.blobId)) continue
-    if (!['available-offline', 'outdated', 'deleted-pending-release'].includes(entry.status)) {
-      continue
-    }
-    usage.syncCache += entry.size ?? 0
   }
 
   return {

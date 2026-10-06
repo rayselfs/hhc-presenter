@@ -28,10 +28,16 @@ vi.mock('@renderer/lib/file-explorer-db', () => ({
 }))
 
 vi.mock('@renderer/contexts/PresenterCommandContext', () => ({
-  usePresenterCommands: () => ({ sendCommand: mockSendCommand })
+  usePresenterCommands: () => ({
+    sendCommand: mockSendCommand,
+    cancelPreparation: mockExit,
+    thumbnails: { 'copy-id': 'blob:poster' }
+  })
 }))
 
 const storeState = {
+  sessionRevision: 1,
+  projectionRetryRevision: 0,
   zoomLevel: 1,
   pan: { x: 0, y: 0 },
   snapshot: null as null | {
@@ -56,6 +62,7 @@ const storeState = {
   typeStates: {} as {
     video?: {
       phase?: 'preparing' | 'ready' | 'playing' | 'paused' | 'ended'
+      preparationPhase?: 'inspection' | 'remux' | 'player'
       hasStarted?: boolean
       isPlaying?: boolean
       isEnded?: boolean
@@ -202,6 +209,12 @@ async function getLoadedVideo(container: HTMLElement): Promise<HTMLVideoElement>
 
 beforeEach(() => {
   vi.clearAllMocks()
+  Object.defineProperty(window, 'api', {
+    configurable: true,
+    value: { projectionVlc: { getPreviewFrame: vi.fn().mockResolvedValue(null) } }
+  })
+  storeState.sessionRevision = 1
+  storeState.projectionRetryRevision = 0
   storeState.snapshot = null
   storeState.typeStates = {}
   mockGetFileSource.mockResolvedValue({
@@ -380,6 +393,76 @@ describe('copied media preview identity', () => {
     expect(container.querySelector('input.video-seek-range')).toHaveValue('42')
   })
 
+  it('renders actual live frames and ignores an old item response after switching', async () => {
+    setVlcPlaybackMode()
+    const capture = vi.fn()
+    let deliver: ((frame: unknown) => void) | undefined
+    capture.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          deliver = resolve
+        })
+    )
+    Object.defineProperty(window, 'api', {
+      configurable: true,
+      value: { projectionVlc: { getPreviewFrame: capture } }
+    })
+    const item = makeCopy('video/x-matroska', 'live.mkv')
+    const { container, rerender } = render(<VideoPreview item={item} />)
+    expect(capture).toHaveBeenCalledWith(item.id)
+    await act(async () => {
+      deliver?.({ itemId: item.id, imageDataUrl: 'data:image/png;base64,bGl2ZQ==' })
+    })
+    expect(container.querySelector('img')).toHaveAttribute('src', 'data:image/png;base64,bGl2ZQ==')
+    expect(screen.getByText('presenter.videoLivePreview')).toBeVisible()
+    rerender(<VideoPreview item={{ ...item, id: 'next-item' }} />)
+    expect(container.querySelector('img')).toBeNull()
+  })
+
+  it('clears live frames on null responses and isolates same-item retries', async () => {
+    vi.useFakeTimers()
+    try {
+      setVlcPlaybackMode()
+      const item = makeCopy('video/x-matroska', 'live.mkv')
+      const capture = vi
+        .fn()
+        .mockResolvedValueOnce({ itemId: item.id, imageDataUrl: 'data:image/png;base64,bGl2ZQ==' })
+        .mockResolvedValue(null)
+      Object.defineProperty(window, 'api', {
+        configurable: true,
+        value: { projectionVlc: { getPreviewFrame: capture } }
+      })
+      const { container, rerender } = render(<VideoPreview item={item} />)
+      await act(async () => {
+        await Promise.resolve()
+      })
+      expect(container.querySelector('img')).toHaveAttribute('data-vlc-live-preview', 'true')
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(300)
+      })
+      expect(container.querySelector('img')).toHaveAttribute('data-vlc-live-preview', 'false')
+      let deliverOld: ((value: unknown) => void) | undefined
+      capture.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            deliverOld = resolve
+          })
+      )
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(300)
+      })
+      storeState.projectionRetryRevision += 1
+      rerender(<VideoPreview item={item} />)
+      await act(async () => {
+        deliverOld?.({ itemId: item.id, imageDataUrl: 'data:image/png;base64,c3RhbGU=' })
+      })
+      expect(container.querySelector('img')).toHaveAttribute('src', 'blob:poster')
+      expect(screen.queryByText('presenter.videoLivePreview')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('sends play without starting Chromium for a VLC-owned item', async () => {
     setVlcPlaybackMode()
     storeState.typeStates.video = {
@@ -392,11 +475,13 @@ describe('copied media preview identity', () => {
       seekable: true
     }
     const { container } = render(<VideoPreview item={makeCopy('video/x-matroska', 'movie.mkv')} />)
-    const video = await getLoadedVideo(container)
+    expect(container.querySelector('video')).toBeNull()
+    expect(container.querySelector('img')).toHaveAttribute('src', 'blob:poster')
+    expect(screen.getByText('presenter.videoLivePreviewWaiting')).toBeVisible()
 
     fireEvent.click(container.querySelector('button.absolute.inset-0.flex')!)
 
-    expect(video.play).not.toHaveBeenCalled()
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled()
     expect(mockSendCommand).toHaveBeenCalledWith({ action: 'play', itemId: 'copy-id' })
   })
 
@@ -412,15 +497,16 @@ describe('copied media preview identity', () => {
       seekable: true
     }
     const { container } = render(<VideoPreview item={makeCopy('video/x-matroska', 'movie.mkv')} />)
-    const video = await getLoadedVideo(container)
+    expect(container.querySelector('video')).toBeNull()
+    expect(container.querySelector('img')).toHaveAttribute('src', 'blob:poster')
+    expect(screen.getByText('presenter.videoLivePreviewWaiting')).toBeVisible()
 
     fireEvent.click(screen.getByLabelText('fileExplorer.presenter.togglePlay'))
-    expect(video.pause).not.toHaveBeenCalled()
+    expect(HTMLMediaElement.prototype.pause).not.toHaveBeenCalled()
     expect(mockSendCommand).toHaveBeenCalledWith({ action: 'pause', itemId: 'copy-id' })
 
     mockSendCommand.mockClear()
     seekRelative(5)
-    expect(video.currentTime).toBe(30)
     expect(mockSendCommand).toHaveBeenCalledWith({ action: 'seek', itemId: 'copy-id', value: 35 })
   })
 
@@ -428,6 +514,7 @@ describe('copied media preview identity', () => {
     setVlcPlaybackMode()
     storeState.typeStates.video = {
       phase: 'preparing',
+      preparationPhase: 'remux',
       hasStarted: false,
       isPlaying: false,
       isEnded: false,
@@ -437,9 +524,12 @@ describe('copied media preview identity', () => {
 
     const { container } = render(<VideoPreview item={makeCopy('video/x-matroska', 'movie.mkv')} />)
 
-    expect(screen.getByRole('status')).toHaveTextContent('presenter.videoPreparing')
+    expect(screen.getByRole('status')).toHaveTextContent('presenter.videoRemuxing')
     expect(container.querySelector('button.absolute.inset-0.flex')).toBeNull()
     expect(screen.queryByLabelText('fileExplorer.presenter.togglePlay')).toBeNull()
+    fireEvent.click(screen.getByText('presenter.videoCancelPreparation'))
+    expect(mockExit).toHaveBeenCalledOnce()
+    expect(mockSendCommand).not.toHaveBeenCalled()
   })
 
   it('hides the central button after owner-confirmed playback starts', async () => {
@@ -617,7 +707,7 @@ describe('copied media preview identity', () => {
     })
     render(<ImagePreview item={makeCopy('image/png', 'copy.png')} />)
 
-    const retry = await screen.findByRole('button', { name: 'presenter.retry' })
+    const retry = await screen.findByRole('button', { name: 'presenter.retryPreview' })
     expect(mockNext).not.toHaveBeenCalled()
     expect(mockExit).not.toHaveBeenCalled()
 

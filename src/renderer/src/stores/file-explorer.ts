@@ -1,13 +1,15 @@
 import { useCallback } from 'react'
+import { FOLDER_DURATION_MS } from '@shared/types/folder'
+import { assertLocalDestination, commitLocalFileItem } from '@renderer/lib/file-catalog-mutations'
+import {
+  createResourceCleanupRecord,
+  retryResourceCleanup
+} from '@renderer/lib/resource-cleanup-journal'
+import { isElectron } from '@renderer/lib/env'
 import { isPersonalRecordVisible, usePersonalSyncStore } from './personal-sync'
 import { create, type Mutate, type StoreApi, type UseBoundStore } from 'zustand'
 import { persist } from 'zustand/middleware'
-import {
-  deleteFileBlob,
-  getFileSource,
-  openFileExplorerDB,
-  storeFileBlob
-} from '@renderer/lib/file-explorer-db'
+import { getFileSource, openFileExplorerDB, storeFileBlob } from '@renderer/lib/file-explorer-db'
 import { hhcPersistStorage, createPersistName } from '@renderer/lib/persist-storage'
 import { createFolderStore } from '@renderer/stores/folder'
 import type { FileExplorerViewMode, FileItemRecord, FolderRecord } from '@shared/types/folder'
@@ -221,27 +223,46 @@ export async function addFileItemToStore(
   }
   const db = await openFileExplorerDB()
   const id = crypto.randomUUID()
-
-  await storeFileBlob(db, id, file)
-
-  const item: Omit<FileItemRecord, 'sortIndex' | 'createdAt' | 'expiresAt'> = {
-    id,
-    parentId,
-    type: 'file',
-    name: file.name,
-    url: `blob:${id}`,
-    size: file.size,
-    mimeType: canonicalMimeType
+  const stagingLock = `local-blob:${id}`
+  const stage = async (): Promise<void> => {
+    const cleanup = createResourceCleanupRecord({
+      blobId: id,
+      storage: isElectron() ? 'native-fs' : 'indexed-db',
+      deleteNativeFile: isElectron(),
+      deleteDerivedAssets: true,
+      deletePdfPageThumbs: true,
+      deleteBlobRecord: true,
+      itemThumbnailIds: [],
+      stagingLock
+    })
+    await db.add('resource-cleanup-journal', cleanup)
+    await storeFileBlob(db, id, file)
+    await useFileExplorerStore.getState().flushPersistence()
+    assertLocalDestination(parentId, Object.values(useFileExplorerStore.getState().folders))
+    const now = Date.now()
+    const item: FileItemRecord = {
+      id,
+      parentId,
+      type: 'file',
+      name: file.name,
+      url: `blob:${id}`,
+      size: file.size,
+      mimeType: canonicalMimeType,
+      sortIndex: useFileExplorerStore.getState().getItems(parentId).length,
+      createdAt: now,
+      expiresAt: parentId === FILE_EXPLORER_ROOT_ID ? now + FOLDER_DURATION_MS['1day'] : null
+    }
+    await commitLocalFileItem(item, { stagingCleanupId: cleanup.id })
+    publishPersistedFileItem(item)
   }
-
-  useFileExplorerStore.getState().addItem(item)
-  const storedItem = useFileExplorerStore.getState().items[id]
   try {
-    if (!storedItem) throw new Error(`Failed to create file metadata: ${id}`)
-    await db.put('folder-items', storedItem)
+    if (navigator.locks) await navigator.locks.request(stagingLock, stage)
+    else await stage()
   } catch (error) {
-    useFileExplorerStore.getState().removeItem(id)
-    await deleteFileBlob(db, id).catch(() => undefined)
+    const pending = (await db.getAll('resource-cleanup-journal')).find(
+      (record) => record.blobId === id
+    )
+    if (pending) await retryResourceCleanup(pending.id).catch(() => undefined)
     throw error
   }
   return id
@@ -287,6 +308,7 @@ export function removeCleanedEntriesFromStore(result: CleanupResult): void {
 }
 
 export async function permanentDeleteFileItemFromStore(id: string): Promise<void> {
+  await useFileExplorerStore.getState().flushPersistence()
   removeCleanedEntriesFromStore(await cleanupFileResources({ itemIds: [id] }))
 }
 
@@ -295,10 +317,12 @@ export function deleteFolderFromStore(folderId: string): void {
 }
 
 export async function permanentDeleteFolderFromStore(folderId: string): Promise<void> {
+  await useFileExplorerStore.getState().flushPersistence()
   removeCleanedEntriesFromStore(await cleanupFileResources({ folderIds: [folderId] }))
 }
 
 export async function purgeExpiredTrashFromStore(retentionMs: number): Promise<void> {
+  await useFileExplorerStore.getState().flushPersistence()
   removeCleanedEntriesFromStore(await purgeExpiredFileTrash(retentionMs))
 }
 

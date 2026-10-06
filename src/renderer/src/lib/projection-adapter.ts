@@ -1,4 +1,4 @@
-import { isFilePlaybackError } from '@shared/projection-messages'
+import { isFilePlaybackError, isFileRenderStatus } from '@shared/projection-messages'
 import { isCameraMessageFrom } from '@shared/camera'
 import { isElectron } from '@renderer/lib/env'
 import type { ProjectionChannel, ProjectionPayload } from '@shared/projection-messages'
@@ -41,6 +41,8 @@ class ElectronProjectionAdapter implements ProjectionAdapter {
           (this.role !== 'main' || !isFilePlaybackError(data))
         )
           return
+        if (channel === 'file:render-status' && (this.role !== 'main' || !isFileRenderStatus(data)))
+          return
         if (!isCameraMessageFrom(channel, data, this.role === 'main' ? 'projection' : 'main'))
           return
         this.handlers.get(channel)?.forEach((handler) => handler(data))
@@ -61,6 +63,11 @@ class ElectronProjectionAdapter implements ProjectionAdapter {
     if (
       channel === 'file:playback-error' &&
       (this.role !== 'projection' || !isFilePlaybackError(data))
+    )
+      return
+    if (
+      channel === 'file:render-status' &&
+      (this.role !== 'projection' || !isFileRenderStatus(data))
     )
       return
     if (!isCameraMessageFrom(channel, data, this.role)) return
@@ -128,6 +135,11 @@ class BroadcastChannelAdapter implements ProjectionAdapter {
       (this.role !== 'projection' || !isFilePlaybackError(data))
     )
       return
+    if (
+      channel === 'file:render-status' &&
+      (this.role !== 'projection' || !isFileRenderStatus(data))
+    )
+      return
     if (!isCameraMessageFrom(channel, data, this.role)) return
     this.bc.postMessage({
       generation: this.generation,
@@ -163,6 +175,11 @@ class BroadcastChannelAdapter implements ProjectionAdapter {
       if (
         msg.channel === 'file:playback-error' &&
         (this.role !== 'main' || !isFilePlaybackError(msg.data))
+      )
+        return
+      if (
+        msg.channel === 'file:render-status' &&
+        (this.role !== 'main' || !isFileRenderStatus(msg.data))
       )
         return
       if (!isCameraMessageFrom(msg.channel, msg.data, msg.senderRole)) return

@@ -1,3 +1,4 @@
+import { lockMediaResources } from './media-resource-locks'
 import type { HhcSession } from '@shared/hhc-auth'
 import type { HhcAssetCollectionItem } from '@shared/hhc-assets'
 import type { HhcAssetApi } from './hhc-asset-api'
@@ -74,56 +75,62 @@ async function saveNativeDownloadedContent(
   metadata: RemoteSyncItem,
   canCommit: SyncDownloadCommitGuard
 ): Promise<SyncDownloadResult> {
-  if (!(await canCommit())) {
-    await window.api.nativeFs.delete(content.fileId)
-    throw new SyncDownloadCancelledError()
-  }
-  const db = await openFileExplorerDB()
-  let entryId: string | undefined
+  const release = lockMediaResources([request.targetBlobId])
   try {
-    await db.put('file-blobs', {
-      id: request.targetBlobId,
-      storage: 'native-fs',
-      size: content.size,
-      refCount: 1
-    })
-    if (!(await canCommit())) throw new SyncDownloadCancelledError()
-    const entry = await putSyncEntry({
-      providerConnectionId: request.providerConnectionId,
-      remoteItemId: request.remoteItemId,
-      parentRemoteItemId: metadata.parentRemoteItemId,
-      kind: 'file',
-      name: metadata.name,
-      itemId: request.targetBlobId,
+    await release.ready
+    if (!(await canCommit())) {
+      await window.api.nativeFs.delete(content.fileId)
+      throw new SyncDownloadCancelledError()
+    }
+    const db = await openFileExplorerDB()
+    let entryId: string | undefined
+    try {
+      await db.put('file-blobs', {
+        id: request.targetBlobId,
+        storage: 'native-fs',
+        size: content.size,
+        refCount: 1
+      })
+      if (!(await canCommit())) throw new SyncDownloadCancelledError()
+      const entry = await putSyncEntry({
+        providerConnectionId: request.providerConnectionId,
+        remoteItemId: request.remoteItemId,
+        parentRemoteItemId: metadata.parentRemoteItemId,
+        kind: 'file',
+        name: metadata.name,
+        itemId: request.targetBlobId,
+        blobId: request.targetBlobId,
+        mimeType: metadata.mimeType ?? content.mimeType,
+        size: content.size,
+        etag: metadata.etag,
+        contentHash: metadata.contentHash,
+        status: 'available-offline',
+        syncReceipt: pendingHhcSyncReceipt(request, metadata),
+        downloadedBytes: content.size,
+        downloadTotalBytes: content.size
+      })
+      entryId = entry.id
+      if (!(await canCommit())) throw new SyncDownloadCancelledError()
+    } catch (error) {
+      const cleanup = await Promise.allSettled([
+        entryId ? deleteSyncEntries([entryId], { notifyRecovery: false }) : Promise.resolve(),
+        db.delete('file-blobs', request.targetBlobId),
+        window.api.nativeFs.delete(content.fileId)
+      ])
+      if (error instanceof SyncDownloadCancelledError) dispatchRecoverySourceChanged()
+      const cleanupFailure = cleanup.find(
+        (result): result is PromiseRejectedResult => result.status === 'rejected'
+      )
+      if (cleanupFailure) throw cleanupFailure.reason
+      throw error
+    }
+    return {
       blobId: request.targetBlobId,
-      mimeType: metadata.mimeType ?? content.mimeType,
       size: content.size,
-      etag: metadata.etag,
-      contentHash: metadata.contentHash,
-      status: 'available-offline',
-      syncReceipt: pendingHhcSyncReceipt(request, metadata),
-      downloadedBytes: content.size,
-      downloadTotalBytes: content.size
-    })
-    entryId = entry.id
-    if (!(await canCommit())) throw new SyncDownloadCancelledError()
-  } catch (error) {
-    const cleanup = await Promise.allSettled([
-      entryId ? deleteSyncEntries([entryId], { notifyRecovery: false }) : Promise.resolve(),
-      db.delete('file-blobs', request.targetBlobId),
-      window.api.nativeFs.delete(content.fileId)
-    ])
-    if (error instanceof SyncDownloadCancelledError) dispatchRecoverySourceChanged()
-    const cleanupFailure = cleanup.find(
-      (result): result is PromiseRejectedResult => result.status === 'rejected'
-    )
-    if (cleanupFailure) throw cleanupFailure.reason
-    throw error
-  }
-  return {
-    blobId: request.targetBlobId,
-    size: content.size,
-    mimeType: metadata.mimeType ?? content.mimeType
+      mimeType: metadata.mimeType ?? content.mimeType
+    }
+  } finally {
+    release()
   }
 }
 

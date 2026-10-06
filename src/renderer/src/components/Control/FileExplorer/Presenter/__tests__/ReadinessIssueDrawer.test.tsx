@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ShortcutScopeProvider } from '@renderer/contexts/ShortcutScopeContext'
 import ReadinessIssueDrawer from '../ReadinessIssueDrawer'
-import { listMediaJobs } from '@renderer/lib/media-work-db'
-import { mediaJobQueue } from '@renderer/lib/media-job-queue'
+import { useMediaProjectionStore } from '@renderer/stores/media-projection'
 import type { PresentationReadinessReport } from '@renderer/lib/presentation-readiness'
 
 vi.mock('react-i18next', async () => {
@@ -13,14 +13,8 @@ vi.mock('react-i18next', async () => {
     useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key })
   }
 })
-
-vi.mock('@renderer/lib/media-work-db', () => ({ listMediaJobs: vi.fn() }))
-vi.mock('@renderer/lib/media-job-queue', () => ({
-  mediaJobQueue: { retry: vi.fn(), setPriority: vi.fn() }
-}))
-
 const report: PresentationReadinessReport = {
-  summary: { ready: 1, preparing: 1, unsupported: 1, missing: 0, failed: 0 },
+  summary: { ready: 0, preparing: 1, unsupported: 1, missing: 0, failed: 0 },
   items: [
     {
       itemId: 'video-1',
@@ -38,43 +32,61 @@ const report: PresentationReadinessReport = {
     }
   ]
 }
-
 describe('ReadinessIssueDrawer', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    vi.mocked(listMediaJobs).mockResolvedValue([
-      {
-        id: 'job-1',
-        itemId: 'video-1',
-        type: 'video-poster',
-        priority: 0,
-        status: 'failed',
-        attempt: 1,
-        createdAt: 1,
-        updatedAt: 2
-      }
-    ])
+  beforeEach(() =>
+    useMediaProjectionStore.setState({
+      playlist: [],
+      skippedReadinessIds: [],
+      repairingReadinessIds: []
+    })
+  )
+  it('uses the session repair action and presents actionable status rather than internal codes', async () => {
+    const retry = vi.fn(async () => true)
+    const original = useMediaProjectionStore.getState().retryReadiness
+    useMediaProjectionStore.setState({ retryReadiness: retry })
+    try {
+      const user = userEvent.setup()
+      render(
+        <ShortcutScopeProvider>
+          <ReadinessIssueDrawer report={report} onClose={vi.fn()} />
+        </ShortcutScopeProvider>
+      )
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(screen.queryByText(/metadata-building/)).not.toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: /^Retry$/i }))
+      expect(retry).toHaveBeenCalledWith('video-1')
+    } finally {
+      useMediaProjectionStore.setState({ retryReadiness: original })
+    }
   })
-
-  it('shows per-item reasons and retries the authoritative background job', async () => {
+  it('keeps Skip after closing and reopening', async () => {
     const user = userEvent.setup()
-    render(<ReadinessIssueDrawer report={report} onClose={vi.fn()} />)
-
-    expect(screen.getByText(/metadata-building/)).toBeInTheDocument()
-    expect(screen.getByText(/unsupported-media/)).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /Retry/i }))
-
-    expect(mediaJobQueue.retry).toHaveBeenCalledWith('job-1')
+    const first = render(
+      <ShortcutScopeProvider>
+        <ReadinessIssueDrawer report={report} onClose={vi.fn()} />
+      </ShortcutScopeProvider>
+    )
+    await user.click(screen.getAllByRole('button', { name: /Skip/i })[0])
+    first.unmount()
+    render(
+      <ShortcutScopeProvider>
+        <ReadinessIssueDrawer report={report} onClose={vi.fn()} />
+      </ShortcutScopeProvider>
+    )
+    expect(screen.queryByText('video-1')).not.toBeInTheDocument()
+    expect(screen.getByText('legacy-1')).toBeInTheDocument()
   })
-
-  it('keeps the item inspectable until the operator explicitly skips it', async () => {
+  it('closes using Escape without presenting another item', async () => {
+    const close = vi.fn()
     const user = userEvent.setup()
-    render(<ReadinessIssueDrawer report={report} onClose={vi.fn()} />)
-
-    const skipButtons = screen.getAllByRole('button', { name: /Skip/i })
-    await user.click(skipButtons[0])
-
-    expect(screen.queryByText(/metadata-building/)).not.toBeInTheDocument()
-    expect(screen.getByText(/unsupported-media/)).toBeInTheDocument()
+    render(
+      <ShortcutScopeProvider>
+        <ReadinessIssueDrawer report={report} onClose={close} />
+      </ShortcutScopeProvider>
+    )
+    screen.getByRole('button', { name: 'common.close' }).focus()
+    await user.keyboard('{Escape}')
+    expect(close).toHaveBeenCalled()
+    expect(useMediaProjectionStore.getState().playlist).toEqual([])
   })
 })

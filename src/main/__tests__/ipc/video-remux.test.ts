@@ -14,6 +14,9 @@ vi.mock('../../video-engine-runtime', () => ({ resolveFfmpegRuntime: mockResolve
 
 import {
   cleanupStaleVideoRemuxTemps,
+  clearVideoCache,
+  getVideoCacheUsage,
+  lockVideoPlaybackSource,
   mutateVideoSource,
   resolveVideoPlaybackPath
 } from '../../ipc/video-remux'
@@ -42,6 +45,51 @@ beforeEach(async () => {
 })
 
 describe('video remux cache', () => {
+  it('accounts for cache and temporary bytes and clears only idle derivatives', async () => {
+    await writeSource('original')
+    const output = await resolveVideoPlaybackPath(sourceId, 'matroska-remux')
+    const temporary = join(testRoot, 'video-remux-cache', `.${sourceId}.test.tmp.mkv`)
+    await fs.writeFile(temporary, 'temp')
+    const usage = await getVideoCacheUsage()
+    expect(usage.cacheBytes).toBeGreaterThan(7)
+    expect(usage.temporaryBytes).toBe(4)
+    const release = lockVideoPlaybackSource(sourceId)
+    await clearVideoCache()
+    await expect(fs.readFile(output, 'utf8')).resolves.toBe('remuxed')
+    release()
+    await clearVideoCache()
+    expect(await getVideoCacheUsage()).toEqual({ cacheBytes: 0, temporaryBytes: 0 })
+    await expect(fs.readFile(getNativeFilePath(sourceId), 'utf8')).resolves.toBe('original')
+  })
+
+  it('does not remove an in-flight remux temporary output', async () => {
+    await writeSource('original')
+    let complete: (() => void) | undefined
+    mockRunFfmpeg.mockImplementationOnce(async ({ args }: { args: string[] }) => {
+      await fs.writeFile(args.at(-1)!, 'remuxed')
+      await new Promise<void>((resolve) => {
+        complete = resolve
+      })
+      return { stdout: '', stderr: '' }
+    })
+    const preparing = resolveVideoPlaybackPath(sourceId, 'matroska-remux')
+    await vi.waitFor(() => expect(complete).toBeDefined())
+    await clearVideoCache()
+    expect((await getVideoCacheUsage()).temporaryBytes).toBe(7)
+    complete?.()
+    await expect(preparing).resolves.toContain(sourceId)
+  })
+
+  it('reports inspection and remux separately without pretending cache hits are remux work', async () => {
+    await writeSource('source')
+    const phase = vi.fn()
+    await resolveVideoPlaybackPath(sourceId, 'matroska-remux', phase)
+    expect(phase.mock.calls).toEqual([['inspection'], ['remux']])
+    phase.mockClear()
+    await resolveVideoPlaybackPath(sourceId, 'matroska-remux', phase)
+    expect(phase.mock.calls).toEqual([['inspection']])
+  })
+
   it('reuses only a non-empty derivative with the current SHA-256 fingerprint', async () => {
     await writeSource('first bytes')
     const first = await resolveVideoPlaybackPath(sourceId, 'matroska-remux')

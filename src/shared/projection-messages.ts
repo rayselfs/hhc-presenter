@@ -13,6 +13,8 @@ import type { CameraSignal, CameraState } from './camera'
 import type { TimerTickPayload, TimerSyncPayload, StopwatchTickPayload } from './types/timer'
 import type { ProjectionTheme } from './types/projection-theme'
 
+export type VideoPreparationPhase = 'inspection' | 'remux' | 'player'
+
 export type FilePlaybackPhase = 'preparing' | 'ready' | 'playing' | 'paused' | 'ended'
 
 type EditableProjectionSlideBackground =
@@ -180,6 +182,7 @@ export interface AppMessages {
     streamUrl?: string
     seekable?: boolean
     durationMs?: number
+    pdf?: { page: number; scroll: number; viewMode: 'single' | 'continuous' }
     presentation?: {
       slideIndex: number
       slideCount?: number
@@ -197,6 +200,7 @@ export interface AppMessages {
   'file:playback-state': {
     itemId: string
     phase: FilePlaybackPhase
+    preparationPhase?: VideoPreparationPhase
     currentTime: number
     duration: number
     isPlaying: boolean
@@ -216,6 +220,13 @@ export interface AppMessages {
     transport: 'play' | 'pause'
     volume: number
   }
+  'file:render-status': {
+    itemId: string
+    blobId: string
+    contentRevision: number
+    status: 'ready' | 'failed'
+    reason?: 'source-unavailable' | 'decode-failed' | 'render-failed'
+  }
   /** Presentation ended — show end screen on projection */
   'file:end': null
 }
@@ -227,9 +238,9 @@ export type FileControlPayload =
   | ({ action: 'pause' } & FileControlTarget)
   | ({ action: 'seek'; value: number } & FileControlTarget)
   | ({ action: 'volume'; value: number } & FileControlTarget)
-  | { action: 'pdfPage'; value: number }
-  | { action: 'pdfScroll'; value: number }
-  | { action: 'pdfViewMode'; value: 'single' | 'continuous' }
+  | ({ action: 'pdfPage'; value: number } & FileControlTarget)
+  | ({ action: 'pdfScroll'; value: number } & FileControlTarget)
+  | ({ action: 'pdfViewMode'; value: 'single' | 'continuous' } & FileControlTarget)
   | { action: 'zoom'; value: number }
   | { action: 'pan'; value: { x: number; y: number } }
 
@@ -359,6 +370,7 @@ export type ProjectionContentChannel = Exclude<
   | `__system:${string}`
   | 'file:playback-state'
   | 'file:playback-error'
+  | 'file:render-status'
   | 'camera:signal'
   | 'camera:ready'
 >
@@ -392,5 +404,25 @@ export function isFilePlaybackError(value: unknown): value is AppMessages['file:
     Number.isFinite(data.volume) &&
     data.volume >= 0 &&
     data.volume <= 1
+  )
+}
+
+export function isFileRenderStatus(value: unknown): value is AppMessages['file:render-status'] {
+  if (!value || typeof value !== 'object') return false
+  const data = value as Record<string, unknown>
+  return (
+    typeof data.itemId === 'string' &&
+    data.itemId.trim().length > 0 &&
+    data.itemId.length <= 256 &&
+    typeof data.blobId === 'string' &&
+    data.blobId.trim().length > 0 &&
+    data.blobId.length <= 256 &&
+    Number.isSafeInteger(data.contentRevision) &&
+    Number(data.contentRevision) > 0 &&
+    (data.status === 'ready' || data.status === 'failed') &&
+    (data.reason === undefined ||
+      data.reason === 'source-unavailable' ||
+      data.reason === 'decode-failed' ||
+      data.reason === 'render-failed')
   )
 }

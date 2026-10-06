@@ -86,6 +86,14 @@ describe('getMediaStorageAccounting', () => {
 
   it('separates Electron native source media from legacy IndexedDB blobs', async () => {
     envState.isElectron = true
+    Object.defineProperty(window, 'api', {
+      configurable: true,
+      value: {
+        nativeFs: {
+          getVideoCacheUsage: vi.fn().mockResolvedValue({ cacheBytes: 500, temporaryBytes: 40 })
+        }
+      }
+    })
     const db = await openFileExplorerDB()
     await db.put('file-blobs', {
       id: 'native-source',
@@ -102,6 +110,8 @@ describe('getMediaStorageAccounting', () => {
 
     const report = await getMediaStorageAccounting()
 
+    expect(report.usage.videoRemuxCache).toBe(500)
+    expect(report.usage.temporaryAndFailedJobFiles).toBe(40)
     expect(report.usage.electronNativeSourceMedia).toBe(1024)
     expect(report.usage.legacyElectronIndexedDbBlobs).toBe(6)
     expect(report.usage.webIndexedDbSourceBlobs).toBe(0)
@@ -138,6 +148,27 @@ describe('getMediaStorageAccounting', () => {
     const report = await getMediaStorageAccounting()
 
     expect(report.usage.syncCache).toBe(100)
+  })
+
+  it('counts a shared sync blob only once across source records and sync entries', async () => {
+    const db = await openFileExplorerDB()
+    await db.put('file-blobs', { id: 'shared-cache', size: 120, storage: 'native-fs', refCount: 2 })
+    for (const remoteItemId of ['first', 'second']) {
+      await putSyncEntry({
+        providerConnectionId: 'connection',
+        remoteItemId,
+        parentRemoteItemId: null,
+        kind: 'file',
+        name: 'video.mkv',
+        blobId: 'shared-cache',
+        size: 100,
+        status: 'available-offline'
+      })
+    }
+    const report = await getMediaStorageAccounting()
+    expect(report.usage.electronNativeSourceMedia).toBe(0)
+    expect(report.usage.syncCache).toBe(120)
+    expect(report.total).toBe(120)
   })
 
   it('includes browser quota and persistence status when available', async () => {

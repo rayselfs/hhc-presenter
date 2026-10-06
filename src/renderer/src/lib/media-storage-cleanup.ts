@@ -1,3 +1,4 @@
+import { isElectron } from './env'
 import { deleteFileBlob, listFileBlobRecords, openFileExplorerDB } from './file-explorer-db'
 import {
   deleteDerivedAsset,
@@ -5,8 +6,13 @@ import {
   type DerivedAssetKind,
   type DerivedAssetRecord
 } from './media-work-db'
-import { isMediaResourceLocked } from './media-resource-locks'
-import { getSyncEntryPreference, listSyncEntries, putSyncEntry } from './sync-db'
+import { isMediaResourceLocked, withMediaResourceCleanup } from './media-resource-locks'
+import {
+  getSyncEntryByRemoteItem,
+  getSyncEntryPreference,
+  listSyncEntries,
+  putSyncEntry
+} from './sync-db'
 
 export interface MediaStorageCleanupResult {
   deletedAssetIds: string[]
@@ -27,7 +33,11 @@ export async function removeUnusedDerivedAssets(): Promise<MediaStorageCleanupRe
 
 export async function clearRegenerableDerivedAssets(): Promise<MediaStorageCleanupResult> {
   const assets = await listDerivedAssets()
-  return deleteDerivedAssets(assets.filter((asset) => REGENERABLE_ASSET_KINDS.has(asset.kind)))
+  const result = await deleteDerivedAssets(
+    assets.filter((asset) => REGENERABLE_ASSET_KINDS.has(asset.kind))
+  )
+  if (isElectron()) await window.api.nativeFs.clearVideoCache()
+  return result
 }
 
 export async function evictRegenerableDerivedAssetsToBudget(
@@ -67,14 +77,26 @@ export async function clearUnpinnedSyncCache(): Promise<MediaStorageCleanupResul
     const preference = await getSyncEntryPreference(entry.providerConnectionId, entry.remoteItemId)
     if (preference?.offlinePolicyOverride === 'always-offline') continue
 
-    await deleteFileBlob(db, entry.blobId)
-    await putSyncEntry({
-      ...entry,
-      blobId: undefined,
-      size: undefined,
-      status: 'remote-only'
-    })
-    deletedSyncBlobIds.push(entry.blobId)
+    await withMediaResourceCleanup(
+      entry.blobId,
+      async () => {
+        const current = await getSyncEntryByRemoteItem(
+          entry.providerConnectionId,
+          entry.remoteItemId
+        )
+        if (!current || current.blobId !== entry.blobId || current.updatedAt !== entry.updatedAt)
+          return
+        await deleteFileBlob(db, entry.blobId!)
+        await putSyncEntry({
+          ...current,
+          blobId: undefined,
+          size: undefined,
+          status: 'remote-only'
+        })
+        deletedSyncBlobIds.push(entry.blobId!)
+      },
+      { defer: false }
+    )
   }
 
   return { deletedAssetIds: [], deletedSyncBlobIds }
@@ -85,8 +107,14 @@ async function deleteDerivedAssets(
 ): Promise<MediaStorageCleanupResult> {
   const deletedAssetIds: string[] = []
   for (const asset of assets) {
-    await deleteDerivedAsset(asset.sourceBlobId, asset.kind, asset.variant)
-    deletedAssetIds.push(asset.id)
+    await withMediaResourceCleanup(
+      asset.sourceBlobId,
+      async () => {
+        await deleteDerivedAsset(asset.sourceBlobId, asset.kind, asset.variant)
+        deletedAssetIds.push(asset.id)
+      },
+      { defer: false }
+    )
   }
   return { deletedAssetIds }
 }

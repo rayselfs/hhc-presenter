@@ -496,3 +496,36 @@ describe('late error browser direction and session binding', () => {
     adapter.dispose()
   })
 })
+
+describe('document render reports browser direction and session binding', () => {
+  it('accepts only valid reports from the matching projection session and generation', () => {
+    vi.mocked(isElectron).mockReturnValue(false)
+    const adapter = createProjectionAdapter('main', 'session-1')
+    adapter.setGeneration(5)
+    const handler = vi.fn()
+    adapter.on('file:render-status', handler)
+    const report = { itemId: 'pdf', blobId: 'blob', contentRevision: 1, status: 'failed' as const }
+    const [, listener] = mockAddEventListener.mock.calls[1] as [string, (e: MessageEvent) => void]
+    const message = {
+      generation: 5,
+      sessionId: 'session-1',
+      senderRole: 'projection',
+      sender: 'projection-window',
+      channel: 'file:render-status',
+      data: report
+    }
+    for (const invalid of [
+      { senderRole: 'main' },
+      { sessionId: 'other' },
+      { generation: 4 },
+      { data: { ...report, contentRevision: 0 } }
+    ])
+      listener({ data: { ...message, ...invalid } } as MessageEvent)
+    expect(handler).not.toHaveBeenCalled()
+    listener({ data: message } as MessageEvent)
+    expect(handler).toHaveBeenCalledWith(report)
+    adapter.send('file:render-status', report)
+    expect(mockPostMessage).not.toHaveBeenCalled()
+    adapter.dispose()
+  })
+})

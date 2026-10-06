@@ -160,6 +160,7 @@ export default function ProjectionPage(): React.JSX.Element {
         vlcStartRevision={state.vlcStartRevision}
         initialSeekable={state.fileData.seekable}
         initialDurationMs={state.fileData.durationMs}
+        initialPdf={state.fileData.pdf}
         initialPresentation={state.fileData.presentation}
         initialEditablePresentation={state.fileData.editablePresentation}
         controlEvent={state.fileControlEvent}
