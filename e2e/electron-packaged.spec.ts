@@ -403,23 +403,18 @@ test('VLC production matrix', async ({ browserName: _browserName }, testInfo) =>
         contentType: 'application/json'
       })
     })
-    const confirmedVolume = (await latestState(control))?.volume
-    const headlessWindowsAudio =
-      process.platform === 'win32' &&
-      confirmedVolume === 0 &&
-      processLogs.includes('mmdevice audio output error: cannot get default device')
-    await testInfo.attach('volume-acknowledgement.json', {
-      body: Buffer.from(JSON.stringify({ requested: 0.4, confirmedVolume, headlessWindowsAudio })),
-      contentType: 'application/json'
-    })
-    if (headlessWindowsAudio) {
-      testInfo.annotations.push({
-        type: 'headless-audio',
-        description: 'Windows runner has no default audio device; verify volume on installed smoke.'
+    await test.step('native volume acknowledgement (requires audio output)', async (step) => {
+      step.skip(
+        process.env.PACKAGED_NATIVE_AUDIO === '0',
+        'Hosted runners do not provide a reliable audio output device; validate volume on a device host.'
+      )
+      const confirmedVolume = (await latestState(control))?.volume
+      await testInfo.attach('volume-acknowledgement.json', {
+        body: Buffer.from(JSON.stringify({ requested: 0.4, confirmedVolume })),
+        contentType: 'application/json'
       })
-    } else {
       expect(confirmedVolume).toBeCloseTo(0.4, 1)
-    }
+    })
 
     const cache = join(userDataPath, 'video-remux-cache')
     await expect

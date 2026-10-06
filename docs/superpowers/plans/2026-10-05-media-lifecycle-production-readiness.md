@@ -476,3 +476,12 @@ step and records its reason in Playwright. All other packaged lifecycle gates st
 required; Windows keeps live-frame assertions. Local graphics-capable macOS smoke
 already passed all three tests on `34ad2e89`. Physical display/audio acceptance
 remains separate, and release execution may continue after the supported gates pass.
+
+### Hosted audio scope and release retry
+
+The v2.6.6 tag workflow passed Windows packaging/smoke but failed macOS native
+volume acknowledgement (expected 0.4, observed 0). Under the user's explicit
+hosted-runner scope, both hosted platforms now omit the audio-output-dependent
+step; local device smoke still runs it by default. The immutable v2.6.6 tag is
+preserved. Version 2.6.7 carries the same combined #89/#90 product changes and
+this test-environment correction; v2.6.6 did not publish desktop release assets.

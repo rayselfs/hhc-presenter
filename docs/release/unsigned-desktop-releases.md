@@ -106,8 +106,9 @@ player. Their packaged smoke explicitly skips only the live-frame/pause/seek ima
 step (`PACKAGED_VLC_LIVE_PREVIEW=0`). Window recovery, native storage, import,
 transport-state acknowledgements, remux/cache reuse and failure/retry checks still
 run. A transport-state pass does not establish that video pixels reached a display.
-Windows runners retain the live-frame step. Audio-device absence is recorded
-separately and does not establish physical audio acceptance.
+Windows runners retain the live-frame step. Both hosted platforms skip native
+volume acknowledgement (`PACKAGED_NATIVE_AUDIO=0`) because they do not provide
+a reliable audio device. These skipped steps remain visible in the test report.
 
 Local packaged smoke runs all steps by default. Use a graphics-capable Mac for the
 live-frame check and real devices for external display/DPI/audio acceptance. The
