@@ -320,77 +320,88 @@ test('VLC production matrix', async ({ browserName: _browserName }, testInfo) =>
     await expectPlayingState(control, itemIds['healthy.mkv'])
     healthyMkvItemId = itemIds['healthy.mkv']
     await expectConfirmedSeek(control, healthyMkvItemId, 2.5)
-    const liveImage = control.locator('img[data-vlc-live-preview="true"]')
-    await expect(liveImage).toBeVisible({ timeout: 10_000 })
-    await expect
-      .poll(() => liveImage.evaluate((image: HTMLImageElement) => image.naturalWidth))
-      .toBeGreaterThan(0)
-    const firstFrame = await liveImage.getAttribute('src')
-    await expect.poll(() => liveImage.getAttribute('src'), { timeout: 5_000 }).not.toBe(firstFrame)
-    await control.evaluate(async (itemId) => {
-      const { lifecycle } = await window.api.projection.check()
-      window.api.projection.send(lifecycle.generation, 'file:control', { action: 'pause', itemId })
-    }, healthyMkvItemId)
-    await expect.poll(async () => (await latestState(control))?.phase).toBe('paused')
-    const pausedAt = Date.now()
-    await expect
-      .poll(async () => {
-        const frame = await control.evaluate(
-          (itemId) => window.api.projectionVlc.getPreviewFrame(itemId),
-          healthyMkvItemId
-        )
-        return frame?.capturedAt ?? 0
-      })
-      .toBeGreaterThan(pausedAt + 500)
-    const pausedFrame = await control.evaluate(
-      (itemId) => window.api.projectionVlc.getPreviewFrame(itemId),
-      healthyMkvItemId
-    )
-    expect(pausedFrame).not.toBeNull()
-    await expect
-      .poll(async () => {
-        const frame = await control.evaluate(
-          (itemId) => window.api.projectionVlc.getPreviewFrame(itemId),
-          healthyMkvItemId
-        )
-        return frame?.capturedAt ?? 0
-      })
-      .toBeGreaterThan(pausedFrame!.capturedAt + 750)
-    const laterPausedFrame = await control.evaluate(
-      (itemId) => window.api.projectionVlc.getPreviewFrame(itemId),
-      healthyMkvItemId
-    )
-    expect(laterPausedFrame?.imageDataUrl).toBe(pausedFrame!.imageDataUrl)
-    await control.evaluate(async (itemId) => {
-      const { lifecycle } = await window.api.projection.check()
-      window.api.projection.send(lifecycle.generation, 'file:control', {
-        action: 'seek',
-        itemId,
-        value: 1
-      })
-    }, healthyMkvItemId)
-    await expect
-      .poll(() => liveImage.getAttribute('src'), { timeout: 5_000 })
-      .not.toBe(pausedFrame!.imageDataUrl)
-    expect((await latestState(control))?.phase).toBe('paused')
-    await control.evaluate(async (itemId) => {
-      const { lifecycle } = await window.api.projection.check()
-      window.api.projection.send(lifecycle.generation, 'file:control', { action: 'play', itemId })
-    }, healthyMkvItemId)
-    await expectPlayingState(control, healthyMkvItemId)
-    const previewMetrics = await control.evaluate(async (itemId) => {
-      const frame = await window.api.projectionVlc.getPreviewFrame(itemId)
-      return (
-        frame && {
-          capturedAt: frame.capturedAt,
-          captureDurationMs: frame.captureDurationMs,
-          bytes: frame.imageDataUrl.length
-        }
+    await test.step('live VLC frames, paused seek and resume (requires native video output)', async (step) => {
+      step.skip(
+        process.env.PACKAGED_VLC_LIVE_PREVIEW === '0',
+        'This runner cannot create the native video output; validate live frames on a graphics-capable host.'
       )
-    }, healthyMkvItemId)
-    await testInfo.attach('vlc-live-preview-metrics.json', {
-      body: Buffer.from(JSON.stringify(previewMetrics)),
-      contentType: 'application/json'
+      const liveImage = control.locator('img[data-vlc-live-preview="true"]')
+      await expect(liveImage).toBeVisible({ timeout: 10_000 })
+      await expect
+        .poll(() => liveImage.evaluate((image: HTMLImageElement) => image.naturalWidth))
+        .toBeGreaterThan(0)
+      const firstFrame = await liveImage.getAttribute('src')
+      await expect
+        .poll(() => liveImage.getAttribute('src'), { timeout: 5_000 })
+        .not.toBe(firstFrame)
+      await control.evaluate(async (itemId) => {
+        const { lifecycle } = await window.api.projection.check()
+        window.api.projection.send(lifecycle.generation, 'file:control', {
+          action: 'pause',
+          itemId
+        })
+      }, healthyMkvItemId)
+      await expect.poll(async () => (await latestState(control))?.phase).toBe('paused')
+      const pausedAt = Date.now()
+      await expect
+        .poll(async () => {
+          const frame = await control.evaluate(
+            (itemId) => window.api.projectionVlc.getPreviewFrame(itemId),
+            healthyMkvItemId
+          )
+          return frame?.capturedAt ?? 0
+        })
+        .toBeGreaterThan(pausedAt + 500)
+      const pausedFrame = await control.evaluate(
+        (itemId) => window.api.projectionVlc.getPreviewFrame(itemId),
+        healthyMkvItemId
+      )
+      expect(pausedFrame).not.toBeNull()
+      await expect
+        .poll(async () => {
+          const frame = await control.evaluate(
+            (itemId) => window.api.projectionVlc.getPreviewFrame(itemId),
+            healthyMkvItemId
+          )
+          return frame?.capturedAt ?? 0
+        })
+        .toBeGreaterThan(pausedFrame!.capturedAt + 750)
+      const laterPausedFrame = await control.evaluate(
+        (itemId) => window.api.projectionVlc.getPreviewFrame(itemId),
+        healthyMkvItemId
+      )
+      expect(laterPausedFrame?.imageDataUrl).toBe(pausedFrame!.imageDataUrl)
+      await control.evaluate(async (itemId) => {
+        const { lifecycle } = await window.api.projection.check()
+        window.api.projection.send(lifecycle.generation, 'file:control', {
+          action: 'seek',
+          itemId,
+          value: 1
+        })
+      }, healthyMkvItemId)
+      await expect
+        .poll(() => liveImage.getAttribute('src'), { timeout: 5_000 })
+        .not.toBe(pausedFrame!.imageDataUrl)
+      expect((await latestState(control))?.phase).toBe('paused')
+      await control.evaluate(async (itemId) => {
+        const { lifecycle } = await window.api.projection.check()
+        window.api.projection.send(lifecycle.generation, 'file:control', { action: 'play', itemId })
+      }, healthyMkvItemId)
+      await expectPlayingState(control, healthyMkvItemId)
+      const previewMetrics = await control.evaluate(async (itemId) => {
+        const frame = await window.api.projectionVlc.getPreviewFrame(itemId)
+        return (
+          frame && {
+            capturedAt: frame.capturedAt,
+            captureDurationMs: frame.captureDurationMs,
+            bytes: frame.imageDataUrl.length
+          }
+        )
+      }, healthyMkvItemId)
+      await testInfo.attach('vlc-live-preview-metrics.json', {
+        body: Buffer.from(JSON.stringify(previewMetrics)),
+        contentType: 'application/json'
+      })
     })
     const confirmedVolume = (await latestState(control))?.volume
     const headlessWindowsAudio =

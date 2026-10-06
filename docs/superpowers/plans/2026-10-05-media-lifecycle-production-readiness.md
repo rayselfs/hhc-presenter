@@ -2,7 +2,7 @@
 
 ## Status and baseline
 
-- Status: implemented on `fix/media-lifecycle-20261006`; local validation complete; release blocked by macOS runner video output. Release and physical-device acceptance remain open.
+- Status: implemented on `fix/media-lifecycle-20261006`; local validation complete; release resumed with explicit hosted-runner capability scope. Release and physical-device acceptance remain open.
 - Investigation baseline: `fix/presenter-import-playback-20261005` at `73139970`.
 - Existing dependency: PR #89 and [its completed implementation plan](2026-10-05-presenter-import-playback.md).
 - Scope: photos, video, PDF, and PPTX across import/upload, storage, preparation, preview, projection, trash, restore, permanent deletion, and resource reclamation.
@@ -467,3 +467,12 @@ The user authorized releasing PR #89 and this implementation together as v2.6.6.
 - macOS package and runtime/notices checks passed, but packaged VLC live-preview smoke failed. The native log records `caopengllayer vout display error: Failure to create CGL context!`, `macosx vout display error: Initialization of open gl view failed`, and `main video output error: video output creation failed`. Playback time alone was insufficient evidence of actual video output; the new preview assertion exposed this runner limitation.
 - Evidence: `/tmp/media-release-mac-diag-evidence/`, `/tmp/media-mac-diag-player.log`. The original failure artifacts are also preserved under `/tmp/media-release-mac-evidence/` and `/tmp/media-release-win-evidence/`.
 - Release remains blocked. PR #90 is not merged; no v2.6.6 tag or release exists. The macOS packaged gate needs a runner capable of the required OpenGL output, or a verified rendering fix that preserves real projector/live-preview behavior. Do not skip the assertion, use a dummy video output, or treat a headless pass as display acceptance.
+
+### Accepted hosted-runner scope
+
+The user explicitly authorized omitting tasks that the runner environment cannot
+support. The hosted macOS workflow now skips only the native live-frame assertion
+step and records its reason in Playwright. All other packaged lifecycle gates stay
+required; Windows keeps live-frame assertions. Local graphics-capable macOS smoke
+already passed all three tests on `34ad2e89`. Physical display/audio acceptance
+remains separate, and release execution may continue after the supported gates pass.

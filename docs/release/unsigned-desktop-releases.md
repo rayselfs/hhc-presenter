@@ -98,3 +98,17 @@ When the project is ready to pay for platform trust:
 - Add Windows code-signing certificate secrets to GitHub Actions.
 - Update this document and release notes so users no longer expect unsigned
   warnings.
+
+## Hosted runner and device coverage
+
+Hosted macOS runners cannot create the OpenGL output required by the embedded VLC
+player. Their packaged smoke explicitly skips only the live-frame/pause/seek image
+step (`PACKAGED_VLC_LIVE_PREVIEW=0`). Window recovery, native storage, import,
+transport-state acknowledgements, remux/cache reuse and failure/retry checks still
+run. A transport-state pass does not establish that video pixels reached a display.
+Windows runners retain the live-frame step. Audio-device absence is recorded
+separately and does not establish physical audio acceptance.
+
+Local packaged smoke runs all steps by default. Use a graphics-capable Mac for the
+live-frame check and real devices for external display/DPI/audio acceptance. The
+hosted runner limitation does not disable or alter the product's live preview.
