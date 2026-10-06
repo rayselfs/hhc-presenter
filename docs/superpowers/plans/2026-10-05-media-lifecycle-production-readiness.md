@@ -2,7 +2,7 @@
 
 ## Status and baseline
 
-- Status: implemented on `fix/media-lifecycle-20261006`; local validation complete. Release and physical-device acceptance remain open.
+- Status: implemented on `fix/media-lifecycle-20261006`; local validation complete; release blocked by macOS runner video output. Release and physical-device acceptance remain open.
 - Investigation baseline: `fix/presenter-import-playback-20261005` at `73139970`.
 - Existing dependency: PR #89 and [its completed implementation plan](2026-10-05-presenter-import-playback.md).
 - Scope: photos, video, PDF, and PPTX across import/upload, storage, preparation, preview, projection, trash, restore, permanent deletion, and resource reclamation.
@@ -456,3 +456,14 @@ Unchecked acceptance items remain open. Local automation establishes implementat
 ### Combined release execution
 
 The user authorized releasing PR #89 and this implementation together as v2.6.6. No intermediate release is planned. Required PR CI must pass before merge; the tag workflow must pass both platform package/runtime/smoke gates before publication. Earlier no-release statements above describe the previous validation checkpoint. Physical-device acceptance remains separate.
+
+### Release execution checkpoint (2026-10-06)
+
+- PR #89 merged to `origin/main` as `10d0f770`. Primary main checkout was clean and fast-forwarded; the original worktree remains untouched.
+- PR #90: https://github.com/rayselfs/hhc-presenter/pull/90. Version is 2.6.6; no intermediate release was created.
+- Tested code commit: `34ad2e89`. PR quality gates and Azure preview passed. Native diagnostics now retain error-level VLC logs and the preview error cause; 62 scoped tests and node typecheck passed locally.
+- Local diagnostic package smoke: all three cases passed (`/tmp/media-release-diagnostics-smoke.log`).
+- Remote package preflight: https://github.com/rayselfs/hhc-presenter/actions/runs/37394378430. Windows package/runtime/notices and packaged smoke passed. The Windows runner has no default audio device, so physical audio acceptance remains open.
+- macOS package and runtime/notices checks passed, but packaged VLC live-preview smoke failed. The native log records `caopengllayer vout display error: Failure to create CGL context!`, `macosx vout display error: Initialization of open gl view failed`, and `main video output error: video output creation failed`. Playback time alone was insufficient evidence of actual video output; the new preview assertion exposed this runner limitation.
+- Evidence: `/tmp/media-release-mac-diag-evidence/`, `/tmp/media-mac-diag-player.log`. The original failure artifacts are also preserved under `/tmp/media-release-mac-evidence/` and `/tmp/media-release-win-evidence/`.
+- Release remains blocked. PR #90 is not merged; no v2.6.6 tag or release exists. The macOS packaged gate needs a runner capable of the required OpenGL output, or a verified rendering fix that preserves real projector/live-preview behavior. Do not skip the assertion, use a dummy video output, or treat a headless pass as display acceptance.
