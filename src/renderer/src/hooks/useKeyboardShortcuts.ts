@@ -21,6 +21,7 @@ export interface ShortcutConfig {
 export interface ShortcutHandler {
   config: ShortcutConfig
   handler: (event: KeyboardEvent) => void
+  allowInEditable?: boolean
   preventDefault?: boolean
   stopPropagation?: boolean
   id?: string
@@ -80,7 +81,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
   if (contentEditable === 'true') return true
   const role = target.getAttribute('role')
   if ((role === 'textbox' || role === 'searchbox') && contentEditable !== 'false') return true
-  return false
+  return target.parentElement ? isEditableTarget(target.parentElement) : false
 }
 
 export function useKeyboardShortcuts(
@@ -127,7 +128,6 @@ export function useKeyboardShortcuts(
       if (event.isComposing || event.keyCode === 229) return
       if (!enabledRef.current) return
       if (isPresenterActive() && sectionKeyRef.current !== 'media') return
-      if (isEditableTarget(event.target)) return
       if (
         event.target instanceof Element &&
         event.target.closest('[role="menu"], [role="dialog"], [role="alertdialog"]')
@@ -142,10 +142,12 @@ export function useKeyboardShortcuts(
       for (const {
         config,
         handler,
+        allowInEditable = false,
         preventDefault = true,
         stopPropagation = true
       } of shortcutsRef.current) {
         if (isOverlayActiveRef.current) continue
+        if (!allowInEditable && isEditableTarget(event.target)) continue
         if (matchesConfig(event, config)) {
           if (preventDefault) event.preventDefault()
           if (stopPropagation) event.stopPropagation()

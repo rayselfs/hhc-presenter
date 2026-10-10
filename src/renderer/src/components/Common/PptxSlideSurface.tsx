@@ -12,6 +12,7 @@ type PptxSlideSurfaceStatus = 'idle' | 'loading' | 'ready' | 'failed'
 interface PptxSlideSurfaceProps {
   source: PresentationSource
   slideIndex: number
+  renderRevision?: number
   className?: string
   verifyNativeFile?: boolean
   onReady?: (info: { slideCount: number; width: number; height: number }) => void
@@ -21,6 +22,7 @@ interface PptxSlideSurfaceProps {
 export default function PptxSlideSurface({
   source,
   slideIndex,
+  renderRevision,
   className,
   verifyNativeFile,
   onReady,
@@ -34,14 +36,22 @@ export default function PptxSlideSurface({
   const [viewer, setViewer] = useState<PptxViewerHandle | null>(null)
   const [status, setStatus] = useState<PptxSlideSurfaceStatus>('idle')
   const [error, setError] = useState<string | null>(null)
+  const [retry, setRetry] = useState(0)
+  const [previousRevision, setPreviousRevision] = useState(renderRevision)
+  if (previousRevision !== renderRevision) {
+    setPreviousRevision(renderRevision)
+    if (status === 'failed') setRetry((attempt) => attempt + 1)
+  }
 
   useEffect(() => {
     let cancelled = false
     const container = containerRef.current
     if (!container) return
-    const target = container
+    const target = document.createElement('div')
+    target.className = 'h-full w-full'
+    container.replaceChildren(target)
+    const controller = new AbortController()
 
-    target.innerHTML = ''
     viewerRef.current?.destroy()
     viewerRef.current = null
 
@@ -61,7 +71,10 @@ export default function PptxSlideSurface({
           { verifyNativeFile }
         )
         if (cancelled) return
-        const handle = await openPptxViewer(buffer, target, { renderMode: 'slide' })
+        const handle = await openPptxViewer(buffer, target, {
+          renderMode: 'slide',
+          signal: controller.signal
+        })
         if (cancelled) {
           handle.destroy()
           return
@@ -81,10 +94,12 @@ export default function PptxSlideSurface({
     void open()
     return () => {
       cancelled = true
+      controller.abort()
+      target.remove()
       viewerRef.current?.destroy()
       viewerRef.current = null
     }
-  }, [onError, sourceId, sourceMimeType, sourceUrl, verifyNativeFile])
+  }, [onError, retry, sourceId, sourceMimeType, sourceUrl, verifyNativeFile])
 
   useEffect(() => {
     const current = viewerRef.current
@@ -112,7 +127,7 @@ export default function PptxSlideSurface({
     return () => {
       cancelled = true
     }
-  }, [onError, onReady, slideIndex, status, viewer])
+  }, [onError, onReady, renderRevision, slideIndex, status, viewer])
 
   return (
     <div className={`relative h-full w-full overflow-hidden bg-black ${className ?? ''}`}>

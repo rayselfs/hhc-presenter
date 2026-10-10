@@ -463,6 +463,39 @@ describe('PresentationWorkspaceHeader', () => {
     expect(mocks.startMediaProjection).not.toHaveBeenCalled()
   })
 
+  it('starts an original PPTX with F5 without an editable session', async () => {
+    item = {
+      ...item,
+      name: 'Sunday.pptx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    }
+    db.get.mockResolvedValue(item)
+    usePresentationWorkspaceStore.getState().closeDocument(item.id)
+    usePresentationWorkspaceStore.getState().openDocument(item)
+    usePresentationWorkspaceStore.getState().setSlideCount(item.id, 13)
+    mocks.registry = { ...mocks.registry!, get: vi.fn(() => undefined) }
+    renderHeader()
+    fireEvent.keyDown(document, { code: 'F5', key: 'F5' })
+    await waitFor(() =>
+      expect(mocks.startMediaProjection).toHaveBeenCalledWith(
+        [item],
+        0,
+        expect.any(Object),
+        expect.objectContaining({ presentationState: { slideIndex: 0, slideCount: 13 } })
+      )
+    )
+  })
+
+  it('presents while a text box still has focus', async () => {
+    renderHeader()
+    const input = document.createElement('textarea')
+    document.body.append(input)
+    input.focus()
+    fireEvent.keyDown(input, { code: 'F5', key: 'F5' })
+    await waitFor(() => expect(mocks.startMediaProjection).toHaveBeenCalledOnce())
+    input.remove()
+  })
+
   it('uses F5 for beginning and Shift+F5 for the current slide', async () => {
     const deckDocument = session.getSnapshot().history.present
     usePresentationWorkspaceStore.getState().setActiveSlideId(item.id, deckDocument.slideOrder[1])

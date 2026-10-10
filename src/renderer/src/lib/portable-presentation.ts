@@ -97,6 +97,13 @@ function textElement(value: Record<string, unknown>): void {
   textStyle(value)
   requireValid(typeof value.text === 'string' && dimension(value.lineHeight))
   alignment(value.align)
+  if (value.verticalAlign !== undefined)
+    requireValid(['top', 'center', 'bottom'].includes(String(value.verticalAlign)))
+  if (value.textInsets !== undefined) {
+    requireValid(record(value.textInsets))
+    for (const side of ['top', 'right', 'bottom', 'left'])
+      requireValid(coordinate(value.textInsets[side]) && Number(value.textInsets[side]) >= 0)
+  }
   if (value.runs !== undefined) runs(value.runs)
   if (value.paragraphs !== undefined) {
     requireValid(Array.isArray(value.paragraphs) && value.paragraphs.length <= 100000)

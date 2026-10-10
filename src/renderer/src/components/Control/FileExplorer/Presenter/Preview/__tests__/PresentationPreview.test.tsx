@@ -48,6 +48,7 @@ const storeState = {
       remoteItem?: { remoteItemId: string }
     }>
   },
+  currentItem: () => makeItem(),
   setTypeState: mockSetTypeState
 }
 
@@ -125,6 +126,7 @@ describe('PresentationPreview', () => {
     mockRegistryGet.mockReturnValue(undefined)
     storeState.typeStates.presentation = { slideIndex: 0 }
     storeState.snapshot = null
+    storeState.currentItem = () => makeItem()
   })
 
   it('shows the first slide for a next preview without changing the current projection state', async () => {
@@ -188,6 +190,14 @@ describe('PresentationPreview', () => {
         slideCount: 1
       })
     })
+  })
+
+  it('ignores slide counts from a preview after the projection changes', async () => {
+    mockLoadEditablePresentation.mockResolvedValue(createBlankEditablePresentationDocument('Old'))
+    storeState.currentItem = () => ({ ...makeItem(), id: 'new-deck' })
+    render(<PresentationPreview item={makeItem()} />)
+    await waitFor(() => expect(mockLoadEditablePresentation).toHaveBeenCalled())
+    expect(mockSetTypeState).not.toHaveBeenCalled()
   })
 
   it('renders an open session revision without loading its durable fallback', async () => {

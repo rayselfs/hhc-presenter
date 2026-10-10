@@ -122,3 +122,16 @@ it('opens a native downloaded deck without an IndexedDB blob or the original PPT
     read.mockRestore()
   }
 })
+
+it.each([
+  { verticalAlign: 'sideways' },
+  { textInsets: { top: -1, right: 0, bottom: 0, left: 0 } },
+  { textInsets: { top: 0, right: '10px', bottom: 0, left: 0 } }
+])('rejects malformed imported text layout %j', async (changes) => {
+  const document = createBlankEditablePresentationDocument('Portable')
+  const slide = document.slides[document.slideOrder[0]]
+  const text = { ...createTextElement(), ...changes }
+  slide.elements[text.id] = text as ReturnType<typeof createTextElement>
+  slide.elementOrder.push(text.id)
+  await expect(load(document)).rejects.toThrow('Invalid portable presentation document')
+})

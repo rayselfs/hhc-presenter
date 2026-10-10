@@ -1,3 +1,5 @@
+import { importEditablePptx } from '../pptx-import'
+import { PPTX_MIME_TYPE } from '../presentation-media'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   importFromFileInput,
@@ -8,6 +10,8 @@ import {
   uploadFolderFiles,
   uploadFromDataTransfer
 } from '../upload-utils'
+
+vi.mock('../pptx-import', () => ({ importEditablePptx: vi.fn() }))
 
 vi.mock('@heroui/react/toast', () => ({
   toast: { success: vi.fn(), danger: vi.fn(), warning: vi.fn() }
@@ -574,7 +578,10 @@ describe('upload identities and partial failures', () => {
     await expect(
       uploadFiles([makeFile('bad.png', 3), makeFile('good.png', 3)], 'parent-1')
     ).resolves.toBe(1)
-    expect(toast.danger).toHaveBeenCalledWith(expect.stringContaining('bad.png'))
+    expect(useMediaImportStore.getState().failures).toEqual([
+      { name: 'bad.png', reason: 'Disk full' }
+    ])
+    expect(toast.danger).not.toHaveBeenCalled()
     expect(addFileItemToStore).toHaveBeenCalledTimes(2)
   })
 
@@ -701,4 +708,13 @@ describe('import progress and recovery', () => {
     expect(addFileItemToStore).toHaveBeenCalledWith(files[1], 'parent-1', 'image/png')
     expect(useMediaImportStore.getState()).toMatchObject({ total: 1, succeeded: 1, failures: [] })
   })
+})
+
+it('imports PPTX directly as an editable deck without persisting a second raw item', async () => {
+  vi.mocked(importEditablePptx).mockResolvedValue({ id: 'editable-pptx' } as never)
+  const pptx = makeFile('Sunday.pptx', 1000, PPTX_MIME_TYPE)
+  expect(await uploadFiles([pptx], 'file-root')).toBe(1)
+  expect(importEditablePptx).toHaveBeenCalledWith(pptx, 'file-root')
+  expect(addFileItemToStore).not.toHaveBeenCalled()
+  expect(mediaJobQueue.enqueue).not.toHaveBeenCalled()
 })

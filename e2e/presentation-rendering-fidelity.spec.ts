@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import JSZip from 'jszip'
-import { completeOnboarding } from './helpers'
+import { completeOnboarding, seedRawPptx } from './helpers'
 
 async function mediaDeck(): Promise<Buffer> {
   const zip = await JSZip.loadAsync(
@@ -57,14 +57,7 @@ test('renders real PPTX fonts, image geometry, pages and embedded-video surface'
   await page.goto('/')
   await completeOnboarding(page)
   await page.goto('/#/files')
-  await page
-    .locator('input[type="file"]:not([webkitdirectory])')
-    .first()
-    .setInputFiles({
-      name: 'Lifecycle fidelity.pptx',
-      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      buffer: await mediaDeck()
-    })
+  await seedRawPptx(page, 'Lifecycle fidelity.pptx', await mediaDeck())
   const file = page.getByText('Lifecycle fidelity.pptx', { exact: true })
   await expect(file).toBeVisible()
   await file.click({ button: 'right' })

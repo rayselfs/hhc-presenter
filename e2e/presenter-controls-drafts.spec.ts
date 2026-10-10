@@ -1,6 +1,7 @@
+import { readFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
 import { resolve } from 'node:path'
-import { completeOnboarding } from './helpers'
+import { completeOnboarding, seedRawPptx } from './helpers'
 
 test('a readonly PPTX copy stays recoverable and unsaved until a writable destination is chosen', async ({
   page,
@@ -9,10 +10,11 @@ test('a readonly PPTX copy stays recoverable and unsaved until a writable destin
   await page.goto('/')
   await completeOnboarding(page)
   await page.goto('/#/files')
-  await page
-    .locator('input[type="file"]:not([webkitdirectory])')
-    .first()
-    .setInputFiles(resolve('src/renderer/src/lib/__fixtures__/pptx/text-placeholder-layout.pptx'))
+  await seedRawPptx(
+    page,
+    'text-placeholder-layout.pptx',
+    await readFile(resolve('src/renderer/src/lib/__fixtures__/pptx/text-placeholder-layout.pptx'))
+  )
   await expect(page.getByText('text-placeholder-layout.pptx')).toBeVisible()
   const sourceId = await page.evaluate(async () => {
     const request = indexedDB.open('hhc-file-explorer')

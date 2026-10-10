@@ -1708,6 +1708,7 @@ function TextElementContent({
             }
             style={{
               minHeight: '1em',
+              flexShrink: 0,
               textAlign: paragraph.align,
               lineHeight:
                 paragraph.lineSpacing.kind === 'multiple'
@@ -1771,10 +1772,20 @@ function TextElementContent({
           textDecoration: element.underline ? 'underline' : 'none',
           textAlign: element.align,
           lineHeight: element.lineHeight,
-          boxSizing: contentHeight ? 'border-box' : undefined,
-          padding: contentHeight
-            ? `${CONTENT_HEIGHT_TEXT_PADDING_Y}px ${CONTENT_HEIGHT_TEXT_PADDING_X}px`
-            : undefined,
+          display: element.verticalAlign ? 'flex' : undefined,
+          flexDirection: element.verticalAlign ? 'column' : undefined,
+          justifyContent:
+            element.verticalAlign === 'center'
+              ? 'center'
+              : element.verticalAlign === 'bottom'
+                ? 'flex-end'
+                : undefined,
+          boxSizing: contentHeight || element.textInsets ? 'border-box' : undefined,
+          padding: element.textInsets
+            ? `${element.textInsets.top}px ${element.textInsets.right}px ${element.textInsets.bottom}px ${element.textInsets.left}px`
+            : contentHeight
+              ? `${CONTENT_HEIGHT_TEXT_PADDING_Y}px ${CONTENT_HEIGHT_TEXT_PADDING_X}px`
+              : undefined,
           width: editing && element.autoWidth === true ? 'max-content' : undefined,
           minWidth: editing && element.autoWidth === true ? '100%' : undefined,
           height: editing && element.autoWidth === true ? 'auto' : undefined,

@@ -207,6 +207,7 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
     [
       {
         id: 'presentation-save',
+        allowInEditable: true,
         config: SHORTCUTS.PRESENTATION.SAVE,
         description: t('common.save', 'Save'),
         handler: () => {
@@ -221,6 +222,7 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
       },
       {
         id: 'presentation-start-beginning',
+        allowInEditable: true,
         config: SHORTCUTS.PRESENTATION.START_FROM_BEGINNING,
         description: t('presentationWorkspace.presentFromBeginning', 'Present from Beginning'),
         handler: () => {
@@ -229,6 +231,7 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
       },
       {
         id: 'presentation-start-current',
+        allowInEditable: true,
         config: SHORTCUTS.PRESENTATION.START_FROM_CURRENT,
         description: t('presentationWorkspace.presentFromCurrent', 'Present from Current Slide'),
         handler: () => {
@@ -252,7 +255,7 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
         }
       }
     ],
-    { enabled: Boolean(activeSession), sectionKey: 'presentation' }
+    { enabled: Boolean(activeDocument), sectionKey: 'presentation' }
   )
 
   return (

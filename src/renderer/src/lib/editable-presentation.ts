@@ -83,6 +83,8 @@ interface EditableElementBase {
 export interface EditableTextElement extends EditableElementBase {
   type: 'text'
   autoWidth?: boolean
+  verticalAlign?: 'top' | 'center' | 'bottom'
+  textInsets?: { top: number; right: number; bottom: number; left: number }
   autoSize?: EditableTextAutoSize
   text: string
   runs?: EditableTextRun[]
@@ -1041,9 +1043,10 @@ export async function convertPptxToEditablePresentation(
   return createEditablePresentationItem(document, item.parentId)
 }
 
-async function createEditablePresentationItem(
+export async function createEditablePresentationItem(
   document: EditablePresentationDocument,
-  parentId: string
+  parentId: string,
+  catalogName = document.name
 ): Promise<FileItemRecord> {
   const itemId = document.id
   const blob = createDocumentBlob(document)
@@ -1061,7 +1064,7 @@ async function createEditablePresentationItem(
     sortIndex: Math.max(-1, ...siblings.map((item) => item.sortIndex)) + 1,
     createdAt: now,
     expiresAt: parentId === 'file-root' ? now + FOLDER_DURATION_MS['1day'] : null,
-    name: document.name,
+    name: catalogName,
     url: `blob:${itemId}`,
     size: blob.size,
     mimeType: EDITABLE_PRESENTATION_MIME_TYPE
@@ -1163,6 +1166,27 @@ function convertSlide(
 ): Omit<EditablePresentationSlide, 'id' | 'name'> {
   const elementOrder: string[] = []
   const elements: Record<string, EditablePresentationElement> = {}
+  const layout = presentation.layouts.get(slide.layoutIndex)
+  const masterId = presentation.layoutToMaster.get(slide.layoutIndex)
+  const master = masterId ? presentation.masters.get(masterId) : undefined
+  if (slide.showMasterSp !== false) {
+    for (const tree of [
+      layout?.spTree,
+      ...(layout?.showMasterSp !== false ? [master?.spTree] : [])
+    ]) {
+      for (const child of tree?.children() ?? []) {
+        if (
+          ['nvGrpSpPr', 'grpSpPr', 'extLst'].includes(child.localName) ||
+          readPlaceholderInfo(child) ||
+          ['nvSpPr', 'nvPicPr', 'nvGraphicFramePr', 'nvCxnSpPr', 'nvGrpSpPr'].some((property) =>
+            isXmlTrue(child.child(property).child('cNvPr').attr('hidden'))
+          )
+        )
+          continue
+        throw new Error('Unsupported PowerPoint layout or master decoration')
+      }
+    }
+  }
 
   for (const node of slide.nodes) {
     const converted = convertNode(node, slide, presentation, assets)
@@ -1187,30 +1211,22 @@ function resolveSlideBackground(
   const layout = presentation.layouts.get(slide.layoutIndex)
   const masterId = presentation.layoutToMaster.get(slide.layoutIndex)
   const master = masterId ? presentation.masters.get(masterId) : undefined
-  return (
-    readDirectSolidBackground(slide) ??
-    readDirectSolidBackground(layout) ??
-    readDirectSolidBackground(master) ??
-    createDefaultSlideBackground()
-  )
-}
-
-function readDirectSolidBackground(sourceOwner: unknown): EditableSlideBackground | null {
-  if (!sourceOwner || typeof sourceOwner !== 'object' || !('source' in sourceOwner)) return null
-  const source = sourceOwner.source
-  if (!isXmlNode(source)) return null
-  const backgroundProperties = source.child('cSld').child('bg').child('bgPr')
-  const color = readSrgbColor(backgroundProperties)
-  return color ? { type: 'solid', color, transparency: 0 } : null
-}
-
-function isXmlNode(value: unknown): value is XmlNode {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'child' in value &&
-    typeof value.child === 'function'
-  )
+  const theme = getSlideTheme(slide, presentation)
+  for (const background of [slide.background, layout?.background, master?.background]) {
+    if (!background?.exists()) continue
+    const properties = background.child('bgPr')
+    const color = readTextColor(properties, theme)
+    if (color) {
+      const fill = properties.child('solidFill')
+      const alpha =
+        fill.child('srgbClr').child('alpha').numAttr('val') ??
+        fill.child('schemeClr').child('alpha').numAttr('val') ??
+        100000
+      return { type: 'solid', color, transparency: 100 - alpha / 1000 }
+    }
+    throw new Error('Unsupported PowerPoint background fill')
+  }
+  return createDefaultSlideBackground()
 }
 
 function convertNode(
@@ -1233,8 +1249,17 @@ function convertShapeNode(
   const text = getShapeText(node)
   const theme = getSlideTheme(slide, presentation)
   const shape = getEditableShapeKind(node.presetGeometry)
-  const fillColor = readSrgbColor(node.fill) ?? 'transparent'
-  const strokeColor = readSrgbColor(node.line) ?? '#000000'
+  if (
+    node.customGeometry?.exists() ||
+    (node.presetGeometry && !['rect', 'ellipse', 'oval', 'line'].includes(node.presetGeometry))
+  )
+    throw new Error('Unsupported PowerPoint shape geometry')
+  if (
+    ['gradFill', 'pattFill', 'blipFill', 'grpFill'].some((fill) => node.fill?.child(fill).exists())
+  )
+    throw new Error('Unsupported PowerPoint shape fill')
+  const fillColor = readTextColor(node.fill, theme) ?? 'transparent'
+  const strokeColor = readTextColor(node.line, theme) ?? '#000000'
   const strokeWidth = node.line?.exists() ? 1 : 0
 
   if (shape && (fillColor !== 'transparent' || strokeWidth > 0)) {
@@ -1272,14 +1297,24 @@ function convertShapeNode(
   if (text) {
     const frame = resolveTextShapeFrame(node, slide, presentation)
     if (!frame) throw new Error(`Text placeholder frame is missing: ${node.name}`)
-    const style = resolveTextShapeStyle(node, theme)
-    const runs = resolveTextRuns(node, theme)
-    const paragraphs = resolveTextParagraphs(node, theme)
+    const style = resolveTextShapeStyle(node, slide, presentation, theme)
+    const runs = resolveTextRuns(node, slide, presentation, theme)
+    const paragraphs = resolveTextParagraphs(node, slide, presentation, theme)
+    const fontScale =
+      (node.textBody?.bodyProperties?.child('normAutofit').numAttr('fontScale') ?? 100000) / 100000
+    if (!Number.isFinite(fontScale) || fontScale <= 0 || fontScale > 1)
+      throw new Error('Invalid PowerPoint text scale')
+    style.fontSize *= fontScale
+    for (const run of runs ?? []) run.fontSize *= fontScale
+    for (const paragraph of paragraphs ?? []) {
+      for (const run of paragraph.runs) run.fontSize *= fontScale
+    }
     elements.push({
       id: crypto.randomUUID(),
       type: 'text',
       autoWidth: false,
       autoSize: 'fixed',
+      ...resolveTextBodyLayout(node, slide, presentation),
       x: frame.x,
       y: frame.y,
       width: frame.width,
@@ -1490,21 +1525,121 @@ function createTextShapeFrame(
 
 function getSlideTheme(slide: SlideData, presentation: PresentationData): ThemeData | undefined {
   const themeId = resolveSlideThemeId(slide, presentation)
-  return themeId ? presentation.themes?.get(themeId) : undefined
+  const theme = themeId ? presentation.themes?.get(themeId) : undefined
+  if (!theme) return undefined
+  const layout = presentation.layouts.get(slide.layoutIndex)
+  const masterId = presentation.layoutToMaster.get(slide.layoutIndex)
+  const master = masterId ? presentation.masters.get(masterId) : undefined
+  const colorScheme = new Map(theme.colorScheme)
+  const aliases = new Map([
+    ['bg1', 'lt1'],
+    ['tx1', 'dk1'],
+    ['bg2', 'lt2'],
+    ['tx2', 'dk2']
+  ])
+  for (const [alias, slot] of master?.colorMap ?? []) aliases.set(alias, slot)
+  for (const [alias, slot] of layout?.colorMapOverride ?? []) aliases.set(alias, slot)
+  for (const [alias, slot] of aliases) {
+    const color = theme.colorScheme.get(slot)
+    if (color) colorScheme.set(alias, color)
+  }
+  return { ...theme, colorScheme }
 }
 
-function resolveTextShapeStyle(node: ShapeNodeData, theme?: ThemeData): TextShapeStyle {
+function inheritedParagraphProperties(
+  node: ShapeNodeData,
+  slide: SlideData,
+  presentation: PresentationData,
+  level: number
+): XmlNode[] {
+  const layout = presentation.layouts.get(slide.layoutIndex)
+  const masterId = presentation.layoutToMaster.get(slide.layoutIndex)
+  const master = masterId ? presentation.masters.get(masterId) : undefined
+  const placeholder = node.placeholder
+  const layoutShape = placeholder
+    ? layout?.placeholders.find((entry) => matchesPlaceholder(entry.node, placeholder))?.node
+    : undefined
+  const masterShape = placeholder
+    ? master?.placeholders.find((entry) => matchesPlaceholder(entry, placeholder))
+    : undefined
+  const category =
+    placeholder?.type === 'title' || placeholder?.type === 'ctrTitle'
+      ? 'titleStyle'
+      : placeholder?.type === 'body'
+        ? 'bodyStyle'
+        : 'otherStyle'
+  return [
+    node.textBody?.listStyle,
+    layoutShape?.child('txBody').child('lstStyle'),
+    masterShape?.child('txBody').child('lstStyle'),
+    master?.textStyles?.[category],
+    master?.defaultTextStyle,
+    presentation.defaultTextStyle
+  ].flatMap((style) => (style ? [style.child(`lvl${level + 1}pPr`), style.child('defPPr')] : []))
+}
+
+function resolveTextBodyLayout(
+  node: ShapeNodeData,
+  slide: SlideData,
+  presentation: PresentationData
+): Pick<EditableTextElement, 'textInsets' | 'verticalAlign'> {
+  const layout = presentation.layouts.get(slide.layoutIndex)
+  const masterId = presentation.layoutToMaster.get(slide.layoutIndex)
+  const master = masterId ? presentation.masters.get(masterId) : undefined
+  const placeholder = node.placeholder
+  const layoutShape = placeholder
+    ? layout?.placeholders.find((entry) => matchesPlaceholder(entry.node, placeholder))?.node
+    : undefined
+  const masterShape = placeholder
+    ? master?.placeholders.find((entry) => matchesPlaceholder(entry, placeholder))
+    : undefined
+  const sources = [
+    node.textBody?.bodyProperties,
+    layoutShape?.child('txBody').child('bodyPr'),
+    masterShape?.child('txBody').child('bodyPr')
+  ]
+  const attr = (name: string): string | undefined =>
+    sources.map((source) => source?.attr(name)).find((value) => value !== undefined)
+  const vertical = attr('vert')
+  if (vertical && vertical !== 'horz') throw new Error('Unsupported PowerPoint vertical text')
+  const anchor = attr('anchor')
+  if (anchor && !['t', 'ctr', 'b'].includes(anchor))
+    throw new Error('Unsupported PowerPoint text anchor')
+  if (Number(attr('numCol') ?? 1) > 1) throw new Error('Unsupported PowerPoint text columns')
+  return {
+    verticalAlign: anchor === 'ctr' ? 'center' : anchor === 'b' ? 'bottom' : 'top',
+    textInsets: {
+      left: emuToPx(Number(attr('lIns') ?? 91440)),
+      right: emuToPx(Number(attr('rIns') ?? 91440)),
+      top: emuToPx(Number(attr('tIns') ?? 45720)),
+      bottom: emuToPx(Number(attr('bIns') ?? 45720))
+    }
+  }
+}
+
+function resolveTextShapeStyle(
+  node: ShapeNodeData,
+  slide: SlideData,
+  presentation: PresentationData,
+  theme?: ThemeData
+): TextShapeStyle {
   const firstParagraph = node.textBody?.paragraphs[0]
   const firstRun = firstParagraph?.runs[0]
   return resolveTextStyle(
     firstRun?.properties,
     firstParagraph?.endParaRPr,
     firstParagraph?.properties,
-    theme
+    theme,
+    inheritedParagraphProperties(node, slide, presentation, firstParagraph?.level ?? 0)
   )
 }
 
-function resolveTextRuns(node: ShapeNodeData, theme?: ThemeData): EditableTextRun[] | undefined {
+function resolveTextRuns(
+  node: ShapeNodeData,
+  slide: SlideData,
+  presentation: PresentationData,
+  theme?: ThemeData
+): EditableTextRun[] | undefined {
   const runs: EditableTextRun[] = []
   for (const [paragraphIndex, paragraph] of (node.textBody?.paragraphs ?? []).entries()) {
     for (const [runIndex, run] of paragraph.runs.entries()) {
@@ -1512,7 +1647,8 @@ function resolveTextRuns(node: ShapeNodeData, theme?: ThemeData): EditableTextRu
         run.properties,
         paragraph.endParaRPr,
         paragraph.properties,
-        theme
+        theme,
+        inheritedParagraphProperties(node, slide, presentation, paragraph.level ?? 0)
       )
       runs.push({
         text: `${paragraphIndex > 0 && runIndex === 0 ? '\n' : ''}${run.text}`,
@@ -1534,6 +1670,8 @@ function resolveTextRuns(node: ShapeNodeData, theme?: ThemeData): EditableTextRu
 
 function resolveTextParagraphs(
   node: ShapeNodeData,
+  slide: SlideData,
+  presentation: PresentationData,
   theme?: ThemeData
 ): EditableTextParagraph[] | undefined {
   const paragraphs = node.textBody?.paragraphs.map((paragraph) => {
@@ -1542,7 +1680,8 @@ function resolveTextParagraphs(
         run.properties,
         paragraph.endParaRPr,
         paragraph.properties,
-        theme
+        theme,
+        inheritedParagraphProperties(node, slide, presentation, paragraph.level ?? 0)
       )
       const baseline = Number(run.properties?.attr('baseline') ?? 0)
       const spacing = Number(run.properties?.attr('spc') ?? 0)
@@ -1565,17 +1704,29 @@ function resolveTextParagraphs(
         highlightColor: readTextColor(run.properties?.child('highlight'), theme)
       }
     })
-    const properties = paragraph.properties
-    const exactPoints = properties?.child('lnSpc').child('spcPts').numAttr('val')
-    const multiple = properties?.child('lnSpc').child('spcPct').numAttr('val')
-    const bullet = properties?.child('buChar')
-    const number = properties?.child('buAutoNum')
+    const sources = [
+      paragraph.properties,
+      ...inheritedParagraphProperties(node, slide, presentation, paragraph.level ?? 0)
+    ]
+    const align = sources.map((source) => source?.attr('algn')).find((value) => value !== undefined)
+    const lineSpacing = sources
+      .map((source) => source?.child('lnSpc'))
+      .find((value) => value?.exists())
+    const exactPoints = lineSpacing?.child('spcPts').numAttr('val')
+    const multiple = lineSpacing?.child('spcPct').numAttr('val')
+    const listProperties = sources.find((source) =>
+      ['buNone', 'buChar', 'buAutoNum'].some((kind) => source?.child(kind).exists())
+    )
+    const bullet = listProperties?.child('buChar')
+    const number = listProperties?.child('buAutoNum')
     const list: EditableListStyle | null = bullet?.exists()
       ? {
           kind: 'bullet',
           level: paragraph.level,
           char: bullet.attr('char') ?? '•',
-          font: properties?.child('buFont').attr('typeface')
+          font: sources
+            .map((source) => source?.child('buFont').attr('typeface'))
+            .find((value) => value !== undefined)
         }
       : number?.exists()
         ? {
@@ -1588,14 +1739,18 @@ function resolveTextParagraphs(
     return {
       runs,
       typingStyle: runs.at(-1),
-      align: normalizeTextAlign(properties?.attr('algn')),
+      align: normalizeTextAlign(align),
       lineSpacing:
         exactPoints !== undefined
           ? { kind: 'exact' as const, points: exactPoints / 100 }
-          : { kind: 'multiple' as const, value: multiple !== undefined ? multiple / 100000 : 1.15 },
+          : { kind: 'multiple' as const, value: multiple !== undefined ? multiple / 100000 : 1 },
       list,
-      marginLeft: normalizeCanvasCoordinate(properties?.numAttr('marL')) ?? 0,
-      textIndent: normalizeCanvasCoordinate(properties?.numAttr('indent')) ?? 0
+      marginLeft: emuToPx(
+        sources.map((source) => source?.numAttr('marL')).find((value) => value !== undefined) ?? 0
+      ),
+      textIndent: emuToPx(
+        sources.map((source) => source?.numAttr('indent')).find((value) => value !== undefined) ?? 0
+      )
     }
   })
   return paragraphs?.length ? paragraphs : undefined
@@ -1605,26 +1760,32 @@ function resolveTextStyle(
   runProperties: XmlNode | undefined,
   paragraphEndProperties: XmlNode | undefined,
   paragraphProperties: XmlNode | undefined,
-  theme?: ThemeData
+  theme?: ThemeData,
+  inherited: XmlNode[] = []
 ): TextShapeStyle {
-  const fontSize = fontSizeToPx(
-    runProperties?.numAttr('sz') ?? paragraphEndProperties?.numAttr('sz') ?? 3200
-  )
-
+  const sources = [
+    runProperties,
+    paragraphProperties?.child('defRPr'),
+    ...inherited.map((properties) => properties.child('defRPr')),
+    paragraphEndProperties
+  ]
+  const attr = (name: string): string | undefined =>
+    sources.map((source) => source?.attr(name)).find((value) => value !== undefined)
   return {
     fontFamily:
-      readFontFamily(runProperties, theme) ??
-      readFontFamily(paragraphEndProperties, theme) ??
-      DEFAULT_FONT_FAMILY,
-    fontSize,
-    bold: isXmlTrue(runProperties?.attr('b') ?? paragraphEndProperties?.attr('b')),
-    italic: isXmlTrue(runProperties?.attr('i') ?? paragraphEndProperties?.attr('i')),
-    underline: isUnderlineEnabled(runProperties?.attr('u') ?? paragraphEndProperties?.attr('u')),
+      sources.map((source) => readFontFamily(source, theme)).find(Boolean) ?? DEFAULT_FONT_FAMILY,
+    fontSize: fontSizeToPx(Number(attr('sz') ?? 3200)),
+    bold: isXmlTrue(attr('b')),
+    italic: isXmlTrue(attr('i')),
+    underline: isUnderlineEnabled(attr('u')),
     color:
-      readTextColor(runProperties, theme) ??
-      readTextColor(paragraphEndProperties, theme) ??
+      sources.map((source) => readTextColor(source, theme)).find(Boolean) ??
       DEFAULT_FOREGROUND_COLOR,
-    align: normalizeTextAlign(paragraphProperties?.attr('algn')),
+    align: normalizeTextAlign(
+      [paragraphProperties, ...inherited]
+        .map((source) => source?.attr('algn'))
+        .find((value) => value !== undefined)
+    ),
     lineHeight: 1.15
   }
 }
@@ -1914,10 +2075,17 @@ function renderTextElementForeignObject(element: EditableTextElement, transform:
         paragraph.lineSpacing.kind === 'multiple'
           ? String(paragraph.lineSpacing.value)
           : `${paragraph.lineSpacing.points}pt`
-      return `<div style="min-height:1em;text-align:${paragraph.align};text-align-last:left;line-height:${lineHeight};margin-left:${paragraph.marginLeft}px;text-indent:${paragraph.textIndent}px">${escapeXml(marker)}${runs}</div>`
+      return `<div style="flex-shrink:0;min-height:1em;text-align:${paragraph.align};text-align-last:${paragraph.align === 'justify' ? 'left' : 'auto'};line-height:${lineHeight};margin-left:${paragraph.marginLeft}px;text-indent:${paragraph.textIndent}px">${escapeXml(marker)}${runs}</div>`
     })
     .join('')
-  return `<foreignObject x="${element.x}" y="${element.y}" width="${element.width}" height="${element.height}" opacity="${element.opacity}" transform="${transform}"><div xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%;overflow:hidden;white-space:pre-wrap;overflow-wrap:break-word">${body}</div></foreignObject>`
+  const insets = element.textInsets
+  const layout = insets
+    ? `box-sizing:border-box;padding:${insets.top}px ${insets.right}px ${insets.bottom}px ${insets.left}px;`
+    : ''
+  const alignment = element.verticalAlign
+    ? `display:flex;flex-direction:column;justify-content:${element.verticalAlign === 'center' ? 'center' : element.verticalAlign === 'bottom' ? 'flex-end' : 'flex-start'};`
+    : ''
+  return `<foreignObject x="${element.x}" y="${element.y}" width="${element.width}" height="${element.height}" opacity="${element.opacity}" transform="${transform}"><div xmlns="http://www.w3.org/1999/xhtml" style="width:100%;height:100%;overflow:hidden;white-space:pre-wrap;overflow-wrap:break-word;${layout}${alignment}">${body}</div></foreignObject>`
 }
 
 function renderImageElementSvg(

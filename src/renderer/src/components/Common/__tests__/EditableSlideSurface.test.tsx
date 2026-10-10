@@ -15,6 +15,24 @@ import {
 import { normalizeTextParagraphs, resolveTypingStyle } from '@renderer/lib/presentation-rich-text'
 
 describe('EditableSlideSurface', () => {
+  it('preserves imported text insets and vertical alignment', () => {
+    const source = createBlankEditablePresentationDocument('Imported')
+    const slideId = source.slideOrder[0]
+    const text = {
+      ...createTextElement(),
+      verticalAlign: 'center' as const,
+      textInsets: { top: 10, right: 30, bottom: 40, left: 20 }
+    }
+    const document = addElementToSlide(source, slideId, text)
+    const { container } = render(<EditableSlideSurface document={document} slideId={slideId} />)
+    expect(container.querySelector('[data-text-content]')).toHaveStyle({
+      padding: '10px 30px 40px 20px',
+      justifyContent: 'center',
+      display: 'flex',
+      boxSizing: 'border-box'
+    })
+  })
+
   it('creates a compact auto-sized text box on click while text insert mode is active', () => {
     const handleInsertText = vi.fn()
     const source = createBlankEditablePresentationDocument('Sunday')
