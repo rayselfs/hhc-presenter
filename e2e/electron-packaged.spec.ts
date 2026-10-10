@@ -632,9 +632,13 @@ test('PPTX editable import, focused F5, 22 slides and persisted reopen', async (
   await control.goto(editorUrl)
   await control.keyboard.press('ControlOrMeta+s')
   await expect(control.getByText(/^(Saved|已儲存|已保存)$/)).toBeVisible()
+  await control.setViewportSize({ width: 1000, height: 768 })
   await control.reload()
   await expect(control.locator('[data-slide-option]')).toHaveCount(22)
-  await control.locator('[data-slide-option]').first().click()
+  await expect(control.locator('[data-slide-option]').first()).toHaveAttribute(
+    'aria-selected',
+    'true'
+  )
   await expect(
     control.locator('.presentation-stage').getByText('Edited opening page', { exact: true })
   ).toBeVisible()
