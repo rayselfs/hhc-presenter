@@ -2501,13 +2501,17 @@ describe('PresentationWorkspacePage session integration', () => {
     const ribbon = await screen.findByTestId('presentation-ribbon-frame')
     const group = window.document.querySelector('.workspace-panel-group')
     expect(group).not.toBeNull()
-    expect(group!.querySelector('.workspace-navigator-slot [data-slide-sidebar]')).not.toBeNull()
+    expect(group!.querySelector('.workspace-navigator-slot [data-slide-sidebar]')).toHaveClass(
+      'h-full',
+      'overflow-y-auto'
+    )
     const stageSlot = group!.querySelector('.workspace-stage-slot')
     expect(stageSlot).toHaveClass('flex')
     expect(stageSlot?.querySelector('.presentation-stage')).toHaveClass('min-h-0', 'flex-1')
     expect(ribbon.querySelector('[data-ribbon-surface]')).toHaveClass(
       'overflow-x-auto',
-      'overflow-y-hidden'
+      'overflow-y-hidden',
+      'bg-surface'
     )
   })
 })

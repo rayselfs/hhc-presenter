@@ -8,6 +8,8 @@ import {
   resolveMediaProjectionAction,
   type MediaProjectionActionResult
 } from '@renderer/stores/media-projection'
+import { SHORTCUTS } from '@renderer/config/shortcuts'
+import { matchesConfig } from '@renderer/hooks/useKeyboardShortcuts'
 import { useThumbnails } from '@renderer/hooks/useThumbnails'
 import GlassDivider from '@renderer/components/Common/GlassDivider'
 import { getMediaType } from '@renderer/lib/presentability'
@@ -82,10 +84,27 @@ export default function PresenterGrid(props: PresenterGridProps): React.JSX.Elem
     const item = state.currentItem()
     return item && getMediaType(item.mimeType) === 'presentation' ? item : null
   })
-  return presentation ? (
-    <PresentationGrid key={`${presentation.id}:${presentation.url}`} item={presentation} />
-  ) : (
-    <FileGrid {...props} />
+  return (
+    <div
+      className="contents"
+      onKeyDown={(event) => {
+        if (
+          !event.defaultPrevented &&
+          !event.nativeEvent.isComposing &&
+          matchesConfig(event.nativeEvent, SHORTCUTS.MEDIA.TOGGLE_GRID)
+        ) {
+          event.preventDefault()
+          event.stopPropagation()
+          useMediaProjectionStore.getState().toggleGrid()
+        }
+      }}
+    >
+      {presentation ? (
+        <PresentationGrid key={`${presentation.id}:${presentation.url}`} item={presentation} />
+      ) : (
+        <FileGrid {...props} />
+      )}
+    </div>
   )
 }
 

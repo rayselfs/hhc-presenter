@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { isMac } from '@renderer/lib/env'
 import {
   registerShortcut,
@@ -99,7 +99,7 @@ export function useKeyboardShortcuts(
 
   const sectionKeyRef = useRef(sectionKey)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     shortcutsRef.current = shortcuts
     enabledRef.current = enabled
     isOverlayActiveRef.current = isOverlayActive

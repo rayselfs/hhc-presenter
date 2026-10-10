@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useLayoutEffect, useCallback } from 'react'
 import type React from 'react'
 
 interface ShortcutScopeContextValue {
@@ -46,7 +46,7 @@ export function ShortcutScope({
 
   const { pushScope, popScope } = ctx
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     pushScope(name)
     return () => {
       popScope(name)

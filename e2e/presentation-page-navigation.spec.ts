@@ -37,6 +37,7 @@ for (const editable of [false, true]) {
         .first()
     ).toBeVisible()
     if (editable) await expect(page.getByTestId('presentation-ribbon-frame')).toBeVisible()
+    const editorUrl = page.url()
     const popup = context.waitForEvent('page')
     await page.getByRole('button', { name: /Start projection|開始投影/ }).click()
     const projection = await popup
@@ -51,6 +52,10 @@ for (const editable of [false, true]) {
         projection.getByText(`Presenter page ${number}`, { exact: true }).first()
       ).toBeVisible()
     }
+    await page.keyboard.press('g')
+    await expect(page.locator('[data-testid^="grid-slide-"]')).toHaveCount(10)
+    await page.keyboard.press('g')
+    await expect(page.locator('[data-testid^="grid-slide-"]')).toHaveCount(0)
     await page.keyboard.press('g')
     await expect(page.locator('[data-testid^="grid-slide-"]')).toHaveCount(10)
     if (!editable) {
@@ -78,6 +83,15 @@ for (const editable of [false, true]) {
     await expect(projection.getByText('Presenter page 1', { exact: true }).first()).toBeVisible()
     await page.keyboard.press('End')
     await expect(projection.getByText('Presenter page 10', { exact: true }).first()).toBeVisible()
+    await page.keyboard.press('Home')
+    await page
+      .locator('.presenter-current')
+      .getByText('Presenter page 1', { exact: true })
+      .first()
+      .click()
+    await expect(projection.getByText('Presenter page 2', { exact: true }).first()).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page).toHaveURL(editorUrl)
     expect(errors).toEqual([])
   })
 }
@@ -125,7 +139,7 @@ test('imports 22 editable pages, projects a focused edit with F5 and saves acros
   }
   await page.keyboard.press('Escape')
   await expect.poll(() => projection.isClosed()).toBe(true)
-  await page.goto(editorUrl)
+  await expect(page).toHaveURL(editorUrl)
   await page.keyboard.press('ControlOrMeta+s')
   await expect(page.getByText(/^(Saved|已儲存|已保存)$/)).toBeVisible()
   await page.reload()

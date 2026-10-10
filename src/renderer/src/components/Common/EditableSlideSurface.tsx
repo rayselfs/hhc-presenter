@@ -744,6 +744,7 @@ function SlideElement({
         onContextMenu?.(event)
       }}
       onClick={(event) => {
+        if (!editable) return
         event.stopPropagation()
         onSelect(event)
       }}

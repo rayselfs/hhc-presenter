@@ -15,6 +15,31 @@ import {
 import { normalizeTextParagraphs, resolveTypingStyle } from '@renderer/lib/presentation-rich-text'
 
 describe('EditableSlideSurface', () => {
+  it.each([false, true])('only intercepts element clicks when editable=%s', async (editable) => {
+    const source = createBlankEditablePresentationDocument('Sunday')
+    const slideId = source.slideOrder[0]
+    const document = addElementToSlide(
+      source,
+      slideId,
+      createTextElement({ text: 'Current slide' })
+    )
+    const onClick = vi.fn()
+    const onSelectElement = vi.fn()
+    render(
+      <div onClick={onClick}>
+        <EditableSlideSurface
+          document={document}
+          slideId={slideId}
+          editable={editable}
+          onSelectElement={onSelectElement}
+        />
+      </div>
+    )
+    await act(async () => fireEvent.click(screen.getByText('Current slide')))
+    expect(onClick).toHaveBeenCalledTimes(editable ? 0 : 1)
+    expect(onSelectElement).toHaveBeenCalledTimes(editable ? 1 : 0)
+  })
+
   it('preserves imported text insets and vertical alignment', () => {
     const source = createBlankEditablePresentationDocument('Imported')
     const slideId = source.slideOrder[0]

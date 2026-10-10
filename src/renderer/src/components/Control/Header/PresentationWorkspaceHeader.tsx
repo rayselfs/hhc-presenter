@@ -312,7 +312,7 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
           tabIndex={0}
           className={`relative flex h-10 max-w-56 self-end items-center gap-2 rounded-t-xl border px-3 text-sm ${
             deck.itemId === activeItemId
-              ? 'z-20 -mb-px border-separator border-b-background bg-background text-foreground shadow-sm'
+              ? 'z-20 -mb-px border-separator border-b-surface bg-surface text-foreground'
               : 'z-10 mb-px border-transparent bg-surface-secondary text-muted hover:text-foreground'
           }`}
           onClick={() => {
