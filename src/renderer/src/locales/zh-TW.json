@@ -1204,7 +1204,7 @@
       "timer": "計時器",
       "media": "多媒體",
       "edit": "編輯",
-      "camera": "攝影機"
+      "camera": "影像擷取"
     },
     "projection": {
       "start": "開始投影"
@@ -1317,7 +1317,7 @@
   "camera": {
     "resetTitle": "重設取景？",
     "resetBody": "位置與縮放將恢復預設值。",
-    "title": "攝影機",
+    "title": "影像擷取",
     "present": "開啟投影",
     "presenting": "投影中",
     "locked": "取景已鎖定",
@@ -1326,21 +1326,29 @@
     "choose": "選擇來源",
     "reset": "重設",
     "retry": "重試",
-    "canvas": "攝影機畫布",
-    "empty": "選擇攝影機以顯示預覽",
+    "canvas": "影像擷取畫布",
+    "empty": "選擇來源以顯示預覽",
     "x": "X",
     "y": "Y",
     "width": "寬度",
     "errors": {
-      "unavailable": "無法使用攝影機，請確認裝置連線及使用安全網頁。",
-      "NotAllowedError": "攝影機權限遭拒，請在系統設定允許存取後重試。",
-      "NotFoundError": "找不到攝影機，請連接裝置後重試。",
-      "NotReadableError": "無法讀取攝影機，可能正被其他程式使用。",
+      "unavailable": "無法使用影像來源，請確認裝置連線及使用安全網頁。",
+      "NotAllowedError": "影像來源權限遭拒，請在系統設定允許存取後重試。",
+      "NotFoundError": "找不到影像來源，請連接裝置後重試。",
+      "NotReadableError": "無法讀取影像來源，可能正被其他程式使用。",
       "OverconstrainedError": "所選來源無法使用，請重新選擇。",
-      "ended": "攝影機已中斷，請重新連接後重試。",
+      "ended": "影像來源已中斷，請重新連接後重試。",
       "connection": "投影連線失敗，請重試。",
-      "playback": "影像無法播放，請重新選擇來源。"
-    }
+      "playback": "影像無法播放，請重新選擇來源。",
+      "sourceExcluded": "此來源為投影顯示器或已無法使用，請選擇其他來源。"
+    },
+    "sourceType": "來源類型",
+    "sourceTypes": {
+      "screen": "顯示器",
+      "window": "視窗",
+      "video": "視訊"
+    },
+    "shareSource": "選擇分享來源…"
   },
   "personalShare": {
     "title": "分享 {{name}}",

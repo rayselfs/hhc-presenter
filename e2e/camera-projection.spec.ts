@@ -10,7 +10,8 @@ test.use({
 })
 
 async function selectCamera(page: Page): Promise<void> {
-  await page.getByTestId('camera-source-selector').click()
+  await page.getByTestId('camera-source-selector').focus()
+  await page.keyboard.press('ArrowDown')
   await expect(page.getByRole('option').first()).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.getByRole('option')).toHaveCount(0)
@@ -44,7 +45,7 @@ test('keeps camera projection across navigation, explicitly reclaims it, and pre
     )
     .toBeGreaterThan(0)
   const popup = context.waitForEvent('page')
-  await workspace.getByRole('button', { name: /^Present camera$|^開啟投影$|^开启投影$/ }).click()
+  await workspace.getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ }).click()
   const projection = await popup
   await expect(projection.getByTestId('camera-projection')).toBeVisible()
   await expect
@@ -186,7 +187,9 @@ test('keeps camera projection across navigation, explicitly reclaims it, and pre
     .toBe(1)
   await page.locator('nav a[href="#/bible"]').click()
   await expect(projection.getByTestId('camera-projection')).toBeVisible()
-  await page.getByRole('link', { name: /^Camera$|^攝影機$|^摄像头$/, exact: true }).click()
+  await page
+    .getByRole('link', { name: /^Video Capture$|^影像擷取$|^影像采集$/, exact: true })
+    .click()
   await expect(editor.getByTestId('camera-stage')).toHaveAttribute('data-frame', savedFrame!)
   await expect(lock).toHaveAttribute('aria-pressed', 'true')
   await lock.click()
@@ -204,12 +207,14 @@ test('keeps camera projection across navigation, explicitly reclaims it, and pre
       )
     )
     .toBe(0)
-  await page.getByRole('link', { name: /^Camera$|^攝影機$|^摄像头$/, exact: true }).click()
+  await page
+    .getByRole('link', { name: /^Video Capture$|^影像擷取$|^影像采集$/, exact: true })
+    .click()
   await expect(
-    workspace.getByRole('button', { name: /^Present camera$|^開啟投影$|^开启投影$/ })
+    workspace.getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ })
   ).toBeEnabled()
   await expect(projection.getByTestId('camera-projection')).toHaveCount(0)
-  await workspace.getByRole('button', { name: /^Present camera$|^開啟投影$|^开启投影$/ }).click()
+  await workspace.getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ }).click()
   await expect(projection.getByTestId('camera-projection')).toBeVisible()
   expect(context.pages()).toHaveLength(2)
   await expect
@@ -298,7 +303,9 @@ test('remembers the camera across page reload without starting projection', asyn
 }) => {
   await page.goto('/')
   await completeOnboarding(page)
-  await page.getByRole('link', { name: /^Camera$|^攝影機$|^摄像头$/, exact: true }).click()
+  await page
+    .getByRole('link', { name: /^Video Capture$|^影像擷取$|^影像采集$/, exact: true })
+    .click()
   await expect(page.getByTestId('camera-editor')).toBeVisible()
   await selectCamera(page)
   await expect
@@ -329,7 +336,9 @@ test('remembers the camera across page reload without starting projection', asyn
   await expect(page.getByTestId('camera-stage')).toHaveAttribute('data-frame', savedFrame!)
   expect(context.pages()).toHaveLength(1)
   await page.locator('nav a[href="#/files"]').click()
-  await page.getByRole('link', { name: /^Camera$|^攝影機$|^摄像头$/, exact: true }).click()
+  await page
+    .getByRole('link', { name: /^Video Capture$|^影像擷取$|^影像采集$/, exact: true })
+    .click()
   await expect
     .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.videoWidth))
     .toBeGreaterThan(0)
@@ -361,7 +370,7 @@ test('snaps camera framing with preview-only guides at different window sizes', 
     .toBeGreaterThan(0)
   const workspace = page.locator('section').filter({ has: editor })
   const popup = context.waitForEvent('page')
-  await workspace.getByRole('button', { name: /^Present camera$|^開啟投影$|^开启投影$/ }).click()
+  await workspace.getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ }).click()
   const projection = await popup
   await expect(projection.getByTestId('camera-projection')).toBeVisible()
   for (const size of [
@@ -412,4 +421,59 @@ test('snaps camera framing with preview-only guides at different window sizes', 
     await page.mouse.up()
   }
   await projection.close()
+})
+
+test('switches capture types and restores each source framing and lock', async ({ page }) => {
+  await page.addInitScript(() => {
+    const getUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
+    navigator.mediaDevices.getDisplayMedia = async (options) => {
+      const stream = await getUserMedia({ video: true, audio: false })
+      const track = stream.getVideoTracks()[0]
+      const settings = track.getSettings.bind(track)
+      const displaySurface =
+        typeof options?.video === 'object' ? options.video.displaySurface : 'monitor'
+      Object.defineProperty(track, 'label', {
+        value: displaySurface === 'monitor' ? 'Test display' : 'Test window'
+      })
+      track.getSettings = () => ({ ...settings(), displaySurface })
+      return stream
+    }
+  })
+  await page.goto('/')
+  await completeOnboarding(page)
+  await page.goto('/#/camera')
+  const kind = page.getByTestId('camera-source-type-selector')
+  const source = page.getByTestId('camera-source-selector')
+  const chooseType = async (name: RegExp): Promise<void> => {
+    await kind.click()
+    await page.getByRole('option', { name, exact: true }).click()
+  }
+  const share = async (): Promise<void> => {
+    await source.click()
+    await page
+      .getByRole('option', { name: /Choose what to share|選擇分享來源|选择共享来源/ })
+      .click()
+    await expect(page.getByRole('spinbutton', { name: 'X', exact: true })).toBeEnabled()
+  }
+  await chooseType(/^Display$|^顯示器$|^显示器$/)
+  await share()
+  await page.getByRole('spinbutton', { name: 'X', exact: true }).fill('123')
+  await page.getByRole('spinbutton', { name: /Width|寬度|宽度/ }).fill('960')
+  const saved = await page.getByTestId('camera-stage').getAttribute('data-frame')
+  await page.getByRole('button', { name: /^Lock framing$|^鎖定取景$|^锁定取景$/ }).click()
+  await expect(page.getByTestId('camera-lock-indicator')).toHaveText('')
+  await chooseType(/^Window$|^視窗$|^窗口$/)
+  await share()
+  await expect(page.getByRole('spinbutton', { name: 'X', exact: true })).toHaveValue('0')
+  await page.getByRole('spinbutton', { name: 'X', exact: true }).fill('456')
+  await chooseType(/^Video$|^視訊$|^视频$/)
+  await selectCamera(page)
+  await expect(page.getByRole('spinbutton', { name: 'X', exact: true })).toHaveValue('0')
+  await chooseType(/^Display$|^顯示器$|^显示器$/)
+  await source.click()
+  await page.getByRole('option', { name: /Choose what to share|選擇分享來源|选择共享来源/ }).click()
+  await expect(page.getByTestId('camera-stage')).toHaveAttribute('data-frame', saved!)
+  await expect(
+    page.getByRole('button', { name: /^Unlock framing$|^解鎖取景$|^解锁取景$/ })
+  ).toHaveAttribute('aria-pressed', 'true')
 })

@@ -1,3 +1,4 @@
+import { isElectron } from '@renderer/lib/env'
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useProjection } from './ProjectionContext'
@@ -5,7 +6,7 @@ import { createCameraSession } from '@renderer/lib/camera-session'
 import { createCameraPeer } from '@renderer/lib/camera-peer'
 import { createCameraCover } from '@renderer/lib/camera-transform'
 import { useCameraStore } from '@renderer/stores/camera'
-import type { CameraState } from '@shared/camera'
+import { cameraSourceKind, type CameraState } from '@shared/camera'
 
 interface CameraContextValue {
   stream: MediaStream | null
@@ -82,7 +83,21 @@ export function CameraSessionProvider({
         const track = next.getVideoTracks()[0]
         const settings = track.getSettings()
         const cover = createCameraCover(settings.width ?? 1920, settings.height ?? 1080)
-        useCameraStore.getState().activateSource(settings.deviceId ?? deviceId, cover)
+        const requestedKind = cameraSourceKind(deviceId)
+        const kind =
+          requestedKind !== 'video' && !isElectron() && settings.displaySurface
+            ? settings.displaySurface === 'monitor'
+              ? 'screen'
+              : 'window'
+            : requestedKind
+        // shortcut: browsers expose labels, not stable desktop IDs; identical labels share framing.
+        const sourceId =
+          kind === 'video'
+            ? (settings.deviceId ?? deviceId)
+            : isElectron()
+              ? deviceId
+              : `browser:${kind}:${track.label}`
+        useCameraStore.getState().activateSource(sourceId, cover)
         useCameraStore.setState({
           busy: false,
           capturing: true
@@ -117,6 +132,23 @@ export function CameraSessionProvider({
     if (pathname !== '/camera' || session.current?.getStream()) return
     let cancelled = false
     const restore = async (): Promise<void> => {
+      const last = useCameraStore.getState().lastDeviceId
+      if (cameraSourceKind(last) !== 'video') {
+        useCameraStore.setState({ sourceKind: cameraSourceKind(last) })
+        if (!isElectron()) return
+        const desktopSources = await window.api.capture.getSources()
+        if (
+          cancelled ||
+          useCameraStore.getState().busy ||
+          session.current?.getStream() ||
+          useCameraStore.getState().lastDeviceId !== last
+        )
+          return
+        useCameraStore.setState({ desktopSources })
+        if (desktopSources.some((source) => source.id === last)) await selectSource(last)
+        else useCameraStore.setState({ error: 'NotFoundError' })
+        return
+      }
       await listDevices()
       if (cancelled || useCameraStore.getState().busy || session.current?.getStream()) return
       const { lastDeviceId, devices } = useCameraStore.getState()
@@ -230,15 +262,67 @@ export function CameraSessionProvider({
     send
   ])
 
+  useEffect(() => {
+    if (
+      !keepCapture ||
+      !stream ||
+      !isElectron() ||
+      cameraSourceKind(useCameraStore.getState().deviceId) === 'video'
+    )
+      return
+    const current = session.current
+    let cancelled = false
+    void window.api.capture
+      .getSources()
+      .then((desktopSources) => {
+        if (cancelled || session.current !== current) return
+        useCameraStore.setState({ desktopSources })
+        const { deviceId, capturing } = useCameraStore.getState()
+        if (
+          capturing &&
+          cameraSourceKind(deviceId) !== 'video' &&
+          !desktopSources.some((source) => source.id === deviceId)
+        ) {
+          current?.stop()
+          setStream(null)
+          useCameraStore.setState({
+            capturing: false,
+            connection: 'unavailable',
+            error: 'sourceExcluded'
+          })
+        }
+      })
+      .catch(() => {
+        if (cancelled || session.current !== current) return
+        current?.stop()
+        setStream(null)
+        useCameraStore.setState({
+          capturing: false,
+          connection: 'unavailable',
+          error: 'unavailable'
+        })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [keepCapture, isProjectionOpen, recovery.generation, stream])
+
   const prepareSources = async (): Promise<void> => {
     const current = session.current
     if (!current || useCameraStore.getState().busy) return
     useCameraStore.setState({ busy: true, error: null })
     try {
+      if (useCameraStore.getState().sourceKind !== 'video') {
+        if (isElectron()) {
+          const desktopSources = await window.api.capture.getSources()
+          if (session.current === current) useCameraStore.setState({ desktopSources })
+        }
+        return
+      }
       await listDevices()
       if (session.current !== current) return
       const devices = useCameraStore.getState().devices
-      if (!session.current?.getStream() && !devices.some((device) => device.id)) {
+      if (!devices.some((device) => device.id)) {
         // Permission discovery does not select or retain a default camera.
         const permissionStream = await navigator.mediaDevices.getUserMedia({
           video: true,

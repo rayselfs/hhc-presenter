@@ -1,3 +1,12 @@
+export type CameraSourceKind = 'screen' | 'window' | 'video'
+export type CameraSource = { id: string; label: string; kind: CameraSourceKind }
+
+export function cameraSourceKind(id: string): CameraSourceKind {
+  if (id.startsWith('screen:') || id.startsWith('browser:screen')) return 'screen'
+  if (id.startsWith('window:') || id.startsWith('browser:window')) return 'window'
+  return 'video'
+}
+
 export type CameraSignal = { sessionId: string } & (
   | { kind: 'offer' | 'answer'; sdp: string }
   | {

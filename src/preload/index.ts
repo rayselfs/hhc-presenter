@@ -250,6 +250,10 @@ const lanRemoteApi = {
 }
 
 const api = {
+  capture: {
+    getSources: () => typedInvoke('capture:get-sources'),
+    selectSource: (id: string) => typedInvoke('capture:select-source', id)
+  },
   projection: projectionApi,
   theme: themeApi,
   timer: timerApi,

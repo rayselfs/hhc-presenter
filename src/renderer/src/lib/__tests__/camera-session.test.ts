@@ -96,3 +96,20 @@ it('surfaces permission denial without retries or stale capture', async () => {
   expect(getUserMedia).toHaveBeenCalledOnce()
   expect(session.getStream()).toBeNull()
 })
+
+it('captures display sources without requesting camera access and releases them on switching', async () => {
+  const display = videoStream()
+  const video = videoStream()
+  const getUserMedia = vi.fn().mockResolvedValue(video.stream)
+  const getDisplayMedia = vi.fn().mockResolvedValue(display.stream)
+  const session = createCameraSession({ getUserMedia, getDisplayMedia })
+  await session.selectSource('browser:screen')
+  expect(getUserMedia).not.toHaveBeenCalled()
+  expect(getDisplayMedia).toHaveBeenCalledWith({
+    audio: false,
+    video: { displaySurface: 'monitor', frameRate: { ideal: 30 } }
+  })
+  await session.selectSource('cam')
+  expect(display.track.stop).toHaveBeenCalledOnce()
+  session.dispose()
+})

@@ -1,15 +1,24 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { createPersistName, hhcPersistStorage } from '@renderer/lib/persist-storage'
-import type { CameraTransform } from '@shared/camera'
+import {
+  cameraSourceKind,
+  type CameraSource,
+  type CameraSourceKind,
+  type CameraTransform
+} from '@shared/camera'
 
 interface CameraLayout {
   centerX: number
   centerY: number
   zoom: number
+  locked?: boolean
 }
 
 interface CameraStore {
+  sourceKind: CameraSourceKind
+  desktopSources: CameraSource[]
+  setLocked(locked: boolean): void
   layouts: Record<string, CameraLayout>
   activateSource(deviceId: string, cover: CameraTransform): void
   devices: Array<{ id: string; label: string }>
@@ -29,6 +38,23 @@ const initial = { x: 0, y: 0, width: 1920, height: 1080 }
 export const useCameraStore = create<CameraStore>()(
   persist(
     (set, get) => ({
+      sourceKind: 'video',
+      desktopSources: [],
+      setLocked: (locked) =>
+        set((state) => ({
+          locked,
+          layouts: state.deviceId
+            ? {
+                ...state.layouts,
+                [state.deviceId]: {
+                  centerX: state.transform.x + state.transform.width / 2,
+                  centerY: state.transform.y + state.transform.height / 2,
+                  zoom: state.transform.width / state.cover.width,
+                  locked
+                }
+              }
+            : state.layouts
+        })),
       layouts: {},
       activateSource: (deviceId, cover) =>
         set((state) => {
@@ -42,6 +68,8 @@ export const useCameraStore = create<CameraStore>()(
           const height = cover.height * (valid ? saved.zoom : 1)
           return {
             deviceId,
+            sourceKind: cameraSourceKind(deviceId),
+            locked: !!valid && saved.locked === true,
             lastDeviceId: deviceId,
             cover,
             transform: valid
@@ -78,7 +106,8 @@ export const useCameraStore = create<CameraStore>()(
                   [state.deviceId]: {
                     centerX: transform.x + transform.width / 2,
                     centerY: transform.y + transform.height / 2,
-                    zoom: transform.width / state.cover.width
+                    zoom: transform.width / state.cover.width,
+                    locked: state.locked
                   }
                 }
               : state.layouts
@@ -89,12 +118,13 @@ export const useCameraStore = create<CameraStore>()(
     {
       name: createPersistName('camera'),
       storage: hhcPersistStorage,
-      version: 1,
-      migrate: (value) => {
+      version: 2,
+      migrate: (value, version) => {
         const old = value as Partial<CameraStore>
         return {
           lastDeviceId: typeof old?.lastDeviceId === 'string' ? old.lastDeviceId : '',
-          layouts: {}
+          layouts:
+            version >= 1 && old?.layouts && typeof old.layouts === 'object' ? old.layouts : {}
         }
       },
       partialize: (state) => ({ lastDeviceId: state.lastDeviceId, layouts: state.layouts })
