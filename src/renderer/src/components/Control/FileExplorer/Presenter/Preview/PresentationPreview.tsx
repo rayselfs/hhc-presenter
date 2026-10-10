@@ -15,9 +15,11 @@ import type { PreviewComponentProps } from '@renderer/lib/presenter-registry'
 export default function PresentationPreview({
   item,
   previewOnly = false,
+  previewSlideIndex = 0,
   onError
 }: PreviewComponentProps & {
   previewOnly?: boolean
+  previewSlideIndex?: number
   onError?: (error: Error) => void
 }): React.JSX.Element {
   const registry = usePresentationSessionRegistry()
@@ -27,18 +29,20 @@ export default function PresentationPreview({
     if (!entry?.remoteItem) return undefined
     return entry.remoteSource ? entry.sourceUrl : null
   })
-  const slideIndex = previewOnly ? 0 : (presentationState?.slideIndex ?? 0)
+  const slideIndex = previewOnly ? previewSlideIndex : (presentationState?.slideIndex ?? 0)
 
   const handleReady = useCallback(
     (info: { slideCount: number }) => {
       if (previewOnly) return
       const state = useMediaProjectionStore.getState()
+      const activeItem = state.currentItem()
+      if (activeItem?.id !== item.id || activeItem.url !== item.url) return
       const current = state.typeStates.presentation ?? { slideIndex: 0 }
       const slideIndex = Math.min(current.slideIndex, Math.max(0, info.slideCount - 1))
       if (current.slideIndex === slideIndex && current.slideCount === info.slideCount) return
       state.setTypeState('presentation', { slideIndex, slideCount: info.slideCount })
     },
-    [previewOnly]
+    [previewOnly, item.id, item.url]
   )
 
   if (isEditablePresentationMimeType(item.mimeType)) {

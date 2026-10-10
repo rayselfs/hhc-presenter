@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@heroui/react'
 import { useMediaProjectionStore } from '@renderer/stores/media-projection'
 import GlassDivider from '@renderer/components/Common/GlassDivider'
+import { isPresentationItem } from '@renderer/lib/presentation-media'
 import NextItemPreview from './Preview/NextItemPreview'
 
 function debounce<Args extends unknown[]>(
@@ -33,6 +34,15 @@ export default function PresenterSidebar({
   const { t } = useTranslation()
   const nextItem = useMediaProjectionStore((s) => s.nextItem())
   const currentItem = useMediaProjectionStore((s) => s.currentItem())
+  const presentation = useMediaProjectionStore((s) => s.typeStates.presentation)
+  const pendingSlide = isPresentationItem(currentItem) && !presentation?.slideCount
+  const nextSlideIndex =
+    isPresentationItem(currentItem) &&
+    presentation?.slideCount &&
+    presentation.slideIndex + 1 < presentation.slideCount
+      ? presentation.slideIndex + 1
+      : undefined
+  const previewItem = nextSlideIndex !== undefined ? currentItem : nextItem
   const updateNotes = useMediaProjectionStore((s) => s.updateNotes)
 
   const [notes, setNotes] = useState(currentItem?.notes ?? '')
@@ -79,13 +89,18 @@ export default function PresenterSidebar({
             className="relative aspect-video bg-surface-secondary rounded-2xl overflow-hidden cursor-default"
             onClick={onNext}
           >
-            {nextItem === null && (
+            {!previewItem && (
               <span className="absolute inset-0 flex items-center justify-center text-foreground/50 text-base">
-                {t('presenter.endOfSlides')}
+                {t(pendingSlide ? 'presenter.loading' : 'presenter.endOfSlides')}
               </span>
             )}
-            {nextItem && (
-              <NextItemPreview key={nextItem.id} item={nextItem} previewCache={previewCache} />
+            {previewItem && (
+              <NextItemPreview
+                key={previewItem.id}
+                item={previewItem}
+                slideIndex={nextSlideIndex}
+                previewCache={previewCache}
+              />
             )}
           </div>
         </div>

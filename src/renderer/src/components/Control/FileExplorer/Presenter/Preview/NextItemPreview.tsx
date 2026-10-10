@@ -12,11 +12,13 @@ import PresentationPreview from './PresentationPreview'
 
 interface NextItemPreviewProps {
   item: FileItemRecord
+  slideIndex?: number
   previewCache?: Record<string, string | null>
 }
 
 export default function NextItemPreview({
   item,
+  slideIndex,
   previewCache
 }: NextItemPreviewProps): React.JSX.Element | null {
   const { t } = useTranslation()
@@ -80,7 +82,12 @@ export default function NextItemPreview({
     return failedKey === sourceKey ? (
       fallback
     ) : (
-      <PresentationPreview item={item} previewOnly onError={handleError} />
+      <PresentationPreview
+        item={item}
+        previewOnly
+        previewSlideIndex={slideIndex}
+        onError={handleError}
+      />
     )
   const sourceUrl = source?.key === sourceKey && failedKey !== sourceKey ? source.url : null
   if (!sourceUrl) return fallback

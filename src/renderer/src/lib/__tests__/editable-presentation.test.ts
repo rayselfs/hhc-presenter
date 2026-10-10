@@ -238,7 +238,11 @@ function mockMixedStyleTextShape(): unknown {
   }
 }
 
-function mockSlide(index: number, layoutIndex: number, source: MockXmlNode): unknown {
+function mockSlide(
+  index: number,
+  layoutIndex: number,
+  source: MockXmlNode
+): Record<string, unknown> {
   return {
     index,
     slidePath: `ppt/slides/slide${index + 1}.xml`,
@@ -1101,7 +1105,7 @@ describe('editable presentation documents', () => {
     expect(text.paragraphs).toHaveLength(2)
     expect(text.paragraphs?.[0]).toMatchObject({
       align: 'justify',
-      lineSpacing: { kind: 'multiple', value: 1.15 }
+      lineSpacing: { kind: 'multiple', value: 1 }
     })
     expect(text.paragraphs?.[0].runs[0].characterSpacing).toBeCloseTo(4 / 3)
     expect(text.paragraphs?.[0].runs.map((run) => run.text)).toEqual(['Bold', ' italic'])
@@ -1167,20 +1171,20 @@ describe('editable presentation documents', () => {
   })
 
   it('preserves direct slide, layout, and master solid black backgrounds with centered white text', () => {
-    const blackBackground = mockSolidBackgroundSource('000000')
+    const blackBackground = mockSolidBackgroundSource('000000').child('cSld').child('bg')
     const presentation = {
       width: 1920,
       height: 1080,
       slides: [
-        mockSlide(0, 0, blackBackground),
+        { ...mockSlide(0, 0, mockXmlNode()), background: blackBackground },
         mockSlide(1, 1, mockXmlNode()),
         mockSlide(2, 2, mockXmlNode())
       ],
       layouts: new Map([
-        [1, { source: blackBackground, placeholders: [] }],
+        [1, { background: blackBackground, placeholders: [] }],
         [2, { source: mockXmlNode(), placeholders: [] }]
       ]),
-      masters: new Map([['master-1', { source: blackBackground, placeholders: [] }]]),
+      masters: new Map([['master-1', { background: blackBackground, placeholders: [] }]]),
       layoutToMaster: new Map([[2, 'master-1']]),
       media: new Map()
     } as unknown as PresentationData

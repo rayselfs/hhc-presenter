@@ -117,6 +117,36 @@ describe('useKeyboardShortcuts', () => {
     expect(handler).toHaveBeenCalledOnce()
   })
 
+  it('allows explicitly opted-in shortcuts from nested editable content', () => {
+    const handler = vi.fn()
+    renderHook(() =>
+      useKeyboardShortcuts([{ config: { code: 'F5' }, handler, allowInEditable: true }])
+    )
+    const editor = document.createElement('div')
+    editor.setAttribute('contenteditable', 'true')
+    const span = document.createElement('span')
+    editor.append(span)
+    document.body.append(editor)
+    fireEvent.keyDown(editor, { code: 'F5' })
+    expect(handler).toHaveBeenCalledOnce()
+    fireEvent.keyDown(span, { code: 'F5', isComposing: true })
+    expect(handler).toHaveBeenCalledOnce()
+    editor.remove()
+  })
+
+  it('does not run ordinary shortcuts in nested editable content', () => {
+    const handler = vi.fn()
+    renderHook(() => useKeyboardShortcuts([{ config: { code: 'Space' }, handler }]))
+    const editor = document.createElement('div')
+    editor.setAttribute('contenteditable', 'true')
+    const span = document.createElement('span')
+    editor.append(span)
+    document.body.append(editor)
+    fireEvent.keyDown(span, { code: 'Space' })
+    expect(handler).not.toHaveBeenCalled()
+    editor.remove()
+  })
+
   it('skips editable targets', () => {
     const handler = vi.fn()
     const config: ShortcutConfig = { code: 'Space' }

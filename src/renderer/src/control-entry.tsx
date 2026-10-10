@@ -1,4 +1,5 @@
 import { StrictMode } from 'react'
+import { MediaImportStatus } from '@renderer/components/Control/FileExplorer/MediaImportStatus'
 import { createRoot } from 'react-dom/client'
 import { ThemeProvider } from '@renderer/contexts/ThemeContext'
 import { ErrorBoundary } from '@renderer/components/ErrorBoundary'
@@ -17,6 +18,7 @@ createRoot(document.getElementById('root')!).render(
       <ThemeProvider>
         <HhcAuthProvider>
           <Toast.Provider placement="bottom end" />
+          <MediaImportStatus />
           <RouterProvider router={router} />
         </HhcAuthProvider>
       </ThemeProvider>

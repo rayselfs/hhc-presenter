@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createProjectionAdapter } from '@renderer/lib/projection-adapter'
 import { getFileSource, openFileExplorerDB } from '@renderer/lib/file-explorer-db'
 import { loadPdfjsLib } from '@renderer/lib/pdfjs-loader'
+import { loadPresentationFont } from '@renderer/lib/font-loader'
 import type {
   FileControlPayload,
   ProjectionMediaReplayState,
@@ -1199,6 +1200,7 @@ export default function FileProjection({
   if (isEditablePresentationMimeType(mimeType ?? undefined) && initialItemId && initialBlobId) {
     return (
       <EditableProjectionSurface
+        key={`${initialItemId}:${initialBlobId}:${initialContentRevision}`}
         itemId={initialItemId}
         blobId={initialBlobId}
         fileName={displayName}
@@ -1217,6 +1219,7 @@ export default function FileProjection({
       <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-black">
         <div className="h-full w-full">
           <PptxSlideSurface
+            renderRevision={initialContentRevision}
             source={{
               id: initialItemId,
               url: initialStreamUrl ?? `blob:${initialBlobId}`,
@@ -1252,6 +1255,7 @@ function EditableProjectionSurface({
   slideIndex: number
   editablePresentation?: ProjectionPayload<'file:show'>['editablePresentation']
 }): React.JSX.Element {
+  const frameRef = useRef<HTMLDivElement>(null)
   const payloadDocument = useMemo(
     () =>
       editablePresentation
@@ -1307,8 +1311,42 @@ function EditableProjectionSurface({
     document?.slideOrder[Math.min(slideIndex, Math.max(0, document.slideOrder.length - 1))]
 
   useEffect(() => {
-    if (error) onError()
-    else if (document && slideId) onReady()
+    if (error) {
+      onError()
+      return
+    }
+    if (!document || !slideId || !frameRef.current) return
+    let cancelled = false
+    const frame = frameRef.current
+    const slide = document.slides[slideId]
+    const assets = document.assets
+    async function prepare(): Promise<void> {
+      const fonts = new Set<string>()
+      for (const id of slide.elementOrder) {
+        const element = slide.elements[id]
+        if (element.type === 'image' && !assets[element.assetId]?.dataUrl) {
+          throw new Error('Missing presentation image')
+        }
+        if (element.type === 'text') {
+          fonts.add(element.fontFamily)
+          for (const paragraph of element.paragraphs ?? []) {
+            for (const run of paragraph.runs) fonts.add(run.fontFamily)
+          }
+        }
+      }
+      await Promise.all([
+        ...Array.from(fonts, loadPresentationFont),
+        ...Array.from(frame.querySelectorAll('img'), (image) => image.decode())
+      ])
+      await globalThis.document.fonts?.ready
+      if (!cancelled) onReady()
+    }
+    void prepare().catch(() => {
+      if (!cancelled) onError()
+    })
+    return () => {
+      cancelled = true
+    }
   }, [document, error, onError, onReady, slideId])
 
   if (error) return <div className="h-screen w-screen bg-black" />
@@ -1322,6 +1360,7 @@ function EditableProjectionSurface({
   return (
     <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-black">
       <div
+        ref={frameRef}
         data-editable-projection-frame
         style={{
           width: `min(100vw, calc(100vh * ${slideRatio}))`,

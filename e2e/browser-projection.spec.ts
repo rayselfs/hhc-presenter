@@ -1,6 +1,7 @@
+import { readFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
 import { resolve } from 'node:path'
-import { completeOnboarding } from './helpers'
+import { completeOnboarding, seedRawPptx } from './helpers'
 
 const TINY_MP4 = Buffer.from(
   'AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAMPbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAAPoAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAjl0cmFrAAAAXHRra2QAAAADAAAAAAAAAAAAAAABAAAAAAAAAPoAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAABAAAAAQAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAD6AAAAAAABAAAAAAGxbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAABAAAAAEABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABXG1pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAARxzdGJsAAAAuHN0c2QAAAAAAAAAAQAAAKhhdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAABAAEABIAAAASAAAAAAAAAABFUxhdmM2Mi4yOC4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAALmF2Y0MBQsAe/+EAFmdCwB7ZHsBEAAADAAQAAAMAIDxYuSABAAVoy4PLIAAAABBwYXNwAAAAAQAAAAEAAAAUYnRydAAAAAAAAFBgAAAAAAAAABhzdHRzAAAAAAAAAAEAAAABAAAQAAAAABxzdHNjAAAAAAAAAAEAAAABAAAAAQAAAAEAAAAUc3RzegAAAAAAAAKDAAAAAQAAABRzdGNvAAAAAAAAAAEAAAM/AAAAYnVkdGEAAABabWV0YQAAAAAAAAAhaGRscgAAAAAAAAAAbWRpcmFwcGwAAAAAAAAAAAAAAAAtaWxzdAAAACWpdG9vAAAAHWRhdGEAAAABAAAAAExhdmY2Mi4xMi4xMDIAAAAIZnJlZQAAAottZGF0AAACcAYF//9s3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE2NSByMzIyMiBiMzU2MDVhIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAyNSAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTAgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MToweDExMSBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MCBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTEgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0wIHdlaWdodHA9MCBrZXlpbnQ9MjUwIGtleWludF9taW49NCBzY2VuZWN1dD00MCBpbnRyYV9yZWZyZXNoPTAgcmNfbG9va2FoZWFkPTQwIHJjPWNyZiBtYnRyZWU9MSBjcmY9MjMuMCBxY29tcD0wLjYwIHFwbWluPTAgcXBtYXg9NjkgcXBzdGVwPTQgaXBfcmF0aW89MS40NCBhcT0xOjEuMDAAgAAAAAtliIQEPJigADQbgA==',
@@ -523,7 +524,7 @@ test('excludes presentations from a mixed folder media playlist', async ({ page,
   await upload.setInputFiles(
     resolve(process.cwd(), 'src/renderer/src/lib/__fixtures__/pptx/text-placeholder-layout.pptx')
   )
-  await expect(page.getByText('text-placeholder-layout.pptx')).toBeVisible()
+  await expect(page.getByText('text-placeholder-layout.lpdeck', { exact: true })).toBeVisible()
 
   const projectionPromise = context.waitForEvent('page')
   await page.getByRole('button', { name: /Start projection|開始投影/ }).click()
@@ -535,7 +536,7 @@ test('excludes presentations from a mixed folder media playlist', async ({ page,
   await expect(page.getByRole('button', { name: /First\.png 1/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /Clip\.mp4 2/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /Bulletin\.pdf 3/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /text-placeholder-layout\.pptx/ })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /text-placeholder-layout\.lpdeck/ })).toHaveCount(0)
 })
 
 test('uses full-window Media controls and closes from the control workspace', async ({
@@ -612,7 +613,7 @@ test('keeps a read-only PPTX stage primary at the 900px breakpoint', async ({ pa
     process.cwd(),
     'src/renderer/src/lib/__fixtures__/pptx/text-placeholder-layout.pptx'
   )
-  await page.locator('input[type="file"]:not([webkitdirectory])').first().setInputFiles(fixture)
+  await seedRawPptx(page, 'text-placeholder-layout.pptx', await readFile(fixture))
   const file = page.getByText('text-placeholder-layout.pptx')
   await expect(file).toBeVisible()
   await file.click()

@@ -160,7 +160,7 @@ test('decodes a native next-video frame while keeping it paused', async ({ page,
       width: node.videoWidth > 0
     }))
   ).toEqual({ paused: true, muted: true, width: true })
-  await page.getByRole('button', { name: /Close|關閉|关闭/, exact: true }).click()
+  await page.getByTestId('media-back-to-files').click()
   await expect(video).toHaveCount(0)
 })
 

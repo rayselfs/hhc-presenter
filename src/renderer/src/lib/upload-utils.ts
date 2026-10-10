@@ -1,3 +1,4 @@
+import { PPTX_MIME_TYPE } from './presentation-media'
 import { useMediaImportStore } from '@renderer/stores/media-import'
 import { openFileExplorerDB } from './file-explorer-db'
 import { getBlobId } from './blob-identity'
@@ -335,7 +336,10 @@ async function uploadPreparedFiles(destinations: UploadDestination[]): Promise<n
       }))
       let id: string | undefined
       try {
-        id = await addFileItemToStore(file, parentId, classification.mimeType)
+        id =
+          classification.mimeType === PPTX_MIME_TYPE
+            ? (await (await import('./pptx-import')).importEditablePptx(file, parentId)).id
+            : await addFileItemToStore(file, parentId, classification.mimeType)
         uploadedCount++
         useMediaImportStore.setState((state) => ({ succeeded: state.succeeded + 1 }))
       } catch (error) {
@@ -344,7 +348,6 @@ async function uploadPreparedFiles(destinations: UploadDestination[]): Promise<n
         useMediaImportStore.setState((state) => ({
           failures: [...state.failures, { name: file.name, reason }]
         }))
-        reportUploadError(file.name, error)
       } finally {
         useMediaImportStore.setState((state) => {
           const names = [...state.currentNames]
@@ -354,7 +357,7 @@ async function uploadPreparedFiles(destinations: UploadDestination[]): Promise<n
         release()
       }
       await yieldToMain()
-      if (id) {
+      if (id && classification.mimeType !== PPTX_MIME_TYPE) {
         try {
           const item = await (await openFileExplorerDB()).get('folder-items', id)
           if (item?.type === 'file')

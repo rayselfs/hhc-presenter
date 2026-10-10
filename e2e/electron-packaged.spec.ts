@@ -4,6 +4,7 @@ import { access, mkdir, readFile, readdir, stat, utimes, writeFile } from 'node:
 import { createHash } from 'node:crypto'
 import { dirname, join, resolve } from 'node:path'
 import { completeOnboarding } from './helpers'
+import { pageDeck } from './helpers/presentation-fixtures'
 import { verifyVlcFixtures } from './helpers/vlc-fixtures'
 
 interface PlaybackState {
@@ -566,4 +567,76 @@ test('persists generated document bytes through native storage', async ({
   })
   expect(result.text).toBe(result.expected)
   expect(result.size).toBe(Buffer.byteLength(result.expected))
+})
+
+test('PPTX editable import, focused F5, 22 slides and persisted reopen', async ({
+  browserName: _browserName
+}, testInfo) => {
+  test.setTimeout(120_000)
+  const configuredPath = process.env.PACKAGED_APP_PATH
+  if (!configuredPath) throw new Error('PACKAGED_APP_PATH is required')
+  const userDataPath = testInfo.outputPath('user-data')
+  const launched = await launchPackaged(resolve(configuredPath), userDataPath)
+  electronApp = launched.app
+  currentUserDataPath = userDataPath
+  const control = launched.control
+  const errors: string[] = []
+  control.on('pageerror', (error) => errors.push(error.message))
+  await control.evaluate(() => {
+    window.location.hash = '/files'
+  })
+  await expect(control).toHaveURL(/#\/files$/)
+  await control
+    .locator('input[type="file"]:not([webkitdirectory])')
+    .first()
+    .setInputFiles({
+      name: 'Twenty two pages.pptx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      buffer: await pageDeck(22)
+    })
+  const file = control.getByText('Twenty two pages.lpdeck', { exact: true })
+  await expect(file).toHaveCount(1)
+  await file.click({ button: 'right' })
+  await control.getByRole('menuitem', { name: /Open Presentation|開啟簡報|打开演示文稿/ }).click()
+  await expect(control.getByTestId('presentation-ribbon-frame')).toBeVisible()
+  await expect(control.locator('[data-slide-option]')).toHaveCount(22)
+  const editorUrl = control.url()
+  await control.locator('.presentation-stage [data-text-content]').first().dblclick()
+  const focusedText = control.locator('.presentation-stage [contenteditable="true"]')
+  await focusedText.fill('Edited opening page')
+  await expect(focusedText).toBeFocused()
+  await control.keyboard.press('F5')
+  await expect(control).toHaveURL(/#\/media$/)
+  await expect.poll(() => electronApp?.windows().length ?? 0).toBe(2)
+  const projection = electronApp.windows().find((window) => window.url().endsWith('#/projection'))
+  if (!projection) throw new Error('Projection window did not open')
+  projection.on('pageerror', (error) => errors.push(error.message))
+  await expect(projection.getByText('Edited opening page', { exact: true })).toBeVisible()
+  for (let number = 2; number <= 22; number++) {
+    await control.keyboard.press('ArrowRight')
+    await expect(
+      control.getByText(`Presenter page ${number}`, { exact: true }).first()
+    ).toBeVisible()
+    await expect(
+      projection.getByText(`Presenter page ${number}`, { exact: true }).first()
+    ).toBeVisible()
+  }
+  await testInfo.attach('pptx-slide-22.png', {
+    body: await projection.screenshot(),
+    contentType: 'image/png'
+  })
+  await control.keyboard.press('Escape')
+  await expect
+    .poll(() => control.evaluate(() => window.api.projection.check()))
+    .toMatchObject({ exists: false, lifecycle: { status: 'closed' } })
+  await control.goto(editorUrl)
+  await control.keyboard.press('ControlOrMeta+s')
+  await expect(control.getByText(/^(Saved|已儲存|已保存)$/)).toBeVisible()
+  await control.reload()
+  await expect(control.locator('[data-slide-option]')).toHaveCount(22)
+  await control.locator('[data-slide-option]').first().click()
+  await expect(
+    control.locator('.presentation-stage').getByText('Edited opening page', { exact: true })
+  ).toBeVisible()
+  expect(errors).toEqual([])
 })
