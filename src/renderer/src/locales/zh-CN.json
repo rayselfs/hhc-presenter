@@ -1204,7 +1204,7 @@
       "timer": "计时器",
       "media": "多媒体",
       "edit": "编辑",
-      "camera": "摄像头"
+      "camera": "影像采集"
     },
     "projection": {
       "start": "开始投影"
@@ -1317,7 +1317,7 @@
   "camera": {
     "resetTitle": "重置取景？",
     "resetBody": "位置与缩放将恢复默认值。",
-    "title": "摄像头",
+    "title": "影像采集",
     "present": "开启投影",
     "presenting": "投影中",
     "locked": "取景已锁定",
@@ -1326,21 +1326,29 @@
     "choose": "选择来源",
     "reset": "重设",
     "retry": "重试",
-    "canvas": "摄像头画布",
-    "empty": "选择摄像头以显示预览",
+    "canvas": "影像采集画布",
+    "empty": "选择来源以显示预览",
     "x": "X",
     "y": "Y",
     "width": "宽度",
     "errors": {
-      "unavailable": "无法使用摄像头，请确认设备连接并使用安全网页。",
-      "NotAllowedError": "摄像头权限被拒绝，请在系统设置允许访问后重试。",
-      "NotFoundError": "找不到摄像头，请连接设备后重试。",
-      "NotReadableError": "无法读取摄像头，可能正被其他程序使用。",
+      "unavailable": "无法使用影像来源，请确认设备连接并使用安全网页。",
+      "NotAllowedError": "影像来源权限被拒绝，请在系统设置允许访问后重试。",
+      "NotFoundError": "找不到影像来源，请连接设备后重试。",
+      "NotReadableError": "无法读取影像来源，可能正被其他程序使用。",
       "OverconstrainedError": "所选来源无法使用，请重新选择。",
-      "ended": "摄像头已断开，请重新连接后重试。",
+      "ended": "影像来源已断开，请重新连接后重试。",
       "connection": "投影连接失败，请重试。",
-      "playback": "影像无法播放，请重新选择来源。"
-    }
+      "playback": "影像无法播放，请重新选择来源。",
+      "sourceExcluded": "此来源为投影显示器或已无法使用，请选择其他来源。"
+    },
+    "sourceType": "来源类型",
+    "sourceTypes": {
+      "screen": "显示器",
+      "window": "窗口",
+      "video": "视频"
+    },
+    "shareSource": "选择共享来源…"
   },
   "personalShare": {
     "title": "分享 {{name}}",

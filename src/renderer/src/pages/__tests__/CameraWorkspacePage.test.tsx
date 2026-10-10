@@ -152,3 +152,21 @@ it('shows center guides when a full-size source also aligns with every edge', ()
   expect(screen.getByTestId('camera-guide-horizontal').style.top).toContain('50%')
   camera.stream = null
 })
+
+it('shows an accessible icon-only lock indicator and red active lock button', () => {
+  camera.stream = {} as MediaStream
+  useCameraStore.setState({ locked: false })
+  render(
+    <MemoryRouter>
+      <CameraWorkspacePage />
+    </MemoryRouter>
+  )
+  const lock = screen.getByRole('button', { name: 'camera.lock' })
+  fireEvent.click(lock)
+  expect(lock).toHaveAttribute('aria-pressed', 'true')
+  expect(lock.className).toContain('aria-pressed:bg-danger')
+  const indicator = screen.getByRole('status', { name: 'camera.locked' })
+  expect(indicator.textContent).toBe('')
+  camera.stream = null
+  useCameraStore.setState({ locked: false })
+})

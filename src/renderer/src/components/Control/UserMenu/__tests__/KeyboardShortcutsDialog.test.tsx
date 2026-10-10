@@ -49,7 +49,7 @@ describe('KeyboardShortcutsDialog', () => {
     expect(screen.getAllByText('Timer').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Bible').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Media').length).toBeGreaterThan(0)
-    fireEvent.click(screen.getByRole('button', { name: 'Camera' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Video Capture' }))
     expect(screen.getByText('Move left 1 px')).toBeInTheDocument()
     expect(screen.getByText('Move down 10 px')).toBeInTheDocument()
     expect(screen.getAllByText('Shift')).toHaveLength(4)

@@ -3,7 +3,7 @@ import { createCameraCover } from '@renderer/lib/camera-transform'
 
 afterEach(() => useCameraStore.setState({ locked: false }))
 
-it('blocks framing updates while locked and resumes after unlocking without persisting the lock', () => {
+it('blocks framing updates while locked and resumes after unlocking', () => {
   const cover = createCameraCover(1920, 1080)
   useCameraStore.setState({ layouts: {}, locked: false })
   useCameraStore.getState().activateSource('locked-camera', cover)
@@ -43,4 +43,36 @@ it('restores layout by device and keeps center and zoom across aspect changes', 
   store.getState().activateSource('two', cover)
   store.getState().activateSource('one', cover)
   expect(store.getState().transform).toEqual(cover)
+})
+
+it('restores each source lock independently, including a source never resized', () => {
+  const store = useCameraStore
+  const cover = createCameraCover(1920, 1080)
+  store.setState({ layouts: {}, locked: false })
+  store.getState().activateSource('screen:1:0', cover)
+  store.getState().setLocked(true)
+  store.getState().activateSource('window:2:0', cover)
+  expect(store.getState().locked).toBe(false)
+  store.getState().updateTransform({ x: 30, y: 40, width: 960, height: 540 })
+  store.getState().activateSource('screen:1:0', cover)
+  expect(store.getState().locked).toBe(true)
+  expect(store.getState().transform).toEqual(cover)
+  const saved = store.persist.getOptions().partialize!(store.getState())
+  expect(saved).toHaveProperty('layouts.screen:1:0.locked', true)
+  store.getState().activateSource('window:2:0', cover)
+  expect(store.getState().locked).toBe(false)
+  expect(store.getState().transform).toEqual({ x: 30, y: 40, width: 960, height: 540 })
+})
+
+it('preserves version-one layouts during migration and defaults their lock to false', async () => {
+  const migrate = useCameraStore.persist.getOptions().migrate!
+  expect(
+    await migrate(
+      { lastDeviceId: 'cam', layouts: { cam: { centerX: 10, centerY: 20, zoom: 0.5 } } },
+      1
+    )
+  ).toMatchObject({
+    lastDeviceId: 'cam',
+    layouts: { cam: { centerX: 10, centerY: 20, zoom: 0.5 } }
+  })
 })

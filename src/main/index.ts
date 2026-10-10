@@ -1,3 +1,4 @@
+import { registerCaptureHandlers } from './ipc/capture'
 import { registerMediaPermissions } from './media-permissions'
 import { app, BrowserWindow, ipcMain, nativeTheme, protocol, session } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
@@ -140,6 +141,7 @@ if (gotSingleInstanceLock) {
     registerPersonalCloudHandlers(wm, hhcAuthService)
     registerOneDriveDownloadHandlers(wm)
     registerNativeMediaProtocol()
+    registerCaptureHandlers(wm, session.defaultSession)
     registerMediaPermissions(session.defaultSession, () => wm.getMainWindow()?.webContents)
     wm.createMainWindow()
     registerUpdateService(wm)

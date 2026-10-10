@@ -1204,7 +1204,7 @@
       "timer": "Timer",
       "media": "Media",
       "edit": "Edit",
-      "camera": "Camera"
+      "camera": "Video Capture"
     },
     "projection": {
       "start": "Start projection"
@@ -1317,30 +1317,38 @@
   "camera": {
     "resetTitle": "Reset framing?",
     "resetBody": "Position and zoom will return to their defaults.",
-    "title": "Camera",
-    "present": "Present camera",
-    "presenting": "Projecting camera",
+    "title": "Video Capture",
+    "present": "Present source",
+    "presenting": "Projecting source",
     "locked": "Framing locked",
     "lock": "Lock framing",
     "unlock": "Unlock framing",
-    "choose": "Select a source",
+    "choose": "Choose source",
     "reset": "Reset",
     "retry": "Retry",
-    "canvas": "Camera canvas",
-    "empty": "Choose a camera to preview",
+    "canvas": "Video capture canvas",
+    "empty": "Choose a source to preview",
     "x": "X",
     "y": "Y",
     "width": "Width",
     "errors": {
-      "unavailable": "Camera unavailable. Check the device and use a secure page.",
-      "NotAllowedError": "Camera access denied. Allow access in system settings and retry.",
-      "NotFoundError": "No camera found. Connect a device and retry.",
-      "NotReadableError": "Camera unavailable or in use by another app.",
+      "unavailable": "Capture source unavailable. Check the device and use a secure page.",
+      "NotAllowedError": "Capture source access denied. Allow access in system settings and retry.",
+      "NotFoundError": "No capture source found. Connect a device and retry.",
+      "NotReadableError": "Capture source unavailable or in use by another app.",
       "OverconstrainedError": "Selected camera unavailable. Select a source again.",
-      "ended": "Camera disconnected. Reconnect and retry.",
+      "ended": "Capture source disconnected. Reconnect and retry.",
       "connection": "Projection connection failed. Retry to reconnect.",
-      "playback": "Video playback failed. Select the source again."
-    }
+      "playback": "Video playback failed. Select the source again.",
+      "sourceExcluded": "This source is a projection display or is no longer available. Choose another source."
+    },
+    "sourceType": "Source type",
+    "sourceTypes": {
+      "screen": "Display",
+      "window": "Window",
+      "video": "Video"
+    },
+    "shareSource": "Choose what to share…"
   },
   "personalShare": {
     "title": "Share {{name}}",

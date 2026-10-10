@@ -241,11 +241,12 @@ export default function CameraWorkspacePage(): React.JSX.Element {
         {camera.stream && state.locked && (
           <div
             role="status"
+            aria-label={t('camera.locked')}
+            title={t('camera.locked')}
             data-testid="camera-lock-indicator"
             className="pointer-events-none absolute top-2 right-2 inline-flex items-center gap-2 rounded-md bg-black/80 px-3 py-2 text-sm text-white"
           >
             <Lock size={16} aria-hidden="true" />
-            {t('camera.locked')}
           </div>
         )}
         {camera.stream &&
@@ -282,7 +283,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className={`${control} inline-flex items-center gap-2 aria-pressed:border-accent aria-pressed:text-accent`}
+            className={`${control} inline-flex items-center gap-2 aria-pressed:border-danger aria-pressed:bg-danger aria-pressed:text-danger-foreground`}
             aria-label={t(state.locked ? 'camera.unlock' : 'camera.lock')}
             title={t(state.locked ? 'camera.unlock' : 'camera.lock')}
             aria-pressed={state.locked}
@@ -290,7 +291,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
             onClick={() => {
               drag.current = null
               setSnapGuides({})
-              useCameraStore.setState({ locked: !state.locked })
+              state.setLocked(!state.locked)
             }}
           >
             <LockIcon size={20} aria-hidden="true" />

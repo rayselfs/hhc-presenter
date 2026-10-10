@@ -1,3 +1,4 @@
+import type { CameraSource } from './camera'
 /**
  * Typed IPC channel contract.
  *
@@ -252,6 +253,8 @@ export type UpdateStatus =
   | 'error'
 
 export interface IpcInvokeMap {
+  'capture:get-sources': { args: []; result: CameraSource[] }
+  'capture:select-source': { args: [id: string]; result: void }
   'projection:check': { args: []; result: ProjectionWindowState }
   'projection:ensure': {
     args: [string?]

@@ -1,3 +1,4 @@
+import type { CameraSource } from '../shared/camera'
 import type { PersonalNativeApi } from '../shared/personal-cloud'
 import type {
   ProjectionChannel,
@@ -217,6 +218,10 @@ interface LanRemoteAPI {
 declare global {
   interface Window {
     api: {
+      capture: {
+        getSources(): Promise<CameraSource[]>
+        selectSource(id: string): Promise<void>
+      }
       projection: ProjectionAPI
       theme: ThemeAPI
       timer: TimerAPI
