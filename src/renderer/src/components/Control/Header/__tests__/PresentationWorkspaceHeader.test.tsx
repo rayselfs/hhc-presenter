@@ -258,6 +258,14 @@ describe('PresentationWorkspaceHeader', () => {
     })
   })
 
+  it('joins the active document tab to the ribbon surface without a bottom shadow', () => {
+    renderHeader()
+
+    const tab = screen.getByText('Sunday.lpdeck').closest('[role="button"]')
+    expect(tab).toHaveClass('bg-surface', 'border-b-surface', '-mb-px')
+    expect(tab).not.toHaveClass('shadow-sm')
+  })
+
   it('runs session Undo and Redo with truthful disabled states', async () => {
     const user = userEvent.setup()
     const snapshot = session.getSnapshot()

@@ -1,4 +1,4 @@
-import { render, screen, act } from '@testing-library/react'
+import { render, screen, act, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import PresenterGrid from '../PresenterGrid'
@@ -49,6 +49,19 @@ describe('PresenterGrid Rendering Optimization', () => {
       currentIndex: 3,
       showGrid: true
     })
+  })
+
+  it('closes the file grid with G while the grid owns keyboard focus', () => {
+    render(<PresenterGrid />)
+    fireEvent.keyDown(document.activeElement!, { key: 'g', code: 'KeyG' })
+    expect(useMediaProjectionStore.getState().showGrid).toBe(false)
+  })
+
+  it('ignores modified G and composition while the grid owns keyboard focus', () => {
+    render(<PresenterGrid />)
+    fireEvent.keyDown(document.activeElement!, { key: 'g', code: 'KeyG', ctrlKey: true })
+    fireEvent.keyDown(document.activeElement!, { key: 'g', code: 'KeyG', isComposing: true })
+    expect(useMediaProjectionStore.getState().showGrid).toBe(true)
   })
 
   it('only re-renders prev/next active item when currentIndex changes', () => {

@@ -1691,7 +1691,7 @@ function EditableSessionDocumentView({
     return (
       <div
         data-ribbon-surface
-        className="flex h-full min-w-0 w-full items-stretch overflow-x-auto overflow-y-hidden border-b border-separator bg-surface/95"
+        className="flex h-full min-w-0 w-full items-stretch overflow-x-auto overflow-y-hidden border-b border-separator bg-surface"
       >
         <RibbonGroup label={t('presentationWorkspace.slides', 'Slides')} className="w-20">
           <div className="flex h-full items-center justify-center">
@@ -2258,7 +2258,7 @@ function EditableSessionDocumentView({
               data-slide-sidebar
               role="listbox"
               aria-multiselectable="true"
-              className="presentation-slide-rail relative min-h-0 overflow-y-auto border-r border-separator bg-surface/40 px-2 py-3"
+              className="presentation-slide-rail relative h-full min-h-0 overflow-y-auto border-r border-separator bg-surface/40 px-2 py-3"
               onContextMenu={showSlideSidebarMenu}
             >
               <div className="space-y-1" role="presentation">

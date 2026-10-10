@@ -285,3 +285,10 @@ it('does not show complete progress while presentation pages are loading', () =>
   render(<PresenterNavigation onNext={vi.fn()} />)
   expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0')
 })
+
+it('closes the presentation grid with G from its focused viewport', async () => {
+  render(<PresenterGrid />)
+  await screen.findByTestId('grid-slide-0')
+  fireEvent.keyDown(document.activeElement!, { key: 'g', code: 'KeyG' })
+  expect(useMediaProjectionStore.getState().showGrid).toBe(false)
+})

@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { FileItemRecord } from '@shared/types/folder'
+import { EDITABLE_PRESENTATION_MIME_TYPE, PPTX_MIME_TYPE } from '@renderer/lib/presentation-media'
 import MediaWorkspacePage from '../MediaWorkspacePage'
 import { useMediaProjectionStore } from '@renderer/stores/media-projection'
 
@@ -34,6 +36,7 @@ function renderPage(): void {
   const router = createMemoryRouter(
     [
       { path: '/files', element: <div>Files</div> },
+      { path: '/presentations/deck', element: <div>Deck editor</div> },
       { path: '/media', element: <MediaWorkspacePage /> }
     ],
     { initialEntries: ['/media'] }
@@ -68,6 +71,29 @@ describe('MediaWorkspacePage', () => {
     await screen.findByText('Files')
     expect(useMediaProjectionStore.getState().isPresenting).toBe(false)
   })
+
+  it.each([PPTX_MIME_TYPE, EDITABLE_PRESENTATION_MIME_TYPE])(
+    'returns a stopped %s presentation to its editor',
+    async (mimeType) => {
+      const item: FileItemRecord = {
+        id: 'deck',
+        parentId: 'root',
+        type: 'file',
+        name: 'Deck',
+        url: 'blob:deck',
+        size: 1,
+        mimeType,
+        sortIndex: 0,
+        createdAt: 0,
+        expiresAt: null
+      }
+      useMediaProjectionStore.setState({ isPresenting: true, playlist: [item], currentIndex: 0 })
+      renderPage()
+      fireEvent.click(screen.getByRole('button', { name: 'Exit Media' }))
+      await screen.findByText('Deck editor')
+      expect(useMediaProjectionStore.getState().isPresenting).toBe(false)
+    }
+  )
 
   it('keeps the live session and controls when projection close fails', async () => {
     mocks.stopProjection.mockRejectedValue(new Error('close failed'))

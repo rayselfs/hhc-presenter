@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import MediaPresenter from '@renderer/components/Control/FileExplorer/Presenter/MediaPresenter'
 import { useProjection } from '@renderer/contexts/ProjectionContext'
 import { closeProjectionAndMediaSession } from '@renderer/lib/projection-actions'
+import { getPresentationWorkspacePath, isPresentationItem } from '@renderer/lib/presentation-media'
 import { useMediaProjectionStore } from '@renderer/stores/media-projection'
 
 export default function MediaWorkspacePage(): React.JSX.Element {
@@ -17,11 +18,20 @@ export default function MediaWorkspacePage(): React.JSX.Element {
   const filesPath = useFileExplorerStore((state) =>
     state.folders[state.currentFolderId]?.personalOwnerId ? '/cloud-files' : '/files'
   )
+  const currentItem = useMediaProjectionStore((state) => state.currentItem())
+  const returnPathRef = useRef(filesPath)
   const isClosingRef = useRef(false)
 
   useEffect(() => {
-    if (!isPresenting) navigate(filesPath, { replace: true })
-  }, [filesPath, isPresenting, navigate])
+    if (isPresenting) {
+      returnPathRef.current =
+        currentItem && isPresentationItem(currentItem)
+          ? getPresentationWorkspacePath(currentItem.id)
+          : filesPath
+    } else {
+      navigate(returnPathRef.current, { replace: true })
+    }
+  }, [currentItem, filesPath, isPresenting, navigate])
 
   const handleExit = useCallback(async (): Promise<void> => {
     if (isClosingRef.current) return
