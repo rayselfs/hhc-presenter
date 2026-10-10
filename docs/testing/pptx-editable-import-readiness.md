@@ -45,12 +45,15 @@ the existing persistence transaction and rollback path.
 - Private OneDrive corpus: 16 presentations, 187 slides imported, persisted and
   reopened. Source files and lyric contents are not committed to this repository.
 - `npm run lint`, `npm run build:web`, and `npm run build` passed.
-- Full unit run: 299 suites passed; the remaining sidebar suite had two invalid
-  test fixtures (missing URL). Corrected fixtures and reran all four sidebar tests
-  together with import/conversion regressions: 20/20 passed.
+- Full unit run after correcting sidebar fixtures: 300 suites and 3,526 tests passed.
 - Built Chromium application: 12 focused end-to-end tests passed, including
   direct editable import, focused F5, all 22 pages, save/reload, raw PPTX page
   navigation, popup recovery, and mixed-folder playlist separation.
+- Full browser suite initially reported 60 passed, 2 skipped and 4 failures from
+  stale import-banner / ambiguous Close locators. Updated those assertions for
+  the real toast and dedicated media close control; all 4 affected tests passed
+  in a scoped Chromium rerun, including progress across navigation, cancellation,
+  success auto-dismiss, failure retry without duplicate files, and media cleanup.
 - A real 13-page black/white sample was imported in the built browser, edited
   while focused, projected with F5 and advanced to page 13; the next preview
   showed slide 2 at the beginning and the end only on page 13.

@@ -54,14 +54,25 @@ test('shows running progress, stops remaining files and retains completed import
         buffer: png
       }))
     )
-  const status = page.getByRole('region', { name: 'Import files' })
-  await expect(status.getByRole('status')).toHaveText('Imported 0 / 5 files')
+  const status = page.locator('[data-slot="toast"]')
+  await expect(status).toHaveCount(1)
+  await expect(page.getByRole('region', { name: 'Import files' })).toHaveCount(0)
+  await expect(status.locator('[data-slot="toast-title"]')).toHaveText('Imported 0 / 5 files')
   await expect(status).toContainText('photo-2.png')
+  await page.goto('/#/timer')
+  await expect(status).toHaveCount(1)
+  await expect(status).toContainText('Imported 0 / 5 files')
   await status.getByRole('button', { name: 'Stop remaining files' }).click()
-  await expect(status.getByRole('status')).toContainText('Finishing active files')
+  await expect(status.locator('[data-slot="toast-title"]')).toContainText('Finishing active files')
   await page.evaluate(() => document.dispatchEvent(new Event('release-import-storage')))
-  await expect(status.getByRole('status')).toHaveText('3 imported · 0 failed · 2 skipped')
+  await expect(status.locator('[data-slot="toast-title"]')).toHaveText(
+    '3 imported · 0 failed · 2 skipped'
+  )
   await expect(status.getByRole('button', { name: 'Close', exact: true })).toBeVisible()
+  await expect(status).toHaveCount(1)
+  await page.mouse.move(0, 0)
+  await page.locator('body').click({ position: { x: 1, y: 1 } })
+  await expect(status).toHaveCount(0, { timeout: 10_000 })
 })
 
 test('reports a failed save and retries only that file without duplicating successes', async ({
@@ -91,11 +102,18 @@ test('reports a failed save and retries only that file without duplicating succe
     .setInputFiles(
       ['saved.png', 'broken.png'].map((name) => ({ name, mimeType: 'image/png', buffer: png }))
     )
-  const status = page.getByRole('region', { name: 'Import files' })
-  await expect(status.getByRole('status')).toHaveText('1 imported · 1 failed · 0 skipped')
-  await expect(status.getByRole('list')).toContainText('broken.png')
+  const status = page.locator('[data-slot="toast"]')
+  await expect(status).toHaveCount(1)
+  await expect(page.getByRole('region', { name: 'Import files' })).toHaveCount(0)
+  await expect(status.locator('[data-slot="toast-title"]')).toHaveText(
+    '1 imported · 1 failed · 0 skipped'
+  )
+  await expect(status.locator('[data-slot="toast-description"]')).toContainText('broken.png')
   await status.getByRole('button', { name: 'Retry failed files', exact: true }).click()
-  await expect(status.getByRole('status')).toHaveText('1 imported · 0 failed · 0 skipped')
+  await expect(status.locator('[data-slot="toast-title"]')).toHaveText(
+    '1 imported · 0 failed · 0 skipped'
+  )
+  await expect(status).toHaveCount(1)
   const names = await page.evaluate(
     async () =>
       new Promise<string[]>((resolve, reject) => {
@@ -123,7 +141,7 @@ test('another tab can purge the catalog while held media bytes survive until loc
     mimeType: 'image/png',
     buffer: png
   })
-  await expect(page.getByRole('region', { name: 'Import files' }).getByRole('status')).toHaveText(
+  await expect(page.locator('[data-slot="toast-title"]')).toHaveText(
     '1 imported · 0 failed · 0 skipped'
   )
   const blobId = await page.evaluate(async () => {
