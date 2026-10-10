@@ -78,3 +78,15 @@ On the intended Windows machine, import a black/white song deck, edit/save/reope
 press F5 while typing, advance through every slide, stop/restart projection, and
 confirm the separate media playlist. No deployment or release is implied by this
 local verification record.
+
+## Release follow-up (2026-10-10)
+
+The v2.6.8 Windows packaged smoke completed import, focused F5, all 22 slides and
+save/reload, then failed when the test clicked a thumbnail hidden by the compact
+layout. The failure screenshot showed the edited opening slide and slide 1 / 22.
+The same failure was reproduced locally at a 1000 px viewport. The regression now
+asserts the restored selection and visible edited content without clicking the
+hidden navigator; the focused local Electron smoke passes at that viewport.
+The v2.6.8 macOS packaged smoke passed, but the desktop release was not published
+because the Windows gate failed. The immutable tag is retained; v2.6.9 repeats
+all CI and packaged release gates with the corrected regression.
