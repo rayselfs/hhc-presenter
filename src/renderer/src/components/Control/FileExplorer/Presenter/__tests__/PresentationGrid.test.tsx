@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import PresenterGrid from '../PresenterGrid'
 import PresenterNavigation from '../PresenterNavigation'
@@ -104,6 +104,7 @@ beforeEach(() => {
   })
 })
 afterEach(() => {
+  cleanup()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
   useMediaProjectionStore.setState({ jumpToSlide: originalJump })
@@ -288,7 +289,7 @@ it('does not show complete progress while presentation pages are loading', () =>
 
 it('closes the presentation grid with G from its focused viewport', async () => {
   render(<PresenterGrid />)
-  await screen.findByTestId('grid-slide-0')
+  await waitFor(() => expect(observed).toHaveLength(10))
   fireEvent.keyDown(document.activeElement!, { key: 'g', code: 'KeyG' })
   expect(useMediaProjectionStore.getState().showGrid).toBe(false)
 })
