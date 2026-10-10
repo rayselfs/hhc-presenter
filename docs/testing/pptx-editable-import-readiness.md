@@ -13,16 +13,16 @@ The production target is Windows with 標楷體 installed.
 
 ## Findings and changes
 
-| Failure | Cause | Change |
-| --- | --- | --- |
-| Persistent import panel under header | Page-local import summary lived beyond the operation | Existing bottom-right toast hosts progress/cancel, timed success, persistent retryable failure |
-| Upload requires making an editable copy | Upload persisted only the raw PPTX | Validate and convert before publishing one editable item |
-| F5 ignored while typing | Global shortcut dispatcher discarded editable targets | Explicit save/projection shortcuts finalize and flush the active text edit |
-| First slide says projection ended | Next preview checked next file rather than next slide | Preview current deck's next slide; show loading before page count is known |
-| Background/text layout changed | Incorrect background field and incomplete master/layout inheritance | Inherit background, color aliases, text styles, paragraph layout, insets, vertical alignment and autofit scaling |
-| Old load erases new deck | Late viewer cleanup shared the same DOM container | Give each open its own abortable host |
-| Retrying the same slide stays preparing | Ready callback did not depend on content revision | Acknowledge each revision; reopen failed viewers while reusing healthy viewers |
-| Projection ready before resources | Editable surface acknowledged before fonts/images loaded | Wait for font readiness and image decode; discard stale acknowledgements |
+| Failure                                 | Cause                                                               | Change                                                                                                           |
+| --------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Persistent import panel under header    | Page-local import summary lived beyond the operation                | Existing bottom-right toast hosts progress/cancel, timed success, persistent retryable failure                   |
+| Upload requires making an editable copy | Upload persisted only the raw PPTX                                  | Validate and convert before publishing one editable item                                                         |
+| F5 ignored while typing                 | Global shortcut dispatcher discarded editable targets               | Explicit save/projection shortcuts finalize and flush the active text edit                                       |
+| First slide says projection ended       | Next preview checked next file rather than next slide               | Preview current deck's next slide; show loading before page count is known                                       |
+| Background/text layout changed          | Incorrect background field and incomplete master/layout inheritance | Inherit background, color aliases, text styles, paragraph layout, insets, vertical alignment and autofit scaling |
+| Old load erases new deck                | Late viewer cleanup shared the same DOM container                   | Give each open its own abortable host                                                                            |
+| Retrying the same slide stays preparing | Ready callback did not depend on content revision                   | Acknowledge each revision; reopen failed viewers while reusing healthy viewers                                   |
+| Projection ready before resources       | Editable surface acknowledged before fonts/images loaded            | Wait for font readiness and image decode; discard stale acknowledgements                                         |
 
 PPTX/LPDECK projects as a single deck. Image/video/PDF projection excludes all
 presentation items in the same folder. Page visits alone do not claim projection.
