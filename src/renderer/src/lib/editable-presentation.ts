@@ -1912,8 +1912,10 @@ function getMimeTypeFromPath(path: string): string {
   if (extension === 'jpg' || extension === 'jpeg') return 'image/jpeg'
   if (extension === 'gif') return 'image/gif'
   if (extension === 'webp') return 'image/webp'
+  if (extension === 'bmp') return 'image/bmp'
+  if (extension === 'png') return 'image/png'
   if (extension === 'svg') return 'image/svg+xml'
-  return 'image/png'
+  throw new Error('Unsupported PowerPoint image format')
 }
 
 function uint8ArrayToDataUrl(bytes: Uint8Array, mimeType: string): string {

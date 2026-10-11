@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import JSZip from 'jszip'
+import { validatePortablePresentation } from '../portable-presentation'
 import { buildPresentation, materializeAllSlideNodes, parseZip } from '@aiden0z/pptx-renderer'
 import {
   convertPresentationData,
@@ -10,7 +11,8 @@ import type { FileItemRecord } from '@shared/types/folder'
 
 async function parseFixture(
   background = '<a:solidFill><a:schemeClr val="tx1"/></a:solidFill>',
-  shapeProperties = ''
+  shapeProperties = '',
+  image?: { extension: string; bytes: Uint8Array }
 ): Promise<PresentationData> {
   const zip = new JSZip()
   const ns =
@@ -47,6 +49,25 @@ async function parseFixture(
     'ppt/theme/theme1.xml',
     `<a:theme ${ns}><a:themeElements><a:clrScheme name="Synthetic"><a:dk1><a:srgbClr val="000000"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1></a:clrScheme><a:fontScheme name="Synthetic"><a:majorFont/><a:minorFont/></a:fontScheme><a:fmtScheme name="Synthetic"/></a:themeElements></a:theme>`
   )
+  if (image) {
+    const slideXml = await zip.file('ppt/slides/slide1.xml')!.async('string')
+    zip.file(
+      'ppt/slides/slide1.xml',
+      slideXml.replace(
+        '</p:spTree>',
+        '<p:pic><p:nvPicPr><p:cNvPr id="3" name="Picture"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="952500" cy="952500"/></a:xfrm><a:prstGeom prst="rect"/></p:spPr></p:pic></p:spTree>'
+      )
+    )
+    const relationships = await zip.file('ppt/slides/_rels/slide1.xml.rels')!.async('string')
+    zip.file(
+      'ppt/slides/_rels/slide1.xml.rels',
+      relationships.replace(
+        '</Relationships>',
+        `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image.${image.extension}"/></Relationships>`
+      )
+    )
+    zip.file(`ppt/media/image.${image.extension}`, image.bytes)
+  }
   const presentation = buildPresentation(
     await parseZip(await zip.generateAsync({ type: 'arraybuffer' }))
   )
@@ -55,6 +76,44 @@ async function parseFixture(
 }
 
 describe('PPTX parser conversion contract', () => {
+  it('preserves embedded BMP MIME and bytes through portable JSON reload', async () => {
+    const bytes = new Uint8Array(58)
+    const header = new DataView(bytes.buffer)
+    bytes.set([0x42, 0x4d])
+    header.setUint32(2, 58, true)
+    header.setUint32(10, 54, true)
+    header.setUint32(14, 40, true)
+    header.setInt32(18, 1, true)
+    header.setInt32(22, 1, true)
+    header.setUint16(26, 1, true)
+    header.setUint16(28, 24, true)
+    header.setUint32(34, 4, true)
+    const presentation = await parseFixture(undefined, '', { extension: 'bmp', bytes })
+    const document = convertPresentationData(
+      { id: 'test', name: 'Picture.pptx', url: 'blob:test' } as FileItemRecord,
+      presentation
+    )
+    const asset = Object.values(document.assets)[0]
+    expect(asset.mimeType).toBe('image/bmp')
+    expect(asset.dataUrl).toBe(`data:image/bmp;base64,${btoa(String.fromCharCode(...bytes))}`)
+    const reopened = JSON.parse(JSON.stringify(document))
+    expect(() => validatePortablePresentation(reopened)).not.toThrow()
+    expect(reopened.assets).toEqual(document.assets)
+  })
+
+  it('rejects an unknown embedded image extension explicitly', async () => {
+    const presentation = await parseFixture(undefined, '', {
+      extension: 'unknown',
+      bytes: new Uint8Array([1, 2, 3])
+    })
+    expect(() =>
+      convertPresentationData(
+        { id: 'test', name: 'Picture.pptx', url: 'blob:test' } as FileItemRecord,
+        presentation
+      )
+    ).toThrow('Unsupported PowerPoint image format')
+  })
+
   it.each(['rect', 'line'])('preserves explicit %s outline width', async (geometry) => {
     const presentation = await parseFixture(
       undefined,
