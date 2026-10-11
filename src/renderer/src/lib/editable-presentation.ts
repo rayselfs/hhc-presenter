@@ -10,7 +10,12 @@ import { EDITABLE_PRESENTATION_MIME_TYPE } from './presentation-media'
 import { readPresentationArrayBuffer } from './presentation-source'
 import { persistEditablePresentationCreation } from './editable-presentation-creation'
 import { normalizeTextParagraphs } from './presentation-rich-text'
-import { validatePortablePresentation } from './portable-presentation'
+import {
+  validatePortablePresentation,
+  serializePortablePresentation,
+  assertPortablePresentationSize
+} from './portable-presentation'
+import { validatePptxSource } from './pptx-source'
 import { FOLDER_DURATION_MS, type FileItemRecord } from '@shared/types/folder'
 import type { PlaceholderInfo, PresentationData } from '@aiden0z/pptx-renderer'
 import type { SlideData, SlideNode } from '@aiden0z/pptx-renderer'
@@ -789,6 +794,7 @@ export function duplicateElementInSlide(
     x: element.x + 24,
     y: element.y + 24
   } as EditablePresentationElement
+  delete nextElement.pptxSourceNode
   return {
     document: addElementToSlide(document, slideId, nextElement),
     elementId: nextElement.id
@@ -831,6 +837,7 @@ function cloneEditableSlide(slide: EditablePresentationSlide): {
     const nextId = crypto.randomUUID()
     elementIdMap.set(sourceId, nextId)
     elements[nextId] = { ...element, id: nextId } as EditablePresentationElement
+    delete elements[nextId].pptxSourceNode
   }
   const nextSlide: EditablePresentationSlide = {
     ...slide,
@@ -841,6 +848,7 @@ function cloneEditableSlide(slide: EditablePresentationSlide): {
       .filter((id): id is string => Boolean(id)),
     elements
   }
+  delete nextSlide.pptxSourcePart
   return { slide: nextSlide, slideId: nextSlideId }
 }
 
@@ -1065,8 +1073,12 @@ export async function createEditablePresentationItem(
   parentId: string,
   catalogName = document.name
 ): Promise<FileItemRecord> {
-  const itemId = document.id
+  const ownerId = usePersonalSyncStore.getState().activeOwnerId
   const blob = createDocumentBlob(document)
+  await validatePptxSource(document)
+  if (usePersonalSyncStore.getState().activeOwnerId !== ownerId)
+    throw new Error('Personal account changed')
+  const itemId = document.id
   const db = await openFileExplorerDB()
   const parent = await db.get('folder-records', parentId)
   const siblings = (await db.getAllFromIndex('folder-items', 'by-parent', parentId)).filter(
@@ -1096,7 +1108,8 @@ export async function createEditablePresentationItem(
 
 export function convertPresentationData(
   source: FileItemRecord,
-  presentation: PresentationData
+  presentation: PresentationData,
+  pptxSource?: PptxSource
 ): EditablePresentationDocument {
   const documentId = crypto.randomUUID()
   const now = Date.now()
@@ -1109,7 +1122,7 @@ export function convertPresentationData(
 
   for (const slide of presentation.slides) {
     const slideId = crypto.randomUUID()
-    const convertedSlide = convertSlide(slide, presentation, assets)
+    const convertedSlide = convertSlide(slide, presentation, assets, Boolean(pptxSource))
     slides[slideId] = {
       ...convertedSlide,
       id: slideId,
@@ -1121,7 +1134,8 @@ export function convertPresentationData(
 
   return {
     id: documentId,
-    schemaVersion: 1,
+    schemaVersion: pptxSource ? 2 : 1,
+    ...(pptxSource ? { pptxSource } : {}),
     name: `${stripPresentationExtension(source.name)} Editable`,
     sourceItemId: source.id,
     sourceBlobId: getBlobId(source),
@@ -1179,7 +1193,8 @@ function resolveSlideThemeId(slide: SlideData, presentation: PresentationData): 
 function convertSlide(
   slide: SlideData,
   presentation: PresentationData,
-  assets: Record<string, EditablePresentationAsset>
+  assets: Record<string, EditablePresentationAsset>,
+  preserveSource: boolean
 ): Omit<EditablePresentationSlide, 'id' | 'name'> {
   const elementOrder: string[] = []
   const elements: Record<string, EditablePresentationElement> = {}
@@ -1208,12 +1223,19 @@ function convertSlide(
   for (const node of slide.nodes) {
     const converted = convertNode(node, slide, presentation, assets)
     for (const element of converted) {
+      if (preserveSource && element.type !== 'locked') {
+        element.pptxSourceNode = {
+          id: node.id,
+          role: element.type === 'text' ? 'text' : element.type === 'image' ? 'image' : 'geometry'
+        }
+      }
       elementOrder.push(element.id)
       elements[element.id] = element
     }
   }
 
   return {
+    ...(preserveSource ? { pptxSourcePart: slide.slidePath } : {}),
     background: resolveSlideBackground(slide, presentation),
     elementOrder,
     elements,
@@ -1985,12 +2007,13 @@ export async function loadEditablePresentationSnapshot(
     editableDocumentCache.set(cacheKey, cached)
     return { document: cached, revision: record.revision ?? 0 }
   }
+  assertPortablePresentationSize(record.blob?.size ?? record.size ?? 0)
   const body = record.blob
     ? await readBlobText(record.blob)
     : new TextDecoder('utf-8', { fatal: true }).decode(
         await readPresentationArrayBuffer({ ...source, mimeType: EDITABLE_PRESENTATION_MIME_TYPE })
       )
-  const document = { ...parseEditablePresentation(body), id: source.id }
+  const document = { ...(await parseEditablePresentation(body)), id: source.id }
   if (personalName !== undefined) document.name = personalName
   editableDocumentCache.set(cacheKey, document)
   while (editableDocumentCache.size > EDITABLE_DOCUMENT_CACHE_LIMIT) {
@@ -2187,12 +2210,16 @@ function escapeXml(value: string): string {
 }
 
 function createDocumentBlob(document: EditablePresentationDocument): Blob {
-  return new Blob([JSON.stringify(document)], { type: EDITABLE_PRESENTATION_MIME_TYPE })
+  return new Blob([serializePortablePresentation(document)], {
+    type: EDITABLE_PRESENTATION_MIME_TYPE
+  })
 }
 
-function parseEditablePresentation(value: string): EditablePresentationDocument {
-  const parsed = JSON.parse(value) as Partial<EditablePresentationDocument>
+async function parseEditablePresentation(value: string): Promise<EditablePresentationDocument> {
+  assertPortablePresentationSize(new Blob([value]).size)
+  const parsed = JSON.parse(value) as EditablePresentationDocument
   validatePortablePresentation(parsed)
+  await validatePptxSource(parsed)
   if (
     !parsed.id ||
     !parsed.name ||
@@ -2220,7 +2247,8 @@ function parseEditablePresentation(value: string): EditablePresentationDocument 
   }
   return {
     id: parsed.id,
-    schemaVersion: 1,
+    schemaVersion: parsed.schemaVersion ?? 1,
+    ...(parsed.pptxSource ? { pptxSource: parsed.pptxSource } : {}),
     name: parsed.name,
     width: parsed.width,
     height: parsed.height,

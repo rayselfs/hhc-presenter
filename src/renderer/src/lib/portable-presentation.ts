@@ -1,3 +1,4 @@
+import { PERSONAL_MAX_FILE_BYTES } from '@shared/personal-cloud'
 import type { EditablePresentationDocument } from './editable-presentation'
 
 function record(value: unknown): value is Record<string, unknown> {
@@ -279,4 +280,14 @@ export function validatePortablePresentation(
     requireValid(id && record(asset) && asset.id === id)
     validateImage(asset.mimeType, asset.dataUrl)
   }
+}
+
+export function serializePortablePresentation(document: EditablePresentationDocument): string {
+  const body = JSON.stringify(document)
+  assertPortablePresentationSize(new Blob([body]).size)
+  return body
+}
+
+export function assertPortablePresentationSize(size: number): void {
+  if (size > PERSONAL_MAX_FILE_BYTES) throw new Error('Presentation exceeds the 200 MiB size limit')
 }

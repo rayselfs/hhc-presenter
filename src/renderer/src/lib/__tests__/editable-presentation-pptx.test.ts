@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { webcrypto } from 'node:crypto'
+import { createPptxSource, validatePptxSource } from '../pptx-source'
 import JSZip from 'jszip'
 import { validatePortablePresentation } from '../portable-presentation'
 import { buildPresentation, materializeAllSlideNodes, parseZip } from '@aiden0z/pptx-renderer'
@@ -12,7 +14,8 @@ import type { FileItemRecord } from '@shared/types/folder'
 async function parseFixture(
   background = '<a:solidFill><a:schemeClr val="tx1"/></a:solidFill>',
   shapeProperties = '',
-  image?: { extension: string; bytes: Uint8Array }
+  image?: { extension: string; bytes: Uint8Array },
+  onPackage?: (buffer: ArrayBuffer) => void
 ): Promise<PresentationData> {
   const zip = new JSZip()
   const ns =
@@ -68,9 +71,14 @@ async function parseFixture(
     )
     zip.file(`ppt/media/image.${image.extension}`, image.bytes)
   }
-  const presentation = buildPresentation(
-    await parseZip(await zip.generateAsync({ type: 'arraybuffer' }))
+  zip.file(
+    '[Content_Types].xml',
+    `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>${image ? `<Default Extension="${image.extension}" ContentType="image/${image.extension}"/>` : ''}<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/></Types>`
   )
+  zip.file('_rels/.rels', rel('officeDocument', 'ppt/presentation.xml'))
+  const buffer = await zip.generateAsync({ type: 'arraybuffer' })
+  onPackage?.(buffer)
+  const presentation = buildPresentation(await parseZip(buffer))
   materializeAllSlideNodes(presentation)
   return presentation
 }
@@ -429,4 +437,47 @@ describe('PPTX parser conversion contract', () => {
       ).toThrow(/Unsupported PowerPoint shape/)
     }
   )
+})
+
+afterEach(() => vi.unstubAllGlobals())
+
+it('binds supplied source to original shape, text and picture nodes while default conversion stays v1', async () => {
+  vi.stubGlobal('crypto', webcrypto)
+  let packageBuffer: ArrayBuffer | undefined
+  const presentation = await parseFixture(
+    undefined,
+    '<a:prstGeom prst="rect"/>',
+    { extension: 'png', bytes: new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]) },
+    (buffer) => {
+      packageBuffer = buffer
+    }
+  )
+  if (!packageBuffer) throw new Error('Package not captured')
+  const retained = await createPptxSource(packageBuffer)
+  const input = {
+    id: 'source',
+    parentId: 'file-root',
+    type: 'file' as const,
+    name: 'Source.pptx',
+    url: '',
+    size: packageBuffer.byteLength,
+    createdAt: 1,
+    expiresAt: null,
+    sortIndex: 0,
+    mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+  }
+  const converted = convertPresentationData(input, presentation, retained)
+  expect(converted).toMatchObject({ schemaVersion: 2, pptxSource: retained })
+  const slide = converted.slides[converted.slideOrder[0]]
+  expect(slide.pptxSourcePart).toBe('ppt/slides/slide1.xml')
+  expect(Object.values(slide.elements).map((element) => element.pptxSourceNode)).toEqual([
+    { id: '2', role: 'geometry' },
+    { id: '2', role: 'text' },
+    { id: '3', role: 'image' }
+  ])
+  await expect(validatePptxSource(converted)).resolves.toBeUndefined()
+  const old = convertPresentationData(input, presentation)
+  expect(old.schemaVersion).toBe(1)
+  expect(old).not.toHaveProperty('pptxSource')
+  expect(old.slides[old.slideOrder[0]]).not.toHaveProperty('pptxSourcePart')
 })
