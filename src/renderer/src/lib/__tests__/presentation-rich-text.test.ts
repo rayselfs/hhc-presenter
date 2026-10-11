@@ -12,6 +12,25 @@ import {
 } from '../presentation-rich-text'
 
 describe('presentation rich text', () => {
+  it('keeps explicit no-highlight runs clear of the element fallback', () => {
+    const element = createTextElement({ text: 'AB', highlightColor: '#FFFF00' })
+    const run = {
+      text: 'A',
+      fontFamily: element.fontFamily,
+      fontSize: element.fontSize,
+      bold: false,
+      italic: false,
+      underline: false,
+      color: element.color,
+      highlightColor: '#FFFF00'
+    }
+    element.runs = [run, { ...run, text: 'B', highlightColor: null }]
+    expect(normalizeTextParagraphs(element)[0].runs.map((value) => value.highlightColor)).toEqual([
+      '#FFFF00',
+      null
+    ])
+  })
+
   it('normalizes legacy runs into paragraphs without flattening styles', () => {
     const element = createTextElement({
       text: 'Bold plain\nSecond',

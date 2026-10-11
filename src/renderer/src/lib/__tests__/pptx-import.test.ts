@@ -35,6 +35,41 @@ it('imports one directly editable deck with all slides and no extra catalog copy
   const reopened = await loadEditablePresentation(item)
   expect(reopened.name).toBe('Sunday')
   expect(reopened.slideOrder).toHaveLength(22)
+  const sourceZip = await JSZip.loadAsync(bytes)
+  for (const [index, slideId] of reopened.slideOrder.entries()) {
+    const xml = await sourceZip.file(`ppt/slides/slide${index + 1}.xml`)!.async('string')
+    const source = new DOMParser().parseFromString(xml, 'application/xml')
+    const expected = [
+      ...source.getElementsByTagNameNS(
+        'http://schemas.openxmlformats.org/presentationml/2006/main',
+        'txBody'
+      )
+    ]
+      .map((body) =>
+        [
+          ...body.getElementsByTagNameNS(
+            'http://schemas.openxmlformats.org/drawingml/2006/main',
+            'p'
+          )
+        ]
+          .map((paragraph) =>
+            [
+              ...paragraph.getElementsByTagNameNS(
+                'http://schemas.openxmlformats.org/drawingml/2006/main',
+                't'
+              )
+            ]
+              .map((text) => text.textContent)
+              .join('')
+          )
+          .join('\n')
+      )
+      .filter(Boolean)
+    const actual = Object.values(reopened.slides[slideId].elements).flatMap((element) =>
+      element.type === 'text' ? [element.text] : []
+    )
+    expect(actual).toEqual(expected)
+  }
   expect(
     Object.values(reopened.slides).every((slide) =>
       Object.values(slide.elements).some((element) => element.type === 'text')
@@ -201,4 +236,30 @@ it('preserves intentional whitespace and empty paragraphs through import and reo
   expect(
     text.paragraphs?.map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n')
   ).toBe(text.text)
+})
+
+it('imports fully invisible supported shapes without rejecting the deck', async () => {
+  const zip = await JSZip.loadAsync(
+    await readFile('src/renderer/src/lib/__fixtures__/pptx/text-placeholder-layout.pptx')
+  )
+  const path = 'ppt/slides/slide1.xml'
+  const xml = await zip.file(path)!.async('string')
+  zip.file(
+    path,
+    xml.replace(
+      '</p:spTree>',
+      '<p:sp><p:nvSpPr><p:cNvPr id="99" name="Invisible"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="952500" cy="952500"/></a:xfrm><a:prstGeom prst="rect"/><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr></p:sp></p:spTree>'
+    )
+  )
+  const item = await importEditablePptx(
+    new File([await zip.generateAsync({ type: 'arraybuffer' })], 'Invisible.pptx', {
+      type: PPTX_MIME_TYPE
+    }),
+    'file-root'
+  )
+  const reopened = await loadEditablePresentation(item)
+  const slide = reopened.slides[reopened.slideOrder[0]]
+  expect(Object.values(slide.elements)).toContainEqual(
+    expect.objectContaining({ type: 'shape', fillColor: 'transparent', strokeWidth: 0 })
+  )
 })

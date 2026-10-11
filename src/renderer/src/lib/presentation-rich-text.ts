@@ -19,7 +19,8 @@ function runStyle(element: EditableTextElement, run?: EditableTextRun): Editable
     strikethrough: run?.strikethrough ?? element.strikethrough ?? false,
     baseline: run?.baseline ?? element.baseline ?? 'normal',
     characterSpacing: run?.characterSpacing ?? element.characterSpacing ?? 0,
-    highlightColor: run?.highlightColor ?? element.highlightColor ?? null
+    highlightColor:
+      run?.highlightColor !== undefined ? run.highlightColor : (element.highlightColor ?? null)
   }
 }
 

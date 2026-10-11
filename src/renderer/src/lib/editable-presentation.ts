@@ -1277,7 +1277,7 @@ function convertShapeNode(
         ? 1
         : emuToPx(sourceStrokeWidth)
 
-  if (shape && (fillColor !== 'transparent' || strokeWidth > 0)) {
+  if (shape && (node.presetGeometry || fillColor !== 'transparent' || strokeWidth > 0)) {
     elements.push({
       id: crypto.randomUUID(),
       type: 'shape',

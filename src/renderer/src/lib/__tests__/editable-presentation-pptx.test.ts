@@ -252,6 +252,24 @@ describe('PPTX parser conversion contract', () => {
     expect(() => validatePortablePresentation(JSON.parse(JSON.stringify(document)))).not.toThrow()
   })
 
+  it('retains an editable invisible rectangle without treating it as unsupported', async () => {
+    const presentation = await parseFixture(
+      undefined,
+      '<a:prstGeom prst="rect"/><a:noFill/><a:ln><a:noFill/></a:ln>'
+    )
+    const node = presentation.slides[0].nodes[0]
+    if (node.nodeType !== 'shape') throw new Error('Expected shape')
+    node.textBody = undefined
+    const document = convertPresentationData(
+      { id: 'test', name: 'Invisible.pptx', url: 'blob:test' } as FileItemRecord,
+      presentation
+    )
+    const slide = document.slides[document.slideOrder[0]]
+    expect(Object.values(slide.elements)).toEqual([
+      expect.objectContaining({ type: 'shape', fillColor: 'transparent', strokeWidth: 0 })
+    ])
+  })
+
   it('inherits master background, mapped text colors and layout paragraph formatting', async () => {
     const presentation = await parseFixture()
     const document = convertPresentationData(
