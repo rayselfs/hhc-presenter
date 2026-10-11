@@ -1260,7 +1260,19 @@ function convertShapeNode(
     throw new Error('Unsupported PowerPoint shape fill')
   const fillColor = readTextColor(node.fill, theme) ?? 'transparent'
   const strokeColor = readTextColor(node.line, theme) ?? '#000000'
-  const strokeWidth = node.line?.exists() ? 1 : 0
+  const rawStrokeWidth = node.line?.attr('w')
+  const sourceStrokeWidth = rawStrokeWidth === undefined ? undefined : Number(rawStrokeWidth)
+  if (
+    sourceStrokeWidth !== undefined &&
+    (!Number.isFinite(sourceStrokeWidth) || sourceStrokeWidth < 0)
+  )
+    throw new Error('Invalid PowerPoint outline width')
+  const strokeWidth =
+    !node.line?.exists() || node.line.child('noFill').exists()
+      ? 0
+      : sourceStrokeWidth === undefined
+        ? 1
+        : emuToPx(sourceStrokeWidth)
 
   if (shape && (fillColor !== 'transparent' || strokeWidth > 0)) {
     elements.push({
@@ -1290,7 +1302,7 @@ function convertShapeNode(
       rotation: node.rotation,
       opacity: 1,
       strokeColor,
-      strokeWidth: Math.max(1, strokeWidth)
+      strokeWidth
     })
   }
 
