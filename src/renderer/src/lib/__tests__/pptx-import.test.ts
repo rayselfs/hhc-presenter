@@ -172,3 +172,33 @@ it('persists and reopens embedded BMP bytes', async () => {
     })
   )
 })
+
+it('preserves intentional whitespace and empty paragraphs through import and reopen', async () => {
+  const zip = await JSZip.loadAsync(
+    await readFile('src/renderer/src/lib/__fixtures__/pptx/text-placeholder-layout.pptx')
+  )
+  const path = 'ppt/slides/slide1.xml'
+  const xml = await zip.file(path)!.async('string')
+  zip.file(
+    path,
+    xml.replace(
+      /<p:txBody>[\s\S]*?<\/p:txBody>/,
+      '<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>  title  </a:t></a:r></a:p><a:p/><a:p><a:r><a:t>tail </a:t></a:r></a:p></p:txBody>'
+    )
+  )
+  const item = await importEditablePptx(
+    new File([await zip.generateAsync({ type: 'arraybuffer' })], 'Whitespace.pptx', {
+      type: PPTX_MIME_TYPE
+    }),
+    'file-root'
+  )
+  const reopened = await loadEditablePresentation(item)
+  const slide = reopened.slides[reopened.slideOrder[0]]
+  const text = Object.values(slide.elements).find((element) => element.type === 'text')
+  if (text?.type !== 'text') throw new Error('Expected text')
+  expect(text.text).toBe('  title  \n\ntail ')
+  expect(text.runs?.map((run) => run.text).join('')).toBe(text.text)
+  expect(
+    text.paragraphs?.map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n')
+  ).toBe(text.text)
+})

@@ -178,6 +178,80 @@ describe('PPTX parser conversion contract', () => {
     ).toThrow('Invalid PowerPoint outline width')
   })
 
+  it('inherits extended run styles while respecting explicit local overrides', async () => {
+    const presentation = await parseFixture()
+    const layout = [...presentation.layouts.values()][0]
+    const defaults = layout.placeholders[0].node
+      .child('txBody')
+      .child('lstStyle')
+      .child('lvl1pPr')
+      .child('defRPr').element
+    if (!defaults) throw new Error('Expected defaults')
+    defaults.setAttribute('strike', 'sngStrike')
+    defaults.setAttribute('baseline', '30000')
+    defaults.setAttribute('spc', '150')
+    const highlight = defaults.ownerDocument.createElementNS(
+      'http://schemas.openxmlformats.org/drawingml/2006/main',
+      'a:highlight'
+    )
+    const color = defaults.ownerDocument.createElementNS(
+      'http://schemas.openxmlformats.org/drawingml/2006/main',
+      'a:srgbClr'
+    )
+    color.setAttribute('val', 'FFFF00')
+    highlight.appendChild(color)
+    defaults.appendChild(highlight)
+    const node = presentation.slides[0].nodes[0]
+    if (node.nodeType !== 'shape') throw new Error('Expected shape')
+    const local = node.textBody?.paragraphs[0].runs[0].properties?.element
+    if (!local) throw new Error('Expected local style')
+    local.setAttribute('strike', 'noStrike')
+    local.setAttribute('baseline', '0')
+    local.setAttribute('spc', '0')
+    const document = convertPresentationData(
+      { id: 'test', name: 'Styles.pptx', url: 'blob:test' } as FileItemRecord,
+      presentation
+    )
+    const slide = document.slides[document.slideOrder[0]]
+    const text = Object.values(slide.elements).find((element) => element.type === 'text')
+    if (text?.type !== 'text') throw new Error('Expected text')
+    expect(text.paragraphs?.[0].runs[0]).toMatchObject({
+      strikethrough: false,
+      baseline: 'normal',
+      characterSpacing: 0,
+      highlightColor: '#FFFF00'
+    })
+    expect(text.paragraphs?.[1].runs[0]).toMatchObject({
+      strikethrough: true,
+      baseline: 'superscript',
+      characterSpacing: 2,
+      highlightColor: '#FFFF00'
+    })
+  })
+
+  it('retains whitespace and empty paragraphs across imported text representations', async () => {
+    const presentation = await parseFixture()
+    const node = presentation.slides[0].nodes[0]
+    if (node.nodeType !== 'shape' || !node.textBody) throw new Error('Expected text')
+    const paragraphs = node.textBody.paragraphs
+    paragraphs[0].runs[0].text = '  title  '
+    paragraphs[1].runs[0].text = ''
+    paragraphs.push({ ...paragraphs[1], runs: [{ ...paragraphs[1].runs[0], text: 'tail ' }] })
+    const document = convertPresentationData(
+      { id: 'test', name: 'Whitespace.pptx', url: 'blob:test' } as FileItemRecord,
+      presentation
+    )
+    const slide = document.slides[document.slideOrder[0]]
+    const text = Object.values(slide.elements).find((element) => element.type === 'text')
+    if (text?.type !== 'text') throw new Error('Expected text')
+    expect(text.text).toBe('  title  \n\ntail ')
+    expect(text.runs?.map((run) => run.text).join('')).toBe(text.text)
+    expect(
+      text.paragraphs?.map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n')
+    ).toBe(text.text)
+    expect(() => validatePortablePresentation(JSON.parse(JSON.stringify(document)))).not.toThrow()
+  })
+
   it('inherits master background, mapped text colors and layout paragraph formatting', async () => {
     const presentation = await parseFixture()
     const document = convertPresentationData(

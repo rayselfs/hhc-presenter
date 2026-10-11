@@ -1073,7 +1073,7 @@ describe('editable presentation documents', () => {
     const text = getTextElements(document.slides[document.slideOrder[0]].elements)[0]
 
     expect(text.text).toBe('Bold italic\nSecond')
-    expect(text.runs).toEqual([
+    expect(text.runs).toMatchObject([
       {
         text: 'Bold',
         fontFamily: 'Arial',
@@ -1107,7 +1107,7 @@ describe('editable presentation documents', () => {
       align: 'justify',
       lineSpacing: { kind: 'multiple', value: 1 }
     })
-    expect(text.paragraphs?.[0].runs[0].characterSpacing).toBeCloseTo(4 / 3)
+    expect(text.paragraphs?.[0].runs[0].characterSpacing).toBeCloseTo(40 / 3)
     expect(text.paragraphs?.[0].runs.map((run) => run.text)).toEqual(['Bold', ' italic'])
   })
 
