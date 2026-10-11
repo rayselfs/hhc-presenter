@@ -1,6 +1,6 @@
 # PPTX conversion fidelity Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Native execution is recommended; user plan review and method selection remain pending.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking. Approved by the user for native execution in this session. Completed 2026-10-12; the full DeckCraft-reference goal remains active.
 
 **Goal:** Correct demonstrable losses in already-supported PPTX objects without changing portable schema v1.
 
@@ -35,11 +35,11 @@
 
 **Interfaces:** Consume `ShapeNodeData.line` and `convertPresentationData(source, presentation): EditablePresentationDocument`; preserve the existing shape/line `strokeWidth: number` contract.
 
-- [ ] Extend the parser-backed fixture builder with optional shape XML. Add `preserves explicit outline width` for rectangle and line `a:ln w="38100"`: converted `strokeWidth` equals 4 canvas pixels; thumbnail contains `stroke-width="4"`. Add explicit `a:noFill` and missing-line cases asserting no visible rectangle outline. Do not introduce snapshot-only tests.
-- [ ] Run `npx vitest run src/renderer/src/lib/__tests__/editable-presentation-pptx.test.ts`; record the assertion failure caused by fixed width before implementation.
-- [ ] In `convertShapeNode`, resolve explicit line width in existing canvas units and explicit no-fill. Confirm parser default/theme-line behavior before choosing an omitted-width fallback; add a fixture for that choice. Keep shape and line behavior consistent and reject invalid non-finite/negative width at the load boundary.
-- [ ] Run both listed test files; verify the outline renders consistently in `EditableSlideSurface` and generated thumbnails. Add a consumer regression only if either path differs.
-- [ ] Commit as `fix: preserve imported presentation outline widths`.
+- [x] Extend the parser-backed fixture builder with optional shape XML. Add `preserves explicit outline width` for rectangle and line `a:ln w="38100"`: converted `strokeWidth` equals 4 canvas pixels; thumbnail contains `stroke-width="4"`. Add explicit `a:noFill` and missing-line cases asserting no visible rectangle outline. Do not introduce snapshot-only tests.
+- [x] Run `npx vitest run src/renderer/src/lib/__tests__/editable-presentation-pptx.test.ts`; record the assertion failure caused by fixed width before implementation.
+- [x] In `convertShapeNode`, resolve explicit line width in existing canvas units and explicit no-fill. Confirm parser default/theme-line behavior before choosing an omitted-width fallback; add a fixture for that choice. Keep shape and line behavior consistent and reject invalid non-finite/negative width at the load boundary.
+- [x] Run both listed test files; verify the outline renders consistently in `EditableSlideSurface` and generated thumbnails. Add a consumer regression only if either path differs.
+- [x] Commit as `fix: preserve imported presentation outline widths`.
 
 ### Task 2: Preserve embedded picture MIME identity
 
@@ -47,11 +47,11 @@
 
 **Interfaces:** Keep private `getMimeTypeFromPath(path: string): string` and existing asset `{ mimeType, dataUrl }`; consume `validatePortablePresentation` without relaxing image signatures.
 
-- [ ] Add a parser-backed valid embedded BMP fixture: assert asset `mimeType` is `image/bmp`, data URL starts `data:image/bmp;base64,`, decoded bytes match source and portable validation accepts the document. Add mismatched signature and unknown-extension import cases asserting explicit failure and no catalog item.
-- [ ] Run the three listed test files; record the current BMP MIME/validation failure.
-- [ ] Correct the existing extension mapping for supported formats and make unknown extension behavior explicit. Reuse portable signature validation; do not add SVG/TIFF support or decode bytes using a new library in this task.
-- [ ] Run the tests; assert JSON save/reload retains asset MIME and exact bytes using existing persistence helpers.
-- [ ] Commit as `fix: retain BMP identity during PPTX import`.
+- [x] Add a parser-backed valid embedded BMP fixture: assert asset `mimeType` is `image/bmp`, data URL starts `data:image/bmp;base64,`, decoded bytes match source and portable validation accepts the document. Add mismatched signature and unknown-extension import cases asserting explicit failure and no catalog item.
+- [x] Run the three listed test files; record the current BMP MIME/validation failure.
+- [x] Correct the existing extension mapping for supported formats and make unknown extension behavior explicit. Reuse portable signature validation; do not add SVG/TIFF support or decode bytes using a new library in this task.
+- [x] Run the tests; assert JSON save/reload retains asset MIME and exact bytes using existing persistence helpers.
+- [x] Commit as `fix: retain BMP identity during PPTX import`.
 
 ### Task 3: Preserve supported inherited run styles and intentional text
 
@@ -59,11 +59,11 @@
 
 **Interfaces:** Keep `EditableTextRun`, `EditableTextParagraph` and `EditableTextElement` fields unchanged. Use the existing `resolveTextStyle` precedence for inherited supported attributes; `normalizeTextParagraphs(element)` remains the shared editor normalization boundary.
 
-- [ ] Add inherited strike/superscript/character-spacing/highlight fixtures with local explicit no-strike/normal/zero overrides. Assert the supported values on paragraph runs and the explicit overrides, using DrawingML source units confirmed against pinned source/documentation. Add text `  title  ` followed by an empty paragraph and `tail `; assert consistent aggregate text/run/paragraph content and save/reopen preservation.
-- [ ] Run `npx vitest run src/renderer/src/lib/__tests__/editable-presentation-pptx.test.ts src/renderer/src/lib/__tests__/editable-presentation-persistence.test.ts`; record actual failures. If a candidate already passes, retain the useful regression and skip the corresponding code change.
-- [ ] Resolve supported inherited extended styles using existing precedence, respecting property omission. Preserve intentional whitespace and paragraph boundaries across converter representations; avoid changing user typing normalization globally unless the fixture proves it necessary.
-- [ ] Run the listed tests plus `presentation-rich-text.test.ts` and `EditableSlideSurface.test.tsx`; verify existing font scaling and explicit `buNone` tests still pass.
-- [ ] Commit as `fix: preserve imported rich text inheritance and whitespace`.
+- [x] Add inherited strike/superscript/character-spacing/highlight fixtures with local explicit no-strike/normal/zero overrides. Assert the supported values on paragraph runs and the explicit overrides, using DrawingML source units confirmed against pinned source/documentation. Add text `  title  ` followed by an empty paragraph and `tail `; assert consistent aggregate text/run/paragraph content and save/reopen preservation.
+- [x] Run `npx vitest run src/renderer/src/lib/__tests__/editable-presentation-pptx.test.ts src/renderer/src/lib/__tests__/editable-presentation-persistence.test.ts`; record actual failures. If a candidate already passes, retain the useful regression and skip the corresponding code change.
+- [x] Resolve supported inherited extended styles using existing precedence, respecting property omission. Preserve intentional whitespace and paragraph boundaries across converter representations; avoid changing user typing normalization globally unless the fixture proves it necessary.
+- [x] Run the listed tests plus `presentation-rich-text.test.ts` and `EditableSlideSurface.test.tsx`; verify existing font scaling and explicit `buNone` tests still pass.
+- [x] Commit as `fix: preserve imported rich text inheritance and whitespace`.
 
 ### Task 4: Verify the complete first batch
 
@@ -71,12 +71,26 @@
 
 **Interfaces:** Preserve existing projection/session and portable document contracts. This task consumes the fixes from Tasks 1–3 and produces recorded acceptance evidence.
 
-- [ ] Assert the hymn import has 22 slides and exact original text; save/reopen retains those values and supported edits. Exercise rejected imports and existing draft/account guards. Add assertions only for uncovered behavior.
-- [ ] Run `npm run lint`, `npm run typecheck`, `npx vitest run`, `npm run build` and `npm run build:web`; record actual outcomes separately.
-- [ ] Run `npm run test:e2e:browser -- e2e/presentation-rendering-fidelity.spec.ts e2e/presentation-text-editing.spec.ts e2e/presentation-page-navigation.spec.ts`. Compare visible text, outline and crop on editor/thumbnail/projection using the imported corpus and targeted fixtures.
-- [ ] Run available Electron runtime smoke for import/edit/save/reopen/projection. Report missing runtime/device prerequisites explicitly; browser tests do not prove packaged or physical Windows acceptance.
-- [ ] Review the complete diff and record unresolved evidence. No PR/CI, release or device acceptance claim without that actual run. Commit any added regression coverage and report batch completion separately from the full goal.
+- [x] Assert the hymn import has 22 slides and exact original text; save/reopen retains those values and supported edits. Exercise rejected imports and existing draft/account guards. Add assertions only for uncovered behavior.
+- [x] Run `npm run lint`, `npm run typecheck`, `npx vitest run`, `npm run build` and `npm run build:web`; record actual outcomes separately.
+- [x] Run `npm run test:e2e:browser -- e2e/presentation-rendering-fidelity.spec.ts e2e/presentation-text-editing.spec.ts e2e/presentation-page-navigation.spec.ts`. Compare visible text, outline and crop on editor/thumbnail/projection using the imported corpus and targeted fixtures.
+- [x] Run available Electron runtime smoke for import/edit/save/reopen/projection. Report missing runtime/device prerequisites explicitly; browser tests do not prove packaged or physical Windows acceptance.
+- [x] Review the complete diff and record unresolved evidence. No PR/CI, release or device acceptance claim without that actual run. Commit any added regression coverage and report batch completion separately from the full goal.
 
 ## Subsequent plans
 
 Next: bounded portable source preservation and schema/API contract evolution, including exact size/depth limits and migration tests; then PPTX export supported-subset fidelity. Objects, masters/layouts and playback retain the order and acceptance conditions in the approved spec. A new schema must not be enabled for cloud writes before matching API deployment is independently authorized and verified.
+
+## Execution evidence — 2026-10-12
+
+Product commits: `97299073`, `3d6f4edd`, `2896708c`, `ce505aca`. A fresh independent reviewer identified mixed-run highlight clearing and invisible supported shapes; both were reproduced RED and fixed GREEN in the final fix pass.
+
+- Lint, node/web typecheck, desktop build and web build passed.
+- Full suite: `npm test -- --maxWorkers=2 --testTimeout=15000`: 300 suites / 3,553 tests passed. Default five-second tests timed out under host contention; the successful run used the stated CLI overrides without changing repository configuration.
+- Browser: 20 Chromium tests passed across rendering fidelity, text editing and page navigation using an isolated preview on port 5179. The actual command was `npx playwright test e2e/presentation-rendering-fidelity.spec.ts e2e/presentation-text-editing.spec.ts e2e/presentation-page-navigation.spec.ts --config=.superpowers/sdd/2026-10-11-pptx-conversion-fidelity/browser.config.ts --project=chromium`.
+- macOS Electron: isolated user profile, original 22-slide hymn, Chinese edit, F5 projection, next slide, escape, save and reload passed. The runtime was the worktree's locked Electron version; this was not packaged-app acceptance.
+- No PR/remote CI, Windows physical-device acceptance, release, deployment or new-schema cloud acceptance performed. Source preservation, export and later phases remain open.
+
+Rulings: keep the parser's one-pixel fallback for visible omitted-width outlines; theme outline resolution remains later phase-1 work. Correct DrawingML character spacing to hundredths of a point; preserve existing newline-prefix runs and add a separator only for empty paragraphs. The initial omission allowance for invisible shapes was superseded after review: preserve their graph identity as editable objects. Incorrect rulings could respectively alter outline appearance, spacing/paragraph behavior, or object identity; regression tests cover this batch's supported cases. No deferred minor findings.
+
+Full ledger and verification logs are archived locally at `/Users/rayselfs/.codex/visualizations/2026/10/11/01a12b4f-88d0-7980-82da-40c2abb5b65f/deckcraft-typescript-batch1/`. The task worktree is retained because unmerged work and follow-up phases remain.
