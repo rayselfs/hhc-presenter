@@ -8,7 +8,7 @@ Use DeckCraft v0.5.0 as a reference for presentation capabilities that HHC lacks
 
 The dedicated workspace is `/Users/rayselfs/.codex/worktrees/deckcraft-reference-ts/hhc-client-v2`, branch `feat/deckcraft-reference-ts`, based on `origin/main` `0980ab5350f41acc6e820469f1f816957efc4fd0`. Preserve the primary checkout and every unrelated worktree. No merge, release or deployment is authorized.
 
-The reference inventory records upstream implemented and partially implemented features in relevant areas. It is a discovery checklist, not a claim that all entries are missing in HHC or production ready upstream. Existing HHC capabilities must be identified and reused before choosing work. Each missing capability needs its own acceptance evidence; passing one phase does not complete the whole goal.
+The reference inventory records upstream implemented and partially implemented features in relevant areas. It is a discovery checklist, not a claim that all entries are missing in HHC or production ready upstream. Existing HHC capabilities must be identified and reused before choosing work. The inventory now distinguishes existing, partial, gap, policy-conflict and unassessed entries with local source paths. These are static code assessments, not end-to-end acceptance results; upstream D/P labels remain upstream claims. A gap describes editable HHC support, not the raw PPTX viewer. Each missing capability needs its own acceptance evidence; passing one phase does not complete the whole goal.
 
 ## Reference evidence
 

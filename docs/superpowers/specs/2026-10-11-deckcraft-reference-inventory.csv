@@ -1,130 +1,130 @@
-reference_version,area,feature,upstream_priority,upstream_status,assessment
-v0.5.0,Files,New blank presentation,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Files,Native file format (open/save),P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Files,Open PowerPoint .pptx,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Files,Save as PowerPoint .pptx,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Files,Open/save .potx/.ppsx/.pptm variants (.potx/.ppsx open; saved with the .pptx content type; no .pptm),P2,P,candidate: verify against HHC and pinned source
-v0.5.0,Files,Save as template,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Files,Autosave and crash recovery,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Files,Document properties,P2,D,candidate: verify against HHC and pinned source
-v0.5.0,Files,"Export to PDF (slides, notes pages, handouts; text layer, links, bookmarks; vector artwork pending)",P0,P,candidate: verify against HHC and pinned source
-v0.5.0,Files,Export slides as PNG/JPEG,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Files,Export outline / RTF,P2,P,candidate: verify against HHC and pinned source
-v0.5.0,Files,Drag and drop files onto the window,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Slides,New slide by layout,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Slides,"Duplicate, delete, hide slides",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Slides,"Reorder slides (thumbnails, sorter)",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Slides,"Sections (add, rename, remove, move, collapse)",P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Slides,Slide layouts (11 standard),P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Slides,Reset slide,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Slides,Slides from outline,P2,D,candidate: verify against HHC and pinned source
-v0.5.0,Slides,Copy/paste slides between decks,P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Masters & themes,Slide Master view (edit master and layouts),P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Masters & themes,"Insert/rename/delete layouts, insert placeholders",P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Masters & themes,Built-in themes (original designs),P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Masters & themes,Theme variants,P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Masters & themes,Colour schemes (built-in and custom),P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Masters & themes,Font schemes (built-in and custom),P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Masters & themes,Effect schemes / background styles,P2,P,candidate: verify against HHC and pinned source
-v0.5.0,Masters & themes,"Format background (solid, gradient, picture, pattern)",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Masters & themes,Hide background graphics,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Masters & themes,"Slide size (16:9, 4:3, presets, custom)",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Masters & themes,"Header & footer (date, slide number, footer)",P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Shapes,"Preset shapes (lines, rectangles, basic, arrows, equation, flowchart, stars, callouts)",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Shapes,Action buttons,P2,D,candidate: verify against HHC and pinned source
-v0.5.0,Shapes,Adjustment handles,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Shapes,"Connectors (straight, elbow, curved)",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Shapes,Connector glue to connection sites,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Shapes,"Freeform, curve and scribble tools",P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Shapes,"Merge shapes (union, combine, fragment, intersect, subtract)",P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Shapes,Change shape,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Shapes,Text boxes,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Shapes,WordArt,P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Shapes,Shape quick styles,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Shapes,Set as default shape,P2,D,candidate: verify against HHC and pinned source
-v0.5.0,Format,Solid fill and transparency,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Format,"Gradient fill (linear, radial, rectangular, path)",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Format,Picture and texture fill,P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Format,Pattern fill,P2,P,candidate: verify against HHC and pinned source
-v0.5.0,Format,"Line colour, width, dash, compound, cap, join",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Format,Arrowheads,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Format,"Shadow (outer, inner, presets)",P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Format,"Reflection, glow, soft edges",P2,P,candidate: verify against HHC and pinned source
-v0.5.0,Format,Format Painter,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Format,Format Shape pane,P0,P,candidate: verify against HHC and pinned source
-v0.5.0,Arrange,"Size and position (exact), lock aspect ratio",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Arrange,Rotate and flip,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Arrange,Bring forward / send backward / to front / to back,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Arrange,Align and distribute,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Arrange,"Group, ungroup, regroup",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Arrange,"Selection pane (names, visibility, order)",P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Arrange,"Nudge, duplicate with repeat offset",P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Arrange,Lock shapes,P2,D,candidate: verify against HHC and pinned source
-v0.5.0,Arrange,Alt text,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,"In-place text editing (caret, selection, mouse, keyboard)",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,"Font, size, bold, italic, underline, strikethrough (only Regular/Bold/Italic faces, #69)",P0,P,candidate: verify against HHC and pinned source
-v0.5.0,Text,"Font colour, highlight",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,"Superscript, subscript, caps, character spacing",P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,"Change case, grow/shrink font, clear formatting",P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,Text outline and text effects,P2,P,candidate: verify against HHC and pinned source
-v0.5.0,Text,"Paragraph alignment, indents, spacing, line spacing",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,Bullets and numbering,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,"Picture bullets, custom bullet symbols",P2,P,candidate: verify against HHC and pinned source
-v0.5.0,Text,List levels (Tab / Shift+Tab),P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,Tab stops,P2,P,candidate: verify against HHC and pinned source
-v0.5.0,Text,Columns,P2,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,"Vertical anchor, margins, wrap",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,"Autofit (shrink on overflow, resize shape)",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,"Text direction (rotated, stacked)",P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,"Find and replace, replace fonts",P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Text,Spelling check,P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Text,Symbols and emoji,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,"Hyperlinks (URL, slide, email)",P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,Date/time and slide number fields,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Text,Right-to-left and complex scripts,P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Text,"East Asian text (CJK fonts, line breaking)",P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Tables,"Insert table (grid picker, dialog)",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Tables,Table styles and style options,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Tables,Insert/delete rows and columns,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Tables,Merge and split cells,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Tables,"Distribute rows/columns, sizes",P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Tables,"Cell fill, borders, margins, alignment",P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Tables,Keyboard navigation between cells,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Charts,"Insert chart (column, bar, line, area, pie, doughnut, scatter)",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Charts,"Other chart types (radar, stock, combo, waterfall, funnel, treemap, sunburst, histogram, box)",P2,P,candidate: verify against HHC and pinned source
-v0.5.0,Charts,Edit chart data,P0,P,candidate: verify against HHC and pinned source
-v0.5.0,Charts,"Chart elements (title, legend, labels, axes, gridlines)",P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Charts,Chart styles and colours,P2,P,candidate: verify against HHC and pinned source
-v0.5.0,Pictures,"Insert picture (PNG, JPEG, GIF, WebP, BMP, TIFF)",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Pictures,"Crop (and crop to shape, aspect ratio)",P0,P,candidate: verify against HHC and pinned source
-v0.5.0,Pictures,"Corrections, colour, transparency",P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Pictures,Picture styles and borders,P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Pictures,Change / reset picture,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Pictures,"Paste image from clipboard (fails on Windows and Linux, #53)",P0,P,candidate: verify against HHC and pinned source
-v0.5.0,Media,Insert audio (any common format),P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Media,Insert video,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Media,Audio/video playback in the show (WMA/WMV not decodable yet),P0,P,candidate: verify against HHC and pinned source
-v0.5.0,Media,"Trim, fade in/out, volume, loop, play across slides",P2,D,candidate: verify against HHC and pinned source
-v0.5.0,Media,Embedded objects (OLE): insert; foreign objects kept on round trip,P2,P,candidate: verify against HHC and pinned source
-v0.5.0,Transitions,"Transition gallery (fade, push, wipe, split, cover, uncover, zoom, morph…)",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Transitions,Effect options and duration,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Transitions,"Advance on click / after time, apply to all",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Transitions,Morph,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Animations,"Entrance, emphasis, exit effects",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Animations,Motion paths,P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Animations,"Effect options, start (on click/with/after), duration, delay",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Animations,"Animation pane (reorder, timing)",P0,P,candidate: verify against HHC and pinned source
-v0.5.0,Animations,By-paragraph text builds,P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Animations,Triggers,P2,D,candidate: verify against HHC and pinned source
-v0.5.0,Animations,Animation Painter,P2,D,candidate: verify against HHC and pinned source
-v0.5.0,Animations,Preview in editor,P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Slide show,Full-screen show from start / current,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Slide show,"Navigation (keys, click, go to slide, blank screen)",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Slide show,"Presenter view (notes, next slide, timer)",P0,P,candidate: verify against HHC and pinned source
-v0.5.0,Slide show,Pen and highlighter ink during the show,P1,P,candidate: verify against HHC and pinned source
-v0.5.0,Slide show,Rehearse timings,P2,D,candidate: verify against HHC and pinned source
-v0.5.0,Slide show,Custom shows,P2,D,candidate: verify against HHC and pinned source
-v0.5.0,Slide show,"Set up show (loop, kiosk, without animation)",P1,D,candidate: verify against HHC and pinned source
-v0.5.0,Undo & clipboard,Unlimited undo/redo,P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Undo & clipboard,"Cut, copy, paste shapes and slides",P0,D,candidate: verify against HHC and pinned source
-v0.5.0,Undo & clipboard,"Paste special (keep formatting, picture, text only)",P1,P,candidate: verify against HHC and pinned source
+reference_version,area,feature,upstream_priority,upstream_status,hhc_status,assessment,evidence
+v0.5.0,Files,New blank presentation,P0,D,existing,createBlankEditablePresentationDocument,src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Files,Native file format (open/save),P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Files,Open PowerPoint .pptx,P0,D,partial,Editable conversion accepts a bounded subset; unsupported content fails before catalog creation,src/renderer/src/lib/pptx-import.ts;src/renderer/src/lib/__tests__/pptx-import.test.ts
+v0.5.0,Files,Save as PowerPoint .pptx,P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Files,Open/save .potx/.ppsx/.pptm variants (.potx/.ppsx open; saved with the .pptx content type; no .pptm),P2,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Files,Save as template,P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Files,Autosave and crash recovery,P0,D,partial,Draft revisions and coordinated saves exist; crash recovery acceptance still needs a dedicated probe,src/renderer/src/lib/presentation-drafts.ts;src/renderer/src/lib/presentation-save-coordinator.ts
+v0.5.0,Files,Document properties,P2,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Files,"Export to PDF (slides, notes pages, handouts; text layer, links, bookmarks; vector artwork pending)",P0,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Files,Export slides as PNG/JPEG,P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Files,Export outline / RTF,P2,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Files,Drag and drop files onto the window,P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Slides,New slide by layout,P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Slides,"Duplicate, delete, hide slides",P0,D,partial,Duplicate/delete exist; editable slide model has no hidden flag,src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Slides,"Reorder slides (thumbnails, sorter)",P0,D,existing,reorderSelectedSlides with workspace integration; sorter layout needs separate comparison,src/renderer/src/lib/presentation-editor-commands.ts;src/renderer/src/pages/PresentationWorkspacePage.tsx
+v0.5.0,Slides,"Sections (add, rename, remove, move, collapse)",P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Slides,Slide layouts (11 standard),P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Slides,Reset slide,P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Slides,Slides from outline,P2,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Slides,Copy/paste slides between decks,P1,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Masters & themes,Slide Master view (edit master and layouts),P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Masters & themes,"Insert/rename/delete layouts, insert placeholders",P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Masters & themes,Built-in themes (original designs),P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Masters & themes,Theme variants,P1,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Masters & themes,Colour schemes (built-in and custom),P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Masters & themes,Font schemes (built-in and custom),P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Masters & themes,Effect schemes / background styles,P2,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Masters & themes,"Format background (solid, gradient, picture, pattern)",P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Masters & themes,Hide background graphics,P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Masters & themes,"Slide size (16:9, 4:3, presets, custom)",P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Masters & themes,"Header & footer (date, slide number, footer)",P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Shapes,"Preset shapes (lines, rectangles, basic, arrows, equation, flowchart, stars, callouts)",P0,D,partial,Editable rectangle/ellipse/line only; custom and other preset geometries rejected,src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Shapes,Action buttons,P2,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Shapes,Adjustment handles,P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Shapes,"Connectors (straight, elbow, curved)",P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Shapes,Connector glue to connection sites,P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Shapes,"Freeform, curve and scribble tools",P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Shapes,"Merge shapes (union, combine, fragment, intersect, subtract)",P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Shapes,Change shape,P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Shapes,Text boxes,P0,D,existing,createTextElement and workspace insertion,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/pages/PresentationWorkspacePage.tsx
+v0.5.0,Shapes,WordArt,P1,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Shapes,Shape quick styles,P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Shapes,Set as default shape,P2,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Format,Solid fill and transparency,P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Format,"Gradient fill (linear, radial, rectangular, path)",P0,D,gap,Shape gradient fill rejected; slide background supports linear gradients separately,src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Format,Picture and texture fill,P1,P,gap,Shape blipFill rejected; standalone picture elements are a different capability,src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Format,Pattern fill,P2,P,gap,Shape pattFill rejected,src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Format,"Line colour, width, dash, compound, cap, join",P0,D,partial,Colour/width fields exist; no dash/compound/cap/join model fields,src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Format,Arrowheads,P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Format,"Shadow (outer, inner, presets)",P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Format,"Reflection, glow, soft edges",P2,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Format,Format Painter,P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Format,Format Shape pane,P0,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Arrange,"Size and position (exact), lock aspect ratio",P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Arrange,Rotate and flip,P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Arrange,Bring forward / send backward / to front / to back,P0,D,existing,reorderElementInSlide and workspace actions,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/pages/PresentationWorkspacePage.tsx
+v0.5.0,Arrange,Align and distribute,P0,D,existing,alignElements/distributeElements and workspace commands,src/renderer/src/lib/presentation-editor-commands.ts;src/renderer/src/pages/PresentationWorkspacePage.tsx
+v0.5.0,Arrange,"Group, ungroup, regroup",P0,D,gap,Editable union has no group kind; converter produces locked nodes for non-shape/picture content,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts
+v0.5.0,Arrange,"Selection pane (names, visibility, order)",P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Arrange,"Nudge, duplicate with repeat offset",P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Arrange,Lock shapes,P2,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Arrange,Alt text,P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Text,"In-place text editing (caret, selection, mouse, keyboard)",P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Text,"Font, size, bold, italic, underline, strikethrough (only Regular/Bold/Italic faces, #69)",P0,P,existing,Run styles and ribbon operations exist; font face availability is platform-dependent,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/pages/PresentationWorkspacePage.tsx
+v0.5.0,Text,"Font colour, highlight",P0,D,existing,Selected character style commands and persisted run fields,src/renderer/src/pages/PresentationWorkspacePage.tsx;src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Text,"Superscript, subscript, caps, character spacing",P1,D,partial,Baseline and character spacing exist; no persisted caps style,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/pages/PresentationWorkspacePage.tsx
+v0.5.0,Text,"Change case, grow/shrink font, clear formatting",P1,D,existing,Ribbon callbacks use shared rich-text commands,src/renderer/src/pages/PresentationWorkspacePage.tsx;src/renderer/src/lib/presentation-rich-text.ts
+v0.5.0,Text,Text outline and text effects,P2,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Text,"Paragraph alignment, indents, spacing, line spacing",P0,D,partial,Alignment/indent/multiple-or-exact line spacing exist; before/after paragraph spacing absent from model,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/pages/PresentationWorkspacePage.tsx
+v0.5.0,Text,Bullets and numbering,P0,D,existing,Typed list styles plus ribbon commands and import extraction,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/pages/PresentationWorkspacePage.tsx
+v0.5.0,Text,"Picture bullets, custom bullet symbols",P2,P,partial,Custom char/font bullet model exists; picture bullet asset absent,src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Text,List levels (Tab / Shift+Tab),P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Text,Tab stops,P2,P,gap,No editable paragraph tab-stop representation,src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Text,Columns,P2,D,gap,No editable text column representation,src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Text,"Vertical anchor, margins, wrap",P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Text,"Autofit (shrink on overflow, resize shape)",P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Text,"Text direction (rotated, stacked)",P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Text,"Find and replace, replace fonts",P1,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Text,Spelling check,P1,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Text,Symbols and emoji,P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Text,"Hyperlinks (URL, slide, email)",P1,D,gap,No editable run hyperlink or slide-action representation,src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Text,Date/time and slide number fields,P1,D,gap,No editable dynamic field representation,src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Text,Right-to-left and complex scripts,P1,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Text,"East Asian text (CJK fonts, line breaking)",P1,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Tables,"Insert table (grid picker, dialog)",P0,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Tables,Table styles and style options,P0,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Tables,Insert/delete rows and columns,P0,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Tables,Merge and split cells,P1,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Tables,"Distribute rows/columns, sizes",P1,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Tables,"Cell fill, borders, margins, alignment",P1,P,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Tables,Keyboard navigation between cells,P0,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Charts,"Insert chart (column, bar, line, area, pie, doughnut, scatter)",P0,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Charts,"Other chart types (radar, stock, combo, waterfall, funnel, treemap, sunburst, histogram, box)",P2,P,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Charts,Edit chart data,P0,P,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Charts,"Chart elements (title, legend, labels, axes, gridlines)",P1,P,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Charts,Chart styles and colours,P2,P,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Pictures,"Insert picture (PNG, JPEG, GIF, WebP, BMP, TIFF)",P0,D,partial,Portable images accept PNG/JPEG/GIF/WebP/BMP with signature limits; TIFF excluded,src/renderer/src/lib/portable-presentation.ts
+v0.5.0,Pictures,"Crop (and crop to shape, aspect ratio)",P0,P,partial,Rectangular image crop model and thumbnail rendering exist; crop-to-shape absent,src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Pictures,"Corrections, colour, transparency",P1,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Pictures,Picture styles and borders,P1,P,partial,Image border colour/width and soft/medium shadow fields exist; style gallery differs,src/renderer/src/lib/editable-presentation.ts
+v0.5.0,Pictures,Change / reset picture,P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Pictures,"Paste image from clipboard (fails on Windows and Linux, #53)",P0,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Media,Insert audio (any common format),P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Media,Insert video,P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Media,Audio/video playback in the show (WMA/WMV not decodable yet),P0,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Media,"Trim, fade in/out, volume, loop, play across slides",P2,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Media,Embedded objects (OLE): insert; foreign objects kept on round trip,P2,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Transitions,"Transition gallery (fade, push, wipe, split, cover, uncover, zoom, morph…)",P0,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Transitions,Effect options and duration,P0,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Transitions,"Advance on click / after time, apply to all",P0,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Transitions,Morph,P1,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Animations,"Entrance, emphasis, exit effects",P0,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Animations,Motion paths,P1,P,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Animations,"Effect options, start (on click/with/after), duration, delay",P0,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Animations,"Animation pane (reorder, timing)",P0,P,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Animations,By-paragraph text builds,P1,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Animations,Triggers,P2,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Animations,Animation Painter,P2,D,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Animations,Preview in editor,P1,P,gap,Editable document has no representation for this capability; raw PPTX viewing is not editable support,src/renderer/src/lib/editable-presentation.ts;src/renderer/src/lib/portable-presentation.ts;src/renderer/src/lib/pptx-import.ts
+v0.5.0,Slide show,Full-screen show from start / current,P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Slide show,"Navigation (keys, click, go to slide, blank screen)",P0,D,policy-conflict,Keep existing navigation; user-facing blank screen conflicts with projection fallback rule,AGENTS.md
+v0.5.0,Slide show,"Presenter view (notes, next slide, timer)",P0,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Slide show,Pen and highlighter ink during the show,P1,P,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Slide show,Rehearse timings,P2,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Slide show,Custom shows,P2,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Slide show,"Set up show (loop, kiosk, without animation)",P1,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Undo & clipboard,Unlimited undo/redo,P0,D,partial,Immutable snapshot undo/redo exists with MAX_HISTORY_ENTRIES=30; memory budget required before removing cap,src/renderer/src/lib/presentation-history.ts
+v0.5.0,Undo & clipboard,"Cut, copy, paste shapes and slides",P0,D,unassessed,candidate: verify against HHC and pinned source,
+v0.5.0,Undo & clipboard,"Paste special (keep formatting, picture, text only)",P1,P,unassessed,candidate: verify against HHC and pinned source,
