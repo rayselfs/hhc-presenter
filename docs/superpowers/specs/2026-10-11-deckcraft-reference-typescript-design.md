@@ -25,18 +25,18 @@ The official WASM release passed a standalone import/edit/show probe using the 2
 
 ## Current HHC evidence
 
-| Area             | Current implementation                                                         | Gap or dependency                                                                                |
-| ---------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
-| PPTX parsing     | `@aiden0z/pptx-renderer` 1.2.4, bounded ZIP parsing, master/layout/theme reads | Installed parser already has table, chart and group node types; assess conversion coverage first |
-| Editable import  | `pptx-import.ts` and `convertPresentationData`                                 | Rejects unsupported objects, shape geometry/fills, animation, transition and embedded media      |
-| Portable model   | `EditablePresentationDocument`, schema v1                                      | Element union is text/image/shape/line/locked; shapes are rectangle/ellipse                      |
-| Text             | Rich runs/paragraphs, formatting and list controls                             | Audit inheritance, autofit and wrapping before porting text algorithms                           |
-| Arrange          | Alignment, distribution, snapping, multi-selection, undo/redo already exist    | Add missing group/connector behavior; preserve existing commands                                 |
-| Rendering        | `EditableSlideSurface`, thumbnails, projection surface                         | Every new object must render consistently in all three surfaces                                  |
-| Persistence      | Save coordinator, drafts, immutable blob revisions, account fences             | New source parts and graph types must survive saves, reopen, history and sync                    |
-| Cloud validation | `portable-presentation.ts`, Asset API `ValidatePersonalDeck`                   | API accepts schema v1 and five element kinds only; new model needs coordinated contract work     |
-| Projection       | Presenter page state separate from editor workspace selection                  | Explicit show actions own projection; stale generations must not move the active show            |
-| Native format    | `.lpdeck` JSON and HHC MIME type                                               | Preserve current files until a tested migration is designed; new format is not assumed           |
+| Area             | Current implementation                                                          | Gap or dependency                                                                                           |
+| ---------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| PPTX parsing     | `@aiden0z/pptx-renderer` 1.2.4, bounded ZIP parsing, master/layout/theme reads  | Installed parser already has table, chart and group node types; assess conversion coverage first            |
+| Editable import  | `pptx-import.ts` and `convertPresentationData`                                  | Rejects unsupported objects, shape geometry/fills, animation, transition and embedded media                 |
+| Portable model   | `EditablePresentationDocument`, schema v1/v2; bounded optional original package | Element union is text/image/shape/line/locked; shapes are rectangle/ellipse                                 |
+| Text             | Rich runs/paragraphs, formatting and list controls                              | Audit inheritance, autofit and wrapping before porting text algorithms                                      |
+| Arrange          | Alignment, distribution, snapping, multi-selection, undo/redo already exist     | Add missing group/connector behavior; preserve existing commands                                            |
+| Rendering        | `EditableSlideSurface`, thumbnails, projection surface                          | Every new object must render consistently in all three surfaces                                             |
+| Persistence      | Save coordinator, drafts, immutable blob revisions, account fences              | New source parts and graph types must survive saves, reopen, history and sync                               |
+| Cloud validation | `portable-presentation.ts`, Asset API `ValidatePersonalDeck`                    | API worktree validates v1/v2 source contract; not deployed; new object kinds need coordinated contract work |
+| Projection       | Presenter page state separate from editor workspace selection                   | Explicit show actions own projection; stale generations must not move the active show                       |
+| Native format    | `.lpdeck` JSON and HHC MIME type                                                | Preserve current files until a tested migration is designed; new format is not assumed                      |
 
 ## Recommended architecture
 
