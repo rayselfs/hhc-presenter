@@ -1,6 +1,6 @@
 # DeckCraft reference capabilities in HHC Presenter
 
-Status: design approved in conversation on 2026-10-11, including necessary Asset API companion changes. Implementation-plan review remains pending.
+Status: design approved in conversation on 2026-10-11, including necessary Asset API companion changes. The conversion-fidelity plan and the source-contract plan were approved; both batches are complete with local verification; the full five-phase goal remains in progress.
 
 ## Intent and scope
 
@@ -115,4 +115,4 @@ Already-covered behavior to reuse: `editable-presentation-pptx.test.ts` exercise
 
 ## Decision needed before implementation planning
 
-The user approved the design and necessary `website/asset-api` validation, OpenAPI and contract-test scope on 2026-10-11, and reiterated that all work must use isolated worktrees. Client work stays in the dedicated worktree; backend implementation requires a separate worktree from that repository latest `origin/main`. No deployment, merge or release is authorized. Review the first-slice implementation plan before product implementation.
+The user approved the design and necessary `website/asset-api` validation, OpenAPI and contract-test scope on 2026-10-11, and reiterated that all work must use isolated worktrees. Client work stays in the dedicated worktree; backend implementation requires a separate worktree from that repository latest `origin/main`. No deployment, merge or release is authorized. The first-slice conversion-fidelity plan was approved and completed; the source-contract plan was approved on 2026-10-12.
