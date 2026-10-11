@@ -68,6 +68,17 @@ export interface EditableImageInsertInput {
   sourceHeight: number
 }
 
+export interface PptxSource {
+  version: 1
+  base64: string
+  sha256: string
+}
+
+export interface PptxSourceNode {
+  id: string
+  role: 'geometry' | 'text' | 'image'
+}
+
 interface EditableElementBase {
   id: string
   type: EditablePresentationElementType
@@ -78,6 +89,7 @@ interface EditableElementBase {
   rotation: number
   opacity: number
   locked?: boolean
+  pptxSourceNode?: PptxSourceNode
 }
 
 export interface EditableTextElement extends EditableElementBase {
@@ -211,6 +223,7 @@ export type EditablePresentationElement =
   | EditableLockedElement
 
 export interface EditablePresentationSlide {
+  pptxSourcePart?: string
   id: string
   name: string
   background: EditableSlideBackground
@@ -221,7 +234,8 @@ export interface EditablePresentationSlide {
 }
 
 export interface EditablePresentationDocument {
-  schemaVersion?: 1
+  schemaVersion?: 1 | 2
+  pptxSource?: PptxSource
   id: string
   name: string
   sourceItemId?: string

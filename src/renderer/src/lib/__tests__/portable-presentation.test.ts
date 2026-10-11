@@ -1,5 +1,6 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 import { Blob as NodeBlob } from 'node:buffer'
+import { validatePortablePresentation } from '../portable-presentation'
 import { openFileExplorerDB, resetFileExplorerDBForTests } from '../file-explorer-db'
 import {
   clearEditablePresentationCache,
@@ -38,7 +39,7 @@ it('migrates legacy decks to v1 without retaining another computer provenance', 
   expect(loaded).not.toHaveProperty('sourceBlobId', 'old-blob')
 })
 
-it.each([{ schemaVersion: 2 }, { width: 0 }, { height: 100001 }, { slideOrder: ['missing'] }])(
+it.each([{ schemaVersion: 3 }, { width: 0 }, { height: 100001 }, { slideOrder: ['missing'] }])(
   'rejects unsupported or inconsistent portable documents: %j',
   async (changes) => {
     const document = { ...createBlankEditablePresentationDocument('Portable'), ...changes }
@@ -134,4 +135,24 @@ it.each([
   slide.elements[text.id] = text as ReturnType<typeof createTextElement>
   slide.elementOrder.push(text.id)
   await expect(load(document)).rejects.toThrow('Invalid portable presentation document')
+})
+
+it('accepts schema v2 graph without requiring an imported source', () => {
+  expect(() =>
+    validatePortablePresentation({
+      ...createBlankEditablePresentationDocument('Portable'),
+      schemaVersion: 2
+    })
+  ).not.toThrow()
+})
+
+it('rejects source records attached to a legacy or v1 graph', () => {
+  for (const schemaVersion of [undefined, 1 as const]) {
+    const document = {
+      ...createBlankEditablePresentationDocument('Portable'),
+      schemaVersion,
+      pptxSource: { version: 1 as const, base64: 'UEs=', sha256: '0'.repeat(64) }
+    }
+    expect(() => validatePortablePresentation(document)).toThrow()
+  }
 })

@@ -1,6 +1,6 @@
 # Bounded PPTX source contract Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement task-by-task. Steps use checkbox syntax. Native execution in the current session was selected by the user and persists. This next-batch plan awaits review; no product implementation has started.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement task-by-task. Steps use checkbox syntax. Native execution in the current session was selected by the user and persists. Approved by the user on 2026-10-12 for native execution; implementation is in progress.
 
 **Goal:** Implement a portable schema-v2 source-preservation foundation that both client and Asset API validate, while retaining legacy/v1 reads and ordinary v1 import writes until deployment acceptance.
 
@@ -100,4 +100,4 @@ Measured the actual existing hymn fixture `src/renderer/src/lib/__fixtures__/ppt
 - 53 XML/relationship parts; maximum XML element depth 10; 22 slide parts; each slide's `p:cNvPr/@id` values are unique.
 - No external relationships or encrypted entries; all ZIP CRC checks passed.
 
-This establishes that the approved hymn fits the proposed bounds and source-node identity rule. It does not establish compatibility with large image/media decks, ZIP64 producers, other authoring applications or cloud acceptance; Task 1's synthetic boundary tests and subsequent independent-consumer corpus must cover those gaps. The XML depth cap of 128 remains a deliberate new trust-boundary limit, not a value proved universal by this small fixture. Plan review remains pending.
+This establishes that the approved hymn fits the proposed bounds and source-node identity rule. It does not establish compatibility with large image/media decks, ZIP64 producers, other authoring applications or cloud acceptance; Task 1's synthetic boundary tests and subsequent independent-consumer corpus must cover those gaps. The XML depth cap of 128 remains a deliberate new trust-boundary limit, not a value proved universal by this small fixture. Plan review was approved on 2026-10-12.
