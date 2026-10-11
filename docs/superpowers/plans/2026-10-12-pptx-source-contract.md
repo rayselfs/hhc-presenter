@@ -89,3 +89,15 @@
 ## Follow-up boundary
 
 This plan implements source validation and local preservation readiness, not full phase 1. Next: deployed-API acceptance and client write activation under separate release authorization, then supported-subset PPTX export with an independent consumer. Editable objects, masters/layouts/themes, playback and Windows/device/performance acceptance follow the approved order. A v2 file is intentionally unreadable by older clients; rollout must account for recipients before general writes are enabled.
+
+## Read-only corpus preflight — 2026-10-12
+
+Measured the actual existing hymn fixture `src/renderer/src/lib/__fixtures__/pptx/text-placeholder-layout.pptx` using Python standard-library ZIP CRC verification and strict XML parsing, without rewriting it.
+
+- SHA-256: `ce1648cc6a449d7a29587b790877be1cf30efbef59de3984065dcdad948d6a0d`.
+- Compressed package 25,845 bytes; canonical base64 34,460 bytes before JSON metadata.
+- 53 unique ZIP members; 47,701 expanded bytes; largest member 3,804 bytes; no media payload.
+- 53 XML/relationship parts; maximum XML element depth 10; 22 slide parts; each slide's `p:cNvPr/@id` values are unique.
+- No external relationships or encrypted entries; all ZIP CRC checks passed.
+
+This establishes that the approved hymn fits the proposed bounds and source-node identity rule. It does not establish compatibility with large image/media decks, ZIP64 producers, other authoring applications or cloud acceptance; Task 1's synthetic boundary tests and subsequent independent-consumer corpus must cover those gaps. The XML depth cap of 128 remains a deliberate new trust-boundary limit, not a value proved universal by this small fixture. Plan review remains pending.
