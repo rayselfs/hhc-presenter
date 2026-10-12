@@ -39,18 +39,18 @@ Extended-preset import initially rejects nonempty embedded shape text and still 
 
 ## Task 1: Versioned Geometry Model and Matching Contracts
 
-**Files:** `src/renderer/src/lib/editable-presentation.ts`, `portable-presentation.ts`, `pptx-source.ts`; client `__tests__/portable-presentation.test.ts`, `pptx-source.test.ts`, new `__fixtures__/preset-geometry/contract.json`. API worktree `internal/assets/personal_deck.go`, `personal_deck_source.go`, new `personal_deck_geometry_test.go`, mirrored `internal/assets/testdata/preset-geometry/contract.json`, `docs/openapi.yaml`, `docs/openapi_test.go`.
+**Files:** `src/shared/projection-messages.ts`, `src/renderer/src/lib/editable-presentation.ts`, `portable-presentation.ts`, `pptx-source.ts`, preset descriptors in `presentation-shape-geometry.ts`; client `__tests__/portable-presentation.test.ts`, `pptx-source.test.ts`, new `__fixtures__/preset-geometry/contract.json`. API worktree `internal/assets/personal_deck.go`, `personal_deck_source.go`, new `personal_deck_geometry_test.go`, mirrored `internal/assets/testdata/preset-geometry/contract.json`, `docs/openapi.yaml`, `docs/openapi_test.go`.
 
 **Interfaces:** extend document version union to `1 | 2 | 3`, shape kind union as above and optional `adjustments`. Preserve existing source-record/reference contract for versions 2/3. Existing factories/default conversion remain v1 (v2 only when explicitly retaining source).
 
-- [ ] Write client/API RED shared cases: valid v3 basic/extended/adjusted shape; old v1/v2 basic shapes and source fixtures accepted; extended kind/adjustments in old versions rejected; unknown preset/version 4, too many values, fractional/out-of-range values and malformed source references rejected. Assert input JSON is unchanged.
-- [ ] Run `npx vitest run src/renderer/src/lib/__tests__/portable-presentation.test.ts src/renderer/src/lib/__tests__/pptx-source.test.ts`; run API `go test ./internal/assets -run 'Geometry|Source'` and `go test ./docs`. Expected RED at the new cases, no unrelated fixture errors.
-- [ ] Implement the exact shape/version validation on both sides, using existing graph/size/source checks; define preset parameter counts with the allow-list. Update canonical OpenAPI and its checked contract fixtures. Preserve valid legacy behavior, not previously malformed graphs.
-- [ ] Rerun the same commands and client typecheck; expected PASS. Verify the two fixture copies have identical SHA-256, then commit each repository's matching contract changes.
+- [x] Write client/API RED shared cases: valid v3 basic/extended/adjusted shape; old v1/v2 basic shapes and source fixtures accepted; extended kind/adjustments in old versions rejected; unknown preset/version 4, too many values, fractional/out-of-range values and malformed source references rejected. Assert input JSON is unchanged.
+- [x] Run `npx vitest run src/renderer/src/lib/__tests__/portable-presentation.test.ts src/renderer/src/lib/__tests__/pptx-source.test.ts`; run API `go test ./internal/assets -run 'Geometry|Source'` and `go test ./docs`. Expected RED at the new cases, no unrelated fixture errors.
+- [x] Implement the exact shape/version validation on both sides, using existing graph/size/source checks; define preset parameter counts with the allow-list. Update canonical OpenAPI and its checked contract fixtures. Preserve valid legacy behavior, not previously malformed graphs.
+- [x] Rerun the same commands and client typecheck; expected PASS. Verify the two fixture copies have identical SHA-256, then commit each repository's matching contract changes.
 
 ## Task 2: Pure Geometry, Conversion and PPTX Reconciliation
 
-**Files:** create `src/renderer/src/lib/presentation-shape-geometry.ts`, `__tests__/presentation-shape-geometry.test.ts`; modify converter, `pptx-export-drawingml.ts`, `pptx-export-source.ts`, attribution, and their existing tests.
+**Files:** extend `src/renderer/src/lib/presentation-shape-geometry.ts`, `__tests__/presentation-shape-geometry.test.ts`; modify converter, `pptx-export-drawingml.ts`, `pptx-export-source.ts`, attribution, and their existing tests.
 
 **Interfaces:** `resolvePresetShapeGeometry(shape: EditableShapeElement): PresetShapeGeometry`, with `path: string`, `textBounds: { x: number; y: number; width: number; height: number }`, `handles: readonly PresetAdjustmentHandle[]`, `sites: readonly { x: number; y: number }[]`. Handles expose index, point, origin, direction and min/max. `projectPresetAdjustment(shape, index, point): readonly number[]` returns clamped integer values. `convertPresentationData` gains a final optional `conversionSchemaVersion?: 3`; ordinary callers omit it.
 

@@ -97,9 +97,22 @@ type EditableProjectionImageElement = EditableProjectionElementBase & {
   shadow?: 'none' | 'soft' | 'medium'
 }
 
+export type EditableProjectionShapeKind =
+  | 'rectangle'
+  | 'ellipse'
+  | 'roundRect'
+  | 'triangle'
+  | 'rtTriangle'
+  | 'diamond'
+  | 'rightArrow'
+  | 'leftArrow'
+  | 'upArrow'
+  | 'downArrow'
+
 type EditableProjectionShapeElement = EditableProjectionElementBase & {
   type: 'shape'
-  shape: 'rectangle' | 'ellipse'
+  shape: EditableProjectionShapeKind
+  adjustments?: readonly number[]
   fillColor: string
   strokeColor: string
   strokeWidth: number

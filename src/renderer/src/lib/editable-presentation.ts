@@ -1,3 +1,4 @@
+import type { EditableProjectionShapeKind } from '@shared/projection-messages'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
 import {
   createPresentationDraft,
@@ -33,7 +34,7 @@ export const EDITABLE_PRESENTATION_DOCUMENT_KIND = 'editable-presentation-docume
 
 export type EditablePresentationElementType = 'text' | 'image' | 'shape' | 'line' | 'locked'
 export type EditableTextAlign = 'left' | 'center' | 'right' | 'justify'
-export type EditableShapeKind = 'rectangle' | 'ellipse'
+export type EditableShapeKind = EditableProjectionShapeKind
 export type EditableGradientDirection = 'left-right' | 'top-bottom' | 'diagonal'
 export type EditableGradientType = 'linear'
 export type EditableImageShadow = 'none' | 'soft' | 'medium'
@@ -212,6 +213,7 @@ export interface EditableImageElement extends EditableElementBase {
 export interface EditableShapeElement extends EditableElementBase {
   type: 'shape'
   shape: EditableShapeKind
+  adjustments?: readonly number[]
   fillColor: string
   strokeColor: string
   strokeWidth: number
@@ -247,7 +249,7 @@ export interface EditablePresentationSlide {
 }
 
 export interface EditablePresentationDocument {
-  schemaVersion?: 1 | 2
+  schemaVersion?: 1 | 2 | 3
   pptxSource?: PptxSource
   id: string
   name: string

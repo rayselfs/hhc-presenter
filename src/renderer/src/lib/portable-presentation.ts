@@ -1,5 +1,6 @@
 import { PERSONAL_MAX_FILE_BYTES } from '@shared/personal-cloud'
 import type { EditablePresentationDocument } from './editable-presentation'
+import { getPresetShapeDescriptor } from './presentation-shape-geometry'
 
 function record(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -188,13 +189,15 @@ export function validatePortablePresentation(
   if (
     document.schemaVersion !== undefined &&
     document.schemaVersion !== 1 &&
-    document.schemaVersion !== 2
+    document.schemaVersion !== 2 &&
+    document.schemaVersion !== 3
   ) {
     throw new Error('Unsupported presentation schema version')
   }
+  const supportsSource = document.schemaVersion === 2 || document.schemaVersion === 3
   if (document.pptxSource !== undefined) {
     const source = document.pptxSource
-    requireValid(document.schemaVersion === 2 && record(source))
+    requireValid(supportsSource && record(source))
     requireValid(source.version === 1 && typeof source.base64 === 'string')
     requireValid(source.base64.length > 0 && source.base64.length <= 279620268)
     requireValid(source.base64.length % 4 === 0 && /^[A-Za-z0-9+/]*={0,2}$/.test(source.base64))
@@ -214,7 +217,7 @@ export function validatePortablePresentation(
   for (const [id, slide] of Object.entries(document.slides ?? {})) {
     requireValid(record(slide) && slide.id === id)
     if (slide.pptxSourcePart !== undefined) {
-      requireValid(document.schemaVersion === 2 && document.pptxSource !== undefined)
+      requireValid(supportsSource && document.pptxSource !== undefined)
       requireValid(
         typeof slide.pptxSourcePart === 'string' &&
           /^ppt\/slides\/[^/]+\.xml$/.test(slide.pptxSourcePart)
@@ -230,9 +233,7 @@ export function validatePortablePresentation(
       if (element.pptxSourceNode !== undefined) {
         const reference = element.pptxSourceNode
         requireValid(
-          document.schemaVersion === 2 &&
-            document.pptxSource !== undefined &&
-            slide.pptxSourcePart !== undefined
+          supportsSource && document.pptxSource !== undefined && slide.pptxSourcePart !== undefined
         )
         requireValid(
           record(reference) &&
@@ -260,8 +261,23 @@ export function validatePortablePresentation(
       }
       requireValid(['text', 'image', 'shape', 'line', 'locked'].includes(element.type))
       if (element.type === 'text') textElement(element)
-      if (element.type === 'shape')
-        requireValid(['rectangle', 'ellipse'].includes(element.shape) && color(element.fillColor))
+      if (element.adjustments !== undefined)
+        requireValid(document.schemaVersion === 3 && element.type === 'shape')
+      if (element.type === 'shape') {
+        const preset = getPresetShapeDescriptor(element.shape)
+        requireValid(preset && color(element.fillColor))
+        requireValid(
+          document.schemaVersion === 3 || ['rectangle', 'ellipse'].includes(element.shape)
+        )
+        if (element.adjustments !== undefined) {
+          requireValid(Array.isArray(element.adjustments))
+          requireValid(
+            element.adjustments.length <= 16 && element.adjustments.length <= preset.guides.length
+          )
+          for (const value of element.adjustments)
+            requireValid(Number.isInteger(value) && value >= -2147483648 && value <= 2147483647)
+        }
+      }
       if (element.type === 'line' || element.type === 'shape')
         requireValid(
           color(element.strokeColor) && coordinate(element.strokeWidth) && element.strokeWidth >= 0
