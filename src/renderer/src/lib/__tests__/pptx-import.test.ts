@@ -202,6 +202,14 @@ async function pictureFixture(extension: string, bytes: Uint8Array): Promise<Fil
       `<Relationship Id="rIdImage" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image.${extension}"/></Relationships>`
     )
   )
+  const contentTypes = await zip.file('[Content_Types].xml')!.async('string')
+  zip.file(
+    '[Content_Types].xml',
+    contentTypes.replace(
+      '</Types>',
+      `<Default Extension="${extension}" ContentType="${extension === 'bmp' ? 'image/bmp' : 'application/octet-stream'}"/></Types>`
+    )
+  )
   zip.file(`ppt/media/image.${extension}`, bytes)
   return new File([await zip.generateAsync({ type: 'arraybuffer' })], 'Picture.pptx', {
     type: PPTX_MIME_TYPE

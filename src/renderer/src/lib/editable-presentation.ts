@@ -16,7 +16,8 @@ import {
   assertPortablePresentationSize
 } from './portable-presentation'
 import { readPptxNotes } from './pptx-notes'
-import { validatePptxSource } from './pptx-source'
+import { validatePptxPackage, validatePptxSource } from './pptx-source'
+import { assertEditablePptxDocument, assertEditablePptxFeatures } from './pptx-compatibility'
 import { FOLDER_DURATION_MS, type FileItemRecord } from '@shared/types/folder'
 import type { PlaceholderInfo, PresentationData } from '@aiden0z/pptx-renderer'
 import type { SlideData, SlideNode } from '@aiden0z/pptx-renderer'
@@ -1059,8 +1060,10 @@ export async function convertPptxToEditablePresentation(
   const buffer = await readPresentationArrayBuffer(item)
   const { parseZip, buildPresentation, materializeAllSlideNodes, RECOMMENDED_ZIP_LIMITS } =
     await import('@aiden0z/pptx-renderer')
+  await validatePptxPackage(buffer)
   const files = await parseZip(buffer, RECOMMENDED_ZIP_LIMITS)
   const presentation = buildPresentation(files)
+  assertEditablePptxFeatures(files, presentation)
   materializeAllSlideNodes(presentation)
   const document = convertPresentationData(
     item,
@@ -1068,6 +1071,7 @@ export async function convertPptxToEditablePresentation(
     undefined,
     await readPptxNotes(buffer, presentation)
   )
+  assertEditablePptxDocument(document)
   if (ownerId !== usePersonalSyncStore.getState().activeOwnerId)
     throw new Error('Personal account changed')
   if (await isReadonlyPresentationSource(item)) return createPresentationDraft(item, document)
