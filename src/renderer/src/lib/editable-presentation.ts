@@ -1409,6 +1409,8 @@ function convertShapeNode(
     for (const run of runs ?? []) run.fontSize *= fontScale
     for (const paragraph of paragraphs ?? []) {
       for (const run of paragraph.runs) run.fontSize *= fontScale
+      if (!paragraph.runs.length && paragraph.typingStyle)
+        paragraph.typingStyle.fontSize *= fontScale
     }
     elements.push({
       id: crypto.randomUUID(),

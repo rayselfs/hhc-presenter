@@ -102,7 +102,8 @@ function patchRunProperties(
   generated: Element,
   before: EditableTextRun | EditableTextStyle,
   after: EditableTextRun | EditableTextStyle,
-  opacityChanged: boolean
+  opacityChanged: boolean,
+  fontScaleChanged: boolean
 ): void {
   const fields = {
     fontSize: 'sz',
@@ -116,8 +117,9 @@ function patchRunProperties(
   for (const [field, attribute] of Object.entries(fields)) {
     const key = field as keyof typeof fields
     if (
+      (key === 'fontSize' && fontScaleChanged) ||
       (before[key] ?? (key === 'baseline' ? 'normal' : 0)) !==
-      (after[key] ?? (key === 'baseline' ? 'normal' : 0))
+        (after[key] ?? (key === 'baseline' ? 'normal' : 0))
     )
       copyAttribute(target, generated, attribute)
   }
@@ -176,6 +178,11 @@ export function patchSourceText(
   }
   const bodyProperties = drawingChild(originalBody, 'bodyPr')
   const nextBodyProperties = drawingChild(generatedBody, 'bodyPr')!
+  const originalScale =
+    Number(
+      drawingChild(bodyProperties ?? originalBody, 'normAutofit')?.getAttribute('fontScale') ??
+        100000
+    ) / 100000
   if (bodyProperties) {
     if (before.autoWidth !== after.autoWidth)
       copyAttribute(bodyProperties, nextBodyProperties, 'wrap')
@@ -213,6 +220,33 @@ export function patchSourceText(
       source.ownerDocument.importNode(nextBodyProperties, true),
       originalBody.firstChild
     )
+  }
+  const retainedScale =
+    Number(
+      drawingChild(
+        drawingChild(originalBody, 'bodyPr') ?? originalBody,
+        'normAutofit'
+      )?.getAttribute('fontScale') ?? 100000
+    ) / 100000
+  const fontScaleChanged = retainedScale !== originalScale
+  if (retainedScale !== 1) {
+    for (const name of ['rPr', 'endParaRPr']) {
+      for (const properties of generatedBody.getElementsByTagNameNS(DRAWINGML_NS, name)) {
+        if (!properties.hasAttribute('sz')) continue
+        const size = Math.round(Number(properties.getAttribute('sz')) / retainedScale)
+        if (!Number.isFinite(size) || size <= 0 || size > 400000) {
+          throw new PptxExportError([
+            {
+              code: 'source-conflict',
+              message: 'The requested font size cannot preserve the retained text scale',
+              slideId,
+              elementId: after.id
+            }
+          ])
+        }
+        properties.setAttribute('sz', String(size))
+      }
+    }
   }
   const originalParagraphs = Array.from(originalBody.children).filter(
     (node) => node.namespaceURI === DRAWINGML_NS && node.localName === 'p'
@@ -264,7 +298,8 @@ export function patchSourceText(
     )
     const runsChanged =
       JSON.stringify(baseline.runs) !== JSON.stringify(paragraph.runs) ||
-      before.opacity !== after.opacity
+      before.opacity !== after.opacity ||
+      fontScaleChanged
     if (runsChanged && oldRuns.length !== baseline.runs.length) {
       throw new PptxExportError([
         {
@@ -296,12 +331,15 @@ export function patchSourceText(
         nextProperties,
         oldStyle,
         run,
-        before.opacity !== after.opacity
+        before.opacity !== after.opacity,
+        fontScaleChanged
       )
       const content = drawingChild(clone, 't')
-      if (content && content.textContent !== run.text) {
-        content.textContent = run.text
-        content.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve')
+      if (content) {
+        if (content.textContent !== run.text) {
+          content.textContent = run.text
+          content.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve')
+        }
       } else clone.appendChild(source.ownerDocument.importNode(drawingChild(nextRun, 't')!, true))
       runs.push(clone)
     }
@@ -315,7 +353,8 @@ export function patchSourceText(
         nextEnd,
         baseline.typingStyle,
         paragraph.typingStyle,
-        before.opacity !== after.opacity
+        before.opacity !== after.opacity,
+        fontScaleChanged
       )
     else if (paragraph.typingStyle && !end && nextEnd)
       target.appendChild(source.ownerDocument.importNode(nextEnd, true))

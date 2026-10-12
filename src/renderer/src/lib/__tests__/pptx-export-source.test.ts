@@ -267,12 +267,189 @@ describe('retained source PPTX export', () => {
     const retained = patched.getElementsByTagNameNS(ans, 'fld')[0]
     expect(retained).toBeDefined()
     expect(retained.getAttribute('type')).toBe('slidenum')
+    expect(retained.getElementsByTagNameNS(ans, 't')).toHaveLength(1)
+    expect(retained.getElementsByTagNameNS(ans, 't')[0].textContent).toBe(
+      firstText(document).paragraphs![0].runs[0].text
+    )
     const style = retained.getElementsByTagNameNS(ans, 'rPr')[0]
     expect(style.getAttribute('b')).toBe(
       firstText(document).paragraphs![0].runs[0].bold ? '1' : '0'
     )
     expect(style.hasAttribute('sz')).toBe(false)
     expect(style.getAttributeNS('urn:hhc:opaque', 'keep')).toBe('run-metadata')
+  })
+
+  it('keeps retained text scaling correct for edited sizes, new runs and empty paragraphs', async () => {
+    const { bytes } = await combinedShape()
+    const zip = await JSZip.loadAsync(bytes)
+    const xml = new DOMParser().parseFromString(
+      await zip.file('ppt/slides/slide1.xml')!.async('string'),
+      'application/xml'
+    )
+    const body = xml.getElementsByTagNameNS(pns, 'txBody')[0]
+    const properties = body.getElementsByTagNameNS(ans, 'bodyPr')[0]
+    properties.getElementsByTagNameNS(ans, 'noAutofit')[0].remove()
+    const scale = xml.createElementNS(ans, 'a:normAutofit')
+    scale.setAttribute('fontScale', '50000')
+    scale.setAttribute('lnSpcReduction', '20000')
+    properties.appendChild(scale)
+    const originalSize = Number(body.getElementsByTagNameNS(ans, 'rPr')[0].getAttribute('sz')) / 75
+    const empty = xml.createElementNS(ans, 'a:p')
+    const end = xml.createElementNS(ans, 'a:endParaRPr')
+    end.setAttribute('sz', String(originalSize * 75))
+    empty.appendChild(end)
+    body.appendChild(empty)
+    zip.file('ppt/slides/slide1.xml', new XMLSerializer().serializeToString(xml))
+    const original = await zip.generateAsync({ type: 'arraybuffer' })
+    const document = await documentFrom(original)
+    const text = firstText(document)
+    expect(text.paragraphs![0].runs[0].fontSize).toBe(originalSize / 2)
+    expect.soft(text.paragraphs![1].typingStyle?.fontSize).toBe(originalSize / 2)
+    text.paragraphs![0].runs[0].fontSize = 50
+    const resized = await documentFrom(await buildSourcePptx(document))
+    expect.soft(firstText(resized).paragraphs![0].runs[0].fontSize).toBe(50)
+    text.paragraphs![0].runs.push({ ...text.paragraphs![0].runs[0], text: ' New', fontSize: 30 })
+    text.paragraphs![1].typingStyle!.fontSize = 22
+    text.paragraphs!.push({
+      ...text.paragraphs![1],
+      runs: [],
+      typingStyle: { ...text.paragraphs![1].typingStyle!, fontSize: 28 }
+    })
+    const output = await buildSourcePptx(document)
+    await validatePptxPackage(output)
+    await assertUntouched(original, output, new Set(['ppt/slides/slide1.xml']))
+    const reopened = firstText(await documentFrom(output))
+    expect.soft(reopened.paragraphs![0].runs.map((run) => run.fontSize)).toEqual([50, 30])
+    expect.soft(reopened.paragraphs![1].typingStyle?.fontSize).toBe(22)
+    expect.soft(reopened.paragraphs![2].typingStyle?.fontSize).toBe(28)
+    const patched = new DOMParser().parseFromString(
+      await (await JSZip.loadAsync(output)).file('ppt/slides/slide1.xml')!.async('string'),
+      'application/xml'
+    )
+    expect(patched.getElementsByTagNameNS(ans, 'normAutofit')[0].getAttribute('fontScale')).toBe(
+      '50000'
+    )
+    expect(
+      patched.getElementsByTagNameNS(ans, 'normAutofit')[0].getAttribute('lnSpcReduction')
+    ).toBe('20000')
+    for (const run of patched.getElementsByTagNameNS(ans, 'r'))
+      expect(run.getElementsByTagNameNS(ans, 't')).toHaveLength(1)
+    const contentSized = structuredClone(document)
+    firstText(contentSized).autoSize = 'content'
+    const withoutScale = firstText(await documentFrom(await buildSourcePptx(contentSized)))
+    expect(withoutScale.paragraphs![0].runs.map((run) => run.fontSize)).toEqual([50, 30])
+    expect(withoutScale.paragraphs![1].typingStyle?.fontSize).toBe(22)
+    text.paragraphs![0].runs[0].fontSize = 4000
+    const snapshot = JSON.stringify(document)
+    await expect(exportPresentationPptx(document)).rejects.toMatchObject({
+      diagnostics: [
+        expect.objectContaining({
+          code: 'source-conflict',
+          slideId: document.slideOrder[0],
+          elementId: text.id
+        })
+      ]
+    })
+    expect(JSON.stringify(document)).toBe(snapshot)
+  })
+
+  it('patches owned frames without removing flips or unmodified transform attributes', async () => {
+    const native = createBlankEditablePresentationDocument('Flipped image')
+    native.assets.image = {
+      id: 'image',
+      name: 'Image.png',
+      mimeType: 'image/png',
+      dataUrl: `data:image/png;base64,${png}`
+    }
+    const slide = native.slides[native.slideOrder[0]]
+    slide.elements = {
+      image: {
+        id: 'image',
+        type: 'image',
+        assetId: 'image',
+        x: 5,
+        y: 6,
+        width: 100,
+        height: 80,
+        rotation: 0,
+        opacity: 1
+      }
+    }
+    slide.elementOrder = ['image']
+    const zip = await JSZip.loadAsync(await buildNativePptx(native))
+    const xml = new DOMParser().parseFromString(
+      await zip.file('ppt/slides/slide1.xml')!.async('string'),
+      'application/xml'
+    )
+    const transform = xml
+      .getElementsByTagNameNS(pns, 'pic')[0]
+      .getElementsByTagNameNS(ans, 'xfrm')[0]
+    transform.setAttribute('flipH', '1')
+    transform.setAttribute('flipV', '1')
+    transform.removeAttribute('rot')
+    transform.setAttributeNS('urn:hhc:opaque', 'opaque:keep', 'transform')
+    transform
+      .getElementsByTagNameNS(ans, 'off')[0]
+      .setAttributeNS('urn:hhc:opaque', 'opaque:keep', 'offset')
+    zip.file('ppt/slides/slide1.xml', new XMLSerializer().serializeToString(xml))
+    const original = await zip.generateAsync({ type: 'arraybuffer' })
+    const document = await documentFrom(original)
+    const image = Object.values(document.slides[document.slideOrder[0]].elements)[0]
+    image.x += 25
+    image.height += 20
+    const output = await buildSourcePptx(document)
+    await validatePptxPackage(output)
+    await assertUntouched(original, output, new Set(['ppt/slides/slide1.xml']))
+    const patched = new DOMParser().parseFromString(
+      await (await JSZip.loadAsync(output)).file('ppt/slides/slide1.xml')!.async('string'),
+      'application/xml'
+    )
+    const frame = patched
+      .getElementsByTagNameNS(pns, 'pic')[0]
+      .getElementsByTagNameNS(ans, 'xfrm')[0]
+    expect(frame.getAttribute('flipH')).toBe('1')
+    expect(frame.getAttribute('flipV')).toBe('1')
+    expect(frame.hasAttribute('rot')).toBe(false)
+    expect(frame.getAttributeNS('urn:hhc:opaque', 'keep')).toBe('transform')
+    expect(
+      frame.getElementsByTagNameNS(ans, 'off')[0].getAttributeNS('urn:hhc:opaque', 'keep')
+    ).toBe('offset')
+    const imported = await documentFrom(output)
+    expect(Object.values(imported.slides[imported.slideOrder[0]].elements)[0]).toMatchObject({
+      x: image.x,
+      height: image.height
+    })
+  })
+
+  it('refuses aggregate note edits with retained custom text shapes without altering input', async () => {
+    const native = createBlankEditablePresentationDocument('Custom notes')
+    native.slides[native.slideOrder[0]].notes = 'Body'
+    const zip = await JSZip.loadAsync(await buildNativePptx(native))
+    const xml = new DOMParser().parseFromString(
+      await zip.file('ppt/notesSlides/notesSlide1.xml')!.async('string'),
+      'application/xml'
+    )
+    const body = Array.from(xml.getElementsByTagNameNS(pns, 'sp')).find(
+      (node) => node.getElementsByTagNameNS(pns, 'ph')[0]?.getAttribute('type') === 'body'
+    )!
+    const custom = body.cloneNode(true) as Element
+    custom.getElementsByTagNameNS(pns, 'ph')[0].remove()
+    custom.getElementsByTagNameNS(pns, 'cNvPr')[0].setAttribute('id', '9001')
+    custom.getElementsByTagNameNS(ans, 't')[0].textContent = 'Custom'
+    body.parentNode!.appendChild(custom)
+    zip.file('ppt/notesSlides/notesSlide1.xml', new XMLSerializer().serializeToString(xml))
+    const original = await zip.generateAsync({ type: 'arraybuffer' })
+    const document = await documentFrom(original)
+    expect(document.slides[document.slideOrder[0]].notes).toBe('Body\nCustom')
+    expect(new Uint8Array(await buildSourcePptx(document))).toEqual(new Uint8Array(original))
+    document.slides[document.slideOrder[0]].notes = 'Body edited\nCustom'
+    const snapshot = JSON.stringify(document)
+    await expect(exportPresentationPptx(document)).rejects.toMatchObject({
+      diagnostics: [
+        expect.objectContaining({ code: 'source-conflict', slideId: document.slideOrder[0] })
+      ]
+    })
+    expect(JSON.stringify(document)).toBe(snapshot)
   })
 
   it('keeps whitespace explicit and paragraph inheritance when adding empty and rich paragraphs', async () => {

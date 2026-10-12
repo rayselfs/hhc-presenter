@@ -490,7 +490,7 @@ export async function buildSourcePptx(
         const next = generatedNodes[slide.elementOrder.indexOf(current.id)]
         const nextProperties = presentationChild(next, 'spPr')!
         if (old && FRAME_KEYS.some((key) => current[key] !== old[key]))
-          replaceDrawingChild(properties, nextProperties, 'xfrm', SP_ORDER)
+          patchFrame(properties, nextProperties, old, current)
         if (
           old &&
           current.type === 'text' &&
@@ -639,10 +639,20 @@ export async function buildSourcePptx(
       if (noteRel) {
         const path = targetPart(slide.pptxSourcePart, noteRel.getAttribute('Target')!)
         const noteXml = parsed(await zip.file(path)!.async('string'))
-        const bodies = Array.from(noteXml.getElementsByTagNameNS(P_NS, 'sp')).filter(
-          (node) => node.getElementsByTagNameNS(P_NS, 'ph')[0]?.getAttribute('type') === 'body'
+        const contributors = Array.from(noteXml.getElementsByTagNameNS(P_NS, 'sp')).filter(
+          (node) => {
+            const placeholder = node.getElementsByTagNameNS(P_NS, 'ph')[0]?.getAttribute('type')
+            return (
+              (!placeholder || placeholder === 'body') &&
+              node.getElementsByTagNameNS(A_NS, 'p').length > 0
+            )
+          }
         )
-        if (bodies.length !== 1 || bodies[0].getElementsByTagNameNS(A_NS, 'fld').length)
+        if (
+          contributors.length !== 1 ||
+          contributors[0].getElementsByTagNameNS(P_NS, 'ph')[0]?.getAttribute('type') !== 'body' ||
+          contributors[0].getElementsByTagNameNS(A_NS, 'fld').length
+        )
           return conflict('The retained note structure cannot be edited safely', slide.id)
         const beforeNote = createTextElement({ text: previous.notes })
         const afterNote = { ...beforeNote, text: slide.notes }
@@ -657,7 +667,7 @@ export async function buildSourcePptx(
           new Map()
         )
         patchSourceText(
-          bodies[0],
+          contributors[0],
           generatedNote.getElementsByTagNameNS(P_NS, 'sp')[0],
           beforeNote,
           afterNote,
@@ -774,6 +784,39 @@ export async function buildSourcePptx(
 function documentXml(namespace: string, name: string): XMLDocument {
   return document.implementation.createDocument(namespace, name)
 }
+function patchFrame(
+  properties: Element,
+  nextProperties: Element,
+  before: EditablePresentationElement,
+  after: EditablePresentationElement
+): void {
+  const current = drawingChild(properties, 'xfrm')
+  const generated = drawingChild(nextProperties, 'xfrm')!
+  if (!current) {
+    replaceDrawingChild(properties, nextProperties, 'xfrm', SP_ORDER)
+    return
+  }
+  if (before.rotation !== after.rotation) {
+    const rotation = generated.getAttribute('rot')
+    if (rotation === null) current.removeAttribute('rot')
+    else current.setAttribute('rot', rotation)
+  }
+  for (const [field, name, attribute] of [
+    ['x', 'off', 'x'],
+    ['y', 'off', 'y'],
+    ['width', 'ext', 'cx'],
+    ['height', 'ext', 'cy']
+  ] as const) {
+    if (before[field] === after[field]) continue
+    let child = drawingChild(current, name)
+    if (!child) {
+      replaceDrawingChild(current, generated, name, ['off', 'ext'])
+      child = drawingChild(current, name)!
+    }
+    child.setAttribute(attribute, drawingChild(generated, name)!.getAttribute(attribute)!)
+  }
+}
+
 function patchOutline(
   properties: Element,
   nextProperties: Element,
