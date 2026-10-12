@@ -297,7 +297,11 @@ export function patchSourceText(
       JSON.stringify(baseline.runs) !== JSON.stringify(paragraph.runs) ||
       before.opacity !== after.opacity ||
       materializeFontSize
-    if (runsChanged && oldRuns.length !== beforeRuns.length) {
+    const breakTopologyChanged =
+      [...oldRuns, ...nextRuns].some((run) => run.localName === 'br') &&
+      (oldRuns.length !== nextRuns.length ||
+        oldRuns.some((run, index) => run.localName !== nextRuns[index]?.localName))
+    if (runsChanged && (oldRuns.length !== beforeRuns.length || breakTopologyChanged)) {
       throw new PptxExportError([
         {
           code: 'source-conflict',

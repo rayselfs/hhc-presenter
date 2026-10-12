@@ -835,3 +835,28 @@ it.each(['same', 'mixed'])(
     expect(firstText(await documentFrom(output)).text).toBe(text.text)
   }
 )
+
+it.each(['insert', 'delete'])(
+  'rejects a %s soft break when original run metadata cannot be reconciled',
+  async (edit) => {
+    const { bytes } = await hymn()
+    const zip = await JSZip.loadAsync(bytes)
+    const part = 'ppt/slides/slide1.xml'
+    const xml = await zip.file(part)!.async('string')
+    const breaks = edit === 'delete' ? '<a:br/><a:br/>' : '<a:br/>'
+    zip.file(
+      part,
+      xml.replace(
+        /<p:txBody>[\s\S]*?<\/p:txBody>/,
+        `<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:buNone/></a:pPr><a:r><a:rPr lang="en-US"/><a:t>First</a:t></a:r>${breaks}<a:r><a:rPr xmlns:probe="urn:hhc:metadata" lang="zh-TW" probe:keep="suffix"><probe:retained/></a:rPr><a:t>Second</a:t></a:r></a:p></p:txBody>`
+      )
+    )
+    const original = await zip.generateAsync({ type: 'arraybuffer' })
+    const document = await documentFrom(original)
+    expect(await (await exportPresentationPptx(document)).arrayBuffer()).toEqual(original)
+    editText(firstText(document), edit === 'insert' ? 'First\n\nSecond' : 'First\nSecond')
+    await expect(exportPresentationPptx(document)).rejects.toMatchObject({
+      diagnostics: [expect.objectContaining({ code: 'source-conflict' })]
+    })
+  }
+)

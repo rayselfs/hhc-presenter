@@ -69,7 +69,7 @@ async function fixture(kind: string): Promise<ArrayBuffer> {
       )
     )
   }
-  if (kind === 'image') {
+  if (['image', 'flipped picture', 'picture bullet', 'represented defaults'].includes(kind)) {
     xml = xml.replace(
       '</p:spTree>',
       '<p:pic><p:nvPicPr><p:cNvPr id="100" name="Private image label"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rIdImage"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="952500" cy="952500"/></a:xfrm><a:prstGeom prst="rect"/><a:effectLst><a:glow rad="100"/></a:effectLst></p:spPr></p:pic></p:spTree>'
@@ -98,6 +98,48 @@ async function fixture(kind: string): Promise<ArrayBuffer> {
         '<Default Extension="png" ContentType="image/png"/></Types>'
       )
     )
+  }
+  if (kind === 'flipped picture' || kind === 'picture bullet' || kind === 'represented defaults') {
+    xml = xml.replace('<a:effectLst><a:glow rad="100"/></a:effectLst>', '')
+    if (kind === 'flipped picture' || kind === 'represented defaults')
+      xml = xml.replace('<a:xfrm>', `<a:xfrm flipH="${kind === 'flipped picture' ? 1 : 0}">`)
+  }
+  if (kind === 'shape shadow')
+    xml = xml.replace(
+      '<p:spPr>',
+      '<p:spPr><a:prstGeom prst="rect"/><a:solidFill><a:srgbClr val="0088FF"/></a:solidFill><a:effectLst><a:outerShdw blurRad="127000" dist="63500" dir="5400000"><a:srgbClr val="000000"/></a:outerShdw></a:effectLst>'
+    )
+  if (
+    [
+      'paragraph before space',
+      'picture bullet',
+      'roman numbering',
+      'represented defaults'
+    ].includes(kind)
+  ) {
+    const root = new DOMParser().parseFromString(xml, 'application/xml')
+    const paragraph = root.getElementsByTagNameNS(
+      'http://schemas.openxmlformats.org/drawingml/2006/main',
+      'p'
+    )[0]
+    for (const properties of Array.from(paragraph.children).filter(
+      (entry) => entry.localName === 'pPr'
+    ))
+      properties.remove()
+    const content =
+      kind === 'represented defaults'
+        ? '<a:buAutoNum type="arabicPeriod"/><a:spcBef><a:spcPts val="0"/></a:spcBef><a:spcAft><a:spcPct val="0"/></a:spcAft>'
+        : kind === 'paragraph before space'
+          ? '<a:buNone/><a:spcBef><a:spcPts val="2400"/></a:spcBef>'
+          : kind === 'picture bullet'
+            ? '<a:buBlip><a:blip r:embed="rIdImage"/></a:buBlip>'
+            : '<a:buAutoNum type="romanUcPeriod"/>'
+    const properties = new DOMParser().parseFromString(
+      `<a:pPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" marL="381000" indent="-190500">${content}</a:pPr>`,
+      'application/xml'
+    )
+    paragraph.insertBefore(root.importNode(properties.documentElement, true), paragraph.firstChild)
+    xml = new XMLSerializer().serializeToString(root)
   }
   if (kind === 'implicit list') {
     const root = new DOMParser().parseFromString(xml, 'application/xml')
@@ -263,6 +305,26 @@ describe.each(['upload', 'local', 'provider'])('%s editable conversion boundary'
       }
     })
     expect(await (await openFileExplorerDB()).count('presentation-drafts')).toBe(0)
+  })
+
+  it.each([
+    ['flipped picture', 'image'],
+    ['shape shadow', 'shape'],
+    ['paragraph before space', 'text'],
+    ['picture bullet', 'text'],
+    ['roman numbering', 'text']
+  ])('rejects unrepresented %s with location and unchanged storage', async (kind, code) => {
+    const convert = await prepareConversion(await fixture(kind), mode)
+    const before = await snapshot()
+    await expect(convert()).rejects.toMatchObject({
+      diagnostic: { code, slideNumber: 1, objectNumber: expect.any(Number) }
+    })
+    expect(await snapshot()).toEqual(before)
+  })
+
+  it('accepts explicit unflipped pictures, zero paragraph spacing and decimal numbering', async () => {
+    const convert = await prepareConversion(await fixture('represented defaults'), mode)
+    await expect(convert()).resolves.toBeDefined()
   })
 
   it('locates an inherited background failure in its actual master part', async () => {

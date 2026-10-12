@@ -1252,8 +1252,10 @@ function convertSlide(
   for (const [objectIndex, node] of slide.nodes.entries()) {
     let converted: EditablePresentationElement[]
     try {
-      if (!preserveSource && node.nodeType === 'shape')
-        assertPptxListIndentation(node, slide, presentation)
+      if (!preserveSource) {
+        assertPptxNodeVisualCompatibility(node)
+        if (node.nodeType === 'shape') assertPptxTextCompatibility(node, slide, presentation)
+      }
       converted = convertNode(node, slide, presentation, assets)
       if (!preserveSource && converted.some((element) => element.type === 'locked'))
         throw new PptxCompatibilityError(
@@ -1877,7 +1879,21 @@ function resolveTextRuns(
   return runs.length ? runs : undefined
 }
 
-function assertPptxListIndentation(
+function assertPptxNodeVisualCompatibility(node: SlideNode): void {
+  if (node.nodeType !== 'shape' && node.nodeType !== 'picture') return
+  const properties = node.source.child('spPr')
+  const transform = properties.child('xfrm')
+  const code = node.nodeType === 'picture' ? 'image' : 'shape'
+  if (isXmlTrue(transform.attr('flipH')) || isXmlTrue(transform.attr('flipV')))
+    throw new PptxCompatibilityError({ code }, 'PowerPoint reflection cannot yet be edited')
+  if (
+    node.nodeType === 'shape' &&
+    (properties.child('effectLst').children().length > 0 || properties.child('effectDag').exists())
+  )
+    throw new PptxCompatibilityError({ code }, 'PowerPoint shape effects cannot yet be edited')
+}
+
+function assertPptxTextCompatibility(
   node: ShapeNodeData,
   slide: SlideData,
   presentation: PresentationData
@@ -1888,8 +1904,29 @@ function assertPptxListIndentation(
       ...inheritedParagraphProperties(node, slide, presentation, paragraph.level ?? 0)
     ]
     const listProperties = sources.find((source) =>
-      ['buNone', 'buChar', 'buAutoNum'].some((kind) => source?.child(kind).exists())
+      ['buNone', 'buChar', 'buAutoNum', 'buBlip'].some((kind) => source?.child(kind).exists())
     )
+    for (const spacing of ['spcBef', 'spcAft']) {
+      const value = sources
+        .map((source) => source?.child(spacing))
+        .find((source) => source?.exists())
+      if (value && value.children().some((entry) => entry.numAttr('val') !== 0))
+        throw new PptxCompatibilityError(
+          { code: 'text' },
+          'PowerPoint paragraph spacing cannot yet be edited'
+        )
+    }
+    if (listProperties?.child('buBlip').exists())
+      throw new PptxCompatibilityError(
+        { code: 'text' },
+        'PowerPoint picture bullets cannot yet be edited'
+      )
+    const numbering = listProperties?.child('buAutoNum')
+    if (numbering?.exists() && (numbering.attr('type') ?? 'arabicPeriod') !== 'arabicPeriod')
+      throw new PptxCompatibilityError(
+        { code: 'text' },
+        'PowerPoint numbering format cannot yet be edited'
+      )
     if (!listProperties || listProperties.child('buNone').exists()) continue
     if (
       ['marL', 'indent'].some((attribute) => {
@@ -1947,7 +1984,7 @@ function resolveTextParagraphs(
     const exactPoints = lineSpacing?.child('spcPts').numAttr('val')
     const multiple = lineSpacing?.child('spcPct').numAttr('val')
     const listProperties = sources.find((source) =>
-      ['buNone', 'buChar', 'buAutoNum'].some((kind) => source?.child(kind).exists())
+      ['buNone', 'buChar', 'buAutoNum', 'buBlip'].some((kind) => source?.child(kind).exists())
     )
     const bullet = listProperties?.child('buChar')
     const number = listProperties?.child('buAutoNum')
