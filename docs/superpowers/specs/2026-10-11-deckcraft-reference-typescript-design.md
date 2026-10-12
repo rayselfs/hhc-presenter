@@ -1,6 +1,6 @@
 # DeckCraft reference capabilities in HHC Presenter
 
-Status: design approved in conversation on 2026-10-11, including necessary Asset API companion changes. The conversion-fidelity plan and the source-contract plan were approved; both batches are complete with local verification; the full five-phase goal remains in progress.
+Status: design approved in conversation on 2026-10-11, including necessary Asset API companion changes. The conversion-fidelity plan and the source-contract plan were approved; both batches and the supported PPTX export foundation are complete with local verification; the full five-phase goal remains in progress.
 
 ## Intent and scope
 
@@ -116,3 +116,9 @@ Already-covered behavior to reuse: `editable-presentation-pptx.test.ts` exercise
 ## Decision needed before implementation planning
 
 The user approved the design and necessary `website/asset-api` validation, OpenAPI and contract-test scope on 2026-10-11, and reiterated that all work must use isolated worktrees. Client work stays in the dedicated worktree; backend implementation requires a separate worktree from that repository latest `origin/main`. No deployment, merge or release is authorized. The first-slice conversion-fidelity plan was approved and completed; the source-contract plan was approved on 2026-10-12.
+
+## Supported export foundation evidence (2026-10-12)
+
+`docs/testing/pptx-export-readiness.md` records the explicit supported contract, source reconciliation boundaries and actual-download independent-consumer evidence. Native and source-backed export, workspace/session fences and notes are locally implemented. Lint, both typechecks, desktop/web builds, 306 Vitest suites / 3665 tests, 25 affected browser E2Es and isolated built Electron acceptance passed. Eight 22-page hymn exports retained expected text/line counts; unchanged native bounds differed by at most 0.057 points, source unchanged pages by 0. A source autofit edit rendered 50.003pt for the toolbar's 50pt request after freezing effective fonts, rather than relying on an Office-recalculated cached scale. Focused crop, borders, shadows, gradients, rotation/opacity, empty text and independently read/written notes passed. The fresh whole-branch review and focused fixes are closed.
+
+Ordinary import remains v1; source-backed v2 is tested through explicit fixtures only pending separately authorized API rollout. SVG support, broader import compatibility diagnostics, advanced objects, editable master/layout graphs and playback remain open. Source no-op/pure movement preserves original autofit; edits requiring unsupported autofit spacing/metadata or ambiguous aggregate-note rewriting return conflicts. Physical Windows/PowerPoint and all deployment/release gates remain distinct.

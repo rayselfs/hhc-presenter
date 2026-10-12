@@ -15,7 +15,7 @@ import { SHORTCUTS } from '@renderer/config/shortcuts'
 import { useKeyboardShortcuts } from '@renderer/hooks/useKeyboardShortcuts'
 import { hasNameConflict, splitFileName, validateDisplayName } from '@renderer/lib/file-naming'
 import { openFileExplorerDB } from '@renderer/lib/file-explorer-db'
-import { exportPresentationPptx, PptxExportError } from '@renderer/lib/pptx-export'
+import { PptxExportError } from '@renderer/lib/pptx-export-drawingml'
 import { isPersonalRecordVisible, usePersonalSyncStore } from '@renderer/stores/personal-sync'
 import { isWeb } from '@renderer/lib/env'
 import {
@@ -132,6 +132,8 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
       const finalized = await registry.finalizeAndFlush(deck.itemId)
       if (!finalized || !isCurrent()) return
       snapshot = finalized
+      const { exportPresentationPptx } = await import('@renderer/lib/pptx-export')
+      if (!isCurrent()) return
       const blob = await exportPresentationPptx(snapshot)
       if (!isCurrent()) return
       const base =

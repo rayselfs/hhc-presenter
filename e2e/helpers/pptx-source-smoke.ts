@@ -5,13 +5,11 @@ import JSZip from 'jszip'
 import type { EditablePresentationDocument } from '../../src/renderer/src/lib/editable-presentation'
 import { completeOnboarding } from '../helpers.ts'
 
-export async function runPptxSourceSmoke(
+export async function prepareSourceHymn(
   page: Page,
-  openProjection: () => Promise<Page>
-): Promise<void> {
-  const bytes = await readFile(
-    'src/renderer/src/lib/__fixtures__/pptx/text-placeholder-layout.pptx'
-  )
+  bytes?: Buffer
+): Promise<{ id: string; source: { version: number; base64: string; sha256: string } }> {
+  bytes ??= await readFile('src/renderer/src/lib/__fixtures__/pptx/text-placeholder-layout.pptx')
   const source = {
     version: 1,
     base64: bytes.toString('base64'),
@@ -28,11 +26,9 @@ export async function runPptxSourceSmoke(
       return { part, ids }
     })
   )
-  const errors: string[] = []
-  page.on('pageerror', (error) => errors.push(error.message))
   await completeOnboarding(page)
   await page.goto(page.url().replace(/#.*$/, '#/files'))
-  await page.locator('input[type="file"]:not([webkitdirectory])').first().setInputFiles({
+  await page.locator('input[type="file"][multiple]:not([webkitdirectory])').first().setInputFiles({
     name: 'Source hymn.pptx',
     mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     buffer: bytes
@@ -103,6 +99,16 @@ export async function runPptxSourceSmoke(
   await page.reload()
   await file.click({ button: 'right' })
   await page.getByRole('menuitem', { name: /Open Presentation|開啟簡報|打开演示文稿/ }).click()
+  return { id, source }
+}
+
+export async function runPptxSourceSmoke(
+  page: Page,
+  openProjection: () => Promise<Page>
+): Promise<void> {
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  const { id, source } = await prepareSourceHymn(page)
   const slides = page.locator('[data-slide-option]')
   await expect(slides).toHaveCount(22)
   const editorUrl = page.url()

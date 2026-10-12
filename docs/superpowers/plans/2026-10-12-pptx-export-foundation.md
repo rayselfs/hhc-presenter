@@ -1,6 +1,6 @@
 # PPTX Export Foundations Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task in the current session, followed by one fresh whole-branch reviewer. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task in the current session, followed by one fresh whole-branch reviewer. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Export the current editable HHC presentation to usable PPTX without losing supported content, and preserve retained original source when exporting source-backed documents.
 
@@ -54,7 +54,7 @@ Supported output is the current visual graph: all ordered slides, backgrounds, r
 
 Use CSS pixels × 9525 for EMU; font size and character spacing in CSS pixels × 75 for DrawingML hundredths of a point; exact paragraph points × 100; paragraph multiples × 100000; normalized degrees × 60000; crop/alpha fractions × 100000. Preserve zero versus omitted values. CSS gradient angle is converted to DrawingML angle by subtracting 90 degrees, verified by rendered horizontal/vertical fixtures. Resolve supported CSS colors using the browser platform and reject unresolved/context-dependent colors.
 
-PNG/JPEG/GIF/BMP media retain binary bytes. SVG/WebP are rasterized through inert browser image decoding into PNG when needed for consumer compatibility; preserve original document assets. Rasterization must reject failed decoding, external resources and dimensions above 8192 per axis or 16777216 total pixels before allocation. These are explicit export bounds; return a diagnostic rather than silently reducing quality. Do not inline executable SVG or fetch external relationships.
+PNG/JPEG/GIF/BMP media retain binary bytes. WebP is rasterized through inert browser image decoding into PNG when needed for consumer compatibility; preserve original document assets. SVG is currently rejected by the portable/API contract and is deferred to a coordinated later capability. Rasterization must reject failed decoding, external resources and dimensions above 8192 per axis or 16777216 total pixels before allocation. These are explicit export bounds; return a diagnostic rather than silently reducing quality. Do not inline executable SVG or fetch external relationships.
 
 Text uses existing normalized paragraphs, explicit `buNone` for no list, per-run styles, paragraph margins/indent/alignment/spacing and empty-paragraph `endParaRPr`. Export list markers consistent with the currently rendered sequence, including start/level; internal sequence IDs are not Office identifiers. Cover fixed/content sizing and insets; do not introduce a shrink-to-fit mode. Map existing image effects explicitly; arbitrary source effects stay inert and preserved, or edited conflicts produce diagnostics.
 
@@ -117,11 +117,11 @@ Text uses existing normalized paragraphs, explicit `buNone` for no list, per-run
 
 **Interfaces:** Browser/Electron exercise Task 4; independent consumer reads files actually downloaded by the app. No production API/deployment required.
 
-- [ ] Add browser download E2E covering v1 hymn, explicit v2 source-backed edit, reopening, undo/redo and projection ownership. Run equivalent isolated Electron smoke with task-owned userData/download paths, leaving the user's profile/downloads untouched.
-- [ ] Convert original and exported hymn plus focused visual fixtures with bundled LibreOfficeDev 26.8.0.0.alpha0 in isolated profiles. Use the same process-only fontconfig environment for both; record the source Noto Sans TC family, its local substitution and actual PDF font names. The preflight configuration prefers Songti TC, but the resulting PDF uses HiraginoSansGB-W6/HiraginoSans-W7; configuration alone is not font evidence. Assert 22 pages, exact expected Chinese text, no unexpected list markers, unchanged line count and compare line bounds with a maximum 2-point deviation for unchanged text. If baseline measurement invalidates this bound, stop and document the cause rather than relaxing it blindly.
-- [ ] Verify focused consumers show intended crop, rotated geometry, gradients, borders and shadows; use rendered images and numerical geometry/text checks rather than HHC-only round trips. Source no-op exact bytes and untouched-member equality are additional acceptance, not substitutes for edited output checks.
-- [ ] Run `npm run lint`, `npm run typecheck`, `npx vitest run`, `npm run build`, `npm run build:web`, focused browser E2E and isolated Electron smoke; require successful exits and retain logs.
-- [ ] Request one fresh whole-branch review using the executing-plans native workflow; address findings with focused regression tests and rerun affected/full required checks. Record evidence, commit verification docs and preserve unmerged worktrees.
+- [x] Add browser download E2E covering v1 hymn, explicit v2 source-backed edit, reopening, undo/redo and projection ownership. Run equivalent isolated Electron smoke with task-owned userData/download paths, leaving the user's profile/downloads untouched.
+- [x] Convert original and exported hymn plus focused visual fixtures with bundled LibreOfficeDev 26.8.0.0.alpha0 in isolated profiles. Use the same process-only fontconfig environment for both; record the source Noto Sans TC family, its local substitution and actual PDF font names. The preflight configuration prefers Songti TC, but the resulting PDF uses HiraginoSansGB-W6/HiraginoSans-W7; configuration alone is not font evidence. Assert 22 pages, exact expected Chinese text, no unexpected list markers, unchanged line count and compare line bounds with a maximum 2-point deviation for unchanged text. If baseline measurement invalidates this bound, stop and document the cause rather than relaxing it blindly.
+- [x] Verify focused consumers show intended crop, rotated geometry, gradients, borders and shadows; use rendered images and numerical geometry/text checks rather than HHC-only round trips. Source no-op exact bytes and untouched-member equality are additional acceptance, not substitutes for edited output checks.
+- [x] Run `npm run lint`, `npm run typecheck`, `npx vitest run`, `npm run build`, `npm run build:web`, focused browser E2E and isolated Electron smoke; require successful exits and retain logs.
+- [x] Request one fresh whole-branch review using the executing-plans native workflow; address findings with focused regression tests and rerun affected/full required checks. Record evidence, commit verification docs and preserve unmerged worktrees.
 
 ## Preflight and Remaining Scope
 
@@ -133,6 +133,10 @@ No API deployment, general v2 activation, remote CI, merge, release, physical Wi
 
 ## Self-Review / Handoff
 
-Checked against the approved spec: this slice covers explicit export, retained source, current property fidelity, persistence-safe UI and independent/dual-mode validation. Later phase requirements and production activation remain explicitly open. Five review-focus cases each have an owning task and tests; public interfaces match between tasks. Tasks 1–4 are implemented and locally verified; Task 5 remains in progress.
+Checked against the approved spec: this slice covers explicit export, retained source, current property fidelity, persistence-safe UI and independent/dual-mode validation. Later phase requirements and production activation remain explicitly open. Five review-focus cases each have an owning task and tests; public interfaces match between tasks. Tasks 1–5 are implemented and locally verified; the complete five-phase goal remains in progress. See `docs/testing/pptx-export-readiness.md` for the supported contract, source autofit/notes conflict boundaries and verification evidence.
 
 Execution method remains the user's approved current-session sequential implementation. The user approved this plan on 2026-10-12 and instructed continuous implementation without further plan-review stops.
+
+## Final acceptance
+
+Completed 2026-10-12: lint, both typechecks, desktop/web builds and bundle checks passed; full Vitest 306 suites / 3665 tests; 25 affected browser E2Es (25.3 s); isolated built Electron flow (7.2 s); one fresh reviewer plus focused closure. Actual-download independent Office acceptance: eight 22-page hymn exports, exact expected text/line counts, maximum unchanged native bounds delta 0.057 points and source delta 0; focused visual/notes checks passed. A normal source toolbar 50pt edit rendered 50.003pt after freezing editable autofit, with both text lines intact. No assertion bounds were weakened. Source no-op/pure movement retains autofit; unmodeled autofit spacing/metadata and ambiguous aggregate-note edits return located conflicts. No API deployment, v2 activation, remote CI, merge, release, PowerPoint or physical Windows acceptance is implied.
