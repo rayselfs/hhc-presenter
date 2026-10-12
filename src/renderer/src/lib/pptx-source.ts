@@ -137,6 +137,10 @@ function readDirectory(buffer: ArrayBuffer): ZipMember[] {
   return members
 }
 
+export function readPptxPackageMemberSizes(buffer: ArrayBuffer): ReadonlyMap<string, number> {
+  return new Map(readDirectory(buffer).map(({ name, size }) => [name, size]))
+}
+
 const crcTable = Uint32Array.from({ length: 256 }, (_, value) => {
   let crc = value
   for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0)

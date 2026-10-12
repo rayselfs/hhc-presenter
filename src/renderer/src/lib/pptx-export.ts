@@ -2,6 +2,7 @@ import type { EditablePresentationDocument } from './editable-presentation'
 import { serializePortablePresentation } from './portable-presentation'
 import { validatePptxPackage, validatePptxSource } from './pptx-source'
 import { buildNativePptx } from './pptx-export-package'
+import { buildSourcePptx } from './pptx-export-source'
 import { PptxExportError } from './pptx-export-drawingml'
 import { PPTX_MIME_TYPE } from './presentation-media'
 export { PptxExportError, type PptxExportDiagnostic } from './pptx-export-drawingml'
@@ -13,12 +14,10 @@ export async function exportPresentationPptx(
     const snapshot: EditablePresentationDocument = JSON.parse(
       serializePortablePresentation(document)
     )
-    await validatePptxSource(snapshot)
-    if (snapshot.pptxSource)
-      throw new PptxExportError([
-        { code: 'source-conflict', message: 'Retained source export is not available yet' }
-      ])
-    const bytes = await buildNativePptx(snapshot)
+    if (!snapshot.pptxSource) await validatePptxSource(snapshot)
+    const bytes = snapshot.pptxSource
+      ? await buildSourcePptx(snapshot)
+      : await buildNativePptx(snapshot)
     await validatePptxPackage(bytes)
     return new Blob([bytes], { type: PPTX_MIME_TYPE })
   } catch (error) {

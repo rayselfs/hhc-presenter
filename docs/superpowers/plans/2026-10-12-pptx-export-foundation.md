@@ -66,11 +66,11 @@ Text uses existing normalized paragraphs, explicit `buNone` for no list, per-run
 
 **Interfaces:** Consume `EditablePresentationDocument`, `EditablePresentationSlide`, `EditablePresentationElement`, existing paragraph/background normalization. Produce `writeSlideDrawingMl(document: EditablePresentationDocument, slideId: string, imageRelationshipIds: ReadonlyMap<string, string>): XMLDocument`. Keep IDs deterministic and unique per slide. The shared diagnostic types live in this module and are re-exported by `pptx-export.ts`.
 
-- [ ] Write failing tests asserting EMU/font/spacing/angle/crop/alpha values; escaped Chinese and literal spaces; empty paragraphs; no invented bullets; lists, mixed runs, highlight/baseline/strike, insets, no visible zero-width outline, image effects and three gradient directions.
-- [ ] Run `npx vitest run src/renderer/src/lib/__tests__/pptx-export-drawingml.test.ts`; confirm failures for missing writer rather than unrelated setup.
-- [ ] Implement explicit visual serialization using existing normalization and DOM APIs; add attribution for any adapted pinned upstream implementation. Assert invalid CSS colors, locked objects and non-finite/unsupported values produce located diagnostics.
-- [ ] Rerun focused tests and `npm run typecheck`; require all pass.
-- [ ] Commit as `feat: serialize editable presentation DrawingML`.
+- [x] Write failing tests asserting EMU/font/spacing/angle/crop/alpha values; escaped Chinese and literal spaces; empty paragraphs; no invented bullets; lists, mixed runs, highlight/baseline/strike, insets, no visible zero-width outline, image effects and three gradient directions.
+- [x] Run `npx vitest run src/renderer/src/lib/__tests__/pptx-export-drawingml.test.ts`; confirm failures for missing writer rather than unrelated setup.
+- [x] Implement explicit visual serialization using existing normalization and DOM APIs; add attribution for any adapted pinned upstream implementation. Assert invalid CSS colors, locked objects and non-finite/unsupported values produce located diagnostics.
+- [x] Rerun focused tests and `npm run typecheck`; require all pass.
+- [x] Commit as `feat: serialize editable presentation DrawingML`.
 
 ### Task 2: Native PPTX Package and Reimport Parity
 
@@ -78,12 +78,12 @@ Text uses existing normalized paragraphs, explicit `buNone` for no list, per-run
 
 **Interfaces:** Consume Task 1 writer. Produce `exportPresentationPptx(document): Promise<Blob>` for native/v1 input; package builder `buildNativePptx(document: EditablePresentationDocument): Promise<ArrayBuffer>`. If extracting package validation, expose `validatePptxPackage(buffer: ArrayBuffer): Promise<void>` from `pptx-source.ts` and reuse its current bounded inspector without allocating an unused base64 record.
 
-- [ ] Write failing tests for 22-slide hymn v1 export, native rich-text/image/background fixture, slide reorder/insert/delete, shared media deduplication, notes, empty slides, asset decoding/raster bounds, package budgets and immutable input on success/failure.
-- [ ] Run `npx vitest run src/renderer/src/lib/__tests__/pptx-export.test.ts`; confirm intended failures.
-- [ ] Generate valid OPC presentation/master/layout/theme/slide/media/notes parts with unique IDs and relationships. No generated master bullets/default styles. Validate the finished archive before returning a PPTX Blob.
-- [ ] Add reimport tests asserting text/geometry/crop/opacity/border/shadow/background and notes where represented. Fix the shared importer once for existing editor properties it currently drops (picture conversion currently omits border/shadow/opacity); do not redefine a loss as success. Source effects outside current model remain preserved/diagnosed.
-- [ ] Run export, source-validation, conversion, portable and rich-text suites plus typecheck; require all pass.
-- [ ] Commit as `feat: export native editable presentations to PPTX`.
+- [x] Write failing tests for 22-slide hymn v1 export, native rich-text/image/background fixture, slide reorder/insert/delete, shared media deduplication, notes, empty slides, asset decoding/raster bounds, package budgets and immutable input on success/failure.
+- [x] Run `npx vitest run src/renderer/src/lib/__tests__/pptx-export.test.ts`; confirm intended failures.
+- [x] Generate valid OPC presentation/master/layout/theme/slide/media/notes parts with unique IDs and relationships. No generated master bullets/default styles. Validate the finished archive before returning a PPTX Blob.
+- [x] Add reimport tests asserting text/geometry/crop/opacity/border/shadow/background and notes where represented. Fix the shared importer once for existing editor properties it currently drops (picture conversion currently omits border/shadow/opacity); do not redefine a loss as success. Source effects outside current model remain preserved/diagnosed.
+- [x] Run export, source-validation, conversion, portable and rich-text suites plus typecheck; require all pass.
+- [x] Commit as `feat: export native editable presentations to PPTX`.
 
 ### Task 3: Retained Source Reconciliation
 
@@ -91,13 +91,13 @@ Text uses existing normalized paragraphs, explicit `buNone` for no list, per-run
 
 **Interfaces:** Consume validated v2 source, existing parser/converter and Task 2 native builder. Produce `buildSourcePptx(document: EditablePresentationDocument): Promise<ArrayBuffer>`. Its result passes the same bounded package validation before download.
 
-- [ ] Write failing tests: an unchanged source-backed hymn exports original bytes exactly; a text edit retains master/layout/theme/media bytes and does not invent bullets; independent text/geometry move/delete/reorder; copied slide; removed slide; shared media; unknown inert XML/relationships; contradictory source references and unrepresentable source edits.
-- [ ] Run `npx vitest run src/renderer/src/lib/__tests__/pptx-export-source.test.ts`; confirm intended failures.
-- [ ] Derive original editable baseline through the existing parser/converter. Compare render-relevant graph values, ignoring generated IDs/timestamps/names. Return exact original bytes when unchanged; otherwise clone and patch only affected parts.
-- [ ] Preserve opaque XML and omission/inheritance in untouched properties. Coalesce compatible text/geometry roles sharing one source shape; split into unique shapes when their frames/order diverge. Remove only deleted mapped roles, retaining unmodeled nodes. Rebuild presentation ordering/internal relations for inserted/copied/deleted slides; keep unrelated source members unchanged.
-- [ ] Return located source-conflict diagnostics when a requested edit cannot preserve meaningful opaque content or inheritance. Never strip unknown metadata to make a test pass. Verify document/source bytes are unchanged after both successful and failed exports.
-- [ ] Run source/native/conversion/validation suites; require all pass and all internal relationship targets resolve.
-- [ ] Commit as `feat: preserve PPTX source during editable export`.
+- [x] Write failing tests: an unchanged source-backed hymn exports original bytes exactly; a text edit retains master/layout/theme/media bytes and does not invent bullets; independent text/geometry move/delete/reorder; copied slide; removed slide; shared media; unknown inert XML/relationships; contradictory source references and unrepresentable source edits.
+- [x] Run `npx vitest run src/renderer/src/lib/__tests__/pptx-export-source.test.ts`; confirm intended failures.
+- [x] Derive original editable baseline through the existing parser/converter. Compare render-relevant graph values, ignoring generated IDs/timestamps/names. Return exact original bytes when unchanged; otherwise clone and patch only affected parts.
+- [x] Preserve opaque XML and omission/inheritance in untouched properties. Coalesce compatible text/geometry roles sharing one source shape; split into unique shapes when their frames/order diverge. Remove only deleted mapped roles, retaining unmodeled nodes. Rebuild presentation ordering/internal relations for inserted/copied/deleted slides; keep unrelated source members unchanged.
+- [x] Return located source-conflict diagnostics when a requested edit cannot preserve meaningful opaque content or inheritance. Never strip unknown metadata to make a test pass. Verify document/source bytes are unchanged after both successful and failed exports.
+- [x] Run source/native/conversion/validation suites; require all pass and all internal relationship targets resolve.
+- [x] Commit as `feat: preserve PPTX source during editable export`.
 
 ### Task 4: Workspace Download and Session Fences
 
@@ -118,7 +118,7 @@ Text uses existing normalized paragraphs, explicit `buNone` for no list, per-run
 **Interfaces:** Browser/Electron exercise Task 4; independent consumer reads files actually downloaded by the app. No production API/deployment required.
 
 - [ ] Add browser download E2E covering v1 hymn, explicit v2 source-backed edit, reopening, undo/redo and projection ownership. Run equivalent isolated Electron smoke with task-owned userData/download paths, leaving the user's profile/downloads untouched.
-- [ ] Convert original and exported hymn plus focused visual fixtures with bundled LibreOfficeDev 26.8.0.0.alpha0 in isolated profiles. Use the same process-only fontconfig environment for both; record that original 標楷體 is unavailable and verify actual PDF font names. The preflight configuration prefers Songti TC, but the resulting PDF uses HiraginoSansGB-W6/HiraginoSans-W7; configuration alone is not font evidence. Assert 22 pages, exact expected Chinese text, no unexpected list markers, unchanged line count and compare line bounds with a maximum 2-point deviation for unchanged text. If baseline measurement invalidates this bound, stop and document the cause rather than relaxing it blindly.
+- [ ] Convert original and exported hymn plus focused visual fixtures with bundled LibreOfficeDev 26.8.0.0.alpha0 in isolated profiles. Use the same process-only fontconfig environment for both; record the source Noto Sans TC family, its local substitution and actual PDF font names. The preflight configuration prefers Songti TC, but the resulting PDF uses HiraginoSansGB-W6/HiraginoSans-W7; configuration alone is not font evidence. Assert 22 pages, exact expected Chinese text, no unexpected list markers, unchanged line count and compare line bounds with a maximum 2-point deviation for unchanged text. If baseline measurement invalidates this bound, stop and document the cause rather than relaxing it blindly.
 - [ ] Verify focused consumers show intended crop, rotated geometry, gradients, borders and shadows; use rendered images and numerical geometry/text checks rather than HHC-only round trips. Source no-op exact bytes and untouched-member equality are additional acceptance, not substitutes for edited output checks.
 - [ ] Run `npm run lint`, `npm run typecheck`, `npx vitest run`, `npm run build`, `npm run build:web`, focused browser E2E and isolated Electron smoke; require successful exits and retain logs.
 - [ ] Request one fresh whole-branch review using the executing-plans native workflow; address findings with focused regression tests and rerun affected/full required checks. Record evidence, commit verification docs and preserve unmerged worktrees.
@@ -133,6 +133,6 @@ No API deployment, general v2 activation, remote CI, merge, release, physical Wi
 
 ## Self-Review / Handoff
 
-Checked against the approved spec: this slice covers explicit export, retained source, current property fidelity, persistence-safe UI and independent/dual-mode validation. Later phase requirements and production activation remain explicitly open. Five review-focus cases each have an owning task and tests; public interfaces match between tasks. No product implementation has started for this plan.
+Checked against the approved spec: this slice covers explicit export, retained source, current property fidelity, persistence-safe UI and independent/dual-mode validation. Later phase requirements and production activation remain explicitly open. Five review-focus cases each have an owning task and tests; public interfaces match between tasks. Tasks 1–3 are implemented and locally verified; Tasks 4–5 remain in progress.
 
-Execution method remains the user's approved current-session sequential implementation. Await review of this new plan before product code, as required by writing-plans.
+Execution method remains the user's approved current-session sequential implementation. The user approved this plan on 2026-10-12 and instructed continuous implementation without further plan-review stops.

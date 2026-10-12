@@ -88,7 +88,7 @@ function webpDimensions(bytes: Uint8Array): { width: number; height: number } {
     { code: 'invalid-value', message: 'The WebP dimensions cannot be decoded' }
   ])
 }
-async function mediaBytes(
+export async function encodePptxImage(
   asset: EditablePresentationAsset
 ): Promise<{ bytes: Uint8Array<ArrayBuffer>; extension: string; mimeType: string }> {
   const bytes = Uint8Array.from(
@@ -204,7 +204,7 @@ export async function buildNativePptx(
             elementId: id
           }
         ])
-      const entry = await mediaBytes(asset)
+      const entry = await encodePptxImage(asset)
       const hash = Array.from(
         new Uint8Array(await crypto.subtle.digest('SHA-256', entry.bytes)),
         (value) => value.toString(16).padStart(2, '0')
