@@ -279,7 +279,7 @@ describe('retained source PPTX export', () => {
     expect(style.getAttributeNS('urn:hhc:opaque', 'keep')).toBe('run-metadata')
   })
 
-  it('keeps retained text scaling correct for edited sizes, new runs and empty paragraphs', async () => {
+  it('freezes effective font sizes for edited autofit text, new runs and empty paragraphs', async () => {
     const { bytes } = await combinedShape()
     const zip = await JSZip.loadAsync(bytes)
     const xml = new DOMParser().parseFromString(
@@ -291,7 +291,7 @@ describe('retained source PPTX export', () => {
     properties.getElementsByTagNameNS(ans, 'noAutofit')[0].remove()
     const scale = xml.createElementNS(ans, 'a:normAutofit')
     scale.setAttribute('fontScale', '50000')
-    scale.setAttribute('lnSpcReduction', '20000')
+    scale.setAttribute('lnSpcReduction', '0')
     properties.appendChild(scale)
     const originalSize = Number(body.getElementsByTagNameNS(ans, 'rPr')[0].getAttribute('sz')) / 75
     const empty = xml.createElementNS(ans, 'a:p')
@@ -302,6 +302,7 @@ describe('retained source PPTX export', () => {
     zip.file('ppt/slides/slide1.xml', new XMLSerializer().serializeToString(xml))
     const original = await zip.generateAsync({ type: 'arraybuffer' })
     const document = await documentFrom(original)
+    expect(new Uint8Array(await buildSourcePptx(document))).toEqual(new Uint8Array(original))
     const text = firstText(document)
     expect(text.paragraphs![0].runs[0].fontSize).toBe(originalSize / 2)
     expect.soft(text.paragraphs![1].typingStyle?.fontSize).toBe(originalSize / 2)
@@ -326,12 +327,8 @@ describe('retained source PPTX export', () => {
       await (await JSZip.loadAsync(output)).file('ppt/slides/slide1.xml')!.async('string'),
       'application/xml'
     )
-    expect(patched.getElementsByTagNameNS(ans, 'normAutofit')[0].getAttribute('fontScale')).toBe(
-      '50000'
-    )
-    expect(
-      patched.getElementsByTagNameNS(ans, 'normAutofit')[0].getAttribute('lnSpcReduction')
-    ).toBe('20000')
+    expect(patched.getElementsByTagNameNS(ans, 'normAutofit')).toHaveLength(0)
+    expect(patched.getElementsByTagNameNS(ans, 'noAutofit')).toHaveLength(1)
     for (const run of patched.getElementsByTagNameNS(ans, 'r'))
       expect(run.getElementsByTagNameNS(ans, 't')).toHaveLength(1)
     const contentSized = structuredClone(document)
@@ -339,19 +336,70 @@ describe('retained source PPTX export', () => {
     const withoutScale = firstText(await documentFrom(await buildSourcePptx(contentSized)))
     expect(withoutScale.paragraphs![0].runs.map((run) => run.fontSize)).toEqual([50, 30])
     expect(withoutScale.paragraphs![1].typingStyle?.fontSize).toBe(22)
-    text.paragraphs![0].runs[0].fontSize = 4000
-    const snapshot = JSON.stringify(document)
-    await expect(exportPresentationPptx(document)).rejects.toMatchObject({
+    scale.setAttribute('lnSpcReduction', '20000')
+    zip.file('ppt/slides/slide1.xml', new XMLSerializer().serializeToString(xml))
+    const unsupported = await documentFrom(await zip.generateAsync({ type: 'arraybuffer' }))
+    firstText(unsupported).paragraphs![0].runs[0].fontSize = 50
+    const snapshot = JSON.stringify(unsupported)
+    await expect(exportPresentationPptx(unsupported)).rejects.toMatchObject({
       diagnostics: [
         expect.objectContaining({
           code: 'source-conflict',
-          slideId: document.slideOrder[0],
-          elementId: text.id
+          slideId: unsupported.slideOrder[0],
+          elementId: firstText(unsupported).id
         })
       ]
     })
-    expect(JSON.stringify(document)).toBe(snapshot)
+    expect(JSON.stringify(unsupported)).toBe(snapshot)
   })
+
+  it.each(['100000', null])(
+    'freezes resized autofit text even when fontScale is %s',
+    async (fontScale) => {
+      const { bytes } = await combinedShape()
+      const zip = await JSZip.loadAsync(bytes)
+      const xml = new DOMParser().parseFromString(
+        await zip.file('ppt/slides/slide1.xml')!.async('string'),
+        'application/xml'
+      )
+      const properties = xml
+        .getElementsByTagNameNS(pns, 'txBody')[0]
+        .getElementsByTagNameNS(ans, 'bodyPr')[0]
+      properties.getElementsByTagNameNS(ans, 'noAutofit')[0].remove()
+      const scale = xml.createElementNS(ans, 'a:normAutofit')
+      if (fontScale) scale.setAttribute('fontScale', fontScale)
+      properties.appendChild(scale)
+      zip.file('ppt/slides/slide1.xml', new XMLSerializer().serializeToString(xml))
+      const document = await documentFrom(await zip.generateAsync({ type: 'arraybuffer' }))
+      const text = firstText(document)
+      const expectedSize = text.paragraphs![0].runs[0].fontSize
+      text.x += 10
+      const moved = new DOMParser().parseFromString(
+        await (await JSZip.loadAsync(await buildSourcePptx(document)))
+          .file('ppt/slides/slide1.xml')!
+          .async('string'),
+        'application/xml'
+      )
+      expect(moved.getElementsByTagNameNS(ans, 'normAutofit')).toHaveLength(1)
+      text.width += 10
+      const output = await buildSourcePptx(document)
+      const resized = new DOMParser().parseFromString(
+        await (await JSZip.loadAsync(output)).file('ppt/slides/slide1.xml')!.async('string'),
+        'application/xml'
+      )
+      expect(resized.getElementsByTagNameNS(ans, 'normAutofit')).toHaveLength(0)
+      expect(firstText(await documentFrom(output)).paragraphs![0].runs[0].fontSize).toBe(
+        expectedSize
+      )
+      scale.setAttributeNS('urn:hhc:opaque', 'opaque:keep', 'autofit')
+      zip.file('ppt/slides/slide1.xml', new XMLSerializer().serializeToString(xml))
+      const opaque = await documentFrom(await zip.generateAsync({ type: 'arraybuffer' }))
+      firstText(opaque).width += 10
+      await expect(exportPresentationPptx(opaque)).rejects.toMatchObject({
+        diagnostics: [expect.objectContaining({ code: 'source-conflict' })]
+      })
+    }
+  )
 
   it('patches owned frames without removing flips or unmodified transform attributes', async () => {
     const native = createBlankEditablePresentationDocument('Flipped image')

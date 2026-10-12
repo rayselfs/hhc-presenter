@@ -495,7 +495,9 @@ export async function buildSourcePptx(
           old &&
           current.type === 'text' &&
           old.type === 'text' &&
-          !equal(textPayload(current), textPayload(old))
+          (!equal(textPayload(current), textPayload(old)) ||
+            ((current.width !== old.width || current.height !== old.height) &&
+              target.getElementsByTagNameNS(A_NS, 'normAutofit').length > 0))
         )
           patchSourceText(target, next, old, current, slide.id)
         if (old && current.type === 'shape' && old.type === 'shape') {

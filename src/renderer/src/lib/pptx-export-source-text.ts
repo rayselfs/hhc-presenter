@@ -103,7 +103,7 @@ function patchRunProperties(
   before: EditableTextRun | EditableTextStyle,
   after: EditableTextRun | EditableTextStyle,
   opacityChanged: boolean,
-  fontScaleChanged: boolean
+  materializeFontSize: boolean
 ): void {
   const fields = {
     fontSize: 'sz',
@@ -117,7 +117,7 @@ function patchRunProperties(
   for (const [field, attribute] of Object.entries(fields)) {
     const key = field as keyof typeof fields
     if (
-      (key === 'fontSize' && fontScaleChanged) ||
+      (key === 'fontSize' && materializeFontSize) ||
       (before[key] ?? (key === 'baseline' ? 'normal' : 0)) !==
         (after[key] ?? (key === 'baseline' ? 'normal' : 0))
     )
@@ -178,11 +178,28 @@ export function patchSourceText(
   }
   const bodyProperties = drawingChild(originalBody, 'bodyPr')
   const nextBodyProperties = drawingChild(generatedBody, 'bodyPr')!
-  const originalScale =
-    Number(
-      drawingChild(bodyProperties ?? originalBody, 'normAutofit')?.getAttribute('fontScale') ??
-        100000
-    ) / 100000
+  // Office recalculates autofit; edited text uses the model's fixed effective sizes.
+  const autofit = bodyProperties && drawingChild(bodyProperties, 'normAutofit')
+  const materializeFontSize = Boolean(autofit)
+  if (
+    autofit &&
+    (Number(autofit.getAttribute('lnSpcReduction') ?? 0) !== 0 ||
+      autofit.children.length ||
+      Array.from(autofit.attributes).some(
+        (attribute) =>
+          attribute.namespaceURI !== 'http://www.w3.org/2000/xmlns/' &&
+          (attribute.namespaceURI || !['fontScale', 'lnSpcReduction'].includes(attribute.localName))
+      ))
+  ) {
+    throw new PptxExportError([
+      {
+        code: 'source-conflict',
+        message: 'The retained text autofit cannot be changed safely',
+        slideId,
+        elementId: after.id
+      }
+    ])
+  }
   if (bodyProperties) {
     if (before.autoWidth !== after.autoWidth)
       copyAttribute(bodyProperties, nextBodyProperties, 'wrap')
@@ -197,7 +214,7 @@ export function patchSourceText(
       if (before.textInsets?.[field] !== after.textInsets?.[field])
         copyAttribute(bodyProperties, nextBodyProperties, attribute)
     }
-    if (before.autoSize !== after.autoSize) {
+    if (before.autoSize !== after.autoSize || autofit) {
       for (const name of ['noAutofit', 'normAutofit', 'spAutoFit'])
         replaceDrawingChild(bodyProperties, nextBodyProperties, name, [
           'prstTxWarp',
@@ -220,33 +237,6 @@ export function patchSourceText(
       source.ownerDocument.importNode(nextBodyProperties, true),
       originalBody.firstChild
     )
-  }
-  const retainedScale =
-    Number(
-      drawingChild(
-        drawingChild(originalBody, 'bodyPr') ?? originalBody,
-        'normAutofit'
-      )?.getAttribute('fontScale') ?? 100000
-    ) / 100000
-  const fontScaleChanged = retainedScale !== originalScale
-  if (retainedScale !== 1) {
-    for (const name of ['rPr', 'endParaRPr']) {
-      for (const properties of generatedBody.getElementsByTagNameNS(DRAWINGML_NS, name)) {
-        if (!properties.hasAttribute('sz')) continue
-        const size = Math.round(Number(properties.getAttribute('sz')) / retainedScale)
-        if (!Number.isFinite(size) || size <= 0 || size > 400000) {
-          throw new PptxExportError([
-            {
-              code: 'source-conflict',
-              message: 'The requested font size cannot preserve the retained text scale',
-              slideId,
-              elementId: after.id
-            }
-          ])
-        }
-        properties.setAttribute('sz', String(size))
-      }
-    }
   }
   const originalParagraphs = Array.from(originalBody.children).filter(
     (node) => node.namespaceURI === DRAWINGML_NS && node.localName === 'p'
@@ -299,7 +289,7 @@ export function patchSourceText(
     const runsChanged =
       JSON.stringify(baseline.runs) !== JSON.stringify(paragraph.runs) ||
       before.opacity !== after.opacity ||
-      fontScaleChanged
+      materializeFontSize
     if (runsChanged && oldRuns.length !== baseline.runs.length) {
       throw new PptxExportError([
         {
@@ -332,7 +322,7 @@ export function patchSourceText(
         oldStyle,
         run,
         before.opacity !== after.opacity,
-        fontScaleChanged
+        materializeFontSize
       )
       const content = drawingChild(clone, 't')
       if (content) {
@@ -354,7 +344,7 @@ export function patchSourceText(
         baseline.typingStyle,
         paragraph.typingStyle,
         before.opacity !== after.opacity,
-        fontScaleChanged
+        materializeFontSize
       )
     else if (paragraph.typingStyle && !end && nextEnd)
       target.appendChild(source.ownerDocument.importNode(nextEnd, true))
