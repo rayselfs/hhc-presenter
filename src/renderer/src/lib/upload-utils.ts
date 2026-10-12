@@ -1,4 +1,5 @@
 import { PPTX_MIME_TYPE } from './presentation-media'
+import { formatPptxCompatibilityError } from './pptx-compatibility-message'
 import { useMediaImportStore } from '@renderer/stores/media-import'
 import { openFileExplorerDB } from './file-explorer-db'
 import { getBlobId } from './blob-identity'
@@ -33,9 +34,7 @@ export function reportUploadError(name: string, error: unknown): void {
   const reason =
     error instanceof PersonalUploadPolicyError
       ? i18n.t(`personalCloud.uploadErrors.${error.code}`)
-      : error instanceof Error
-        ? error.message
-        : i18n.t('personalCloud.failed')
+      : formatPptxCompatibilityError(error)
   toast.danger(i18n.t('fileExplorer.uploadFailed', { name, reason }))
 }
 
@@ -344,7 +343,7 @@ async function uploadPreparedFiles(destinations: UploadDestination[]): Promise<n
         useMediaImportStore.setState((state) => ({ succeeded: state.succeeded + 1 }))
       } catch (error) {
         failedImports.push({ file, classification, parentId })
-        const reason = error instanceof Error ? error.message : i18n.t('personalCloud.failed')
+        const reason = formatPptxCompatibilityError(error)
         useMediaImportStore.setState((state) => ({
           failures: [...state.failures, { name: file.name, reason }]
         }))

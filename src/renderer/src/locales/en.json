@@ -650,6 +650,22 @@
     }
   },
   "presentationWorkspace": {
+    "importOriginalKept": "Open the original PPTX to view it; the source file has not been changed.",
+    "importErrors": {
+      "invalid-package": "The PowerPoint package is invalid, encrypted, macro-enabled or exceeds the import limits.",
+      "no-slides": "This presentation contains no slides.",
+      "animation": "PowerPoint animation is not supported for editable import yet.",
+      "transition": "PowerPoint transitions are not supported for editable import yet.",
+      "media": "PowerPoint audio/video is not supported for editable import yet.",
+      "color-mapping": "This slide overrides its inherited color mapping.",
+      "unsupported-object": "This object cannot be edited yet.",
+      "shape": "This shape contains unsupported geometry or formatting.",
+      "text": "This text contains unsupported layout or formatting.",
+      "image": "This image contains unsupported effects or formatting.",
+      "background": "This background contains an unsupported fill.",
+      "layout": "This layout or master contains unsupported decoration.",
+      "invalid-content": "This slide contains invalid or unsupported content."
+    },
     "exportPptx": "Export PPTX",
     "exportErrorElement": "Object {{element}}",
     "exportFailed": "Unable to export PPTX",

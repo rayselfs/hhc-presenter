@@ -5,8 +5,11 @@ import { openFileExplorerDB } from './file-explorer-db'
 import { resolveUniqueFileName } from './file-naming'
 import { PPTX_MIME_TYPE } from './presentation-media'
 import { readPptxNotes } from './pptx-notes'
-import { validatePptxPackage } from './pptx-source'
-import { assertEditablePptxDocument, assertEditablePptxFeatures } from './pptx-compatibility'
+import {
+  assertEditablePptxDocument,
+  assertEditablePptxFeatures,
+  assertEditablePptxPackage
+} from './pptx-compatibility'
 import { validatePortablePresentation } from './portable-presentation'
 
 let pendingCatalogCreation: Promise<unknown> = Promise.resolve()
@@ -16,7 +19,7 @@ export async function importEditablePptx(file: File, parentId: string): Promise<
   const { parseZip, buildPresentation, materializeAllSlideNodes, RECOMMENDED_ZIP_LIMITS } =
     await import('@aiden0z/pptx-renderer')
   const buffer = await file.arrayBuffer()
-  await validatePptxPackage(buffer)
+  await assertEditablePptxPackage(buffer)
   const files = await parseZip(buffer, RECOMMENDED_ZIP_LIMITS)
   const presentation = buildPresentation(files)
   assertEditablePptxFeatures(files, presentation)
@@ -39,7 +42,7 @@ export async function importEditablePptx(file: File, parentId: string): Promise<
     undefined,
     await readPptxNotes(buffer, presentation)
   )
-  assertEditablePptxDocument(document)
+  assertEditablePptxDocument(document, presentation)
   // Name resolution and persistence must stay together when upload workers finish concurrently.
   const creation = pendingCatalogCreation.then(async () => {
     const db = await openFileExplorerDB()

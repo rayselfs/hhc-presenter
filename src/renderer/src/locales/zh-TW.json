@@ -650,6 +650,22 @@
     }
   },
   "presentationWorkspace": {
+    "importOriginalKept": "可開啟原始 PPTX 檢視；原檔未被修改。",
+    "importErrors": {
+      "invalid-package": "PowerPoint 套件無效、已加密、含有巨集，或超過匯入限制。",
+      "no-slides": "簡報沒有投影片。",
+      "animation": "可編輯匯入目前不支援 PowerPoint 動畫。",
+      "transition": "可編輯匯入目前不支援 PowerPoint 轉場。",
+      "media": "可編輯匯入目前不支援 PowerPoint 音訊或影片。",
+      "color-mapping": "這張投影片覆寫了繼承的色彩對應。",
+      "unsupported-object": "目前無法編輯這個物件。",
+      "shape": "這個形狀含有不支援的幾何或格式。",
+      "text": "這段文字含有不支援的版面或格式。",
+      "image": "這張圖片含有不支援的效果或格式。",
+      "background": "這個背景含有不支援的填滿格式。",
+      "layout": "這個版面或母片含有不支援的裝飾物件。",
+      "invalid-content": "這張投影片含有無效或不支援的內容。"
+    },
     "exportPptx": "匯出 PPTX",
     "exportErrorElement": "第 {{element}} 個物件",
     "exportFailed": "無法匯出 PPTX",

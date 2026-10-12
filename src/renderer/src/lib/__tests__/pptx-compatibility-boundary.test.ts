@@ -49,6 +49,50 @@ async function fixture(kind: string): Promise<ArrayBuffer> {
       '</p:spTree>',
       '<p:grpSp><p:nvGrpSpPr><p:cNvPr id="99" name="Group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="952500" cy="952500"/><a:chOff x="0" y="0"/><a:chExt cx="952500" cy="952500"/></a:xfrm></p:grpSpPr></p:grpSp></p:spTree>'
     )
+  if (kind === 'shape') xml = xml.replace('<p:spPr>', '<p:spPr><a:prstGeom prst="triangle"/>')
+  if (kind === 'text') xml = xml.replace(/<a:bodyPr[^>]*\/>/, '<a:bodyPr vert="vert"/>')
+  if (kind === 'background')
+    xml = xml.replace('<p:cSld>', '<p:cSld><p:bg><p:bgPr><a:pattFill prst="pct5"/></p:bgPr></p:bg>')
+  if (kind === 'inherited background') {
+    const masterPath = 'ppt/slideMasters/slideMaster1.xml'
+    zip.file(
+      masterPath,
+      (await zip.file(masterPath)!.async('string')).replace(
+        '<p:spTree>',
+        '<p:bg><p:bgPr><a:pattFill prst="pct5"/></p:bgPr></p:bg><p:spTree>'
+      )
+    )
+  }
+  if (kind === 'image') {
+    xml = xml.replace(
+      '</p:spTree>',
+      '<p:pic><p:nvPicPr><p:cNvPr id="100" name="Private image label"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rIdImage"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="952500" cy="952500"/></a:xfrm><a:prstGeom prst="rect"/><a:effectLst><a:glow rad="100"/></a:effectLst></p:spPr></p:pic></p:spTree>'
+    )
+    const relPath = 'ppt/slides/_rels/slide1.xml.rels'
+    zip.file(
+      relPath,
+      (await zip.file(relPath)!.async('string')).replace(
+        '</Relationships>',
+        '<Relationship Id="rIdImage" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image.png"/></Relationships>'
+      )
+    )
+    zip.file(
+      'ppt/media/image.png',
+      Uint8Array.from(
+        atob(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jY1sAAAAASUVORK5CYII='
+        ),
+        (character) => character.charCodeAt(0)
+      )
+    )
+    zip.file(
+      '[Content_Types].xml',
+      (await zip.file('[Content_Types].xml')!.async('string')).replace(
+        '</Types>',
+        '<Default Extension="png" ContentType="image/png"/></Types>'
+      )
+    )
+  }
   if (kind === 'malformed') xml = '<broken>'
   zip.file(path, xml)
   if (kind === 'macro') zip.file('ppt/vbaProject.bin', 'macro')
@@ -127,6 +171,42 @@ describe.each(['upload', 'local', 'provider'])('%s editable conversion boundary'
     const before = await snapshot()
     await expect(convert()).rejects.toThrow()
     expect(await snapshot()).toEqual(before)
+  })
+
+  it.each([
+    ['animation', 'animation'],
+    ['transition', 'transition'],
+    ['media', 'media'],
+    ['color mapping', 'color-mapping'],
+    ['shape', 'shape'],
+    ['text', 'text'],
+    ['image', 'image'],
+    ['background', 'background']
+  ])('identifies %s with a typed reason and slide/source location', async (kind, code) => {
+    const convert = await prepareConversion(await fixture(kind), mode)
+    await expect(convert()).rejects.toMatchObject({
+      name: 'PptxCompatibilityError',
+      diagnostic: {
+        code,
+        slideNumber: 1,
+        sourcePart: 'ppt/slides/slide1.xml',
+        ...(['shape', 'text', 'image'].includes(code)
+          ? { objectNumber: expect.any(Number), objectId: expect.any(String) }
+          : {})
+      }
+    })
+    expect(await (await openFileExplorerDB()).count('presentation-drafts')).toBe(0)
+  })
+
+  it('locates an inherited background failure in its actual master part', async () => {
+    const convert = await prepareConversion(await fixture('inherited background'), mode)
+    await expect(convert()).rejects.toMatchObject({
+      diagnostic: {
+        code: 'background',
+        slideNumber: 1,
+        sourcePart: 'ppt/slideMasters/slideMaster1.xml'
+      }
+    })
   })
 
   it('retains the supported hymn and schema-v1 persistence policy', async () => {
