@@ -1,7 +1,7 @@
 reference_version,area,feature,upstream_priority,upstream_status,hhc_status,assessment,evidence
 v0.5.0,Files,New blank presentation,P0,D,existing,createBlankEditablePresentationDocument,src/renderer/src/lib/editable-presentation.ts
 v0.5.0,Files,Native file format (open/save),P0,D,unassessed,candidate: verify against HHC and pinned source,
-v0.5.0,Files,Open PowerPoint .pptx,P0,D,partial,Editable conversion accepts a bounded subset; unsupported content fails before catalog creation,src/renderer/src/lib/pptx-import.ts;src/renderer/src/lib/__tests__/pptx-import.test.ts
+v0.5.0,Files,Open PowerPoint .pptx,P0,D,partial,Upload/local/provider copy share a bounded compatibility gate and localized located diagnostics; tested failures leave storage unchanged,src/renderer/src/lib/pptx-compatibility.ts;docs/testing/pptx-import-compatibility.md
 v0.5.0,Files,Save as PowerPoint .pptx,P0,D,partial,Supported native/source export locally verified; advanced object and platform scope remains,src/renderer/src/lib/pptx-export.ts;docs/testing/pptx-export-readiness.md
 v0.5.0,Files,Open/save .potx/.ppsx/.pptm variants (.potx/.ppsx open; saved with the .pptx content type; no .pptm),P2,P,unassessed,candidate: verify against HHC and pinned source,
 v0.5.0,Files,Save as template,P1,D,unassessed,candidate: verify against HHC and pinned source,

@@ -24,30 +24,36 @@
 
 ## Task 1: Shared compatibility gate and failure atomicity
 
-- [ ] Write RED fixtures/tests for animation, transition, media, meaningful color-map override and unsupported converted objects through both ordinary import and create-editable-copy, including read-only provider drafts. Assert no new catalog/blob/draft on failure and original source bytes/records unchanged.
-- [ ] Extract the existing guard and share it at both entry points; reuse bounded package validation before parsing. Keep parser recommendation bounds and cancellation/account checks.
-- [ ] Cover malformed/macro/encrypted/oversized packages at the same boundary; use existing bounded fixtures/helpers, not resource-heavy fixtures or another parser.
-- [ ] Run affected import/conversion/persistence suites and typechecks; commit the focused safety fix.
+- [x] Write RED fixtures/tests for animation, transition, media, meaningful color-map override and unsupported converted objects through both ordinary import and create-editable-copy, including read-only provider drafts. Assert no new catalog/blob/draft on failure and original source bytes/records unchanged.
+- [x] Extract the existing guard and share it at both entry points; reuse bounded package validation before parsing. Keep parser recommendation bounds and cancellation/account checks.
+- [x] Cover malformed/macro/encrypted/oversized packages at the same boundary; use existing bounded fixtures/helpers, not resource-heavy fixtures or another parser.
+- [x] Run affected import/conversion/persistence suites and typechecks; commit the focused safety fix.
 
 ## Task 2: Located, localized compatibility diagnostics
 
-- [ ] Write RED tests for structured feature reasons and slide/object/source-part location, unsupported text/image/shape/background conversion, and local/provider UI failures without raw XML/private labels.
-- [ ] Give feature inspection and converter failures typed diagnostic codes; attach location where traversal already knows the current slide/node. Keep valid values and inheritance unchanged. Retain causes for debugging without showing their raw text to the user.
-- [ ] Reuse upload failure/retry and copy toast surfaces with three locales. Supported copy/import keeps the existing source-provider permissions and destination behavior.
-- [ ] Run diagnostic, upload, copy and account-fence tests plus lint/typecheck; commit.
+- [x] Write RED tests for structured feature reasons and slide/object/source-part location, unsupported text/image/shape/background conversion, and local/provider UI failures without raw XML/private labels.
+- [x] Give feature inspection and converter failures typed diagnostic codes; attach location where traversal already knows the current slide/node. Keep valid values and inheritance unchanged. Retain causes for debugging without showing their raw text to the user.
+- [x] Reuse upload failure/retry and copy toast surfaces with three locales. Supported copy/import keeps the existing source-provider permissions and destination behavior.
+- [x] Run diagnostic, upload, copy and account-fence tests plus lint/typecheck; commit.
 
 ## Task 3: Compatibility fixture and independent-consumer matrix
 
-- [ ] Record supported, unsupported-until-later and malformed input cases with committed fixture/test pointers. Include inheritance, lists, empty/whitespace text, fonts, autofit, shape/image/background properties and notes; distinguish source-preserved no-op from editable support.
-- [ ] Probe soft line breaks through actual export and an independent consumer. If loss is reproduced, fix the common import/export representation narrowly with meaningful regression tests; otherwise record the passing evidence. Do not silently strip original run metadata or invent defaults.
-- [ ] Verify representative supported files import/edit/export/reopen and failure cases leave no duplicate or partial item. Keep schema v1 and cloud activation gates explicit.
+- [x] Record supported, unsupported-until-later and malformed input cases with committed fixture/test pointers. Include inheritance, lists, empty/whitespace text, fonts, autofit, shape/image/background properties and notes; distinguish source-preserved no-op from editable support.
+- [x] Probe soft line breaks through actual export and an independent consumer. If loss is reproduced, fix the common import/export representation narrowly with meaningful regression tests; otherwise record the passing evidence. Do not silently strip original run metadata or invent defaults.
+- [x] Verify representative supported files import/edit/export/reopen and failure cases leave no duplicate or partial item. Keep schema v1 and cloud activation gates explicit.
 
 ## Task 4: Whole-slice acceptance and review
 
-- [ ] Run repository lint, both typechecks, full Vitest, desktop/web builds, affected browser E2Es and an isolated built Electron import/copy/export flow. Keep task-owned profiles/downloads and remove only owned temporary data after archiving evidence.
-- [ ] Request one fresh read-only whole-slice reviewer under the approved execution workflow; fix actionable findings and rerun justified checks.
-- [ ] Update the design/inventory/readiness and plan with exact results, archive task-owned execution evidence, commit and retain unmerged worktrees. Continue Phase 2 discovery after Phase 1's compatibility boundary is verified.
+- [x] Run repository lint, both typechecks, full Vitest, desktop/web builds, affected browser E2Es and an isolated built Electron import/copy/export flow. Keep task-owned profiles/downloads and remove only owned temporary data after archiving evidence.
+- [x] Request one fresh read-only whole-slice reviewer under the approved execution workflow; fix actionable findings and rerun justified checks.
+- [x] Update the design/inventory/readiness and plan with exact results, archive task-owned execution evidence, commit and retain unmerged worktrees. Continue Phase 2 discovery after Phase 1's compatibility boundary is verified.
 
 ## Completion and limits
 
-Both editable conversion entry points reject unrepresentable content before persistence and identify a useful reason/location. Supported imports/copies, history/save/reopen and source-provider permissions work in Electron/browser. Raw PPTX viewing remains available. This slice does not implement advanced shapes/groups/tables/charts, masters/layouts or playback; those are subsequent approved phases. It does not enable v2 writes, change the portable/API schema, claim remote CI or authorize deployment/merge/release/physical Windows acceptance.
+Both editable conversion entry points reject the covered known unrepresentable content before persistence and identify a useful reason/location. Supported imports/copies, history/save/reopen and source-provider permissions work in Electron/browser. Raw PPTX viewing remains available. This slice does not implement advanced shapes/groups/tables/charts, masters/layouts or playback; those are subsequent approved phases. It does not enable v2 writes, change the portable/API schema, claim remote CI or authorize deployment/merge/release/physical Windows acceptance.
+
+## Completion Evidence
+
+Completed locally on 2026-10-12. Product `1cc755ca`; acceptance tests `2ac689ae`. One fresh whole-branch reviewer found four Important issues, all fixed in one RED/GREEN pass (20 reproducing tests, three positive controls, 144 affected tests). Final full suite 309/3773 passed (257.66s, one worker, unchanged timeouts), lint/typechecks and desktop/web builds passed, all 25 affected browser cases passed (27.7s), isolated built Electron passed (10.8s). Fresh independent Office evidence covers eight actual exporter cases and .01pt maximum expected horizontal deviation. Runtime-load failures and corrected XML fixture doubles are retained in the ledger/evidence.
+
+See `docs/testing/pptx-import-compatibility.md` for coverage and explicit limits. Durable evidence: `/Users/rayselfs/.codex/visualizations/2026/10/11/01a12b4f-88d0-7980-82da-40c2abb5b65f/deckcraft-pptx-import-acceptance-20261012/`. Both unmerged worktrees are retained, no activation/deployment/release is implied. Phase 2 discovery and preset-geometry plan are saved; continue inline without a new confirmation. The full goal remains active.
