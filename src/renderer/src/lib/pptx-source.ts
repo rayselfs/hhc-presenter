@@ -336,6 +336,10 @@ async function digest(buffer: ArrayBuffer): Promise<string> {
   return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
+export async function validatePptxPackage(buffer: ArrayBuffer): Promise<void> {
+  await inspectPackage(buffer)
+}
+
 export async function createPptxSource(buffer: ArrayBuffer): Promise<PptxSource> {
   await inspectPackage(buffer)
   return { version: 1, base64: encodeBase64(new Uint8Array(buffer)), sha256: await digest(buffer) }

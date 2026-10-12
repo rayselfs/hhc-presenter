@@ -5,6 +5,7 @@ import { convertPresentationData, createEditablePresentationItem } from './edita
 import { openFileExplorerDB } from './file-explorer-db'
 import { resolveUniqueFileName } from './file-naming'
 import { PPTX_MIME_TYPE } from './presentation-media'
+import { readPptxNotes } from './pptx-notes'
 import { validatePortablePresentation } from './portable-presentation'
 
 let pendingCatalogCreation: Promise<unknown> = Promise.resolve()
@@ -13,7 +14,8 @@ export async function importEditablePptx(file: File, parentId: string): Promise<
   const ownerId = usePersonalSyncStore.getState().activeOwnerId
   const { parseZip, buildPresentation, materializeAllSlideNodes, RECOMMENDED_ZIP_LIMITS } =
     await import('@aiden0z/pptx-renderer')
-  const files = await parseZip(await file.arrayBuffer(), RECOMMENDED_ZIP_LIMITS)
+  const buffer = await file.arrayBuffer()
+  const files = await parseZip(buffer, RECOMMENDED_ZIP_LIMITS)
   const presentation = buildPresentation(files)
   assertEditablePptxFeatures(files, presentation)
   materializeAllSlideNodes(presentation)
@@ -29,7 +31,12 @@ export async function importEditablePptx(file: File, parentId: string): Promise<
     size: file.size,
     mimeType: PPTX_MIME_TYPE
   }
-  const document = convertPresentationData(source, presentation)
+  const document = convertPresentationData(
+    source,
+    presentation,
+    undefined,
+    await readPptxNotes(buffer, presentation)
+  )
   if (!document.slideOrder.length) throw new Error('The presentation contains no slides')
   if (
     Object.values(document.slides).some((slide) =>

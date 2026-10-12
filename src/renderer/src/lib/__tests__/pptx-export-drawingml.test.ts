@@ -37,6 +37,7 @@ describe('editable DrawingML output', () => {
       width: 300,
       height: 140,
       fontSize: 24,
+      fontFamily: 'Noto Sans TC',
       characterSpacing: 2,
       rotation: -45,
       opacity: 0.5,
@@ -57,6 +58,7 @@ describe('editable DrawingML output', () => {
     expect(one(xml.getElementsByTagNameNS(p, 'sp')[0], 'off').getAttribute('x')).toBe('114300')
     expect(one(xml.getElementsByTagNameNS(p, 'sp')[0], 'ext').getAttribute('cx')).toBe('2857500')
     expect(one(xml, 'rPr').getAttribute('sz')).toBe('1800')
+    expect(one(xml, 'rPr').getAttribute('lang')).toBe('zh-TW')
     expect(one(xml, 'rPr').getAttribute('spc')).toBe('150')
     expect(one(xml, 'alpha').getAttribute('val')).toBe('50000')
     expect(one(xml, 'bodyPr').getAttribute('lIns')).toBe('38100')

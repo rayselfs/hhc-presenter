@@ -7,7 +7,7 @@ import {
   type EditableTextRun,
   type EditableTextStyle
 } from './editable-presentation'
-import { normalizeTextParagraphs } from './presentation-rich-text'
+import { normalizeTextParagraphs, resolveParagraphListNumbers } from './presentation-rich-text'
 
 export const DRAWINGML_NS = 'http://schemas.openxmlformats.org/drawingml/2006/main'
 export const PRESENTATIONML_NS = 'http://schemas.openxmlformats.org/presentationml/2006/main'
@@ -164,6 +164,8 @@ export function writeSlideDrawingMl(
       baseline:
         style.baseline === 'superscript' ? 30000 : style.baseline === 'subscript' ? -25000 : 0
     })
+    if (/\bTC\b/.test(style.fontFamily)) node.setAttribute('lang', 'zh-TW')
+    else if (/\bSC\b/.test(style.fontFamily)) node.setAttribute('lang', 'zh-CN')
     fill(node, style.color, opacity)
     if (style.highlightColor) colorNode(add(node, 'a:highlight'), style.highlightColor, opacity)
     for (const kind of ['latin', 'ea', 'cs'])
@@ -183,7 +185,9 @@ export function writeSlideDrawingMl(
     })
     add(properties, element.autoSize === 'content' ? 'a:spAutoFit' : 'a:noAutofit')
     add(body, 'a:lstStyle')
-    for (const [index, paragraph] of normalizeTextParagraphs(element).entries()) {
+    const paragraphs = normalizeTextParagraphs(element)
+    const listNumbers = resolveParagraphListNumbers(paragraphs)
+    for (const [index, paragraph] of paragraphs.entries()) {
       const para = add(body, 'a:p')
       const properties = add(para, 'a:pPr', {
         algn:
@@ -208,7 +212,7 @@ export function writeSlideDrawingMl(
           add(properties, 'a:buFont', { typeface: safeText(paragraph.list.font) })
         add(properties, 'a:buChar', { char: safeText(paragraph.list.char || '•') })
       } else {
-        const start = (paragraph.list.startAt ?? 1) + index
+        const start = listNumbers[index]!
         if (start < 1 || start > 32767) fail('List numbering exceeds the PowerPoint limit')
         // The current editor renders decimal markers regardless of the imported numbering format.
         add(properties, 'a:buAutoNum', { type: 'arabicPeriod', startAt: start })

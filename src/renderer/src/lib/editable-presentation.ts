@@ -9,12 +9,13 @@ import { openFileExplorerDB } from './file-explorer-db'
 import { EDITABLE_PRESENTATION_MIME_TYPE } from './presentation-media'
 import { readPresentationArrayBuffer } from './presentation-source'
 import { persistEditablePresentationCreation } from './editable-presentation-creation'
-import { normalizeTextParagraphs } from './presentation-rich-text'
+import { normalizeTextParagraphs, resolveParagraphListNumbers } from './presentation-rich-text'
 import {
   validatePortablePresentation,
   serializePortablePresentation,
   assertPortablePresentationSize
 } from './portable-presentation'
+import { readPptxNotes } from './pptx-notes'
 import { validatePptxSource } from './pptx-source'
 import { FOLDER_DURATION_MS, type FileItemRecord } from '@shared/types/folder'
 import type { PlaceholderInfo, PresentationData } from '@aiden0z/pptx-renderer'
@@ -1061,7 +1062,12 @@ export async function convertPptxToEditablePresentation(
   const files = await parseZip(buffer, RECOMMENDED_ZIP_LIMITS)
   const presentation = buildPresentation(files)
   materializeAllSlideNodes(presentation)
-  const document = convertPresentationData(item, presentation)
+  const document = convertPresentationData(
+    item,
+    presentation,
+    undefined,
+    await readPptxNotes(buffer, presentation)
+  )
   if (ownerId !== usePersonalSyncStore.getState().activeOwnerId)
     throw new Error('Personal account changed')
   if (await isReadonlyPresentationSource(item)) return createPresentationDraft(item, document)
@@ -1109,7 +1115,8 @@ export async function createEditablePresentationItem(
 export function convertPresentationData(
   source: FileItemRecord,
   presentation: PresentationData,
-  pptxSource?: PptxSource
+  pptxSource?: PptxSource,
+  notesBySlide: ReadonlyMap<string, string> = new Map()
 ): EditablePresentationDocument {
   const documentId = crypto.randomUUID()
   const now = Date.now()
@@ -1125,6 +1132,7 @@ export function convertPresentationData(
     const convertedSlide = convertSlide(slide, presentation, assets, Boolean(pptxSource))
     slides[slideId] = {
       ...convertedSlide,
+      notes: notesBySlide.get(slide.slidePath) ?? '',
       id: slideId,
       name: `Slide ${slide.index + 1}`,
       themeId: resolveSlideThemeId(slide, presentation) ?? defaultThemeId
@@ -1263,6 +1271,37 @@ function resolveSlideBackground(
         100000
       return { type: 'solid', color, transparency: 100 - alpha / 1000 }
     }
+    const gradient = properties.child('gradFill')
+    if (gradient.exists()) {
+      const linear = gradient.child('lin')
+      if (!linear.exists() || gradient.child('path').exists())
+        throw new Error('Unsupported PowerPoint background fill: non-linear gradient')
+      const angle = ((linear.numAttr('ang') ?? 0) / 60000 + 90) % 360
+      const stops = gradient
+        .child('gsLst')
+        .children('gs')
+        .map((stop) => {
+          const color = readTextColor(stop, theme)
+          const position = stop.numAttr('pos')
+          if (!color || position === undefined || position < 0 || position > 100000)
+            throw new Error('Invalid PowerPoint gradient stop')
+          return {
+            color,
+            position: position / 1000,
+            transparency: 100 - readColorAlpha(stop) * 100,
+            brightness: 0
+          }
+        })
+      if (stops.length < 2 || stops.length > 1000)
+        throw new Error('Invalid PowerPoint gradient stops')
+      return {
+        type: 'gradient',
+        gradientType: 'linear',
+        direction: angle === 90 ? 'left-right' : angle === 180 ? 'top-bottom' : 'diagonal',
+        angle,
+        stops
+      }
+    }
     throw new Error('Unsupported PowerPoint background fill')
   }
   return createDefaultSlideBackground()
@@ -1297,8 +1336,8 @@ function convertShapeNode(
     ['gradFill', 'pattFill', 'blipFill', 'grpFill'].some((fill) => node.fill?.child(fill).exists())
   )
     throw new Error('Unsupported PowerPoint shape fill')
-  const fillColor = readTextColor(node.fill, theme) ?? 'transparent'
-  const strokeColor = readTextColor(node.line, theme) ?? '#000000'
+  const fillColor = readPaintColor(node.fill, theme) ?? 'transparent'
+  const strokeColor = readPaintColor(node.line, theme) ?? '#000000'
   const rawStrokeWidth = node.line?.attr('w')
   const sourceStrokeWidth = rawStrokeWidth === undefined ? undefined : Number(rawStrokeWidth)
   if (
@@ -1313,7 +1352,15 @@ function convertShapeNode(
         ? 1
         : emuToPx(sourceStrokeWidth)
 
-  if (shape && (node.presetGeometry || fillColor !== 'transparent' || strokeWidth > 0)) {
+  const isInvisibleTextBox =
+    isXmlTrue(node.source.child('nvSpPr').child('cNvSpPr').attr('txBox')) &&
+    node.source.child('spPr').child('noFill').exists() &&
+    strokeWidth === 0
+  if (
+    shape &&
+    !isInvisibleTextBox &&
+    (node.presetGeometry || fillColor !== 'transparent' || strokeWidth > 0)
+  ) {
     elements.push({
       id: crypto.randomUUID(),
       type: 'shape',
@@ -1345,7 +1392,10 @@ function convertShapeNode(
     })
   }
 
-  if (text) {
+  if (
+    text ||
+    (node.textBody && isXmlTrue(node.source.child('nvSpPr').child('cNvSpPr').attr('txBox')))
+  ) {
     const frame = resolveTextShapeFrame(node, slide, presentation)
     if (!frame) throw new Error(`Text placeholder frame is missing: ${node.name}`)
     const style = resolveTextShapeStyle(node, slide, presentation, theme)
@@ -1400,6 +1450,41 @@ function convertPictureNode(
   presentation: PresentationData,
   assets: Record<string, EditablePresentationAsset>
 ): EditablePresentationElement[] {
+  const theme = getSlideTheme(slide, presentation)
+  const blip = node.source.child('blipFill').child('blip')
+  const opacity = (blip.child('alphaModFix').numAttr('amt') ?? 100000) / 100000
+  if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1)
+    throw new Error('Invalid PowerPoint image opacity')
+  const borderWidth =
+    node.line?.child('noFill').exists() || !node.line?.exists()
+      ? 0
+      : emuToPx(node.line.numAttr('w') ?? 9525)
+  if (!Number.isFinite(borderWidth) || borderWidth < 0)
+    throw new Error('Invalid PowerPoint image outline')
+  const borderColor = readPaintColor(node.line, theme, opacity || 1) ?? '#ffffff'
+  const effectList = node.source.child('spPr').child('effectLst')
+  const shadow = effectList.child('outerShdw')
+  let imageShadow: EditableImageShadow | undefined
+  if (shadow.exists()) {
+    const blur = emuToPx(shadow.numAttr('blurRad') ?? 0)
+    const distance = emuToPx(shadow.numAttr('dist') ?? 0)
+    const alpha = readColorAlpha(shadow)
+    const matches = (
+      expectedBlur: number,
+      expectedDistance: number,
+      expectedAlpha: number
+    ): boolean =>
+      blur === expectedBlur &&
+      distance === expectedDistance &&
+      shadow.numAttr('dir') === 5400000 &&
+      readTextColor(shadow, theme)?.toLowerCase() === '#000000' &&
+      Math.abs(alpha - expectedAlpha * opacity) < 0.00001
+    if (matches(20, 8, 0.22)) imageShadow = 'soft'
+    else if (matches(32, 14, 0.32)) imageShadow = 'medium'
+    else throw new Error('Unsupported PowerPoint image shadow')
+  }
+  if (effectList.children().some((effect) => effect.localName !== 'outerShdw'))
+    throw new Error('Unsupported PowerPoint image effect')
   const asset = resolvePictureAsset(node, slide, presentation, assets)
   if (!asset) return [createLockedElement(node, 'Picture')]
   return [
@@ -1412,8 +1497,10 @@ function convertPictureNode(
       width: node.size.w,
       height: node.size.h,
       rotation: node.rotation,
-      opacity: 1,
-      crop: node.crop
+      opacity,
+      crop: node.crop,
+      ...(borderWidth > 0 ? { borderWidth, borderColor } : {}),
+      ...(imageShadow ? { shadow: imageShadow } : {})
     }
   ]
 }
@@ -1732,7 +1819,8 @@ function resolveTextParagraphs(
   presentation: PresentationData,
   theme?: ThemeData
 ): EditableTextParagraph[] | undefined {
-  const paragraphs = node.textBody?.paragraphs.map((paragraph) => {
+  const numberingSequences = new Map<number, string>()
+  const paragraphs = node.textBody?.paragraphs.map((paragraph, paragraphIndex) => {
     const runs = paragraph.runs.map((run) => {
       const style = resolveTextStyle(
         run.properties,
@@ -1787,9 +1875,25 @@ function resolveTextParagraphs(
             startAt: number.numAttr('startAt')
           }
         : null
+    if (list?.kind === 'number') {
+      if (list.startAt !== undefined || !numberingSequences.has(list.level))
+        numberingSequences.set(list.level, `pptx:${node.id}:${paragraphIndex}`)
+      list.sequenceId = numberingSequences.get(list.level)
+    } else numberingSequences.clear()
+    const {
+      align: _align,
+      lineHeight: _lineHeight,
+      ...typingStyle
+    } = resolveTextStyle(
+      undefined,
+      paragraph.endParaRPr,
+      paragraph.properties,
+      theme,
+      inheritedParagraphProperties(node, slide, presentation, paragraph.level ?? 0)
+    )
     return {
       runs,
-      typingStyle: runs.at(-1),
+      typingStyle: runs.at(-1) ?? typingStyle,
       align: normalizeTextAlign(align),
       lineSpacing:
         exactPoints !== undefined
@@ -1844,7 +1948,7 @@ function resolveTextStyle(
     italic: isXmlTrue(attr('i')),
     underline: isUnderlineEnabled(attr('u')),
     color:
-      sources.map((source) => readTextColor(source, theme)).find(Boolean) ??
+      sources.map((source) => readPaintColor(source, theme)).find(Boolean) ??
       DEFAULT_FOREGROUND_COLOR,
     align: normalizeTextAlign(
       [paragraphProperties, ...inherited]
@@ -1897,36 +2001,50 @@ function readFontFamily(node: XmlNode | undefined, theme?: ThemeData): string | 
   return value
 }
 
+function colorRoot(node: XmlNode | undefined): XmlNode | undefined {
+  return node?.child('solidFill').exists() ? node.child('solidFill') : node
+}
+
+function readColorAlpha(node: XmlNode | undefined): number {
+  const root = colorRoot(node)
+  const alpha =
+    root?.child('srgbClr').child('alpha').numAttr('val') ??
+    root?.child('schemeClr').child('alpha').numAttr('val') ??
+    100000
+  if (!Number.isFinite(alpha) || alpha < 0 || alpha > 100000)
+    throw new Error('Invalid PowerPoint color alpha')
+  return alpha / 100000
+}
+
+function readPaintColor(node: XmlNode | undefined, theme?: ThemeData, opacity = 1): string | null {
+  const color = readTextColor(node, theme)
+  if (!color) return null
+  const alpha = readColorAlpha(node) / opacity
+  if (alpha >= 1) return color
+  const rgb = parseHexColor(color)
+  if (!rgb) throw new Error('Invalid PowerPoint paint color')
+  return `rgba(${rgb.red}, ${rgb.green}, ${rgb.blue}, ${alpha})`
+}
+
 function readTextColor(node: XmlNode | undefined, theme?: ThemeData): string | null {
-  const direct = readSrgbColor(node)
-  if (direct) return direct
-  const scheme = node?.child('solidFill').child('schemeClr')
+  const root = colorRoot(node)
+  const rgb = root?.child('srgbClr')
+  const scheme = root?.child('schemeClr')
+  const direct = rgb?.attr('val')
   const slot = scheme?.attr('val')
-  const base = slot ? theme?.colorScheme.get(slot) : undefined
-  if (!base || !scheme) return null
-  const tint = scheme.child('tint').numAttr('val')
-  const shade = scheme.child('shade').numAttr('val')
-  const luminance = scheme.child('lumMod').numAttr('val')
-  const offset = scheme.child('lumOff').numAttr('val')
+  const base = direct ?? (slot ? theme?.colorScheme.get(slot) : undefined)
+  const properties = direct ? rgb : scheme
+  if (!base || !properties) return null
+  const tint = properties.child('tint').numAttr('val')
+  const shade = properties.child('shade').numAttr('val')
+  const luminance = properties.child('lumMod').numAttr('val')
+  const offset = properties.child('lumOff').numAttr('val')
   let color = normalizeThemeColor(base)
   if (tint !== undefined) color = applyBrightness(color, 100 - tint / 1000)
   if (shade !== undefined) color = applyBrightness(color, shade / 1000 - 100)
   if (luminance !== undefined) color = applyBrightness(color, luminance / 1000 - 100)
   if (offset !== undefined) color = applyBrightness(color, offset / 1000)
   return color
-}
-
-function readSrgbColor(
-  node:
-    | {
-        child: (name: string) => {
-          child: (name: string) => { attr: (name: string) => string | undefined }
-        }
-      }
-    | undefined
-): string | null {
-  const value = node?.child('solidFill').child('srgbClr').attr('val')
-  return value ? `#${value}` : null
 }
 
 function resolveRelTarget(basePath: string, target: string): string {
@@ -2117,13 +2235,14 @@ function renderElementSvg(
 
 function renderTextElementForeignObject(element: EditableTextElement, transform: string): string {
   const paragraphs = normalizeTextParagraphs(element)
+  const listNumbers = resolveParagraphListNumbers(paragraphs)
   const body = paragraphs
     .map((paragraph, paragraphIndex) => {
       const marker =
         paragraph.list?.kind === 'bullet'
           ? `${paragraph.list.char} `
           : paragraph.list?.kind === 'number'
-            ? `${(paragraph.list.startAt ?? 1) + paragraphIndex}. `
+            ? `${listNumbers[paragraphIndex]}. `
             : ''
       const runs = paragraph.runs
         .map((run) => {
