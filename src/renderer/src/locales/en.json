@@ -650,6 +650,16 @@
     }
   },
   "presentationWorkspace": {
+    "exportPptx": "Export PPTX",
+    "exportErrorElement": "Object {{element}}",
+    "exportFailed": "Unable to export PPTX",
+    "exportErrorSlide": "Slide {{slide}}",
+    "exportErrors": {
+      "unsupported-content": "This presentation contains content that cannot be exported yet. Replace the unsupported object and try again.",
+      "source-conflict": "This edit cannot preserve retained content safely. Recreate the affected object and try again.",
+      "invalid-value": "Check the affected text, image or formatting and try again.",
+      "package-limit": "This presentation is too large to export. Reduce its images or slides and try again."
+    },
     "saveDraftTitle": "Save presentation",
     "draftName": "Name",
     "draftLocation": "Location",

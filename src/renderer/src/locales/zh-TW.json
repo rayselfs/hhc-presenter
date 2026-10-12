@@ -650,6 +650,16 @@
     }
   },
   "presentationWorkspace": {
+    "exportPptx": "匯出 PPTX",
+    "exportErrorElement": "第 {{element}} 個物件",
+    "exportFailed": "無法匯出 PPTX",
+    "exportErrorSlide": "第 {{slide}} 張投影片",
+    "exportErrors": {
+      "unsupported-content": "此簡報含有尚未支援匯出的內容，請替換不支援的物件後重試。",
+      "source-conflict": "這項修改無法安全保留原有內容，請重新建立受影響的物件後重試。",
+      "invalid-value": "請檢查受影響的文字、圖片或格式後重試。",
+      "package-limit": "此簡報超過匯出大小限制，請減少圖片或投影片後重試。"
+    },
     "saveDraftTitle": "儲存簡報",
     "draftName": "名稱",
     "draftLocation": "儲存位置",

@@ -105,11 +105,11 @@ Text uses existing normalized paragraphs, explicit `buNone` for no list, per-run
 
 **Interfaces:** Consume existing registry `finalizeAndFlush(itemId): Promise<EditablePresentationDocument | null>` and `exportPresentationPptx`. Use existing account visibility and workspace state; no new registry API, IPC or save service.
 
-- [ ] Write failing tests for editable-only export, unsaved current text finalization, IME refusal, flush/export error, duplicate click, tab close/change and account switch while awaiting export; assert no download and no projection action in unsafe cases.
-- [ ] Run `npx vitest run src/renderer/src/components/Control/Header/__tests__/PresentationWorkspaceHeader.test.tsx`; confirm intended failures.
-- [ ] Add accessible localized export action. Capture document/owner, finalize and flush, export the snapshot, then recheck owner/tab/session visibility before download. Use the existing Blob/anchor download pattern with safe basename and object URL cleanup. Keep `.lpdeck` save and raw PPTX behavior.
-- [ ] Rerun header, session and ownership tests plus lint/typecheck; require all pass.
-- [ ] Commit as `feat: download PPTX from the editable workspace`.
+- [x] Write failing tests for editable-only export, unsaved current text finalization, IME refusal, flush/export error, duplicate click, tab close/change and account switch while awaiting export; assert no download and no projection action in unsafe cases.
+- [x] Run `npx vitest run src/renderer/src/components/Control/Header/__tests__/PresentationWorkspaceHeader.test.tsx`; confirm intended failures.
+- [x] Add accessible localized export action. Capture document/owner, finalize and flush, export the snapshot, then recheck owner/tab/session visibility before download. Use the existing Blob/anchor download pattern with safe basename and object URL cleanup. Keep `.lpdeck` save and raw PPTX behavior.
+- [x] Rerun header, session and ownership tests plus lint/typecheck; require all pass.
+- [x] Commit as `feat: download PPTX from the editable workspace`.
 
 ### Task 5: Independent Consumer and Dual-Mode Acceptance
 
@@ -133,6 +133,6 @@ No API deployment, general v2 activation, remote CI, merge, release, physical Wi
 
 ## Self-Review / Handoff
 
-Checked against the approved spec: this slice covers explicit export, retained source, current property fidelity, persistence-safe UI and independent/dual-mode validation. Later phase requirements and production activation remain explicitly open. Five review-focus cases each have an owning task and tests; public interfaces match between tasks. Tasks 1–3 are implemented and locally verified; Tasks 4–5 remain in progress.
+Checked against the approved spec: this slice covers explicit export, retained source, current property fidelity, persistence-safe UI and independent/dual-mode validation. Later phase requirements and production activation remain explicitly open. Five review-focus cases each have an owning task and tests; public interfaces match between tasks. Tasks 1–4 are implemented and locally verified; Task 5 remains in progress.
 
 Execution method remains the user's approved current-session sequential implementation. The user approved this plan on 2026-10-12 and instructed continuous implementation without further plan-review stops.
