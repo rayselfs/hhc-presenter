@@ -1252,7 +1252,14 @@ function convertSlide(
   for (const [objectIndex, node] of slide.nodes.entries()) {
     let converted: EditablePresentationElement[]
     try {
+      if (!preserveSource && node.nodeType === 'shape')
+        assertPptxListIndentation(node, slide, presentation)
       converted = convertNode(node, slide, presentation, assets)
+      if (!preserveSource && converted.some((element) => element.type === 'locked'))
+        throw new PptxCompatibilityError(
+          { code: 'unsupported-object' },
+          'This PowerPoint object cannot yet be edited'
+        )
     } catch (error) {
       throw locatePptxCompatibilityError(error, {
         objectNumber: objectIndex + 1,
@@ -1868,6 +1875,35 @@ function resolveTextRuns(
     }
   }
   return runs.length ? runs : undefined
+}
+
+function assertPptxListIndentation(
+  node: ShapeNodeData,
+  slide: SlideData,
+  presentation: PresentationData
+): void {
+  for (const paragraph of node.textBody?.paragraphs ?? []) {
+    const sources = [
+      paragraph.properties,
+      ...inheritedParagraphProperties(node, slide, presentation, paragraph.level ?? 0)
+    ]
+    const listProperties = sources.find((source) =>
+      ['buNone', 'buChar', 'buAutoNum'].some((kind) => source?.child(kind).exists())
+    )
+    if (!listProperties || listProperties.child('buNone').exists()) continue
+    if (
+      ['marL', 'indent'].some((attribute) => {
+        const value = sources
+          .map((source) => source?.numAttr(attribute))
+          .find((value) => value !== undefined)
+        return value === undefined || !Number.isFinite(value)
+      })
+    )
+      throw new PptxCompatibilityError(
+        { code: 'text' },
+        'PowerPoint list indentation cannot be resolved for editable import'
+      )
+  }
 }
 
 function resolveTextParagraphs(

@@ -4,7 +4,12 @@ import type {
   EditableTextStyle
 } from './editable-presentation'
 import { normalizeTextParagraphs, resolveParagraphListNumbers } from './presentation-rich-text'
-import { DRAWINGML_NS, PRESENTATIONML_NS, PptxExportError } from './pptx-export-drawingml'
+import {
+  DRAWINGML_NS,
+  PRESENTATIONML_NS,
+  PptxExportError,
+  expandPptxTextRuns
+} from './pptx-export-drawingml'
 
 export function drawingChild(parent: Element, name: string): Element | undefined {
   return Array.from(parent.children).find(
@@ -284,13 +289,15 @@ export function patchSourceText(
       (node) => node.namespaceURI === DRAWINGML_NS && ['r', 'br', 'fld'].includes(node.localName)
     )
     const nextRuns = Array.from(next.children).filter(
-      (node) => node.namespaceURI === DRAWINGML_NS && node.localName === 'r'
+      (node) => node.namespaceURI === DRAWINGML_NS && ['r', 'br'].includes(node.localName)
     )
+    const beforeRuns = expandPptxTextRuns(baseline.runs)
+    const afterRuns = expandPptxTextRuns(paragraph.runs)
     const runsChanged =
       JSON.stringify(baseline.runs) !== JSON.stringify(paragraph.runs) ||
       before.opacity !== after.opacity ||
       materializeFontSize
-    if (runsChanged && oldRuns.length !== baseline.runs.length) {
+    if (runsChanged && oldRuns.length !== beforeRuns.length) {
       throw new PptxExportError([
         {
           code: 'source-conflict',
@@ -301,11 +308,11 @@ export function patchSourceText(
       ])
     }
     const runs: Element[] = []
-    for (const [runIndex, run] of (runsChanged ? paragraph.runs : []).entries()) {
+    for (const [runIndex, run] of (runsChanged ? afterRuns : []).entries()) {
       const oldRun = oldRuns[runIndex] ?? oldRuns[0]
-      const oldStyle = baseline.runs[runIndex] ?? baseline.runs[0]
+      const oldStyle = beforeRuns[runIndex] ?? beforeRuns[0]
       const nextRun = nextRuns[runIndex]
-      if (!oldRun || !oldStyle || !['r', 'fld'].includes(oldRun.localName)) {
+      if (!oldRun || !oldStyle || (oldRun.localName === 'br') !== (nextRun.localName === 'br')) {
         runs.push(source.ownerDocument.importNode(nextRun, true))
         continue
       }
@@ -324,6 +331,10 @@ export function patchSourceText(
         before.opacity !== after.opacity,
         materializeFontSize
       )
+      if (clone.localName === 'br') {
+        runs.push(clone)
+        continue
+      }
       const content = drawingChild(clone, 't')
       if (content) {
         if (content.textContent !== run.text) {

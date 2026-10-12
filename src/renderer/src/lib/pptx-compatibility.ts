@@ -1,6 +1,6 @@
 import type { PptxFiles, PresentationData } from '@aiden0z/pptx-renderer'
 import type { EditablePresentationDocument } from './editable-presentation'
-import { validatePptxPackage } from './pptx-source'
+import { validatePptxPackage, resolvePptxInternalTarget } from './pptx-source'
 
 export type PptxCompatibilityCode =
   | 'invalid-package'
@@ -62,6 +62,47 @@ export async function assertEditablePptxPackage(buffer: ArrayBuffer): Promise<vo
 export function assertEditablePptxFeatures(files: PptxFiles, presentation: PresentationData): void {
   const drawingNamespace = 'http://schemas.openxmlformats.org/drawingml/2006/main'
   const presentationNamespace = 'http://schemas.openxmlformats.org/presentationml/2006/main'
+  const declaration = new DOMParser().parseFromString(files.presentation, 'application/xml')
+  const slideList = Array.from(declaration.documentElement.children).find(
+    (node) => node.namespaceURI === presentationNamespace && node.localName === 'sldIdLst'
+  )
+  const declaredSlides = Array.from(slideList?.children ?? []).filter(
+    (node) => node.namespaceURI === presentationNamespace && node.localName === 'sldId'
+  )
+  if (!declaredSlides.length)
+    throw new PptxCompatibilityError(
+      { code: 'no-slides', sourcePart: 'ppt/presentation.xml' },
+      'The presentation contains no slides'
+    )
+  const relationships = new DOMParser().parseFromString(files.presentationRels, 'application/xml')
+  const byId = new Map(
+    Array.from(relationships.documentElement.children).map((node) => [
+      node.getAttribute('Id'),
+      node
+    ])
+  )
+  for (const [index, reference] of declaredSlides.entries()) {
+    const relationship = byId.get(
+      reference.getAttributeNS(
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
+        'id'
+      )
+    )
+    const target = relationship?.getAttribute('Target')
+    if (
+      declaredSlides.length !== presentation.slides.length ||
+      relationship?.getAttribute('Type') !==
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide' ||
+      relationship.getAttribute('TargetMode') === 'External' ||
+      !target ||
+      resolvePptxInternalTarget('ppt/presentation.xml', target) !==
+        presentation.slides[index].slidePath
+    )
+      throw new PptxCompatibilityError(
+        { code: 'invalid-package', slideNumber: index + 1, sourcePart: 'ppt/presentation.xml' },
+        'PowerPoint slide references do not match the presentation order'
+      )
+  }
   const sources = new Map<string, { xml: string; slideNumber: number }>()
   for (const [index, slide] of presentation.slides.entries()) {
     const layoutId = slide.layoutIndex

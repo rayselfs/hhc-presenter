@@ -6,6 +6,7 @@ import type { FileItemRecord } from '@shared/types/folder'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
 import { useFileExplorerStore } from '@renderer/stores/file-explorer'
 import { importEditablePptx } from '../pptx-import'
+import { exportPresentationPptx } from '../pptx-export'
 import {
   convertPptxToEditablePresentation,
   loadEditablePresentation
@@ -44,10 +45,15 @@ async function fixture(kind: string): Promise<ArrayBuffer> {
     'color mapping': '<p:clrMapOvr><a:overrideClrMapping bg1="dk1" tx1="lt1"/></p:clrMapOvr>'
   }
   if (features[kind]) xml = xml.replace('</p:sld>', `${features[kind]}</p:sld>`)
-  if (kind === 'group')
+  if (kind === 'group' || kind === 'group after painted text')
     xml = xml.replace(
       '</p:spTree>',
       '<p:grpSp><p:nvGrpSpPr><p:cNvPr id="99" name="Group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="952500" cy="952500"/><a:chOff x="0" y="0"/><a:chExt cx="952500" cy="952500"/></a:xfrm></p:grpSpPr></p:grpSp></p:spTree>'
+    )
+  if (kind === 'group after painted text')
+    xml = xml.replace(
+      '<p:spPr>',
+      '<p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="952500" cy="952500"/></a:xfrm><a:prstGeom prst="rect"/><a:solidFill><a:srgbClr val="0088FF"/></a:solidFill>'
     )
   if (kind === 'shape') xml = xml.replace('<p:spPr>', '<p:spPr><a:prstGeom prst="triangle"/>')
   if (kind === 'text') xml = xml.replace(/<a:bodyPr[^>]*\/>/, '<a:bodyPr vert="vert"/>')
@@ -93,8 +99,67 @@ async function fixture(kind: string): Promise<ArrayBuffer> {
       )
     )
   }
+  if (kind === 'implicit list') {
+    const root = new DOMParser().parseFromString(xml, 'application/xml')
+    const paragraph = root.getElementsByTagNameNS(
+      'http://schemas.openxmlformats.org/drawingml/2006/main',
+      'p'
+    )[0]
+    for (const properties of Array.from(paragraph.children).filter(
+      (entry) => entry.localName === 'pPr'
+    ))
+      properties.remove()
+    const fragment = new DOMParser().parseFromString(
+      '<a:pPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:buChar char="•"/></a:pPr>',
+      'application/xml'
+    )
+    paragraph.insertBefore(root.importNode(fragment.documentElement, true), paragraph.firstChild)
+    xml = new XMLSerializer().serializeToString(root)
+    for (const member of zip.file(/\.xml$/)) {
+      const body = await member.async('string')
+      zip.file(member.name, body.replace(/\b(?:marL|indent)="[^"]*"/g, ''))
+    }
+  }
+  if (kind === 'soft breaks')
+    xml = xml.replace(
+      /<p:txBody>[\s\S]*?<\/p:txBody>/,
+      '<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr marL="381000" indent="-190500"><a:buChar char="•"/></a:pPr><a:r><a:rPr sz="3200"/><a:t>First</a:t></a:r><a:br><a:rPr sz="3200"/></a:br><a:r><a:rPr sz="3200"/><a:t>Second</a:t></a:r></a:p></p:txBody>'
+    )
   if (kind === 'malformed') xml = '<broken>'
   zip.file(path, xml)
+  if (kind === 'no slides') {
+    const presentationPath = 'ppt/presentation.xml'
+    zip.file(
+      presentationPath,
+      (await zip.file(presentationPath)!.async('string')).replace(
+        /<p:sldIdLst>[\s\S]*?<\/p:sldIdLst>/,
+        '<p:sldIdLst/>'
+      )
+    )
+  }
+  if (kind === 'invalid slide references') {
+    const presentationPath = 'ppt/presentation.xml'
+    zip.file(
+      presentationPath,
+      (await zip.file(presentationPath)!.async('string')).replace(
+        /<p:sldIdLst>[\s\S]*?<\/p:sldIdLst>/,
+        (list) => list.replace(/r:id="[^"]*"/g, 'r:id="missing"')
+      )
+    )
+  }
+  if (kind === 'unicode path') {
+    const renamedPath = 'ppt/slides/投影片1.xml'
+    zip.file(renamedPath, await zip.file(path)!.async('arraybuffer'))
+    zip.remove(path)
+    const relPath = 'ppt/slides/_rels/slide1.xml.rels'
+    zip.file('ppt/slides/_rels/投影片1.xml.rels', await zip.file(relPath)!.async('string'))
+    zip.remove(relPath)
+    for (const member of ['ppt/_rels/presentation.xml.rels', '[Content_Types].xml'])
+      zip.file(
+        member,
+        (await zip.file(member)!.async('string')).replace('slides/slide1.xml', 'slides/投影片1.xml')
+      )
+  }
   if (kind === 'macro') zip.file('ppt/vbaProject.bin', 'macro')
   const buffer = await zip.generateAsync({ type: 'arraybuffer', compression: 'STORE' })
   if (kind === 'encrypted' || kind === 'oversized') {
@@ -164,7 +229,9 @@ describe.each(['upload', 'local', 'provider'])('%s editable conversion boundary'
     'malformed',
     'macro',
     'encrypted',
-    'oversized'
+    'oversized',
+    'no slides',
+    'invalid slide references'
   ])('rejects %s before any partial item, blob or draft is created', async (kind) => {
     const bytes = await fixture(kind)
     const convert = await prepareConversion(bytes, mode)
@@ -207,6 +274,74 @@ describe.each(['upload', 'local', 'provider'])('%s editable conversion boundary'
         sourcePart: 'ppt/slideMasters/slideMaster1.xml'
       }
     })
+  })
+
+  it('rejects unresolved implicit list indentation before publishing an editable copy', async () => {
+    const convert = await prepareConversion(await fixture('implicit list'), mode)
+    const before = await snapshot()
+    await expect(convert()).rejects.toMatchObject({
+      diagnostic: { code: 'text', slideNumber: 1, objectNumber: 1 }
+    })
+    expect(await snapshot()).toEqual(before)
+  })
+
+  it('locates unsupported objects by source ordinal after a shape with two editable roles', async () => {
+    const convert = await prepareConversion(await fixture('group after painted text'), mode)
+    await expect(convert()).rejects.toMatchObject({
+      diagnostic: { code: 'unsupported-object', slideNumber: 1, objectNumber: 2, objectId: '99' }
+    })
+  })
+
+  it('imports or copies, edits, exports and reopens a soft break as one listed paragraph', async () => {
+    const convert = await prepareConversion(await fixture('soft breaks'), mode)
+    const item = await convert()
+    const document =
+      mode === 'provider'
+        ? (await getPresentationDraft(item.id))!.document
+        : await loadEditablePresentation(item)
+    const element = Object.values(document.slides[document.slideOrder[0]].elements).find(
+      (entry) => entry.type === 'text'
+    )
+    if (element?.type !== 'text' || !element.paragraphs) throw new Error('Missing soft-break text')
+    expect(element.text).toBe('First\nSecond')
+    expect(element.paragraphs).toHaveLength(1)
+    element.text = 'Edited first\nSecond'
+    element.paragraphs[0].runs[0].text = 'Edited first'
+    delete element.runs
+    const bytes = await (await exportPresentationPptx(document)).arrayBuffer()
+    const reopenedItem = await importEditablePptx(
+      new File([bytes], 'Round trip.pptx', { type: PPTX_MIME_TYPE }),
+      'file-root'
+    )
+    const reopened = await loadEditablePresentation(reopenedItem)
+    const text = Object.values(reopened.slides[reopened.slideOrder[0]].elements).find(
+      (entry) => entry.type === 'text'
+    )
+    expect(reopened.schemaVersion).toBe(1)
+    expect(reopened.slideOrder).toHaveLength(22)
+    expect(text).toMatchObject({
+      text: 'Edited first\nSecond',
+      paragraphs: [{ list: { kind: 'bullet' } }]
+    })
+    if (text?.type !== 'text') throw new Error('Missing reopened text')
+    expect(text.paragraphs).toHaveLength(1)
+    const db = await openFileExplorerDB()
+    expect(await db.count('folder-items')).toBe(mode === 'local' ? 3 : 2)
+    expect(await db.count('presentation-drafts')).toBe(mode === 'provider' ? 1 : 0)
+  })
+
+  it('keeps a supported Unicode slide part path and the declared order', async () => {
+    const convert = await prepareConversion(await fixture('unicode path'), mode)
+    const item = await convert()
+    const document =
+      mode === 'provider'
+        ? (await getPresentationDraft(item.id))!.document
+        : await loadEditablePresentation(item)
+    expect(document.slideOrder).toHaveLength(22)
+    const text = Object.values(document.slides[document.slideOrder[0]].elements).find(
+      (element) => element.type === 'text'
+    )
+    expect(text).toMatchObject({ text: expect.stringContaining('主愛永不止息') })
   })
 
   it('retains the supported hymn and schema-v1 persistence policy', async () => {

@@ -777,3 +777,61 @@ describe('retained source PPTX export', () => {
     expect(JSON.stringify(document)).toBe(original)
   })
 })
+
+it.each(['same', 'mixed'])(
+  'preserves source soft breaks, styles and metadata after %s run font edits',
+  async (kind) => {
+    const zip = await JSZip.loadAsync((await hymn()).bytes)
+    const path = 'ppt/slides/slide1.xml'
+    const xml = new DOMParser().parseFromString(
+      await zip.file(path)!.async('string'),
+      'application/xml'
+    )
+    const body = xml.getElementsByTagNameNS(pns, 'txBody')[0]
+    for (const paragraph of Array.from(body.children).filter(
+      (entry) => entry.namespaceURI === ans && entry.localName === 'p'
+    ))
+      paragraph.remove()
+    const fragment = new DOMParser().parseFromString(
+      `<a:p xmlns:a="${ans}" xmlns:probe="urn:hhc:soft-break"><a:pPr marL="381000" indent="-190500"><a:buChar char="•"/></a:pPr><a:r><a:rPr sz="3200" lang="en-US"/><a:t>first</a:t></a:r><a:br><a:rPr sz="${kind === 'mixed' ? 3100 : 3200}" lang="en-US" probe:keep="original"><probe:retained/></a:rPr></a:br><a:r><a:rPr sz="${kind === 'mixed' ? 3000 : 3200}" b="${kind === 'mixed' ? 1 : 0}" lang="en-US"/><a:t>second</a:t></a:r></a:p>`,
+      'application/xml'
+    )
+    body.appendChild(xml.importNode(fragment.documentElement, true))
+    zip.file(path, new XMLSerializer().serializeToString(xml))
+    const bytes = await zip.generateAsync({ type: 'arraybuffer' })
+    const document = await documentFrom(bytes)
+    expect(await (await exportPresentationPptx(document)).arrayBuffer()).toEqual(bytes)
+    const text = firstText(document)
+    expect(text.text).toBe('first\nsecond')
+    expect(text.paragraphs).toHaveLength(1)
+    text.fontSize += 2
+    for (const run of text.runs ?? []) run.fontSize += 2
+    for (const paragraph of text.paragraphs ?? []) {
+      paragraph.runs = paragraph.runs.map((run) => ({ ...run, fontSize: run.fontSize + 2 }))
+      if (paragraph.typingStyle)
+        paragraph.typingStyle = {
+          ...paragraph.typingStyle,
+          fontSize: paragraph.typingStyle.fontSize + 2
+        }
+    }
+    const output = await (await exportPresentationPptx(document)).arrayBuffer()
+    const afterZip = await JSZip.loadAsync(output)
+    const after = new DOMParser().parseFromString(
+      await afterZip.file(path)!.async('string'),
+      'application/xml'
+    )
+    const afterBody = after.getElementsByTagNameNS(pns, 'txBody')[0]
+    expect(afterBody.getElementsByTagNameNS(ans, 'p')).toHaveLength(1)
+    const breaks = afterBody.getElementsByTagNameNS(ans, 'br')
+    expect(breaks).toHaveLength(1)
+    const properties = breaks[0].getElementsByTagNameNS(ans, 'rPr')[0]
+    expect(properties.getAttribute('lang')).toBe('en-US')
+    expect(properties.getAttributeNS('urn:hhc:soft-break', 'keep')).toBe('original')
+    expect(properties.getElementsByTagNameNS('urn:hhc:soft-break', 'retained')).toHaveLength(1)
+    expect(
+      Array.from(afterBody.getElementsByTagNameNS(ans, 't')).map((entry) => entry.textContent)
+    ).toEqual(['first', 'second'])
+    await assertUntouched(bytes, output, new Set([path]))
+    expect(firstText(await documentFrom(output)).text).toBe(text.text)
+  }
+)
