@@ -79,7 +79,7 @@ Extended-preset import initially rejects nonempty embedded shape text and still 
 - [x] Export real browser/Electron downloads from explicit v3 fixtures containing each supported preset, selected non-default adjustments, extreme ratios, rotated bounds and adjacent text. Verify undo/save/reopen and unchanged projection ownership. Keep task-owned profiles/downloads and exact failure evidence.
 - [x] Render original/native/source-no-op/source-adjusted output through isolated Office/PDF, checking actual vector bounds/shape identity/adjustment values and unrelated source bytes. Record any approximation by preset; fail/reject shapes whose consumer evidence disagrees rather than relaxing geometry checks.
 - [x] Run lint, both typechecks, full Vitest alone with a bounded worker count, desktop/web builds and affected browser/isolated Electron acceptance. API full tests/vet/OpenAPI checks run in its worktree with owned fixtures/services only. Expected zero failures; local checks are distinct from CI/device acceptance.
-- [ ] Request one fresh read-only whole-slice reviewer; re-grade findings, one TDD fix pass for Important/Critical, ledger deferred minors/rulings, no re-review. Archive exact evidence, commit, clean only owned scratch/profile data and retain both unmerged worktrees.
+- [x] Request one fresh read-only whole-slice reviewer; re-grade findings, one TDD fix pass for Important/Critical, ledger deferred minors/rulings, no re-review. Archive exact evidence, commit, clean only owned scratch/profile data and retain both unmerged worktrees.
 
 ## Self-review and Continuation
 
