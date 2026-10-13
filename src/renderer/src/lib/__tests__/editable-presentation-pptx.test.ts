@@ -611,3 +611,25 @@ it('rejects preset geometry in an unrecognized XML namespace instead of renderin
   const presentation = await presetFixture('roundRect', '', '', '', 'urn:unknown-geometry')
   expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).toThrow()
 })
+
+it.each([
+  ['triangle', '<a:round/>'],
+  ['rightArrow', '<a:round/>'],
+  ['rightArrow', '<a:miter lim="800000"/>'],
+  ['upArrow', '<a:miter/>']
+])('admits the represented Office default join for %s: %s', async (kind, join) => {
+  const presentation = await presetFixture(kind, '', '<a:ln w="9525">' + join + '</a:ln>')
+  expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).not.toThrow()
+})
+
+it.each([
+  ['triangle', '<a:miter/>'],
+  ['leftArrow', '<a:miter lim="800000"/>'],
+  ['rightArrow', '<a:miter lim="400000"/>'],
+  ['downArrow', '<a:bevel/>']
+])('rejects a join that the v3 model cannot preserve for %s: %s', async (kind, join) => {
+  const presentation = await presetFixture(kind, '', '<a:ln w="9525">' + join + '</a:ln>')
+  expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).toThrow(
+    /outline/
+  )
+})

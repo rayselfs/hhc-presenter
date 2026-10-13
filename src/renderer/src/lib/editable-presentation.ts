@@ -1429,7 +1429,7 @@ function convertShapeNode(
         { code: 'shape' },
         'PowerPoint preset attached text cannot yet be edited'
       )
-    assertPresetOutlineCompatibility(node)
+    assertPresetOutlineCompatibility(node, shape)
   }
   const fillColor = readPaintColor(node.fill, theme) ?? 'transparent'
   const strokeColor = readPaintColor(node.line, theme) ?? '#000000'
@@ -1708,13 +1708,15 @@ function readPresetAdjustments(
   )
 }
 
-function assertPresetOutlineCompatibility(node: ShapeNodeData): void {
+function assertPresetOutlineCompatibility(node: ShapeNodeData, shape: EditableShapeKind): void {
   const line = node.line
   if (!line?.exists() || line.child('noFill').exists()) return
   const unsupported =
-    ['gradFill', 'pattFill', 'custDash', 'round', 'bevel'].some((name) =>
-      line.child(name).exists()
-    ) ||
+    ['gradFill', 'pattFill', 'custDash', 'bevel'].some((name) => line.child(name).exists()) ||
+    (line.child('miter').exists() &&
+      (getPresetShapeDescriptor(shape)!.lineJoin !== 'miter' ||
+        (line.child('miter').attr('lim') !== undefined &&
+          Number(line.child('miter').attr('lim')) !== 800000))) ||
     (line.child('prstDash').exists() && line.child('prstDash').attr('val') !== 'solid') ||
     ['headEnd', 'tailEnd'].some(
       (name) => line.child(name).exists() && line.child(name).attr('type') !== 'none'
@@ -2458,7 +2460,7 @@ function renderElementSvg(
   if (element.type === 'shape') {
     if (schemaVersion === 3) {
       const geometry = resolvePresetShapeGeometry(element)
-      return `<path d="${geometry.path}" fill="${escapeXml(element.fillColor)}" stroke="${escapeXml(element.strokeColor)}" stroke-width="${element.strokeWidth}" opacity="${element.opacity}" transform="${transform} translate(${element.x} ${element.y})"/>`
+      return `<path d="${geometry.path}" fill="${escapeXml(element.fillColor)}" stroke="${escapeXml(element.strokeColor)}" stroke-width="${element.strokeWidth}" stroke-linejoin="${getPresetShapeDescriptor(element.shape)!.lineJoin}" stroke-miterlimit="8" opacity="${element.opacity}" transform="${transform} translate(${element.x} ${element.y})"/>`
     }
     if (element.shape === 'ellipse') {
       return `<ellipse cx="${element.x + element.width / 2}" cy="${element.y + element.height / 2}" rx="${element.width / 2}" ry="${element.height / 2}" fill="${escapeXml(element.fillColor)}" stroke="${escapeXml(element.strokeColor)}" stroke-width="${element.strokeWidth}" opacity="${element.opacity}" transform="${transform}"/>`

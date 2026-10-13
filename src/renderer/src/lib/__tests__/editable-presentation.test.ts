@@ -1247,5 +1247,7 @@ it('uses the same adjusted v3 geometry in a saved thumbnail', () => {
   const xml = new DOMParser().parseFromString(svg, 'image/svg+xml')
   const path = xml.querySelector('path')
   expect(path?.getAttribute('d')).toBe('M0 100 L50 0 L200 100 Z')
+  expect(path?.getAttribute('stroke-linejoin')).toBe('round')
+  expect(path?.getAttribute('stroke-miterlimit')).toBe('8')
   expect(path?.getAttribute('transform')).toBe('rotate(35 110 70) translate(10 20)')
 })

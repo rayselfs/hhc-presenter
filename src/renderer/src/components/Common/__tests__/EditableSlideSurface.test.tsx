@@ -2769,3 +2769,33 @@ describe('v3 preset adjustment interactions', () => {
     }
   )
 })
+
+it.each([
+  'rectangle',
+  'ellipse',
+  'roundRect',
+  'triangle',
+  'rtTriangle',
+  'diamond',
+  'rightArrow',
+  'leftArrow',
+  'upArrow',
+  'downArrow'
+] as const)('renders the Office default line join for v3 %s', (kind) => {
+  const source = createBlankEditablePresentationDocument('Outline')
+  source.schemaVersion = 3
+  const element = createShapeElement(kind, { strokeWidth: 4 })
+  const slideId = source.slideOrder[0]
+  const { container } = render(
+    <EditableSlideSurface
+      document={addElementToSlide(source, slideId, element)}
+      slideId={slideId}
+    />
+  )
+  const path = container.querySelector('svg[data-shape-kind="' + kind + '"] path')
+  expect(path).toHaveAttribute(
+    'stroke-linejoin',
+    ['rightArrow', 'upArrow', 'downArrow'].includes(kind) ? 'miter' : 'round'
+  )
+  expect(path).toHaveAttribute('stroke-miterlimit', '8')
+})

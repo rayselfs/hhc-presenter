@@ -1,4 +1,5 @@
 import {
+  getPresetShapeDescriptor,
   projectPresetAdjustment,
   resolvePresetShapeGeometry
 } from '@renderer/lib/presentation-shape-geometry'
@@ -1262,6 +1263,8 @@ function renderElementContent(
             fill={element.fillColor}
             stroke={element.strokeColor}
             strokeWidth={element.strokeWidth}
+            strokeLinejoin={getPresetShapeDescriptor(element.shape)!.lineJoin}
+            strokeMiterlimit={8}
           />
         </svg>
       )

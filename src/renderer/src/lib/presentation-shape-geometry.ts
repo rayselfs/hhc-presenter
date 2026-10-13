@@ -4,20 +4,42 @@ interface PresetShapeDescriptor {
   preset: string
   guides: readonly string[]
   defaults: readonly number[]
+  lineJoin: 'round' | 'miter'
 }
 
+// Line joins follow MS-OI29500 20.1.8.52; right/up/down arrows are Office miter exceptions.
 // Preset defaults adapted from DeckCraft v0.5.0 crates/geom/src/preset.rs (MIT).
 const PRESET_SHAPES: Record<EditableShapeKind, PresetShapeDescriptor> = {
-  rectangle: { preset: 'rect', guides: [], defaults: [] },
-  ellipse: { preset: 'ellipse', guides: [], defaults: [] },
-  roundRect: { preset: 'roundRect', guides: ['adj'], defaults: [16667] },
-  triangle: { preset: 'triangle', guides: ['adj'], defaults: [50000] },
-  rtTriangle: { preset: 'rtTriangle', guides: [], defaults: [] },
-  diamond: { preset: 'diamond', guides: [], defaults: [] },
-  rightArrow: { preset: 'rightArrow', guides: ['adj1', 'adj2'], defaults: [50000, 50000] },
-  leftArrow: { preset: 'leftArrow', guides: ['adj1', 'adj2'], defaults: [50000, 50000] },
-  upArrow: { preset: 'upArrow', guides: ['adj1', 'adj2'], defaults: [50000, 50000] },
-  downArrow: { preset: 'downArrow', guides: ['adj1', 'adj2'], defaults: [50000, 50000] }
+  rectangle: { preset: 'rect', guides: [], defaults: [], lineJoin: 'round' },
+  ellipse: { preset: 'ellipse', guides: [], defaults: [], lineJoin: 'round' },
+  roundRect: { preset: 'roundRect', guides: ['adj'], defaults: [16667], lineJoin: 'round' },
+  triangle: { preset: 'triangle', guides: ['adj'], defaults: [50000], lineJoin: 'round' },
+  rtTriangle: { preset: 'rtTriangle', guides: [], defaults: [], lineJoin: 'round' },
+  diamond: { preset: 'diamond', guides: [], defaults: [], lineJoin: 'round' },
+  rightArrow: {
+    preset: 'rightArrow',
+    guides: ['adj1', 'adj2'],
+    defaults: [50000, 50000],
+    lineJoin: 'miter'
+  },
+  leftArrow: {
+    preset: 'leftArrow',
+    guides: ['adj1', 'adj2'],
+    defaults: [50000, 50000],
+    lineJoin: 'round'
+  },
+  upArrow: {
+    preset: 'upArrow',
+    guides: ['adj1', 'adj2'],
+    defaults: [50000, 50000],
+    lineJoin: 'miter'
+  },
+  downArrow: {
+    preset: 'downArrow',
+    guides: ['adj1', 'adj2'],
+    defaults: [50000, 50000],
+    lineJoin: 'miter'
+  }
 }
 
 export function getPresetShapeDescriptor(shape: unknown): PresetShapeDescriptor | undefined {
