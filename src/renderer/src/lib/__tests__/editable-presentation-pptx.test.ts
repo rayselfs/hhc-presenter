@@ -1,14 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { webcrypto } from 'node:crypto'
-import { createPptxSource, validatePptxSource } from '../pptx-source'
+import { createPptxSource, validatePptxSource, validatePptxPackage } from '../pptx-source'
 import JSZip from 'jszip'
 import { validatePortablePresentation } from '../portable-presentation'
 import { buildPresentation, materializeAllSlideNodes, parseZip } from '@aiden0z/pptx-renderer'
 import {
   convertPresentationData,
-  generateEditablePresentationThumbnail
+  generateEditablePresentationThumbnail,
+  createBlankEditablePresentationDocument,
+  createShapeElement
 } from '../editable-presentation'
 import type { PresentationData } from '@aiden0z/pptx-renderer'
+import { buildNativePptx } from '../pptx-export-package'
 import type { FileItemRecord } from '@shared/types/folder'
 
 async function parseFixture(
@@ -631,5 +634,194 @@ it.each([
   const presentation = await presetFixture(kind, '', '<a:ln w="9525">' + join + '</a:ln>')
   expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).toThrow(
     /outline/
+  )
+})
+
+async function themeStyleFixture(
+  reference: 'fillRef' | 'lnRef' | 'effectRef',
+  options: {
+    localOverride?: boolean
+    harmless?: boolean
+    index?: string
+    preset?: 'triangle' | 'rectangle' | 'rightArrow'
+    partialLine?: 'w' | 'solidFill' | 'prstDash'
+    themeLineJoin?: 'round' | 'miter'
+  } = {}
+): Promise<{ presentation: PresentationData; bytes: ArrayBuffer }> {
+  const drawing = 'http://schemas.openxmlformats.org/drawingml/2006/main'
+  const document = createBlankEditablePresentationDocument('Theme preset')
+  document.schemaVersion = 3
+  const shape = createShapeElement(options.preset ?? 'triangle', {
+    width: 300,
+    height: 200,
+    fillColor: '#ff0000',
+    strokeColor: '#000000',
+    strokeWidth: 2
+  })
+  const slide = document.slides[document.slideOrder[0]]
+  slide.elements = { [shape.id]: shape }
+  slide.elementOrder = [shape.id]
+  const zip = await JSZip.loadAsync(await buildNativePptx(document))
+  const xml = new DOMParser().parseFromString(
+    await zip.file('ppt/slides/slide1.xml')!.async('string'),
+    'application/xml'
+  )
+  const properties = xml.getElementsByTagNameNS(drawing, 'prstGeom')[0].parentElement!
+  if (!options.localOverride && reference === 'fillRef')
+    properties.getElementsByTagNameNS(drawing, 'solidFill')[0].remove()
+  if (!options.localOverride && reference === 'lnRef')
+    properties.getElementsByTagNameNS(drawing, 'ln')[0].remove()
+  if (options.partialLine) {
+    const line = properties.getElementsByTagNameNS(drawing, 'ln')[0]
+    if (options.partialLine === 'w') line.removeAttribute('w')
+    else line.getElementsByTagNameNS(drawing, options.partialLine)[0].remove()
+  }
+  if (options.localOverride && reference === 'effectRef')
+    properties.insertAdjacentHTML('beforeend', '<a:effectLst xmlns:a="' + drawing + '"/>')
+  const style = xml.createElementNS(
+    'http://schemas.openxmlformats.org/presentationml/2006/main',
+    'p:style'
+  )
+  for (const name of ['lnRef', 'fillRef', 'effectRef', 'fontRef']) {
+    const entry = xml.createElementNS(drawing, 'a:' + name)
+    entry.setAttribute(
+      'idx',
+      name === 'fontRef' ? 'minor' : name === reference ? (options.index ?? '1') : '0'
+    )
+    const color = xml.createElementNS(drawing, 'a:srgbClr')
+    color.setAttribute('val', 'FF0000')
+    entry.appendChild(color)
+    style.appendChild(entry)
+  }
+  properties.parentElement!.appendChild(style)
+  zip.file('ppt/slides/slide1.xml', new XMLSerializer().serializeToString(xml))
+  const theme = new DOMParser().parseFromString(
+    await zip.file('ppt/theme/theme1.xml')!.async('string'),
+    'application/xml'
+  )
+  const effects = theme.getElementsByTagNameNS(drawing, 'effectLst')[0]
+  if (options.harmless) {
+    const fill = theme.getElementsByTagNameNS(drawing, 'fillStyleLst')[0]
+    fill.firstElementChild!.replaceWith(theme.createElementNS(drawing, 'a:noFill'))
+    const line = theme.getElementsByTagNameNS(drawing, 'lnStyleLst')[0].firstElementChild!
+    while (line.firstChild) line.firstChild.remove()
+    line.appendChild(theme.createElementNS(drawing, 'a:noFill'))
+  } else {
+    const line = theme.getElementsByTagNameNS(drawing, 'lnStyleLst')[0].firstElementChild!
+    line.setAttribute('w', '95250')
+    line.getElementsByTagNameNS(drawing, 'prstDash')[0].setAttribute('val', 'dash')
+    const shadow = theme.createElementNS(drawing, 'a:outerShdw')
+    for (const [key, value] of Object.entries({ blurRad: '38100', dist: '38100', dir: '2700000' }))
+      shadow.setAttribute(key, value)
+    const color = theme.createElementNS(drawing, 'a:srgbClr')
+    color.setAttribute('val', '000000')
+    shadow.appendChild(color)
+    effects.appendChild(shadow)
+  }
+  if (options.themeLineJoin) {
+    const line = theme.getElementsByTagNameNS(drawing, 'lnStyleLst')[0].firstElementChild!
+    line.appendChild(theme.createElementNS(drawing, 'a:' + options.themeLineJoin))
+  }
+  zip.file('ppt/theme/theme1.xml', new XMLSerializer().serializeToString(theme))
+  const bytes = await zip.generateAsync({ type: 'arraybuffer' })
+  await validatePptxPackage(bytes)
+  const presentation = buildPresentation(await parseZip(bytes))
+  materializeAllSlideNodes(presentation)
+  return { presentation, bytes }
+}
+
+it.each(['fillRef', 'lnRef', 'effectRef'] as const)(
+  'rejects unrepresented inherited theme %s with source location before v3 conversion',
+  async (reference) => {
+    const { presentation, bytes } = await themeStyleFixture(reference)
+    const retained = await createPptxSource(bytes)
+    for (const original of [undefined, retained]) {
+      try {
+        convertPresentationData(source, presentation, original, new Map(), 3)
+        expect.unreachable('Inherited visual style was silently lost')
+      } catch (error) {
+        expect(error).toMatchObject({
+          diagnostic: { code: 'shape', slideNumber: 1, objectNumber: 1 }
+        })
+      }
+    }
+  }
+)
+
+it.each(['fillRef', 'lnRef', 'effectRef'] as const)(
+  'keeps explicit local overrides of inherited theme %s',
+  async (reference) => {
+    const { presentation } = await themeStyleFixture(reference, { localOverride: true })
+    const result = convertPresentationData(source, presentation, undefined, new Map(), 3)
+    expect(Object.values(result.slides[result.slideOrder[0]].elements)[0]).toMatchObject({
+      shape: 'triangle',
+      fillColor: '#FF0000',
+      strokeColor: '#000000',
+      strokeWidth: 2
+    })
+  }
+)
+
+it.each(['fillRef', 'lnRef', 'effectRef'] as const)(
+  'accepts harmless inherited theme %s without introducing paint',
+  async (reference) => {
+    const { presentation } = await themeStyleFixture(reference, { harmless: true })
+    const result = convertPresentationData(source, presentation, undefined, new Map(), 3)
+    expect(() => validatePortablePresentation(result)).not.toThrow()
+    const element = Object.values(result.slides[result.slideOrder[0]].elements)[0]
+    if (reference === 'fillRef') expect(element).toMatchObject({ fillColor: 'transparent' })
+    if (reference === 'lnRef') expect(element).toMatchObject({ strokeWidth: 0 })
+  }
+)
+
+it.each(['0', '-1', '1.5', '4'])(
+  'handles inherited theme index %s without guessing an absent style',
+  async (index) => {
+    const { presentation } = await themeStyleFixture('fillRef', { index })
+    const convert = (): unknown =>
+      convertPresentationData(source, presentation, undefined, new Map(), 3)
+    if (index === '0') expect(convert).not.toThrow()
+    else expect(convert).toThrow(/theme/i)
+  }
+)
+
+it('applies theme admission to ordinary basic-shape conversion while preserving v2 source compatibility', async () => {
+  const { presentation, bytes } = await themeStyleFixture('fillRef', { preset: 'rectangle' })
+  expect(() => convertPresentationData(source, presentation)).toThrow(/theme/i)
+  const retained = await createPptxSource(bytes)
+  expect(convertPresentationData(source, presentation, retained).schemaVersion).toBe(2)
+})
+
+it.each(['w', 'solidFill', 'prstDash'] as const)(
+  'rejects an inherited theme line when the local override leaves %s unresolved',
+  async (partialLine) => {
+    const { presentation } = await themeStyleFixture('lnRef', { localOverride: true, partialLine })
+    expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).toThrow(
+      /theme/i
+    )
+  }
+)
+
+it.each(['round', 'miter'] as const)(
+  'accepts inherited %s joins that match the Office right-arrow default',
+  async (themeLineJoin) => {
+    const { presentation } = await themeStyleFixture('lnRef', {
+      preset: 'rightArrow',
+      localOverride: true,
+      themeLineJoin
+    })
+    expect(() =>
+      convertPresentationData(source, presentation, undefined, new Map(), 3)
+    ).not.toThrow()
+  }
+)
+
+it('rejects an inherited nondefault miter join on a triangle', async () => {
+  const { presentation } = await themeStyleFixture('lnRef', {
+    localOverride: true,
+    themeLineJoin: 'miter'
+  })
+  expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).toThrow(
+    /theme/i
   )
 })

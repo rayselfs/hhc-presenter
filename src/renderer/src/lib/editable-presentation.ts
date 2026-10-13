@@ -1272,7 +1272,7 @@ function convertSlide(
     let converted: EditablePresentationElement[]
     try {
       if (!preserveSource || conversionSchemaVersion === 3) {
-        assertPptxNodeVisualCompatibility(node)
+        assertPptxNodeVisualCompatibility(node, getSlideTheme(slide, presentation))
         if (node.nodeType === 'shape') assertPptxTextCompatibility(node, slide, presentation)
       }
       converted = convertNode(node, slide, presentation, assets, conversionSchemaVersion)
@@ -1984,9 +1984,10 @@ function resolveTextRuns(
   return runs.length ? runs : undefined
 }
 
-function assertPptxNodeVisualCompatibility(node: SlideNode): void {
+function assertPptxNodeVisualCompatibility(node: SlideNode, theme?: ThemeData): void {
   if (node.nodeType !== 'shape' && node.nodeType !== 'picture') return
   const properties = node.source.child('spPr')
+  if (node.nodeType === 'shape') assertReferencedShapeStyleCompatibility(node, theme)
   const transform = properties.child('xfrm')
   const code = node.nodeType === 'picture' ? 'image' : 'shape'
   if (isXmlTrue(transform.attr('flipH')) || isXmlTrue(transform.attr('flipV')))
@@ -1997,6 +1998,99 @@ function assertPptxNodeVisualCompatibility(node: SlideNode): void {
       ['effectDag', 'scene3d', 'sp3d'].some((name) => properties.child(name).exists()))
   )
     throw new PptxCompatibilityError({ code }, 'PowerPoint shape effects cannot yet be edited')
+}
+
+function assertReferencedShapeStyleCompatibility(node: ShapeNodeData, theme?: ThemeData): void {
+  const properties = node.source.child('spPr')
+  const style = node.source.child('style')
+  const fail = (): never => {
+    throw new PptxCompatibilityError(
+      { code: 'shape' },
+      'Unsupported PowerPoint inherited theme style'
+    )
+  }
+  const referenced = (name: 'fillRef' | 'lnRef' | 'effectRef'): XmlNode | undefined => {
+    const reference = style.child(name)
+    if (!reference.exists()) return undefined
+    const rawIndex = reference.attr('idx') ?? ''
+    if (!/^\d+$/.test(rawIndex)) return fail()
+    const index = Number(rawIndex)
+    if (index === 0) return undefined
+    const styles =
+      name === 'fillRef'
+        ? index >= 1001
+          ? theme?.bgFillStyles
+          : theme?.fillStyles
+        : name === 'lnRef'
+          ? theme?.lineStyles
+          : theme?.effectStyles
+    const resolved = styles?.[index - (name === 'fillRef' && index >= 1001 ? 1001 : 1)]
+    if (!Number.isSafeInteger(index) || !resolved) return fail()
+    return resolved
+  }
+  const paintNames = ['noFill', 'solidFill', 'gradFill', 'pattFill', 'blipFill', 'grpFill']
+  const localFill = paintNames.find((name) => properties.child(name).exists())
+  if (!localFill) {
+    const fill = referenced('fillRef')
+    if (fill && fill.localName !== 'noFill') fail()
+  } else if (properties.child(localFill).child('schemeClr').attr('val') === 'phClr') {
+    fail()
+  }
+
+  const line = node.line
+  if (!line?.child('noFill').exists() && line?.numAttr('w') !== 0) {
+    const inherited = referenced('lnRef')
+    if (inherited) {
+      if (!line?.exists()) {
+        if (!inherited.child('noFill').exists() && inherited.numAttr('w') !== 0) fail()
+      } else {
+        // A local line can override only part of its referenced theme line.
+        for (const [name, defaultValue] of [
+          ['w', '9525'],
+          ['cap', 'flat'],
+          ['cmpd', 'sng'],
+          ['algn', 'ctr']
+        ]) {
+          const value = inherited.attr(name)
+          if (line.attr(name) === undefined && value !== undefined && value !== defaultValue) fail()
+        }
+        for (const names of [
+          paintNames,
+          ['prstDash', 'custDash'],
+          ['round', 'bevel', 'miter'],
+          ['headEnd'],
+          ['tailEnd']
+        ]) {
+          if (names.some((name) => line.child(name).exists())) continue
+          const child = names.map((name) => inherited.child(name)).find((entry) => entry.exists())
+          if (!child) continue
+          if (child.localName === 'prstDash' && child.attr('val') === 'solid') continue
+          if (['headEnd', 'tailEnd'].includes(child.localName) && child.attr('type') === 'none')
+            continue
+          if (child.localName === 'round') continue
+          if (
+            child.localName === 'miter' &&
+            getPresetShapeDescriptor(getEditableShapeKind(node.presetGeometry, 3) ?? 'rectangle')
+              ?.lineJoin === 'miter' &&
+            (child.attr('lim') === undefined || child.numAttr('lim') === 800000)
+          )
+            continue
+          fail()
+        }
+      }
+    }
+    if (line?.child('solidFill').child('schemeClr').attr('val') === 'phClr') fail()
+  }
+  if (!properties.child('effectLst').exists() && !properties.child('effectDag').exists()) {
+    const effects = referenced('effectRef')
+    if (
+      effects &&
+      effects
+        .children()
+        .some((entry) => entry.localName !== 'effectLst' || entry.children().length > 0)
+    )
+      fail()
+  }
 }
 
 function assertPptxTextCompatibility(
