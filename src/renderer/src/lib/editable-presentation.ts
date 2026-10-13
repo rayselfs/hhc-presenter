@@ -1,4 +1,4 @@
-import { getPresetShapeDescriptor } from './presentation-shape-geometry'
+import { getPresetShapeDescriptor, resolvePresetShapeGeometry } from './presentation-shape-geometry'
 import type { EditableProjectionShapeKind } from '@shared/projection-messages'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
 import {
@@ -2391,7 +2391,9 @@ export function generateEditablePresentationThumbnail(
         .map((elementId) => slide.elements[elementId])
         .filter((element): element is EditablePresentationElement => Boolean(element))
     : []
-  const body = elements.map((element) => renderElementSvg(element, document.assets)).join('')
+  const body = elements
+    .map((element) => renderElementSvg(element, document.assets, document.schemaVersion))
+    .join('')
   const background = renderBackgroundSvg(slide?.background)
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${document.width}" height="${document.height}" viewBox="0 0 ${document.width} ${document.height}">${background}${body}</svg>`
   return `data:image/svg+xml;base64,${stringToBase64(svg)}`
@@ -2438,13 +2440,18 @@ function renderBackgroundSvg(background: EditableSlideBackground | undefined): s
 
 function renderElementSvg(
   element: EditablePresentationElement,
-  assets: Record<string, EditablePresentationAsset>
+  assets: Record<string, EditablePresentationAsset>,
+  schemaVersion?: EditablePresentationDocument['schemaVersion']
 ): string {
   const transform = `rotate(${element.rotation} ${element.x + element.width / 2} ${element.y + element.height / 2})`
   if (element.type === 'text') {
     return renderTextElementForeignObject(element, transform)
   }
   if (element.type === 'shape') {
+    if (schemaVersion === 3) {
+      const geometry = resolvePresetShapeGeometry(element)
+      return `<path d="${geometry.path}" fill="${escapeXml(element.fillColor)}" stroke="${escapeXml(element.strokeColor)}" stroke-width="${element.strokeWidth}" opacity="${element.opacity}" transform="${transform} translate(${element.x} ${element.y})"/>`
+    }
     if (element.shape === 'ellipse') {
       return `<ellipse cx="${element.x + element.width / 2}" cy="${element.y + element.height / 2}" rx="${element.width / 2}" ry="${element.height / 2}" fill="${escapeXml(element.fillColor)}" stroke="${escapeXml(element.strokeColor)}" stroke-width="${element.strokeWidth}" opacity="${element.opacity}" transform="${transform}"/>`
     }

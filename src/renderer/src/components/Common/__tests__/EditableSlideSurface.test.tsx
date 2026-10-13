@@ -2540,3 +2540,28 @@ function mockElementRect(
 afterEach(() => {
   vi.restoreAllMocks()
 })
+
+it.each([false, true])(
+  'renders adjusted v3 geometry on the shared surface with editable=%s',
+  (editable) => {
+    const source = createBlankEditablePresentationDocument('Geometry')
+    source.schemaVersion = 3
+    const element = {
+      ...createShapeElement('triangle', { width: 200, height: 100, rotation: 35 }),
+      adjustments: [25000]
+    }
+    const slideId = source.slideOrder[0]
+    const { container } = render(
+      <EditableSlideSurface
+        document={addElementToSlide(source, slideId, element)}
+        slideId={slideId}
+        editable={editable}
+      />
+    )
+    const path = container.querySelector('svg[data-shape-kind="triangle"] path')
+    expect(path).toHaveAttribute('d', 'M0 100 L50 0 L200 100 Z')
+    expect(path).toHaveAttribute('fill', element.fillColor)
+    expect(path).toHaveAttribute('stroke-width', String(element.strokeWidth))
+    expect(path?.closest('[data-slide-element]')).toHaveStyle({ transform: 'rotate(35deg)' })
+  }
+)

@@ -1,3 +1,4 @@
+import { resolvePresetShapeGeometry } from '@renderer/lib/presentation-shape-geometry'
 import { useTranslation } from 'react-i18next'
 import { loadPresentationFont } from '@renderer/lib/font-loader'
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -1108,6 +1109,26 @@ function renderElementContent(
   }
 
   if (element.type === 'shape') {
+    if (document.schemaVersion === 3) {
+      const geometry = resolvePresetShapeGeometry(element)
+      return (
+        <svg
+          data-shape-kind={element.shape}
+          aria-hidden="true"
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${element.width} ${element.height}`}
+          className="overflow-visible"
+        >
+          <path
+            d={geometry.path}
+            fill={element.fillColor}
+            stroke={element.strokeColor}
+            strokeWidth={element.strokeWidth}
+          />
+        </svg>
+      )
+    }
     return (
       <div
         className="h-full w-full"

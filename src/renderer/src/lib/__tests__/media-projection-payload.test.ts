@@ -235,3 +235,20 @@ describe('buildFileProjectionPayload', () => {
     expect(payload.editablePresentation?.slide.id).toBe(document.slideOrder[0])
   })
 })
+
+it('carries the v3 geometry version to projection without changing its selected slide', () => {
+  const document = createBlankEditablePresentationDocument('Geometry')
+  document.schemaVersion = 3
+  const payload = buildEditableSlideProjectionPayload(
+    buildFileProjectionPayload({
+      playlist: [{ ...makeFile('deck'), mimeType: EDITABLE_PRESENTATION_MIME_TYPE }],
+      currentIndex: 0
+    })!,
+    document,
+    document.slideOrder[0]
+  )
+  expect(payload.editablePresentation).toMatchObject({
+    schemaVersion: 3,
+    slide: { id: document.slideOrder[0] }
+  })
+})

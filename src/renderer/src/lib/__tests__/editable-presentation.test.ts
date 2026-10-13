@@ -16,6 +16,7 @@ import {
   createBlankEditablePresentationDocument,
   createEditablePresentation,
   createImageElement,
+  createShapeElement,
   createTextElement,
   DEFAULT_PRESENTATION_THEME_ID,
   convertPresentationData,
@@ -1232,4 +1233,19 @@ it('chooses thumbnail outlines from the composited slide background', () => {
       direction: 'left-right'
     })
   ).toBe('mixed')
+})
+
+it('uses the same adjusted v3 geometry in a saved thumbnail', () => {
+  const source = createBlankEditablePresentationDocument('Geometry')
+  source.schemaVersion = 3
+  const element = {
+    ...createShapeElement('triangle', { x: 10, y: 20, width: 200, height: 100, rotation: 35 }),
+    adjustments: [25000]
+  }
+  const document = addElementToSlide(source, source.slideOrder[0], element)
+  const svg = decodeSvgDataUrl(generateEditablePresentationThumbnail(document))
+  const xml = new DOMParser().parseFromString(svg, 'image/svg+xml')
+  const path = xml.querySelector('path')
+  expect(path?.getAttribute('d')).toBe('M0 100 L50 0 L200 100 Z')
+  expect(path?.getAttribute('transform')).toBe('rotate(35 110 70) translate(10 20)')
 })

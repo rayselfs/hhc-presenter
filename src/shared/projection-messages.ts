@@ -201,6 +201,7 @@ export interface AppMessages {
       slideCount?: number
     }
     editablePresentation?: {
+      schemaVersion?: 1 | 2 | 3
       width: number
       height: number
       slide: EditableProjectionSlide
