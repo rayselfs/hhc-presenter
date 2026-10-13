@@ -871,7 +871,67 @@
       "sw": "bottom left",
       "w": "left",
       "nw": "top left"
-    }
+    },
+    "shapeNames": {
+      "roundRect": "Rounded rectangle",
+      "triangle": "Triangle",
+      "rtTriangle": "Right triangle",
+      "diamond": "Diamond",
+      "rightArrow": "Right arrow",
+      "leftArrow": "Left arrow",
+      "upArrow": "Up arrow",
+      "downArrow": "Down arrow"
+    },
+    "shapeParameters": "Shape parameters",
+    "shapeAdjustmentValues": {
+      "roundRect": {
+        "0": "Corner radius"
+      },
+      "triangle": {
+        "0": "Apex position"
+      },
+      "rightArrow": {
+        "0": "Shaft width",
+        "1": "Arrowhead length"
+      },
+      "leftArrow": {
+        "0": "Shaft width",
+        "1": "Arrowhead length"
+      },
+      "upArrow": {
+        "0": "Shaft width",
+        "1": "Arrowhead length"
+      },
+      "downArrow": {
+        "0": "Shaft width",
+        "1": "Arrowhead length"
+      }
+    },
+    "adjustShape": {
+      "roundRect": {
+        "0": "Adjust corner radius"
+      },
+      "triangle": {
+        "0": "Adjust apex position"
+      },
+      "rightArrow": {
+        "0": "Adjust shaft width",
+        "1": "Adjust arrowhead length"
+      },
+      "leftArrow": {
+        "0": "Adjust shaft width",
+        "1": "Adjust arrowhead length"
+      },
+      "upArrow": {
+        "0": "Adjust shaft width",
+        "1": "Adjust arrowhead length"
+      },
+      "downArrow": {
+        "0": "Adjust shaft width",
+        "1": "Adjust arrowhead length"
+      }
+    },
+    "incompatibleShapePaste": "These shapes cannot be pasted into this presentation yet."
   },
   "projection": {
     "startButton": "Start projection",

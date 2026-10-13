@@ -10,7 +10,8 @@ import {
   createTextElement,
   updateElementInSlide,
   type EditablePresentationDocument,
-  type EditableImageElement
+  type EditableImageElement,
+  type EditableShapeElement
 } from '@renderer/lib/editable-presentation'
 import { normalizeTextParagraphs, resolveTypingStyle } from '@renderer/lib/presentation-rich-text'
 
@@ -2565,3 +2566,206 @@ it.each([false, true])(
     expect(path?.closest('[data-slide-element]')).toHaveStyle({ transform: 'rotate(35deg)' })
   }
 )
+
+describe('v3 preset adjustment interactions', () => {
+  function fixture(
+    adjustments: readonly number[] = [50000],
+    rotation = 90
+  ): {
+    element: EditableShapeElement
+    slideId: string
+    document: EditablePresentationDocument
+  } {
+    const source = createBlankEditablePresentationDocument('Adjust')
+    source.schemaVersion = 3
+    const slideId = source.slideOrder[0]
+    const element = {
+      ...createShapeElement('triangle', { width: 200, height: 100, rotation }),
+      adjustments
+    }
+    return { element, slideId, document: addElementToSlide(source, slideId, element) }
+  }
+
+  it('projects a rotated, half-scale drag into one adjustment transaction', () => {
+    mockSurfaceScale(0.5)
+    const { element, slideId, document } = fixture()
+    const start = vi.fn(() => element)
+    const preview = vi.fn()
+    const commit = vi.fn()
+    render(
+      <EditableSlideSurface
+        document={document}
+        slideId={slideId}
+        editable
+        selectedElementId={element.id}
+        onTransformStart={start}
+        onTransformPreview={preview}
+        onTransformCommit={commit}
+      />
+    )
+    const handle = screen.getByRole('button', { name: 'Adjust apex position' })
+    fireEvent.pointerDown(handle, { clientX: 100, clientY: 100, pointerId: 1 })
+    for (let index = 1; index <= 25; index++) {
+      fireEvent.pointerMove(handle, { clientX: 100, clientY: 100 + index, pointerId: 1 })
+    }
+    fireEvent.pointerUp(handle, { clientX: 100, clientY: 125, pointerId: 1 })
+    expect(preview).toHaveBeenLastCalledWith(element.id, { adjustments: [75000] })
+    expect(start).toHaveBeenCalledTimes(1)
+    expect(commit).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(['Escape', 'pointercancel'])('cancels an adjustment on %s', (reason) => {
+    const { element, slideId, document } = fixture()
+    const cancel = vi.fn()
+    const commit = vi.fn()
+    render(
+      <EditableSlideSurface
+        document={document}
+        slideId={slideId}
+        editable
+        selectedElementId={element.id}
+        onTransformStart={() => element}
+        onTransformPreview={() => true}
+        onTransformCancel={cancel}
+        onTransformCommit={commit}
+      />
+    )
+    const handle = screen.getByRole('button', { name: 'Adjust apex position' })
+    fireEvent.pointerDown(handle, { clientX: 100, clientY: 100, pointerId: 1 })
+    fireEvent.pointerMove(handle, { clientX: 100, clientY: 125, pointerId: 1 })
+    if (reason === 'Escape') fireEvent.keyDown(window.document.body, { key: 'Escape' })
+    else fireEvent.pointerCancel(handle, { pointerId: 1 })
+    fireEvent.pointerUp(handle, { pointerId: 1 })
+    expect(cancel).toHaveBeenCalledTimes(1)
+    expect(commit).not.toHaveBeenCalled()
+  })
+
+  it('cancels the original transaction when the document changes mid-drag', () => {
+    const { element, slideId, document } = fixture()
+    const originalCancel = vi.fn()
+    const nextCancel = vi.fn()
+    const commit = vi.fn()
+    const { rerender } = render(
+      <EditableSlideSurface
+        document={document}
+        slideId={slideId}
+        editable
+        selectedElementId={element.id}
+        onTransformStart={() => element}
+        onTransformPreview={() => true}
+        onTransformCancel={originalCancel}
+        onTransformCommit={commit}
+      />
+    )
+    const handle = screen.getByRole('button', { name: 'Adjust apex position' })
+    fireEvent.pointerDown(handle, { clientX: 100, clientY: 100, pointerId: 1 })
+    fireEvent.pointerMove(handle, { clientX: 100, clientY: 125, pointerId: 1 })
+    rerender(
+      <EditableSlideSurface
+        document={{ ...document, id: 'another-document' }}
+        slideId={slideId}
+        editable
+        selectedElementId={element.id}
+        onTransformCancel={nextCancel}
+        onTransformCommit={commit}
+      />
+    )
+    fireEvent.pointerUp(screen.getByRole('button', { name: 'Adjust apex position' }), {
+      pointerId: 1
+    })
+    expect(originalCancel).toHaveBeenCalledTimes(1)
+    expect(nextCancel).not.toHaveBeenCalled()
+    expect(commit).not.toHaveBeenCalled()
+  })
+
+  it('does not create an undo transaction when dragging past an existing clamp', () => {
+    const { element, slideId, document } = fixture([100000], 0)
+    const cancel = vi.fn()
+    const commit = vi.fn()
+    render(
+      <EditableSlideSurface
+        document={document}
+        slideId={slideId}
+        editable
+        selectedElementId={element.id}
+        onTransformStart={() => element}
+        onTransformPreview={() => undefined}
+        onTransformCancel={cancel}
+        onTransformCommit={commit}
+      />
+    )
+    const handle = screen.getByRole('button', { name: 'Adjust apex position' })
+    fireEvent.pointerDown(handle, { clientX: 100, clientY: 100, pointerId: 1 })
+    fireEvent.pointerMove(handle, { clientX: 140, clientY: 100, pointerId: 1 })
+    fireEvent.pointerUp(handle, { pointerId: 1 })
+    expect(commit).not.toHaveBeenCalled()
+    expect(cancel).toHaveBeenCalledTimes(1)
+  })
+
+  it('supports keyboard adjustment with the existing transform callbacks', () => {
+    const { element, slideId, document } = fixture()
+    const preview = vi.fn()
+    const commit = vi.fn()
+    render(
+      <EditableSlideSurface
+        document={document}
+        slideId={slideId}
+        editable
+        selectedElementId={element.id}
+        onTransformStart={() => element}
+        onTransformPreview={preview}
+        onTransformCommit={commit}
+      />
+    )
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Adjust apex position' }), {
+      key: 'ArrowRight'
+    })
+    expect(preview).toHaveBeenCalledWith(element.id, { adjustments: [51000] })
+    expect(commit).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(['legacy', 'read-only', 'locked'])('hides adjustment controls for %s shapes', (mode) => {
+    const { element, slideId, document } = fixture()
+    if (mode === 'legacy') document.schemaVersion = 2
+    if (mode === 'locked')
+      document.slides[slideId].elements[element.id] = { ...element, locked: true }
+    render(
+      <EditableSlideSurface
+        document={document}
+        slideId={slideId}
+        editable={mode !== 'read-only'}
+        selectedElementId={element.id}
+      />
+    )
+    expect(screen.queryByRole('button', { name: 'Adjust apex position' })).not.toBeInTheDocument()
+  })
+
+  it.each([undefined, [], [2147483647]] as const)(
+    'keeps original omitted or clamped raw parameters on an unchanged drag: %s',
+    (adjustments) => {
+      const { element, slideId, document } = fixture()
+      document.slides[slideId].elements[element.id] = { ...element, adjustments }
+      const original = document.slides[slideId].elements[element.id]
+      const commit = vi.fn()
+      const cancel = vi.fn()
+      render(
+        <EditableSlideSurface
+          document={document}
+          slideId={slideId}
+          editable
+          selectedElementId={element.id}
+          onTransformStart={() => original}
+          onTransformCommit={commit}
+          onTransformCancel={cancel}
+        />
+      )
+      const handle = screen.getByRole('button', { name: 'Adjust apex position' })
+      fireEvent.pointerDown(handle, { clientX: 100, clientY: 100, pointerId: 1 })
+      fireEvent.pointerMove(handle, { clientX: 100, clientY: 100, pointerId: 1 })
+      fireEvent.pointerUp(handle, { pointerId: 1 })
+      expect(commit).not.toHaveBeenCalled()
+      expect(cancel).toHaveBeenCalledTimes(1)
+      expect(document.slides[slideId].elements[element.id]).toBe(original)
+    }
+  )
+})

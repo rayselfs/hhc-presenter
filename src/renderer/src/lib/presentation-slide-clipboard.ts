@@ -49,6 +49,20 @@ export function pasteSlideClipboard(
   clipboard: PresentationSlideClipboard,
   insertionIndex: number
 ): { document: EditablePresentationDocument; slideIds: string[] } {
+  if (
+    document.schemaVersion !== 3 &&
+    clipboard.slides.some((slide) =>
+      slide.elementOrder.some((id) => {
+        const element = slide.elements[id]
+        return (
+          element?.type === 'shape' &&
+          ((element.shape !== 'rectangle' && element.shape !== 'ellipse') ||
+            element.adjustments !== undefined)
+        )
+      })
+    )
+  )
+    throw new Error('Shape parameters require schema v3')
   const assets = { ...document.assets }
   const assetIds = new Map<string, string>()
   for (const [sourceId, asset] of Object.entries(clipboard.assets)) {

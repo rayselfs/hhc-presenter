@@ -617,6 +617,7 @@ export function createShapeElement(
     id: crypto.randomUUID(),
     type: 'shape',
     shape,
+    ...(input.adjustments === undefined ? {} : { adjustments: [...input.adjustments] }),
     x: input.x ?? 360,
     y: input.y ?? 280,
     width: input.width ?? 360,
@@ -720,6 +721,13 @@ function hasElementPatchChanges(
   updates: Partial<EditablePresentationElement>
 ): boolean {
   return Object.entries(updates).some(([key, value]) => {
+    if (key === 'adjustments' && element.type === 'shape' && Array.isArray(value)) {
+      return (
+        !element.adjustments ||
+        element.adjustments.length !== value.length ||
+        element.adjustments.some((entry, index) => entry !== value[index])
+      )
+    }
     if (key !== 'crop') return !Object.is(element[key as keyof EditablePresentationElement], value)
     if (element.type !== 'image') return true
     const current = normalizeImageCrop(element.crop)

@@ -1,4 +1,7 @@
-import { resolvePresetShapeGeometry } from '@renderer/lib/presentation-shape-geometry'
+import {
+  projectPresetAdjustment,
+  resolvePresetShapeGeometry
+} from '@renderer/lib/presentation-shape-geometry'
 import { useTranslation } from 'react-i18next'
 import { loadPresentationFont } from '@renderer/lib/font-loader'
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -89,7 +92,9 @@ export type TextEditFinalizer = (() => boolean) & {
 
 interface DragState {
   elementId: string
-  mode: 'move' | 'resize' | 'crop' | 'rotate'
+  mode: 'move' | 'resize' | 'crop' | 'rotate' | 'adjust'
+  adjustmentIndex?: number
+  cancel?: () => void
   handle?: ResizeHandle
   rotationOrigin?: { x: number; y: number; angle: number }
   startX: number
@@ -199,6 +204,25 @@ export default function EditableSlideSurface({
     return () => observer.disconnect()
   }, [document.width])
 
+  useEffect(() => {
+    const cancel = (): void => {
+      const drag = dragRef.current
+      dragRef.current = null
+      drag?.cancel?.()
+    }
+    const onEscape = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape' || !dragRef.current) return
+      event.preventDefault()
+      event.stopPropagation()
+      cancel()
+    }
+    window.addEventListener('keydown', onEscape, true)
+    return () => {
+      window.removeEventListener('keydown', onEscape, true)
+      cancel()
+    }
+  }, [document.id, slideId, editable])
+
   if (!slide) {
     return <div className={`h-full w-full bg-black ${className ?? ''}`} />
   }
@@ -209,7 +233,8 @@ export default function EditableSlideSurface({
     event: React.PointerEvent,
     element: EditablePresentationElement,
     mode: DragState['mode'],
-    handle?: ResizeHandle
+    handle?: ResizeHandle,
+    adjustmentIndex?: number
   ): void => {
     if (!editable || element.locked) return
     if (!finalizeTextEdit()) return
@@ -230,6 +255,8 @@ export default function EditableSlideSurface({
       elementId: element.id,
       mode,
       handle,
+      adjustmentIndex,
+      cancel: onTransformCancel,
       startX: event.clientX,
       startY: event.clientY,
       original,
@@ -255,7 +282,26 @@ export default function EditableSlideSurface({
     const dx = (event.clientX - drag.startX) * scaleRef.current.x
     const dy = (event.clientY - drag.startY) * scaleRef.current.y
     let updates: Partial<EditablePresentationElement>
-    if (drag.mode === 'rotate' && drag.rotationOrigin) {
+    if (
+      drag.mode === 'adjust' &&
+      drag.original.type === 'shape' &&
+      drag.adjustmentIndex !== undefined
+    ) {
+      const handle = resolvePresetShapeGeometry(drag.original).handles[drag.adjustmentIndex]
+      if (!handle) return
+      const angle = (drag.original.rotation * Math.PI) / 180
+      const adjustments = projectPresetAdjustment(drag.original, drag.adjustmentIndex, {
+        x: handle.point.x + dx * Math.cos(angle) + dy * Math.sin(angle),
+        y: handle.point.y - dx * Math.sin(angle) + dy * Math.cos(angle)
+      })
+      updates =
+        adjustments[drag.adjustmentIndex] ===
+        projectPresetAdjustment(drag.original, drag.adjustmentIndex, handle.point)[
+          drag.adjustmentIndex
+        ]
+          ? {}
+          : { adjustments }
+    } else if (drag.mode === 'rotate' && drag.rotationOrigin) {
       const origin = drag.rotationOrigin
       const angle = Math.atan2(event.clientY - origin.y, event.clientX - origin.x)
       const degrees = drag.original.rotation + ((angle - origin.angle) * 180) / Math.PI
@@ -373,16 +419,58 @@ export default function EditableSlideSurface({
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
     if (drag.hasPersistedChanges) onTransformCommit?.()
-    else onTransformCancel?.()
+    else drag.cancel?.()
   }
 
   const cancelDrag = (event: React.PointerEvent): void => {
-    if (!dragRef.current) return
+    const drag = dragRef.current
+    if (!drag) return
     dragRef.current = null
     if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
-    onTransformCancel?.()
+    drag.cancel?.()
+  }
+
+  const adjustWithKeyboard = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    element: EditablePresentationElement,
+    index: number
+  ): void => {
+    if (
+      !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key) ||
+      !finalizeTextEdit()
+    )
+      return
+    const original = onTransformStart ? onTransformStart(element.id) : element
+    if (!original || original.type !== 'shape') return
+    const handle = resolvePresetShapeGeometry(original).handles[index]
+    if (!handle) {
+      onTransformCancel?.()
+      return
+    }
+    event.preventDefault()
+    event.stopPropagation()
+    const delta =
+      (event.key === 'ArrowLeft' || event.key === 'ArrowDown' ? -1 : 1) *
+      (event.shiftKey ? 10000 : 1000)
+    const adjustments = projectPresetAdjustment(original, index, {
+      x: handle.point.x + handle.direction.x * delta,
+      y: handle.point.y + handle.direction.y * delta
+    })
+    const updates =
+      adjustments[index] === projectPresetAdjustment(original, index, handle.point)[index]
+        ? {}
+        : { adjustments }
+    const changed = onTransformPreview
+      ? (onTransformPreview(element.id, updates) ?? hasElementPatchChanges(original, updates))
+      : hasElementPatchChanges(original, updates)
+    if (!changed) {
+      onTransformCancel?.()
+      return
+    }
+    if (!onTransformPreview) onUpdateElement?.(slideId, element.id, updates)
+    onTransformCommit?.()
   }
 
   const getCanvasPoint = (
@@ -629,6 +717,11 @@ export default function EditableSlideSurface({
               key={`selection-${element.id}`}
               element={element}
               cropMode={element.id === cropElementId}
+              showAdjustments={document.schemaVersion === 3}
+              onAdjustmentPointerDown={(event, index) =>
+                startDrag(event, element, 'adjust', undefined, index)
+              }
+              onAdjustmentKeyDown={(event, index) => adjustWithKeyboard(event, element, index)}
               surfaceScale={surfaceScale}
               showHandles={editable && element.id === selectedElementId && !element.locked}
               onRotatePointerDown={(event) => startDrag(event, element, 'rotate')}
@@ -774,6 +867,9 @@ function SelectionChrome({
   cropMode,
   surfaceScale,
   showHandles,
+  showAdjustments,
+  onAdjustmentPointerDown,
+  onAdjustmentKeyDown,
   onRotatePointerDown,
   onRotateKeyDown,
   onMovePointerDown,
@@ -789,6 +885,9 @@ function SelectionChrome({
   cropMode: boolean
   surfaceScale: number
   showHandles: boolean
+  showAdjustments: boolean
+  onAdjustmentPointerDown: (event: React.PointerEvent, index: number) => void
+  onAdjustmentKeyDown: (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => void
   onRotatePointerDown: (event: React.PointerEvent) => void
   onRotateKeyDown: (event: React.KeyboardEvent<HTMLButtonElement>) => void
   onMovePointerDown: (event: React.PointerEvent) => void
@@ -858,6 +957,44 @@ function SelectionChrome({
           </button>
         </>
       )}
+      {showHandles &&
+        showAdjustments &&
+        element.type === 'shape' &&
+        resolvePresetShapeGeometry(element).handles.map((handle) => (
+          <button
+            key={handle.index}
+            type="button"
+            data-adjustment-handle={handle.index}
+            aria-label={t(
+              `presentationWorkspace.adjustShape.${element.shape}.${handle.index}`,
+              element.shape === 'triangle'
+                ? 'Adjust apex position'
+                : element.shape === 'roundRect'
+                  ? 'Adjust corner radius'
+                  : handle.index === 0
+                    ? 'Adjust shaft width'
+                    : 'Adjust arrowhead length'
+            )}
+            className="pointer-events-auto absolute flex cursor-crosshair items-center justify-center"
+            style={{
+              left: handle.point.x,
+              top: handle.point.y,
+              width: 24 / surfaceScale,
+              height: 24 / surfaceScale,
+              transform: 'translate(-50%, -50%)',
+              touchAction: 'none',
+              zIndex: 30
+            }}
+            onPointerDown={(event) => onAdjustmentPointerDown(event, handle.index)}
+            onKeyDown={(event) => onAdjustmentKeyDown(event, handle.index)}
+          >
+            <span
+              aria-hidden="true"
+              className="rotate-45 border border-amber-800 bg-amber-300"
+              style={{ width: 9 / surfaceScale, height: 9 / surfaceScale }}
+            />
+          </button>
+        ))}
       {showHandles && (
         <ElementHandles
           element={element}
@@ -1243,6 +1380,14 @@ function hasElementPatchChanges(
   updates: Partial<EditablePresentationElement>
 ): boolean {
   return Object.entries(updates).some(([key, value]) => {
+    if (key === 'adjustments' && element.type === 'shape' && Array.isArray(value)) {
+      const current = element.adjustments
+      return (
+        !current ||
+        current.length !== value.length ||
+        current.some((entry, index) => entry !== value[index])
+      )
+    }
     if (key !== 'crop') {
       return !Object.is(element[key as keyof EditablePresentationElement], value)
     }
