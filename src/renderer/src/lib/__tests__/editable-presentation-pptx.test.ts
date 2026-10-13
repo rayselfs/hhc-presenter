@@ -483,3 +483,131 @@ it('binds supplied source to original shape, text and picture nodes while defaul
   expect(old).not.toHaveProperty('pptxSource')
   expect(old.slides[old.slideOrder[0]]).not.toHaveProperty('pptxSourcePart')
 })
+
+const source = {
+  id: 'preset-source',
+  name: 'Preset.pptx',
+  url: 'blob:preset-source'
+} as FileItemRecord
+
+async function presetFixture(
+  preset: string,
+  guides: string | null = '',
+  extra = '',
+  body = '',
+  geometryNamespace?: string
+): Promise<PresentationData> {
+  let original!: ArrayBuffer
+  await parseFixture(
+    undefined,
+    `<a:prstGeom ${geometryNamespace ? `xmlns:a="${geometryNamespace}" ` : ''}prst="${preset}">${guides === null ? '' : `<a:avLst>${guides}</a:avLst>`}</a:prstGeom>${extra === 'flipH' ? '' : extra}`,
+    undefined,
+    (bytes) => {
+      original = bytes
+    }
+  )
+  const zip = await JSZip.loadAsync(original)
+  const xml = (await zip.file('ppt/slides/slide1.xml')!.async('string'))
+    .replace(/<p:txBody>[\s\S]*?<\/p:txBody>/, body)
+    .replace('<p:ph type="subTitle" idx="1"/>', '')
+    .replace('<a:xfrm>', extra === 'flipH' ? '<a:xfrm flipH="1">' : '<a:xfrm>')
+  zip.file('ppt/slides/slide1.xml', xml)
+  const presentation = buildPresentation(
+    await parseZip(await zip.generateAsync({ type: 'arraybuffer' }))
+  )
+  materializeAllSlideNodes(presentation)
+  return presentation
+}
+
+it.each([
+  'roundRect',
+  'triangle',
+  'rtTriangle',
+  'diamond',
+  'rightArrow',
+  'leftArrow',
+  'upArrow',
+  'downArrow'
+])('admits %s only for explicit v3 conversion and retains default omission', async (preset) => {
+  const presentation = await presetFixture(preset)
+  expect(() => convertPresentationData(source, presentation)).toThrow(/geometry/)
+  const document = convertPresentationData(source, presentation, undefined, new Map(), 3)
+  expect(document.schemaVersion).toBe(3)
+  const element = Object.values(document.slides[document.slideOrder[0]].elements)[0]
+  expect(element).toMatchObject({ type: 'shape', shape: preset })
+  expect(element).not.toHaveProperty('adjustments')
+  expect(() => validatePortablePresentation(document)).not.toThrow()
+})
+
+it('retains constant raw adjustments and materializes a sparse named prefix in preset order', async () => {
+  const presentation = await presetFixture('rightArrow', '<a:gd name="adj2" fmla="val 75000"/>')
+  const document = convertPresentationData(source, presentation, undefined, new Map(), 3)
+  expect(Object.values(document.slides[document.slideOrder[0]].elements)[0]).toMatchObject({
+    shape: 'rightArrow',
+    adjustments: [50000, 75000]
+  })
+})
+
+it.each([
+  '<a:gd name="adj" fmla="val 1"/><a:gd name="adj" fmla="val 2"/>',
+  '<a:gd name="other" fmla="val 1"/>',
+  '<a:gd name="adj" fmla="*/ w 1 2"/>',
+  '<a:gd name="adj" fmla="val 1.5"/>',
+  '<a:gd name="adj" fmla="val 2147483648"/>',
+  '<a:gd name="adj" fmla="val NaN"/>',
+  '<a:gd name="adj" fmla="val 1e2"/>'
+])(
+  'rejects unknown/ambiguous/nonconstant preset adjustments with source location: %s',
+  async (guides) => {
+    const presentation = await presetFixture('roundRect', guides)
+    try {
+      convertPresentationData(source, presentation, undefined, new Map(), 3)
+      expect.unreachable('unsafe preset adjustments accepted')
+    } catch (error) {
+      expect(error).toMatchObject({
+        diagnostic: { code: 'shape', slideNumber: 1, objectNumber: 1, objectId: '2' }
+      })
+    }
+  }
+)
+
+it.each([
+  [
+    'embedded text',
+    '',
+    '<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>Attached text</a:t></a:r></a:p></p:txBody>'
+  ],
+  ['reflection', 'flipH', ''],
+  ['effect', '<a:effectLst><a:outerShdw/></a:effectLst>', ''],
+  ['3D', '<a:sp3d extrusionH="9525"/>', ''],
+  ['dash', '<a:ln w="9525"><a:prstDash val="dash"/></a:ln>', ''],
+  ['outline end', '<a:ln w="9525"><a:headEnd type="triangle"/></a:ln>', ''],
+  ['gradient', '<a:gradFill><a:gsLst/></a:gradFill>', '']
+])('rejects unrepresented v3 shape properties before admitting %s', async (_name, extra, body) => {
+  const presentation = await presetFixture('roundRect', '', extra, body)
+  expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).toThrow()
+})
+
+it('accepts a missing avLst as preset defaults and rejects duplicate adjustment containers', async () => {
+  const presentation = await presetFixture('triangle', null)
+  const document = convertPresentationData(source, presentation, undefined, new Map(), 3)
+  expect(Object.values(document.slides[document.slideOrder[0]].elements)[0]).toMatchObject({
+    shape: 'triangle'
+  })
+  expect(Object.values(document.slides[document.slideOrder[0]].elements)[0]).not.toHaveProperty(
+    'adjustments'
+  )
+  const duplicated = await presetFixture(
+    'triangle',
+    '',
+    '<a:prstGeom prst="triangle"><a:avLst/></a:prstGeom>'
+  )
+  expect(() => convertPresentationData(source, duplicated, undefined, new Map(), 3)).toThrow(
+    /adjustments/
+  )
+})
+
+it('rejects preset geometry in an unrecognized XML namespace instead of rendering it', async () => {
+  const presentation = await presetFixture('roundRect', '', '', '', 'urn:unknown-geometry')
+  expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).toThrow()
+})

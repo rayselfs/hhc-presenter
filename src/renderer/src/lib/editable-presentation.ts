@@ -1,3 +1,4 @@
+import { getPresetShapeDescriptor } from './presentation-shape-geometry'
 import type { EditableProjectionShapeKind } from '@shared/projection-messages'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
 import {
@@ -1128,7 +1129,8 @@ export function convertPresentationData(
   source: FileItemRecord,
   presentation: PresentationData,
   pptxSource?: PptxSource,
-  notesBySlide: ReadonlyMap<string, string> = new Map()
+  notesBySlide: ReadonlyMap<string, string> = new Map(),
+  conversionSchemaVersion?: 3
 ): EditablePresentationDocument {
   const documentId = crypto.randomUUID()
   const now = Date.now()
@@ -1143,7 +1145,13 @@ export function convertPresentationData(
     const slideId = crypto.randomUUID()
     let convertedSlide: Omit<EditablePresentationSlide, 'id' | 'name'>
     try {
-      convertedSlide = convertSlide(slide, presentation, assets, Boolean(pptxSource))
+      convertedSlide = convertSlide(
+        slide,
+        presentation,
+        assets,
+        Boolean(pptxSource),
+        conversionSchemaVersion
+      )
     } catch (error) {
       throw locatePptxCompatibilityError(error, {
         slideNumber: slideIndex + 1,
@@ -1162,7 +1170,7 @@ export function convertPresentationData(
 
   return {
     id: documentId,
-    schemaVersion: pptxSource ? 2 : 1,
+    schemaVersion: conversionSchemaVersion ?? (pptxSource ? 2 : 1),
     ...(pptxSource ? { pptxSource } : {}),
     name: `${stripPresentationExtension(source.name)} Editable`,
     sourceItemId: source.id,
@@ -1222,7 +1230,8 @@ function convertSlide(
   slide: SlideData,
   presentation: PresentationData,
   assets: Record<string, EditablePresentationAsset>,
-  preserveSource: boolean
+  preserveSource: boolean,
+  conversionSchemaVersion?: 3
 ): Omit<EditablePresentationSlide, 'id' | 'name'> {
   const elementOrder: string[] = []
   const elements: Record<string, EditablePresentationElement> = {}
@@ -1254,12 +1263,15 @@ function convertSlide(
   for (const [objectIndex, node] of slide.nodes.entries()) {
     let converted: EditablePresentationElement[]
     try {
-      if (!preserveSource) {
+      if (!preserveSource || conversionSchemaVersion === 3) {
         assertPptxNodeVisualCompatibility(node)
         if (node.nodeType === 'shape') assertPptxTextCompatibility(node, slide, presentation)
       }
-      converted = convertNode(node, slide, presentation, assets)
-      if (!preserveSource && converted.some((element) => element.type === 'locked'))
+      converted = convertNode(node, slide, presentation, assets, conversionSchemaVersion)
+      if (
+        (!preserveSource || conversionSchemaVersion === 3) &&
+        converted.some((element) => element.type === 'locked')
+      )
         throw new PptxCompatibilityError(
           { code: 'unsupported-object' },
           'This PowerPoint object cannot yet be edited'
@@ -1371,9 +1383,11 @@ function convertNode(
   node: SlideNode,
   slide: SlideData,
   presentation: PresentationData,
-  assets: Record<string, EditablePresentationAsset>
+  assets: Record<string, EditablePresentationAsset>,
+  conversionSchemaVersion?: 3
 ): EditablePresentationElement[] {
-  if (node.nodeType === 'shape') return convertShapeNode(node, slide, presentation)
+  if (node.nodeType === 'shape')
+    return convertShapeNode(node, slide, presentation, conversionSchemaVersion)
   if (node.nodeType === 'picture') return convertPictureNode(node, slide, presentation, assets)
   return [createLockedElement(node, `${node.nodeType} object`)]
 }
@@ -1381,21 +1395,34 @@ function convertNode(
 function convertShapeNode(
   node: ShapeNodeData,
   slide: SlideData,
-  presentation: PresentationData
+  presentation: PresentationData,
+  conversionSchemaVersion?: 3
 ): EditablePresentationElement[] {
   const elements: EditablePresentationElement[] = []
   const text = getShapeText(node)
   const theme = getSlideTheme(slide, presentation)
-  const shape = getEditableShapeKind(node.presetGeometry)
+  const shape = getEditableShapeKind(node.presetGeometry, conversionSchemaVersion)
   if (
     node.customGeometry?.exists() ||
-    (node.presetGeometry && !['rect', 'ellipse', 'oval', 'line'].includes(node.presetGeometry))
+    (node.presetGeometry && !shape && node.presetGeometry !== 'line')
   )
     throw new PptxCompatibilityError({ code: 'shape' }, 'Unsupported PowerPoint shape geometry')
   if (
-    ['gradFill', 'pattFill', 'blipFill', 'grpFill'].some((fill) => node.fill?.child(fill).exists())
+    ['gradFill', 'pattFill', 'blipFill', 'grpFill'].some(
+      (fill) => node.fill?.localName === fill || node.source.child('spPr').child(fill).exists()
+    )
   )
     throw new PptxCompatibilityError({ code: 'shape' }, 'Unsupported PowerPoint shape fill')
+  const adjustments =
+    conversionSchemaVersion === 3 && shape ? readPresetAdjustments(node, shape) : undefined
+  if (conversionSchemaVersion === 3 && shape) {
+    if (!['rectangle', 'ellipse'].includes(shape) && text)
+      throw new PptxCompatibilityError(
+        { code: 'shape' },
+        'PowerPoint preset attached text cannot yet be edited'
+      )
+    assertPresetOutlineCompatibility(node)
+  }
   const fillColor = readPaintColor(node.fill, theme) ?? 'transparent'
   const strokeColor = readPaintColor(node.line, theme) ?? '#000000'
   const rawStrokeWidth = node.line?.attr('w')
@@ -1425,6 +1452,7 @@ function convertShapeNode(
       id: crypto.randomUUID(),
       type: 'shape',
       shape,
+      ...(adjustments ? { adjustments } : {}),
       x: node.position.x,
       y: node.position.y,
       width: node.size.w,
@@ -1621,10 +1649,75 @@ function getShapeText(node: ShapeNodeData): string {
   )
 }
 
-function getEditableShapeKind(presetGeometry: string | undefined): EditableShapeKind | null {
-  if (!presetGeometry || ['rect', 'roundRect'].includes(presetGeometry)) return 'rectangle'
+function getEditableShapeKind(
+  presetGeometry: string | undefined,
+  conversionSchemaVersion?: 3
+): EditableShapeKind | null {
+  if (!presetGeometry || presetGeometry === 'rect') return 'rectangle'
   if (['ellipse', 'oval'].includes(presetGeometry)) return 'ellipse'
-  return null
+  return conversionSchemaVersion === 3 && getPresetShapeDescriptor(presetGeometry)
+    ? (presetGeometry as EditableShapeKind)
+    : null
+}
+
+function readPresetAdjustments(
+  node: ShapeNodeData,
+  shape: EditableShapeKind
+): readonly number[] | undefined {
+  const fail = (): never => {
+    throw new PptxCompatibilityError({ code: 'shape' }, 'Unsupported PowerPoint preset adjustments')
+  }
+  const properties = node.source.child('spPr')
+  if (properties.children('prstGeom').length > 1) fail()
+  const geometry = properties.child('prstGeom')
+  const drawingNamespace = 'http://schemas.openxmlformats.org/drawingml/2006/main'
+  if (geometry.exists() && geometry.element?.namespaceURI !== drawingNamespace) fail()
+  if (geometry.children('avLst').length > 1) fail()
+  const adjustments = geometry.child('avLst')
+  if (adjustments.exists() && adjustments.element?.namespaceURI !== drawingNamespace) fail()
+  const guides = geometry.child('avLst').children('gd')
+  if (!guides.length) return undefined
+  const descriptor = getPresetShapeDescriptor(shape)!
+  if (guides.length > 16 || guides.length > descriptor.guides.length) fail()
+  const values = new Map<number, number>()
+  for (const guide of guides) {
+    const index = descriptor.guides.indexOf(guide.attr('name') ?? '')
+    const match = /^val\s+([+-]?\d+)$/.exec((guide.attr('fmla') ?? '').trim())
+    if (!match) return fail()
+    if (
+      index < 0 ||
+      values.has(index) ||
+      guide.element?.namespaceURI !== 'http://schemas.openxmlformats.org/drawingml/2006/main'
+    )
+      fail()
+    const value = Number(match[1])
+    if (!Number.isInteger(value) || value < -2147483648 || value > 2147483647) fail()
+    values.set(index, value)
+  }
+  return Array.from(
+    { length: Math.max(...values.keys()) + 1 },
+    (_, index) => values.get(index) ?? descriptor.defaults[index]
+  )
+}
+
+function assertPresetOutlineCompatibility(node: ShapeNodeData): void {
+  const line = node.line
+  if (!line?.exists() || line.child('noFill').exists()) return
+  const unsupported =
+    ['gradFill', 'pattFill', 'custDash', 'round', 'bevel'].some((name) =>
+      line.child(name).exists()
+    ) ||
+    (line.child('prstDash').exists() && line.child('prstDash').attr('val') !== 'solid') ||
+    ['headEnd', 'tailEnd'].some(
+      (name) => line.child(name).exists() && line.child(name).attr('type') !== 'none'
+    ) ||
+    [
+      ['cap', 'flat'],
+      ['cmpd', 'sng'],
+      ['algn', 'ctr']
+    ].some(([name, supported]) => line.attr(name) !== undefined && line.attr(name) !== supported)
+  if (unsupported)
+    throw new PptxCompatibilityError({ code: 'shape' }, 'Unsupported PowerPoint preset outline')
 }
 
 function normalizeTextAlign(value: string | undefined): EditableTextAlign {
@@ -1890,7 +1983,8 @@ function assertPptxNodeVisualCompatibility(node: SlideNode): void {
     throw new PptxCompatibilityError({ code }, 'PowerPoint reflection cannot yet be edited')
   if (
     node.nodeType === 'shape' &&
-    (properties.child('effectLst').children().length > 0 || properties.child('effectDag').exists())
+    (properties.child('effectLst').children().length > 0 ||
+      ['effectDag', 'scene3d', 'sp3d'].some((name) => properties.child(name).exists()))
   )
     throw new PptxCompatibilityError({ code }, 'PowerPoint shape effects cannot yet be edited')
 }
