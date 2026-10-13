@@ -26,6 +26,8 @@ The Office verifier initially assumed every PDF color was an RGB tuple; LibreOff
 
 Logs, fixture generator, consumer checker, original/native downloads and PDFs are retained at `/Users/rayselfs/.codex/visualizations/2026/10/11/01a12b4f-88d0-7980-82da-40c2abb5b65f/deckcraft-pptx-theme-solid-fill-20261013`, with a SHA-256 manifest.
 
-## Remaining goal work
+## Historical remaining-work inventory
+
+The user narrowed the scope on 2026-10-13. The following inventory is historical, not a mandatory implementation queue; the main design document defines the active value-based scope.
 
 Theme line inheritance, shape gradients/effects/custom paths, groups/connectors/tables/charts, editable masters/themes, playback and full platform verification remain. Microsoft PowerPoint/physical Windows/projector acceptance and deployed authenticated cloud behavior have not been checked for this increment. Both worktrees remain unmerged and undeployed; no push, release or general schema activation is authorized by local acceptance.

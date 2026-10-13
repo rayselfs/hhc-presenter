@@ -1,5 +1,7 @@
 # Editable object discovery
 
+Scope update (2026-10-13): the user explicitly narrowed work to necessary improvements of existing features. The expansion sequence below is historical and no longer an active implementation queue; see the active-scope section in `2026-10-11-deckcraft-reference-typescript-design.md`. Keep existing gated work, but do not continue adding object types or schemas merely to match DeckCraft. The user subsequently clarified that the assistant should autonomously choose useful additions as well as omissions; small justified improvements remain permitted.
+
 Continuation of the approved five-phase DeckCraft-reference design; current-session inline execution and uninterrupted progress are explicitly authorized. Existing isolated client/API worktrees remain the only implementation locations. No API deployment, shared push, merge or release is authorized.
 
 ## Verified source and current gaps

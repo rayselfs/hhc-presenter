@@ -1,6 +1,16 @@
 # DeckCraft reference capabilities in HHC Presenter
 
-Status: design approved in conversation on 2026-10-11, including necessary Asset API companion changes. The conversion-fidelity plan and the source-contract plan were approved; both batches and the supported PPTX export foundation are complete with local verification; the full five-phase goal remains in progress.
+Status: scope explicitly narrowed by the user on 2026-10-13: “我想收斂回必要功能即可，尤其改善原先我們已經實現的部分”. The active scope below supersedes the original five-phase expansion roadmap. Earlier design and evidence are retained as history, not an instruction to continue adding all DeckCraft capabilities.
+
+## Active scope after user correction (2026-10-13)
+
+Improve correctness and stability of existing HHC Presenter functionality. DeckCraft remains a reference for fixing demonstrated gaps, not a feature-parity target. Use the original 22-slide hymn and supported text/image/basic-shape/line flows as the acceptance baseline: import, edit, undo/redo, save/reopen, export and projection ownership in browser and Electron.
+
+Finish verification of the in-flight theme-line fidelity correction, including explicit handling of unsupported hairlines. The user clarified that the assistant should directly decide what is worth adding and what can be omitted. Prioritize demonstrated defects and practical workflow pain points in existing functionality; add small, useful capabilities when their benefit justifies implementation and compatibility cost. Do not use the historical parity inventory as a mandatory queue. Full table/chart editors, master designers, complex animation systems, dedicated hairline representation and further preset expansion are currently deferred because their value does not justify their scope for the present use case. Schema/API changes require a concrete necessary capability, not speculative parity. This is an autonomous value-based selection policy, not a blanket ban on new functionality. Already implemented gated geometry/source capabilities are retained in the isolated branches; do not remove, activate or publish them without a concrete need or further instruction.
+
+Local completion requires relevant tests/builds and actual browser/Electron acceptance for changed paths, plus a concise record of known limitations. CI, deployment, release, authenticated cloud and physical-device checks remain separately reported evidence states; do not manufacture release work or treat the historical entire expansion checklist as a blocker to this narrowed local deliverable. No push, merge, deploy or release is authorized. Preserve both isolated worktrees and the primary checkout.
+
+## Historical design (superseded where it expands the active scope)
 
 ## Intent and scope
 

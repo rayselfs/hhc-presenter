@@ -1,4 +1,4 @@
-import { resolvePptxShapeThemeFill } from './pptx-shape-fill'
+import { resolvePptxShapeThemeFill, resolvePptxShapeThemeLine } from './pptx-shape-style'
 import { getPresetShapeDescriptor, resolvePresetShapeGeometry } from './presentation-shape-geometry'
 import type { EditableProjectionShapeKind } from '@shared/projection-messages'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
@@ -1401,10 +1401,10 @@ function convertNode(
   presentation: PresentationData,
   assets: Record<string, EditablePresentationAsset>,
   conversionSchemaVersion?: 3,
-  resolveThemeFill = true
+  resolveThemeStyle = true
 ): EditablePresentationElement[] {
   if (node.nodeType === 'shape')
-    return convertShapeNode(node, slide, presentation, conversionSchemaVersion, resolveThemeFill)
+    return convertShapeNode(node, slide, presentation, conversionSchemaVersion, resolveThemeStyle)
   if (node.nodeType === 'picture') return convertPictureNode(node, slide, presentation, assets)
   return [createLockedElement(node, `${node.nodeType} object`)]
 }
@@ -1414,7 +1414,7 @@ function convertShapeNode(
   slide: SlideData,
   presentation: PresentationData,
   conversionSchemaVersion?: 3,
-  resolveThemeFill = true
+  resolveThemeStyle = true
 ): EditablePresentationElement[] {
   const elements: EditablePresentationElement[] = []
   const text = getShapeText(node)
@@ -1442,10 +1442,11 @@ function convertShapeNode(
     assertPresetOutlineCompatibility(node, shape)
   }
   const fillColor =
-    (resolveThemeFill ? resolvePptxShapeThemeFill(node, theme) : undefined) ??
+    (resolveThemeStyle ? resolvePptxShapeThemeFill(node, theme) : undefined) ??
     readPaintColor(node.fill, theme) ??
     'transparent'
-  const strokeColor = readPaintColor(node.line, theme) ?? '#000000'
+  const themeLine = resolveThemeStyle ? resolvePptxShapeThemeLine(node, theme) : undefined
+  const strokeColor = themeLine?.strokeColor ?? readPaintColor(node.line, theme) ?? '#000000'
   const rawStrokeWidth = node.line?.attr('w')
   const sourceStrokeWidth = rawStrokeWidth === undefined ? undefined : Number(rawStrokeWidth)
   if (
@@ -1454,11 +1455,12 @@ function convertShapeNode(
   )
     throw new PptxCompatibilityError({ code: 'shape' }, 'Invalid PowerPoint outline width')
   const strokeWidth =
-    !node.line?.exists() || node.line.child('noFill').exists()
+    themeLine?.strokeWidth ??
+    (!node.line?.exists() || node.line.child('noFill').exists()
       ? 0
       : sourceStrokeWidth === undefined
         ? 1
-        : emuToPx(sourceStrokeWidth)
+        : emuToPx(sourceStrokeWidth))
 
   const isInvisibleTextBox =
     isXmlTrue(node.source.child('nvSpPr').child('cNvSpPr').attr('txBox')) &&
@@ -2022,14 +2024,14 @@ function assertReferencedShapeStyleCompatibility(node: ShapeNodeData, theme?: Th
       'Unsupported PowerPoint inherited theme style'
     )
   }
-  const referenced = (name: 'lnRef' | 'effectRef'): XmlNode | undefined => {
+  const referenced = (name: 'effectRef'): XmlNode | undefined => {
     const reference = style.child(name)
     if (!reference.exists()) return undefined
     const rawIndex = reference.attr('idx') ?? ''
     if (!/^\d+$/.test(rawIndex)) return fail()
     const index = Number(rawIndex)
     if (index === 0) return undefined
-    const styles = name === 'lnRef' ? theme?.lineStyles : theme?.effectStyles
+    const styles = theme?.effectStyles
     const resolved = styles?.[index - 1]
     if (!Number.isSafeInteger(index) || !resolved) return fail()
     return resolved
@@ -2042,50 +2044,7 @@ function assertReferencedShapeStyleCompatibility(node: ShapeNodeData, theme?: Th
     fail()
   }
 
-  const line = node.line
-  if (!line?.child('noFill').exists() && line?.numAttr('w') !== 0) {
-    const inherited = referenced('lnRef')
-    if (inherited) {
-      if (!line?.exists()) {
-        if (!inherited.child('noFill').exists() && inherited.numAttr('w') !== 0) fail()
-      } else {
-        // A local line can override only part of its referenced theme line.
-        for (const [name, defaultValue] of [
-          ['w', '9525'],
-          ['cap', 'flat'],
-          ['cmpd', 'sng'],
-          ['algn', 'ctr']
-        ]) {
-          const value = inherited.attr(name)
-          if (line.attr(name) === undefined && value !== undefined && value !== defaultValue) fail()
-        }
-        for (const names of [
-          paintNames,
-          ['prstDash', 'custDash'],
-          ['round', 'bevel', 'miter'],
-          ['headEnd'],
-          ['tailEnd']
-        ]) {
-          if (names.some((name) => line.child(name).exists())) continue
-          const child = names.map((name) => inherited.child(name)).find((entry) => entry.exists())
-          if (!child) continue
-          if (child.localName === 'prstDash' && child.attr('val') === 'solid') continue
-          if (['headEnd', 'tailEnd'].includes(child.localName) && child.attr('type') === 'none')
-            continue
-          if (child.localName === 'round') continue
-          if (
-            child.localName === 'miter' &&
-            getPresetShapeDescriptor(getEditableShapeKind(node.presetGeometry, 3) ?? 'rectangle')
-              ?.lineJoin === 'miter' &&
-            (child.attr('lim') === undefined || child.numAttr('lim') === 800000)
-          )
-            continue
-          fail()
-        }
-      }
-    }
-    if (line?.child('solidFill').child('schemeClr').attr('val') === 'phClr') fail()
-  }
+  resolvePptxShapeThemeLine(node, theme)
   if (!properties.child('effectLst').exists() && !properties.child('effectDag').exists()) {
     const effects = referenced('effectRef')
     if (

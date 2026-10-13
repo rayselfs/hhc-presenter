@@ -649,6 +649,9 @@ async function themeStyleFixture(
     themeLineJoin?: 'round' | 'miter'
     fillXml?: string
     referenceColorXml?: string
+    themeLineXml?: string
+    localLineXml?: string
+    omitStyle?: boolean
   } = {}
 ): Promise<{ presentation: PresentationData; bytes: ArrayBuffer }> {
   const drawing = 'http://schemas.openxmlformats.org/drawingml/2006/main'
@@ -697,7 +700,15 @@ async function themeStyleFixture(
     if (name === reference && options.referenceColorXml) entry.innerHTML = options.referenceColorXml
     style.appendChild(entry)
   }
-  properties.parentElement!.appendChild(style)
+  if (options.localLineXml) {
+    properties.getElementsByTagNameNS(drawing, 'ln')[0]?.remove()
+    const replacement = new DOMParser().parseFromString(
+      `<root xmlns:a="${drawing}">${options.localLineXml}</root>`,
+      'application/xml'
+    ).documentElement.firstElementChild!
+    properties.appendChild(xml.importNode(replacement, true))
+  }
+  if (!options.omitStyle) properties.parentElement!.appendChild(style)
   zip.file('ppt/slides/slide1.xml', new XMLSerializer().serializeToString(xml))
   const theme = new DOMParser().parseFromString(
     await zip.file('ppt/theme/theme1.xml')!.async('string'),
@@ -725,6 +736,14 @@ async function themeStyleFixture(
   if (options.themeLineJoin) {
     const line = theme.getElementsByTagNameNS(drawing, 'lnStyleLst')[0].firstElementChild!
     line.appendChild(theme.createElementNS(drawing, 'a:' + options.themeLineJoin))
+  }
+  if (options.themeLineXml) {
+    const line = theme.getElementsByTagNameNS(drawing, 'lnStyleLst')[0].firstElementChild!
+    const replacement = new DOMParser().parseFromString(
+      `<root xmlns:a="${drawing}">${options.themeLineXml}</root>`,
+      'application/xml'
+    ).documentElement.firstElementChild!
+    line.replaceWith(theme.importNode(replacement, true))
   }
   if (options.fillXml) {
     const list = Number(options.index ?? '1') >= 1001 ? 'bgFillStyleLst' : 'fillStyleLst'
@@ -811,7 +830,7 @@ it('applies theme admission to ordinary basic-shape conversion while preserving 
   expect(convertPresentationData(source, presentation, retained).schemaVersion).toBe(2)
 })
 
-it.each(['w', 'solidFill', 'prstDash'] as const)(
+it.each(['prstDash'] as const)(
   'rejects an inherited theme line when the local override leaves %s unresolved',
   async (partialLine) => {
     const { presentation } = await themeStyleFixture('lnRef', { localOverride: true, partialLine })
@@ -991,5 +1010,157 @@ describe('resolved theme solid fills', () => {
         diagnostic: expect.objectContaining({ code: 'shape', slideNumber: 1, objectNumber: 1 })
       })
     )
+  })
+})
+
+describe('resolved theme solid lines', () => {
+  const solid =
+    '<a:ln w="95250"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:round/></a:ln>'
+  it.each(['rectangle', 'triangle'] as const)(
+    'imports inherited color and width for %s',
+    async (preset) => {
+      const { presentation } = await themeStyleFixture('lnRef', { preset, themeLineXml: solid })
+      const version = preset === 'triangle' ? 3 : undefined
+      const document = convertPresentationData(source, presentation, undefined, new Map(), version)
+      expect(Object.values(document.slides[document.slideOrder[0]].elements)[0]).toMatchObject({
+        strokeColor: '#FF0000',
+        strokeWidth: 10
+      })
+      const reopened = buildPresentation(await parseZip(await buildNativePptx(document)))
+      materializeAllSlideNodes(reopened)
+      const result = convertPresentationData(source, reopened, undefined, new Map(), version)
+      expect(Object.values(result.slides[result.slideOrder[0]].elements)[0]).toMatchObject({
+        strokeColor: '#FF0000',
+        strokeWidth: 10
+      })
+    }
+  )
+  it.each([
+    ['width only', '<a:ln w="19050"/>', '#FF0000', 2],
+    [
+      'color only',
+      '<a:ln><a:solidFill><a:srgbClr val="123456"/></a:solidFill></a:ln>',
+      '#123456',
+      10
+    ],
+    [
+      'placeholder color',
+      '<a:ln><a:solidFill><a:schemeClr val="phClr"><a:alpha val="50000"/></a:schemeClr></a:solidFill></a:ln>',
+      'rgba(255, 0, 0, 0.5)',
+      10
+    ],
+    ['no fill', '<a:ln><a:noFill/></a:ln>', '#000000', 0],
+    ['zero width without paint', '<a:ln w="0"><a:noFill/></a:ln>', '#000000', 0]
+  ] as const)(
+    'merges a local %s override',
+    async (_name, localLineXml, strokeColor, strokeWidth) => {
+      const { presentation } = await themeStyleFixture('lnRef', {
+        themeLineXml: solid,
+        localLineXml
+      })
+      const document = convertPresentationData(source, presentation, undefined, new Map(), 3)
+      expect(Object.values(document.slides[document.slideOrder[0]].elements)[0]).toMatchObject({
+        strokeColor,
+        strokeWidth
+      })
+    }
+  )
+  it('rejects a painted local zero-width hairline without a theme reference', async () => {
+    const { presentation } = await themeStyleFixture('lnRef', {
+      omitStyle: true,
+      localLineXml: '<a:ln w="0"><a:solidFill><a:srgbClr val="123456"/></a:solidFill></a:ln>'
+    })
+    expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).toThrow(
+      /hairline/
+    )
+  })
+  it.each(['local', 'inherited'] as const)(
+    'rejects a painted %s zero-width hairline instead of losing it',
+    async (origin) => {
+      const { presentation } = await themeStyleFixture('lnRef', {
+        themeLineXml: origin === 'inherited' ? solid.replace('95250', '0') : solid,
+        localLineXml: origin === 'local' ? '<a:ln w="0"/>' : undefined
+      })
+      expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).toThrow(
+        /hairline/
+      )
+    }
+  )
+  it.each(['-1', 'NaN', '1.5'])(
+    'rejects malformed inherited width %s with location',
+    async (width) => {
+      const { presentation } = await themeStyleFixture('lnRef', {
+        themeLineXml: solid.replace('95250', width)
+      })
+      expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).toThrow(
+        expect.objectContaining({
+          diagnostic: expect.objectContaining({ code: 'shape', slideNumber: 1, objectNumber: 1 })
+        })
+      )
+    }
+  )
+  it.each([
+    '<a:ln w="95250" cap="rnd"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln>',
+    '<a:ln w="95250" cmpd="dbl"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln>',
+    '<a:ln w="95250"><a:gradFill/></a:ln>',
+    '<a:ln w="95250"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:headEnd type="triangle"/></a:ln>'
+  ])('rejects unrepresented effective outlines', async (themeLineXml) => {
+    const { presentation } = await themeStyleFixture('lnRef', { themeLineXml })
+    expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).toThrow(
+      /theme line/
+    )
+  })
+  it('lets local solid paint override inherited gradient paint without dropping inherited width', async () => {
+    const { presentation } = await themeStyleFixture('lnRef', {
+      themeLineXml: '<a:ln w="95250"><a:gradFill/></a:ln>',
+      localLineXml: '<a:ln><a:solidFill><a:srgbClr val="123456"/></a:solidFill></a:ln>'
+    })
+    const document = convertPresentationData(source, presentation, undefined, new Map(), 3)
+    expect(Object.values(document.slides[document.slideOrder[0]].elements)[0]).toMatchObject({
+      strokeColor: '#123456',
+      strokeWidth: 10
+    })
+  })
+  it('keeps a zero style reference unpainted when only a local width is supplied', async () => {
+    const { presentation } = await themeStyleFixture('lnRef', {
+      index: '0',
+      localLineXml: '<a:ln w="95250"/>'
+    })
+    const document = convertPresentationData(source, presentation, undefined, new Map(), 3)
+    expect(Object.values(document.slides[document.slideOrder[0]].elements)[0]).toMatchObject({
+      strokeWidth: 0
+    })
+  })
+  it('preserves theme source bytes and writes a local stroke override after editing', async () => {
+    const { presentation, bytes } = await themeStyleFixture('lnRef', { themeLineXml: solid })
+    const document = convertPresentationData(
+      source,
+      presentation,
+      await createPptxSource(bytes),
+      new Map(),
+      3
+    )
+    expect(new Uint8Array(await buildSourcePptx(document))).toEqual(new Uint8Array(bytes))
+    const slide = document.slides[document.slideOrder[0]]
+    const shape = slide.elements[slide.elementOrder[0]]
+    if (shape.type !== 'shape') throw new Error('Expected shape')
+    shape.strokeColor = '#123456'
+    shape.strokeWidth = 4
+    const output = await buildSourcePptx(document)
+    const before = await JSZip.loadAsync(bytes),
+      after = await JSZip.loadAsync(output)
+    for (const [name, member] of Object.entries(before.files)) {
+      if (member.dir || name === 'ppt/slides/slide1.xml') continue
+      expect(await after.file(name)!.async('uint8array'), name).toEqual(
+        await member.async('uint8array')
+      )
+    }
+    const reopened = buildPresentation(await parseZip(output))
+    materializeAllSlideNodes(reopened)
+    const result = convertPresentationData(source, reopened, undefined, new Map(), 3)
+    expect(Object.values(result.slides[result.slideOrder[0]].elements)[0]).toMatchObject({
+      strokeColor: '#123456',
+      strokeWidth: 4
+    })
   })
 })

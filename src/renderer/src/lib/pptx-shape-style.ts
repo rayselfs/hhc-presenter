@@ -1,3 +1,4 @@
+import { getPresetShapeDescriptor } from './presentation-shape-geometry'
 import type { ShapeNodeData, ThemeData } from '@aiden0z/pptx-renderer'
 import { PptxCompatibilityError } from './pptx-compatibility'
 
@@ -36,6 +37,10 @@ export function resolvePptxShapeThemeFill(
   if (!Number.isSafeInteger(index) || !fill) return unsupported()
   if (fill.localName === 'noFill') return 'transparent'
   if (fill.localName !== 'solidFill') return unsupported()
+  return solidPaintColor(fill, theme, reference)
+}
+
+function solidPaintColor(fill: XmlNode, theme?: ThemeData, reference?: XmlNode): string {
   const color = resolveColor(fill, theme, reference)
   const channels = color.rgb.map((value) => Math.round(clamp(value) * 255 + 1e-9))
   if (color.alpha < 1) return `rgba(${channels.join(', ')}, ${color.alpha})`
@@ -111,4 +116,76 @@ function resolveColor(container: XmlNode, theme?: ThemeData, reference?: XmlNode
     } else return unsupported()
   }
   return color
+}
+
+export function resolvePptxShapeThemeLine(
+  node: ShapeNodeData,
+  theme?: ThemeData
+): { strokeColor: string; strokeWidth: number } | undefined {
+  const fail = (): never => {
+    throw new PptxCompatibilityError(
+      { code: 'shape' },
+      'Unsupported PowerPoint inherited theme line'
+    )
+  }
+  const local = node.line
+  const reference = node.source.child('style').child('lnRef')
+  if (!reference.exists()) {
+    if (local?.numAttr('w') === 0 && !local.child('noFill').exists())
+      throw new PptxCompatibilityError(
+        { code: 'shape' },
+        'PowerPoint hairline outlines cannot yet be edited'
+      )
+    if (local?.child('solidFill').child('schemeClr').attr('val') === 'phClr') fail()
+    return undefined
+  }
+  const invisible = { strokeColor: '#000000', strokeWidth: 0 }
+  if (local?.child('noFill').exists()) return invisible
+  const rawIndex = reference.attr('idx') ?? ''
+  if (!/^\d+$/.test(rawIndex)) return fail()
+  const index = Number(rawIndex)
+  const inherited = index === 0 ? undefined : theme?.lineStyles[index - 1]
+  if (!Number.isSafeInteger(index) || (index !== 0 && !inherited)) return fail()
+  const child = (names: string[]): XmlNode | undefined =>
+    [local, inherited]
+      .flatMap((line) => line?.children() ?? [])
+      .find((entry) => names.includes(entry.localName))
+  const attr = (name: string): string | undefined => local?.attr(name) ?? inherited?.attr(name)
+  const paint = child(['noFill', 'solidFill', 'gradFill', 'pattFill', 'blipFill', 'grpFill'])
+  const rawWidth = attr('w') ?? '9525'
+  if (!/^\d+$/.test(rawWidth) || !Number.isSafeInteger(Number(rawWidth))) return fail()
+  if (paint?.localName === 'noFill' || (!paint && index === 0)) return invisible
+  // Zero-width paint is a device hairline, not the model's zero-width/no-outline value.
+  if (Number(rawWidth) === 0)
+    throw new PptxCompatibilityError(
+      { code: 'shape' },
+      'PowerPoint hairline outlines cannot yet be edited'
+    )
+  if (paint && paint.localName !== 'solidFill') return fail()
+  for (const [name, supported] of [
+    ['cap', 'flat'],
+    ['cmpd', 'sng'],
+    ['algn', 'ctr']
+  ]) {
+    if (attr(name) !== undefined && attr(name) !== supported) fail()
+  }
+  const dash = child(['prstDash', 'custDash'])
+  if (dash && (dash.localName !== 'prstDash' || dash.attr('val') !== 'solid')) fail()
+  const join = child(['round', 'bevel', 'miter'])
+  if (join && join.localName !== 'round') {
+    if (
+      join.localName !== 'miter' ||
+      getPresetShapeDescriptor(node.presetGeometry)?.lineJoin !== 'miter' ||
+      (join.attr('lim') !== undefined && join.numAttr('lim') !== 800000)
+    )
+      fail()
+  }
+  for (const name of ['headEnd', 'tailEnd']) {
+    const end = child([name])
+    if (end && end.attr('type') !== 'none') fail()
+  }
+  return {
+    strokeColor: paint ? solidPaintColor(paint, theme, reference) : '#000000',
+    strokeWidth: Number(rawWidth) / 9525
+  }
 }

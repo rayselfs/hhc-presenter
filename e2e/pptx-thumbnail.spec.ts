@@ -18,41 +18,64 @@ test('imports a real PPTX as one editable deck with a cover thumbnail', async ({
   await expect(page.getByRole('img', { name: 'text-placeholder-layout.lpdeck' })).toBeVisible()
 })
 
-async function themeFillSmoke(page: Page, waitForProjection: () => Promise<Page>): Promise<void> {
-  await completeOnboarding(page)
+const themeFixtures = [
+  { name: 'theme-solid-fill', fill: 'rgb(255, 188, 188)', stroke: 'rgb(0, 0, 0)', width: '2px' },
+  { name: 'theme-solid-line', fill: 'rgb(255, 0, 0)', stroke: 'rgb(255, 0, 0)', width: '10px' }
+]
+
+async function themeStyleSmoke(
+  page: Page,
+  waitForProjection: () => Promise<Page>,
+  fixture: (typeof themeFixtures)[number]
+): Promise<void> {
   await page.goto(page.url().replace(/#.*$/, '#/files'))
   await page
     .locator('input[type="file"]:not([webkitdirectory])')
     .first()
-    .setInputFiles(resolve('src/renderer/src/lib/__fixtures__/pptx/theme-solid-fill.pptx'))
-  await page.getByText('theme-solid-fill.lpdeck', { exact: true }).click({ button: 'right' })
+    .setInputFiles(resolve('src/renderer/src/lib/__fixtures__/pptx/' + fixture.name + '.pptx'))
+  await page.getByText(fixture.name + '.lpdeck', { exact: true }).click({ button: 'right' })
   await page.getByRole('menuitem', { name: /Open Presentation|開啟簡報|打开演示文稿/ }).click()
   const fill = page.locator('.presentation-stage [data-slide-element] > div').first()
-  await expect(fill).toHaveCSS('background-color', 'rgb(255, 188, 188)')
+  await expect(fill).toHaveCSS('background-color', fixture.fill)
+  await expect(fill).toHaveCSS('border-top-color', fixture.stroke)
+  await expect(fill).toHaveCSS('border-top-width', fixture.width)
   await page.reload()
-  await expect(fill).toHaveCSS('background-color', 'rgb(255, 188, 188)')
+  await expect(fill).toHaveCSS('background-color', fixture.fill)
+  await expect(fill).toHaveCSS('border-top-color', fixture.stroke)
+  await expect(fill).toHaveCSS('border-top-width', fixture.width)
   const pending = waitForProjection()
   await page.getByRole('button', { name: /Start projection|開始投影/ }).click()
   const projection = await pending
   try {
     await expect(projection.locator('[data-slide-element] > div').first()).toHaveCSS(
       'background-color',
-      'rgb(255, 188, 188)'
+      fixture.fill
+    )
+    await expect(projection.locator('[data-slide-element] > div').first()).toHaveCSS(
+      'border-top-color',
+      fixture.stroke
+    )
+    await expect(projection.locator('[data-slide-element] > div').first()).toHaveCSS(
+      'border-top-width',
+      fixture.width
     )
   } finally {
     await projection.close()
   }
 }
 
-test('imports a theme solid fill and keeps its color after reopen and projection', async ({
-  page,
-  context
-}) => {
-  await page.goto('/')
-  await themeFillSmoke(page, () => context.waitForEvent('page'))
-})
+for (const fixture of themeFixtures) {
+  test(`imports ${fixture.name} and preserves its appearance after reopen and projection`, async ({
+    page,
+    context
+  }) => {
+    await page.goto('/')
+    await completeOnboarding(page)
+    await themeStyleSmoke(page, () => context.waitForEvent('page'), fixture)
+  })
+}
 
-test('Electron theme solid fill survives import, reopen and projection', async ({
+test('Electron theme solid styles survive import, reopen and projection', async ({
   browserName
 }) => {
   test.setTimeout(90_000)
@@ -69,7 +92,9 @@ test('Electron theme solid fill survives import, reopen and projection', async (
     const page = await app.firstWindow()
     const errors: string[] = []
     page.on('pageerror', (error) => errors.push(error.message))
-    await themeFillSmoke(page, () => app.waitForEvent('window'))
+    await completeOnboarding(page)
+    for (const fixture of themeFixtures)
+      await themeStyleSmoke(page, () => app.waitForEvent('window'), fixture)
     expect(errors).toEqual([])
   } finally {
     const exited = new Promise<void>((resolve) => app.process().once('exit', () => resolve()))
