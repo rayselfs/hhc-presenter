@@ -66,19 +66,19 @@ Extended-preset import initially rejects nonempty embedded shape text and still 
 
 **Consumes:** Task 2 geometry/handle projection and Task 1 validated v3 model. Reuse existing transform start/preview/commit/cancel callbacks; an adjustment drag commits one undo entry and cancels on replacement/escape.
 
-- [ ] Write RED surface assertions for inert SVG path/fill/outline and consistent rotated bounds in editor/thumbnail/projection, plus selected-shape adjustment handles and numeric inspector controls. Legacy v1/v2 shapes retain their current rendering/controls.
-- [ ] Write RED actual menu insertion in an explicit v3 fixture, adjustment drag at rotated/scaled coordinates, keyboard-accessible numeric updates, cancellation, undo/redo and a document switch mid-drag. New preset menu entries remain gated to v3 documents; default blank/import/copy policy stays unchanged.
-- [ ] Cover add/edit/duplicate/delete/reorder/clipboard/save/reopen of adjusted v3 shapes with stable schema and source-reference detachment; read-only/account fences and editor/projection ownership stay intact.
-- [ ] Implement only the existing shape surfaces, gallery and inspector changes. Generate SVG solely from validated geometry; keep existing v1/v2 CSS shape path until its separate migration is validated.
-- [ ] Run affected surface/workspace/editor-command/clipboard/persistence suites and typecheck; expected PASS. Commit the working gated editor slice.
+- [x] Write RED surface assertions for inert SVG path/fill/outline and consistent rotated bounds in editor/thumbnail/projection, plus selected-shape adjustment handles and numeric inspector controls. Legacy v1/v2 shapes retain their current rendering/controls.
+- [x] Write RED actual menu insertion in an explicit v3 fixture, adjustment drag at rotated/scaled coordinates, keyboard-accessible numeric updates, cancellation, undo/redo and a document switch mid-drag. New preset menu entries remain gated to v3 documents; default blank/import/copy policy stays unchanged.
+- [x] Cover add/edit/duplicate/delete/reorder/clipboard/save/reopen of adjusted v3 shapes with stable schema and source-reference detachment; read-only/account fences and editor/projection ownership stay intact.
+- [x] Implement only the existing shape surfaces, gallery and inspector changes. Generate SVG solely from validated geometry; keep existing v1/v2 CSS shape path until its separate migration is validated.
+- [x] Run affected surface/workspace/editor-command/clipboard/persistence suites and typecheck; expected PASS. Commit the working gated editor slice.
 
 ## Task 4: Independent Consumer and Complete Local Acceptance
 
 **Files:** new bounded `e2e/presentation-preset-geometry.spec.ts`, existing isolated Electron acceptance helper/flow, `docs/testing/pptx-preset-geometry-readiness.md`, design/inventory/plan.
 
-- [ ] Export real browser/Electron downloads from explicit v3 fixtures containing each supported preset, selected non-default adjustments, extreme ratios, rotated bounds and adjacent text. Verify undo/save/reopen and unchanged projection ownership. Keep task-owned profiles/downloads and exact failure evidence.
-- [ ] Render original/native/source-no-op/source-adjusted output through isolated Office/PDF, checking actual vector bounds/shape identity/adjustment values and unrelated source bytes. Record any approximation by preset; fail/reject shapes whose consumer evidence disagrees rather than relaxing geometry checks.
-- [ ] Run lint, both typechecks, full Vitest alone with a bounded worker count, desktop/web builds and affected browser/isolated Electron acceptance. API full tests/vet/OpenAPI checks run in its worktree with owned fixtures/services only. Expected zero failures; local checks are distinct from CI/device acceptance.
+- [x] Export real browser/Electron downloads from explicit v3 fixtures containing each supported preset, selected non-default adjustments, extreme ratios, rotated bounds and adjacent text. Verify undo/save/reopen and unchanged projection ownership. Keep task-owned profiles/downloads and exact failure evidence.
+- [x] Render original/native/source-no-op/source-adjusted output through isolated Office/PDF, checking actual vector bounds/shape identity/adjustment values and unrelated source bytes. Record any approximation by preset; fail/reject shapes whose consumer evidence disagrees rather than relaxing geometry checks.
+- [x] Run lint, both typechecks, full Vitest alone with a bounded worker count, desktop/web builds and affected browser/isolated Electron acceptance. API full tests/vet/OpenAPI checks run in its worktree with owned fixtures/services only. Expected zero failures; local checks are distinct from CI/device acceptance.
 - [ ] Request one fresh read-only whole-slice reviewer; re-grade findings, one TDD fix pass for Important/Critical, ledger deferred minors/rulings, no re-review. Archive exact evidence, commit, clean only owned scratch/profile data and retain both unmerged worktrees.
 
 ## Self-review and Continuation
