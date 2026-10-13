@@ -795,6 +795,13 @@ function EditableSessionDocumentView({
   const activeSlide = activeSlideId ? document.slides[activeSlideId] : null
   const selectedElement =
     activeSlide && selectedElementId ? activeSlide.elements[selectedElementId] : null
+  const adjustableShape =
+    document.schemaVersion === 3 &&
+    selectedElement?.type === 'shape' &&
+    !selectedElement.locked &&
+    getPresetShapeDescriptor(selectedElement.shape)!.guides.length
+      ? selectedElement
+      : null
   const projectedItem = projectionPlaylist[projectionIndex]
   const projectedSlideIndex =
     isPresenting && projectedItem?.id === deck.itemId
@@ -2319,9 +2326,17 @@ function EditableSessionDocumentView({
         <ResponsivePanelGroup
           navigatorWidth={railWidth}
           navigatorLabel={t('presentationWorkspace.slides', 'Slides')}
-          inspectorLabel={t('presentationWorkspace.formatBackground', 'Format Background')}
-          overlay={compactOverlay === 'inspector' && !isBackgroundPanelOpen ? null : compactOverlay}
-          inspectorReturnFocusRef={formatBackgroundTriggerRef}
+          inspectorLabel={
+            isBackgroundPanelOpen
+              ? t('presentationWorkspace.formatBackground', 'Format Background')
+              : t('presentationWorkspace.shapeParameters', 'Shape parameters')
+          }
+          overlay={
+            compactOverlay === 'inspector' && !isBackgroundPanelOpen && !adjustableShape
+              ? null
+              : compactOverlay
+          }
+          inspectorReturnFocusRef={isBackgroundPanelOpen ? formatBackgroundTriggerRef : undefined}
           onOverlayChange={(overlay) => {
             setCompactOverlay(overlay)
             if (overlay === 'navigator' || (overlay === null && compactOverlay === 'inspector')) {

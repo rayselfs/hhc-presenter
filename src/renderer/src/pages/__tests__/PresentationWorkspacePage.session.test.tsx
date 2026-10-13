@@ -2736,4 +2736,38 @@ describe('PresentationWorkspacePage session integration', () => {
     )
     expect(mocks.startMediaProjection).not.toHaveBeenCalled()
   })
+
+  it('opens shape parameters in the compact inspector without opening the background panel', async () => {
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+      matches: query === '(max-width: 1279px)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(() => true)
+    }))
+    const source = createBlankEditablePresentationDocument('Compact shapes')
+    source.schemaVersion = 3
+    const slideId = source.slideOrder[0]
+    const shape = createShapeElement('roundRect', { adjustments: [30000] })
+    mocks.loadEditablePresentationSnapshot.mockResolvedValue({
+      document: addElementToSlide(source, slideId, shape),
+      revision: 0
+    })
+    const session = await renderWorkspaceSession()
+    fireEvent.click(window.document.querySelector('.presentation-stage [data-slide-element]')!)
+    fireEvent.click(screen.getByRole('button', { name: 'Shape parameters' }))
+    const dialog = screen.getByRole('dialog', { name: 'Shape parameters' })
+    const input = within(dialog).getByRole('spinbutton', { name: 'Corner radius (%)' })
+    expect(input).toHaveValue(30)
+    fireEvent.change(input, { target: { value: '25' } })
+    expect(session.getSnapshot().renderedDocument.slides[slideId].elements[shape.id]).toMatchObject(
+      { adjustments: [25000] }
+    )
+    expect(within(dialog).queryByText('Format Background')).not.toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close Shape parameters' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
 })
