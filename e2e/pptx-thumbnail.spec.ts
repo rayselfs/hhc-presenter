@@ -19,6 +19,12 @@ test('imports a real PPTX as one editable deck with a cover thumbnail', async ({
 })
 
 const themeFixtures = [
+  {
+    name: 'local-solid-style',
+    fill: 'rgb(255, 188, 188)',
+    stroke: 'rgb(255, 188, 188)',
+    width: '2px'
+  },
   { name: 'theme-solid-fill', fill: 'rgb(255, 188, 188)', stroke: 'rgb(0, 0, 0)', width: '2px' },
   { name: 'theme-solid-line', fill: 'rgb(255, 0, 0)', stroke: 'rgb(255, 0, 0)', width: '10px' }
 ]

@@ -15,17 +15,11 @@ function unsupported(): never {
 const clamp = (value: number): number => Math.max(0, Math.min(1, value))
 
 // Reference: DeckCraft v0.5.0 model/resolve.rs and color/lib.rs (MIT; THIRD_PARTY_NOTICES).
-export function resolvePptxShapeThemeFill(
-  node: ShapeNodeData,
-  theme?: ThemeData
-): string | undefined {
+export function resolvePptxShapeFill(node: ShapeNodeData, theme?: ThemeData): string | undefined {
   const properties = node.source.child('spPr')
-  if (
-    ['noFill', 'solidFill', 'gradFill', 'pattFill', 'blipFill', 'grpFill'].some((name) =>
-      properties.child(name).exists()
-    )
-  )
-    return undefined
+  if (properties.child('noFill').exists()) return 'transparent'
+  const localFill = properties.child('solidFill')
+  if (localFill.exists()) return solidPaintColor(localFill, theme)
   const reference = node.source.child('style').child('fillRef')
   if (!reference.exists()) return undefined
   const rawIndex = reference.attr('idx') ?? ''
@@ -118,30 +112,22 @@ function resolveColor(container: XmlNode, theme?: ThemeData, reference?: XmlNode
   return color
 }
 
-export function resolvePptxShapeThemeLine(
+export function resolvePptxShapeLine(
   node: ShapeNodeData,
   theme?: ThemeData
 ): { strokeColor: string; strokeWidth: number } | undefined {
   const fail = (): never => {
     throw new PptxCompatibilityError(
       { code: 'shape' },
-      'Unsupported PowerPoint inherited theme line'
+      'Unsupported PowerPoint outline or inherited theme line'
     )
   }
   const local = node.line
   const reference = node.source.child('style').child('lnRef')
-  if (!reference.exists()) {
-    if (local?.numAttr('w') === 0 && !local.child('noFill').exists())
-      throw new PptxCompatibilityError(
-        { code: 'shape' },
-        'PowerPoint hairline outlines cannot yet be edited'
-      )
-    if (local?.child('solidFill').child('schemeClr').attr('val') === 'phClr') fail()
-    return undefined
-  }
+  if (!reference.exists() && !local?.exists()) return undefined
   const invisible = { strokeColor: '#000000', strokeWidth: 0 }
   if (local?.child('noFill').exists()) return invisible
-  const rawIndex = reference.attr('idx') ?? ''
+  const rawIndex = reference.exists() ? (reference.attr('idx') ?? '') : '0'
   if (!/^\d+$/.test(rawIndex)) return fail()
   const index = Number(rawIndex)
   const inherited = index === 0 ? undefined : theme?.lineStyles[index - 1]
@@ -153,8 +139,10 @@ export function resolvePptxShapeThemeLine(
   const attr = (name: string): string | undefined => local?.attr(name) ?? inherited?.attr(name)
   const paint = child(['noFill', 'solidFill', 'gradFill', 'pattFill', 'blipFill', 'grpFill'])
   const rawWidth = attr('w') ?? '9525'
-  if (!/^\d+$/.test(rawWidth) || !Number.isSafeInteger(Number(rawWidth))) return fail()
-  if (paint?.localName === 'noFill' || (!paint && index === 0)) return invisible
+  if (!/^\d+$/.test(rawWidth) || !Number.isSafeInteger(Number(rawWidth)))
+    throw new PptxCompatibilityError({ code: 'shape' }, 'Invalid PowerPoint outline width')
+  if (paint?.localName === 'noFill' || (!paint && index === 0 && reference.exists()))
+    return invisible
   // Zero-width paint is a device hairline, not the model's zero-width/no-outline value.
   if (Number(rawWidth) === 0)
     throw new PptxCompatibilityError(
@@ -185,7 +173,9 @@ export function resolvePptxShapeThemeLine(
     if (end && end.attr('type') !== 'none') fail()
   }
   return {
-    strokeColor: paint ? solidPaintColor(paint, theme, reference) : '#000000',
+    strokeColor: paint
+      ? solidPaintColor(paint, theme, reference.exists() ? reference : undefined)
+      : '#000000',
     strokeWidth: Number(rawWidth) / 9525
   }
 }

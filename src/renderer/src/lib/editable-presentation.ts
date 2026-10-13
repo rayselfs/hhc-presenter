@@ -1,4 +1,4 @@
-import { resolvePptxShapeThemeFill, resolvePptxShapeThemeLine } from './pptx-shape-style'
+import { resolvePptxShapeFill, resolvePptxShapeLine } from './pptx-shape-style'
 import { getPresetShapeDescriptor, resolvePresetShapeGeometry } from './presentation-shape-geometry'
 import type { EditableProjectionShapeKind } from '@shared/projection-messages'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
@@ -1442,10 +1442,10 @@ function convertShapeNode(
     assertPresetOutlineCompatibility(node, shape)
   }
   const fillColor =
-    (resolveThemeStyle ? resolvePptxShapeThemeFill(node, theme) : undefined) ??
+    (resolveThemeStyle ? resolvePptxShapeFill(node, theme) : undefined) ??
     readPaintColor(node.fill, theme) ??
     'transparent'
-  const themeLine = resolveThemeStyle ? resolvePptxShapeThemeLine(node, theme) : undefined
+  const themeLine = resolveThemeStyle ? resolvePptxShapeLine(node, theme) : undefined
   const strokeColor = themeLine?.strokeColor ?? readPaintColor(node.line, theme) ?? '#000000'
   const rawStrokeWidth = node.line?.attr('w')
   const sourceStrokeWidth = rawStrokeWidth === undefined ? undefined : Number(rawStrokeWidth)
@@ -2039,12 +2039,12 @@ function assertReferencedShapeStyleCompatibility(node: ShapeNodeData, theme?: Th
   const paintNames = ['noFill', 'solidFill', 'gradFill', 'pattFill', 'blipFill', 'grpFill']
   const localFill = paintNames.find((name) => properties.child(name).exists())
   if (!localFill) {
-    resolvePptxShapeThemeFill(node, theme)
+    resolvePptxShapeFill(node, theme)
   } else if (properties.child(localFill).child('schemeClr').attr('val') === 'phClr') {
     fail()
   }
 
-  resolvePptxShapeThemeLine(node, theme)
+  resolvePptxShapeLine(node, theme)
   if (!properties.child('effectLst').exists() && !properties.child('effectDag').exists()) {
     const effects = referenced('effectRef')
     if (
