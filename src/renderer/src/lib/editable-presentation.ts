@@ -1,3 +1,4 @@
+import { resolvePptxShapeThemeFill } from './pptx-shape-fill'
 import { getPresetShapeDescriptor, resolvePresetShapeGeometry } from './presentation-shape-geometry'
 import type { EditableProjectionShapeKind } from '@shared/projection-messages'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
@@ -1275,7 +1276,14 @@ function convertSlide(
         assertPptxNodeVisualCompatibility(node, getSlideTheme(slide, presentation))
         if (node.nodeType === 'shape') assertPptxTextCompatibility(node, slide, presentation)
       }
-      converted = convertNode(node, slide, presentation, assets, conversionSchemaVersion)
+      converted = convertNode(
+        node,
+        slide,
+        presentation,
+        assets,
+        conversionSchemaVersion,
+        !preserveSource || conversionSchemaVersion === 3
+      )
       if (
         (!preserveSource || conversionSchemaVersion === 3) &&
         converted.some((element) => element.type === 'locked')
@@ -1392,10 +1400,11 @@ function convertNode(
   slide: SlideData,
   presentation: PresentationData,
   assets: Record<string, EditablePresentationAsset>,
-  conversionSchemaVersion?: 3
+  conversionSchemaVersion?: 3,
+  resolveThemeFill = true
 ): EditablePresentationElement[] {
   if (node.nodeType === 'shape')
-    return convertShapeNode(node, slide, presentation, conversionSchemaVersion)
+    return convertShapeNode(node, slide, presentation, conversionSchemaVersion, resolveThemeFill)
   if (node.nodeType === 'picture') return convertPictureNode(node, slide, presentation, assets)
   return [createLockedElement(node, `${node.nodeType} object`)]
 }
@@ -1404,7 +1413,8 @@ function convertShapeNode(
   node: ShapeNodeData,
   slide: SlideData,
   presentation: PresentationData,
-  conversionSchemaVersion?: 3
+  conversionSchemaVersion?: 3,
+  resolveThemeFill = true
 ): EditablePresentationElement[] {
   const elements: EditablePresentationElement[] = []
   const text = getShapeText(node)
@@ -1431,7 +1441,10 @@ function convertShapeNode(
       )
     assertPresetOutlineCompatibility(node, shape)
   }
-  const fillColor = readPaintColor(node.fill, theme) ?? 'transparent'
+  const fillColor =
+    (resolveThemeFill ? resolvePptxShapeThemeFill(node, theme) : undefined) ??
+    readPaintColor(node.fill, theme) ??
+    'transparent'
   const strokeColor = readPaintColor(node.line, theme) ?? '#000000'
   const rawStrokeWidth = node.line?.attr('w')
   const sourceStrokeWidth = rawStrokeWidth === undefined ? undefined : Number(rawStrokeWidth)
@@ -2009,30 +2022,22 @@ function assertReferencedShapeStyleCompatibility(node: ShapeNodeData, theme?: Th
       'Unsupported PowerPoint inherited theme style'
     )
   }
-  const referenced = (name: 'fillRef' | 'lnRef' | 'effectRef'): XmlNode | undefined => {
+  const referenced = (name: 'lnRef' | 'effectRef'): XmlNode | undefined => {
     const reference = style.child(name)
     if (!reference.exists()) return undefined
     const rawIndex = reference.attr('idx') ?? ''
     if (!/^\d+$/.test(rawIndex)) return fail()
     const index = Number(rawIndex)
     if (index === 0) return undefined
-    const styles =
-      name === 'fillRef'
-        ? index >= 1001
-          ? theme?.bgFillStyles
-          : theme?.fillStyles
-        : name === 'lnRef'
-          ? theme?.lineStyles
-          : theme?.effectStyles
-    const resolved = styles?.[index - (name === 'fillRef' && index >= 1001 ? 1001 : 1)]
+    const styles = name === 'lnRef' ? theme?.lineStyles : theme?.effectStyles
+    const resolved = styles?.[index - 1]
     if (!Number.isSafeInteger(index) || !resolved) return fail()
     return resolved
   }
   const paintNames = ['noFill', 'solidFill', 'gradFill', 'pattFill', 'blipFill', 'grpFill']
   const localFill = paintNames.find((name) => properties.child(name).exists())
   if (!localFill) {
-    const fill = referenced('fillRef')
-    if (fill && fill.localName !== 'noFill') fail()
+    resolvePptxShapeThemeFill(node, theme)
   } else if (properties.child(localFill).child('schemeClr').attr('val') === 'phClr') {
     fail()
   }

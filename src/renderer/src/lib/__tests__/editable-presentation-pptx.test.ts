@@ -12,6 +12,7 @@ import {
 } from '../editable-presentation'
 import type { PresentationData } from '@aiden0z/pptx-renderer'
 import { buildNativePptx } from '../pptx-export-package'
+import { buildSourcePptx } from '../pptx-export-source'
 import type { FileItemRecord } from '@shared/types/folder'
 
 async function parseFixture(
@@ -646,6 +647,8 @@ async function themeStyleFixture(
     preset?: 'triangle' | 'rectangle' | 'rightArrow'
     partialLine?: 'w' | 'solidFill' | 'prstDash'
     themeLineJoin?: 'round' | 'miter'
+    fillXml?: string
+    referenceColorXml?: string
   } = {}
 ): Promise<{ presentation: PresentationData; bytes: ArrayBuffer }> {
   const drawing = 'http://schemas.openxmlformats.org/drawingml/2006/main'
@@ -691,6 +694,7 @@ async function themeStyleFixture(
     const color = xml.createElementNS(drawing, 'a:srgbClr')
     color.setAttribute('val', 'FF0000')
     entry.appendChild(color)
+    if (name === reference && options.referenceColorXml) entry.innerHTML = options.referenceColorXml
     style.appendChild(entry)
   }
   properties.parentElement!.appendChild(style)
@@ -722,6 +726,15 @@ async function themeStyleFixture(
     const line = theme.getElementsByTagNameNS(drawing, 'lnStyleLst')[0].firstElementChild!
     line.appendChild(theme.createElementNS(drawing, 'a:' + options.themeLineJoin))
   }
+  if (options.fillXml) {
+    const list = Number(options.index ?? '1') >= 1001 ? 'bgFillStyleLst' : 'fillStyleLst'
+    const fill = theme.getElementsByTagNameNS(drawing, list)[0].firstElementChild!
+    const replacement = new DOMParser().parseFromString(
+      `<root xmlns:a="${drawing}">${options.fillXml}</root>`,
+      'application/xml'
+    ).documentElement.firstElementChild!
+    fill.replaceWith(theme.importNode(replacement, true))
+  }
   zip.file('ppt/theme/theme1.xml', new XMLSerializer().serializeToString(theme))
   const bytes = await zip.generateAsync({ type: 'arraybuffer' })
   await validatePptxPackage(bytes)
@@ -733,7 +746,10 @@ async function themeStyleFixture(
 it.each(['fillRef', 'lnRef', 'effectRef'] as const)(
   'rejects unrepresented inherited theme %s with source location before v3 conversion',
   async (reference) => {
-    const { presentation, bytes } = await themeStyleFixture(reference)
+    const { presentation, bytes } = await themeStyleFixture(
+      reference,
+      reference === 'fillRef' ? { fillXml: '<a:gradFill/>' } : {}
+    )
     const retained = await createPptxSource(bytes)
     for (const original of [undefined, retained]) {
       try {
@@ -786,7 +802,10 @@ it.each(['0', '-1', '1.5', '4'])(
 )
 
 it('applies theme admission to ordinary basic-shape conversion while preserving v2 source compatibility', async () => {
-  const { presentation, bytes } = await themeStyleFixture('fillRef', { preset: 'rectangle' })
+  const { presentation, bytes } = await themeStyleFixture('fillRef', {
+    preset: 'rectangle',
+    fillXml: '<a:gradFill/>'
+  })
   expect(() => convertPresentationData(source, presentation)).toThrow(/theme/i)
   const retained = await createPptxSource(bytes)
   expect(convertPresentationData(source, presentation, retained).schemaVersion).toBe(2)
@@ -824,4 +843,153 @@ it('rejects an inherited nondefault miter join on a triangle', async () => {
   expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).toThrow(
     /theme/i
   )
+})
+
+describe('resolved theme solid fills', () => {
+  it.each(['triangle', 'rectangle'] as const)(
+    'imports inherited placeholder color for %s',
+    async (preset) => {
+      const { presentation } = await themeStyleFixture('fillRef', { preset })
+      const result = convertPresentationData(
+        source,
+        presentation,
+        undefined,
+        new Map(),
+        preset === 'triangle' ? 3 : undefined
+      )
+      const element = Object.values(result.slides[result.slideOrder[0]].elements)[0]
+      expect(element).toMatchObject({ type: 'shape', fillColor: '#FF0000' })
+      const reopened = buildPresentation(await parseZip(await buildNativePptx(result)))
+      materializeAllSlideNodes(reopened)
+      const roundTrip = convertPresentationData(
+        source,
+        reopened,
+        undefined,
+        new Map(),
+        preset === 'triangle' ? 3 : undefined
+      )
+      expect(Object.values(roundTrip.slides[roundTrip.slideOrder[0]].elements)[0]).toMatchObject({
+        fillColor: '#FF0000'
+      })
+    }
+  )
+
+  it.each([
+    [
+      'saved system color',
+      '1',
+      '<a:solidFill><a:sysClr val="windowText" lastClr="112233"/></a:solidFill>',
+      '#112233'
+    ],
+    [
+      'alpha offset',
+      '1',
+      '<a:solidFill><a:schemeClr val="phClr"><a:alphaOff val="-25000"/></a:schemeClr></a:solidFill>',
+      'rgba(255, 0, 0, 0.75)'
+    ],
+    ['concrete RGB', '1', '<a:solidFill><a:srgbClr val="2468AC"/></a:solidFill>', '#2468AC'],
+    ['background fill', '1001', '<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>', '#FF0000'],
+    [
+      'linear tint',
+      '1',
+      '<a:solidFill><a:schemeClr val="phClr"><a:tint val="50000"/></a:schemeClr></a:solidFill>',
+      '#FFBCBC'
+    ],
+    [
+      'linear shade',
+      '1',
+      '<a:solidFill><a:schemeClr val="phClr"><a:shade val="50000"/></a:schemeClr></a:solidFill>',
+      '#BC0000'
+    ],
+    [
+      'ordered luminance',
+      '1',
+      '<a:solidFill><a:schemeClr val="phClr"><a:lumMod val="50000"/><a:lumOff val="20000"/></a:schemeClr></a:solidFill>',
+      '#E60000'
+    ],
+    [
+      'reverse luminance',
+      '1',
+      '<a:solidFill><a:schemeClr val="phClr"><a:lumOff val="20000"/><a:lumMod val="50000"/></a:schemeClr></a:solidFill>',
+      '#B30000'
+    ],
+    [
+      'alpha',
+      '1',
+      '<a:solidFill><a:schemeClr val="phClr"><a:alphaMod val="50000"/></a:schemeClr></a:solidFill>',
+      'rgba(255, 0, 0, 0.25)'
+    ]
+  ])('resolves %s using the style matrix', async (name, index, fillXml, expected) => {
+    const { presentation } = await themeStyleFixture('fillRef', {
+      index,
+      fillXml,
+      referenceColorXml:
+        name === 'alpha' ? '<a:srgbClr val="FF0000"><a:alpha val="50000"/></a:srgbClr>' : undefined
+    })
+    const result = convertPresentationData(source, presentation, undefined, new Map(), 3)
+    expect(Object.values(result.slides[result.slideOrder[0]].elements)[0]).toMatchObject({
+      fillColor: expected
+    })
+  })
+
+  it('preserves exact source bytes, then writes an explicit edited fill without altering its theme', async () => {
+    const { presentation, bytes } = await themeStyleFixture('fillRef')
+    const retained = await createPptxSource(bytes)
+    const document = convertPresentationData(source, presentation, retained, new Map(), 3)
+    expect(new Uint8Array(await buildSourcePptx(document))).toEqual(new Uint8Array(bytes))
+    const slide = document.slides[document.slideOrder[0]]
+    const element = slide.elements[slide.elementOrder[0]]
+    if (element.type !== 'shape') throw new Error('Expected theme-filled shape')
+    element.fillColor = '#123456'
+    const output = await buildSourcePptx(document)
+    const originalZip = await JSZip.loadAsync(bytes)
+    const editedZip = await JSZip.loadAsync(output)
+    for (const [name, member] of Object.entries(originalZip.files)) {
+      if (member.dir || name === 'ppt/slides/slide1.xml') continue
+      expect(await editedZip.file(name)!.async('uint8array'), name).toEqual(
+        await member.async('uint8array')
+      )
+    }
+    const reopened = buildPresentation(await parseZip(output))
+    materializeAllSlideNodes(reopened)
+    const result = convertPresentationData(source, reopened, undefined, new Map(), 3)
+    expect(Object.values(result.slides[result.slideOrder[0]].elements)[0]).toMatchObject({
+      fillColor: '#123456'
+    })
+  })
+
+  it('resolves mapped theme reference color before applying matrix transforms', async () => {
+    const { presentation } = await themeStyleFixture('fillRef', {
+      referenceColorXml: '<a:schemeClr val="tx1"><a:lumOff val="20000"/></a:schemeClr>',
+      fillXml:
+        '<a:solidFill><a:schemeClr val="phClr"><a:lumMod val="50000"/></a:schemeClr></a:solidFill>'
+    })
+    const result = convertPresentationData(source, presentation, undefined, new Map(), 3)
+    expect(Object.values(result.slides[result.slideOrder[0]].elements)[0]).toMatchObject({
+      fillColor: '#1A1A1A'
+    })
+  })
+
+  it('rejects an unresolved reference placeholder without recursion', async () => {
+    const { presentation } = await themeStyleFixture('fillRef', {
+      referenceColorXml: '<a:schemeClr val="phClr"/>'
+    })
+    expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).toThrow(
+      /theme fill/
+    )
+  })
+
+  it.each([
+    '<a:solidFill><a:schemeClr val="missing"/></a:solidFill>',
+    '<a:solidFill><a:srgbClr val="invalid"/></a:solidFill>',
+    '<a:solidFill><a:schemeClr val="phClr"><a:alpha val="NaN"/></a:schemeClr></a:solidFill>',
+    '<a:solidFill><a:schemeClr val="phClr"><a:unknown val="50000"/></a:schemeClr></a:solidFill>'
+  ])('rejects unresolved or unrepresented color without guessing: %s', async (fillXml) => {
+    const { presentation } = await themeStyleFixture('fillRef', { fillXml })
+    expect(() => convertPresentationData(source, presentation, undefined, new Map(), 3)).toThrow(
+      expect.objectContaining({
+        diagnostic: expect.objectContaining({ code: 'shape', slideNumber: 1, objectNumber: 1 })
+      })
+    )
+  })
 })
