@@ -650,6 +650,32 @@
     }
   },
   "presentationWorkspace": {
+    "importOriginalKept": "可打开原始 PPTX 查看；原文件未被修改。",
+    "importErrors": {
+      "invalid-package": "PowerPoint 文件包无效、已加密、包含宏，或超过导入限制。",
+      "no-slides": "演示文稿没有幻灯片。",
+      "animation": "可编辑导入目前不支持 PowerPoint 动画。",
+      "transition": "可编辑导入目前不支持 PowerPoint 切换。",
+      "media": "可编辑导入目前不支持 PowerPoint 音频或视频。",
+      "color-mapping": "此幻灯片覆盖了继承的颜色映射。",
+      "unsupported-object": "目前无法编辑此对象。",
+      "shape": "此形状包含不支持的几何或格式。",
+      "text": "此文本包含不支持的布局或格式。",
+      "image": "此图片包含不支持的效果或格式。",
+      "background": "此背景包含不支持的填充格式。",
+      "layout": "此布局或母版包含不支持的装饰对象。",
+      "invalid-content": "此幻灯片包含无效或不支持的内容。"
+    },
+    "exportPptx": "导出 PPTX",
+    "exportErrorElement": "第 {{element}} 个对象",
+    "exportFailed": "无法导出 PPTX",
+    "exportErrorSlide": "第 {{slide}} 张幻灯片",
+    "exportErrors": {
+      "unsupported-content": "此演示文稿含有尚未支持导出的内容，请替换不支持的对象后重试。",
+      "source-conflict": "这项修改无法安全保留原有内容，请重新创建受影响的对象后重试。",
+      "invalid-value": "请检查受影响的文字、图片或格式后重试。",
+      "package-limit": "此演示文稿超过导出大小限制，请减少图片或幻灯片后重试。"
+    },
     "saveDraftTitle": "保存演示文稿",
     "draftName": "名称",
     "draftLocation": "保存位置",
@@ -845,7 +871,67 @@
       "sw": "左下",
       "w": "左",
       "nw": "左上"
-    }
+    },
+    "shapeNames": {
+      "roundRect": "圆角矩形",
+      "triangle": "三角形",
+      "rtTriangle": "直角三角形",
+      "diamond": "菱形",
+      "rightArrow": "向右箭头",
+      "leftArrow": "向左箭头",
+      "upArrow": "向上箭头",
+      "downArrow": "向下箭头"
+    },
+    "shapeParameters": "形状参数",
+    "shapeAdjustmentValues": {
+      "roundRect": {
+        "0": "圆角半径"
+      },
+      "triangle": {
+        "0": "顶点位置"
+      },
+      "rightArrow": {
+        "0": "箭身宽度",
+        "1": "箭头长度"
+      },
+      "leftArrow": {
+        "0": "箭身宽度",
+        "1": "箭头长度"
+      },
+      "upArrow": {
+        "0": "箭身宽度",
+        "1": "箭头长度"
+      },
+      "downArrow": {
+        "0": "箭身宽度",
+        "1": "箭头长度"
+      }
+    },
+    "adjustShape": {
+      "roundRect": {
+        "0": "调整圆角半径"
+      },
+      "triangle": {
+        "0": "调整顶点位置"
+      },
+      "rightArrow": {
+        "0": "调整箭身宽度",
+        "1": "调整箭头长度"
+      },
+      "leftArrow": {
+        "0": "调整箭身宽度",
+        "1": "调整箭头长度"
+      },
+      "upArrow": {
+        "0": "调整箭身宽度",
+        "1": "调整箭头长度"
+      },
+      "downArrow": {
+        "0": "调整箭身宽度",
+        "1": "调整箭头长度"
+      }
+    },
+    "incompatibleShapePaste": "目前无法将这些形状粘贴到此演示文稿。"
   },
   "projection": {
     "startButton": "开始投影",

@@ -19,7 +19,8 @@ function runStyle(element: EditableTextElement, run?: EditableTextRun): Editable
     strikethrough: run?.strikethrough ?? element.strikethrough ?? false,
     baseline: run?.baseline ?? element.baseline ?? 'normal',
     characterSpacing: run?.characterSpacing ?? element.characterSpacing ?? 0,
-    highlightColor: run?.highlightColor ?? element.highlightColor ?? null
+    highlightColor:
+      run?.highlightColor !== undefined ? run.highlightColor : (element.highlightColor ?? null)
   }
 }
 
@@ -83,6 +84,22 @@ export function normalizeTextParagraphs(element: EditableTextElement): EditableT
   }
   for (const paragraph of paragraphs) paragraph.runs = mergeRuns(paragraph.runs)
   return paragraphs
+}
+
+export function resolveParagraphListNumbers(
+  paragraphs: readonly EditableTextParagraph[]
+): (number | undefined)[] {
+  const sequences = new Map<string, { start: number; count: number }>()
+  return paragraphs.map((paragraph, index) => {
+    const list = paragraph.list
+    if (list?.kind !== 'number') return undefined
+    if (!list.sequenceId) return (list.startAt ?? 1) + index
+    const key = JSON.stringify([list.sequenceId, list.level])
+    const sequence = sequences.get(key) ?? { start: list.startAt ?? 1, count: 0 }
+    const value = sequence.start + sequence.count++
+    sequences.set(key, sequence)
+    return value
+  })
 }
 
 function paragraphBounds(

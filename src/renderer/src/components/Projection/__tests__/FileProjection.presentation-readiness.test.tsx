@@ -228,3 +228,39 @@ describe('presentation readiness', () => {
     await waitFor(() => expect(send).toHaveBeenCalledWith(...status(2, 'ready')))
   })
 })
+
+it('renders a v3 adjusted preset from the projection payload', async () => {
+  const payload: NonNullable<ProjectionPayload<'file:show'>['editablePresentation']> = {
+    ...editable,
+    schemaVersion: 3,
+    assets: {},
+    slide: {
+      ...editable.slide,
+      elementOrder: ['shape'],
+      elements: {
+        shape: {
+          id: 'shape',
+          type: 'shape',
+          shape: 'triangle',
+          adjustments: [25000],
+          x: 10,
+          y: 20,
+          width: 200,
+          height: 100,
+          rotation: 35,
+          opacity: 1,
+          fillColor: '#abcdef',
+          strokeColor: '#000000',
+          strokeWidth: 2
+        }
+      }
+    }
+  }
+  const { container } = render(<FileProjection {...props} initialEditablePresentation={payload} />)
+  await waitFor(() =>
+    expect(container.querySelector('svg[data-shape-kind="triangle"] path')).toHaveAttribute(
+      'd',
+      'M0 100 L50 0 L200 100 Z'
+    )
+  )
+})

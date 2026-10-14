@@ -650,6 +650,32 @@
     }
   },
   "presentationWorkspace": {
+    "importOriginalKept": "可開啟原始 PPTX 檢視；原檔未被修改。",
+    "importErrors": {
+      "invalid-package": "PowerPoint 套件無效、已加密、含有巨集，或超過匯入限制。",
+      "no-slides": "簡報沒有投影片。",
+      "animation": "可編輯匯入目前不支援 PowerPoint 動畫。",
+      "transition": "可編輯匯入目前不支援 PowerPoint 轉場。",
+      "media": "可編輯匯入目前不支援 PowerPoint 音訊或影片。",
+      "color-mapping": "這張投影片覆寫了繼承的色彩對應。",
+      "unsupported-object": "目前無法編輯這個物件。",
+      "shape": "這個形狀含有不支援的幾何或格式。",
+      "text": "這段文字含有不支援的版面或格式。",
+      "image": "這張圖片含有不支援的效果或格式。",
+      "background": "這個背景含有不支援的填滿格式。",
+      "layout": "這個版面或母片含有不支援的裝飾物件。",
+      "invalid-content": "這張投影片含有無效或不支援的內容。"
+    },
+    "exportPptx": "匯出 PPTX",
+    "exportErrorElement": "第 {{element}} 個物件",
+    "exportFailed": "無法匯出 PPTX",
+    "exportErrorSlide": "第 {{slide}} 張投影片",
+    "exportErrors": {
+      "unsupported-content": "此簡報含有尚未支援匯出的內容，請替換不支援的物件後重試。",
+      "source-conflict": "這項修改無法安全保留原有內容，請重新建立受影響的物件後重試。",
+      "invalid-value": "請檢查受影響的文字、圖片或格式後重試。",
+      "package-limit": "此簡報超過匯出大小限制，請減少圖片或投影片後重試。"
+    },
     "saveDraftTitle": "儲存簡報",
     "draftName": "名稱",
     "draftLocation": "儲存位置",
@@ -845,7 +871,67 @@
       "sw": "左下",
       "w": "左",
       "nw": "左上"
-    }
+    },
+    "shapeNames": {
+      "roundRect": "圓角矩形",
+      "triangle": "三角形",
+      "rtTriangle": "直角三角形",
+      "diamond": "菱形",
+      "rightArrow": "向右箭頭",
+      "leftArrow": "向左箭頭",
+      "upArrow": "向上箭頭",
+      "downArrow": "向下箭頭"
+    },
+    "shapeParameters": "形狀參數",
+    "shapeAdjustmentValues": {
+      "roundRect": {
+        "0": "圓角半徑"
+      },
+      "triangle": {
+        "0": "頂點位置"
+      },
+      "rightArrow": {
+        "0": "箭身寬度",
+        "1": "箭頭長度"
+      },
+      "leftArrow": {
+        "0": "箭身寬度",
+        "1": "箭頭長度"
+      },
+      "upArrow": {
+        "0": "箭身寬度",
+        "1": "箭頭長度"
+      },
+      "downArrow": {
+        "0": "箭身寬度",
+        "1": "箭頭長度"
+      }
+    },
+    "adjustShape": {
+      "roundRect": {
+        "0": "調整圓角半徑"
+      },
+      "triangle": {
+        "0": "調整頂點位置"
+      },
+      "rightArrow": {
+        "0": "調整箭身寬度",
+        "1": "調整箭頭長度"
+      },
+      "leftArrow": {
+        "0": "調整箭身寬度",
+        "1": "調整箭頭長度"
+      },
+      "upArrow": {
+        "0": "調整箭身寬度",
+        "1": "調整箭頭長度"
+      },
+      "downArrow": {
+        "0": "調整箭身寬度",
+        "1": "調整箭頭長度"
+      }
+    },
+    "incompatibleShapePaste": "目前無法將這些形狀貼入此簡報。"
   },
   "projection": {
     "startButton": "開始投影",

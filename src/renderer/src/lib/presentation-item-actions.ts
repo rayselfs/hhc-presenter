@@ -1,3 +1,4 @@
+import { formatPptxCompatibilityError } from './pptx-compatibility-message'
 import { toast } from '@heroui/react/toast'
 import type { ContextMenuEntry } from '@renderer/contexts/ContextMenuContext'
 import { convertPptxToEditablePresentation } from '@renderer/lib/editable-presentation'
@@ -50,7 +51,7 @@ export function buildPresentationItemActions({
                   navigate(getPresentationWorkspacePath(createdItem.id))
                 })
                 .catch((error) => {
-                  toast.danger(error instanceof Error ? error.message : String(error))
+                  toast.danger(formatPptxCompatibilityError(error))
                 })
             }
           } satisfies Exclude<ContextMenuEntry, 'separator'>

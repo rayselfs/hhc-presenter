@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import PresentationWorkspacePage, { PptxDocumentView } from '../PresentationWorkspacePage'
 import i18n from '@renderer/i18n'
+import { PptxCompatibilityError } from '@renderer/lib/pptx-compatibility'
 import {
   addElementToSlide,
   createBlankEditablePresentationDocument,
@@ -235,6 +236,39 @@ describe('PresentationWorkspacePage read-only PPTX edit copy', () => {
     expect(usePresentationWorkspaceStore.getState().documents).toHaveLength(1)
     expect(mocks.navigate).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: 'Edit a copy' })).toBeEnabled()
+  })
+
+  it('localizes a provider copy failure without exposing retained XML or private labels', async () => {
+    await i18n.changeLanguage('zh-TW')
+    mocks.convertPptxToEditablePresentation.mockRejectedValue(
+      new PptxCompatibilityError(
+        { code: 'image', slideNumber: 4, objectNumber: 2, sourcePart: 'ppt/slides/private.xml' },
+        'Private label <a:glow/>'
+      )
+    )
+    const sourceItem = makeFile({ url: 'unsupported:hhc-line-online' })
+    mocks.session = { userId: 'user-1', displayName: 'Ada', roles: ['media_sync_user'] }
+    mocks.prepareHhcLinePresentationSource.mockResolvedValue({
+      providerConnectionId: 'hhc-line:user-1',
+      remoteItemId: 'asset-1',
+      rootRemoteFolderId: 'collection-1',
+      source: {
+        kind: 'ticket',
+        url: 'https://www.alive.org.tw/api/assets/content?ticket=pptx-secret',
+        expiresAt: Date.now() + 60_000,
+        etag: 'etag-1'
+      }
+    })
+    renderReadOnlyDeck(sourceItem)
+    fireEvent.click(screen.getByRole('button', { name: '編輯副本' }))
+    await waitFor(() => expect(mocks.toastDanger).toHaveBeenCalled())
+    const reason = mocks.toastDanger.mock.calls[0][0]
+    expect(reason).toContain('第 4 張投影片')
+    expect(reason).toContain('第 2 個物件')
+    expect(reason).toContain('圖片')
+    expect(reason).not.toMatch(/private|<a:glow/i)
+    expect(usePresentationWorkspaceStore.getState().activeItemId).toBe('deck-1')
+    expect(mocks.navigate).not.toHaveBeenCalled()
   })
 
   it('uses the shared responsive shell for read-only PPTX', async () => {

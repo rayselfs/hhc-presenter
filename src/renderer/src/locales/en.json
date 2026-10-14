@@ -650,6 +650,32 @@
     }
   },
   "presentationWorkspace": {
+    "importOriginalKept": "Open the original PPTX to view it; the source file has not been changed.",
+    "importErrors": {
+      "invalid-package": "The PowerPoint package is invalid, encrypted, macro-enabled or exceeds the import limits.",
+      "no-slides": "This presentation contains no slides.",
+      "animation": "PowerPoint animation is not supported for editable import yet.",
+      "transition": "PowerPoint transitions are not supported for editable import yet.",
+      "media": "PowerPoint audio/video is not supported for editable import yet.",
+      "color-mapping": "This slide overrides its inherited color mapping.",
+      "unsupported-object": "This object cannot be edited yet.",
+      "shape": "This shape contains unsupported geometry or formatting.",
+      "text": "This text contains unsupported layout or formatting.",
+      "image": "This image contains unsupported effects or formatting.",
+      "background": "This background contains an unsupported fill.",
+      "layout": "This layout or master contains unsupported decoration.",
+      "invalid-content": "This slide contains invalid or unsupported content."
+    },
+    "exportPptx": "Export PPTX",
+    "exportErrorElement": "Object {{element}}",
+    "exportFailed": "Unable to export PPTX",
+    "exportErrorSlide": "Slide {{slide}}",
+    "exportErrors": {
+      "unsupported-content": "This presentation contains content that cannot be exported yet. Replace the unsupported object and try again.",
+      "source-conflict": "This edit cannot preserve retained content safely. Recreate the affected object and try again.",
+      "invalid-value": "Check the affected text, image or formatting and try again.",
+      "package-limit": "This presentation is too large to export. Reduce its images or slides and try again."
+    },
     "saveDraftTitle": "Save presentation",
     "draftName": "Name",
     "draftLocation": "Location",
@@ -845,7 +871,67 @@
       "sw": "bottom left",
       "w": "left",
       "nw": "top left"
-    }
+    },
+    "shapeNames": {
+      "roundRect": "Rounded rectangle",
+      "triangle": "Triangle",
+      "rtTriangle": "Right triangle",
+      "diamond": "Diamond",
+      "rightArrow": "Right arrow",
+      "leftArrow": "Left arrow",
+      "upArrow": "Up arrow",
+      "downArrow": "Down arrow"
+    },
+    "shapeParameters": "Shape parameters",
+    "shapeAdjustmentValues": {
+      "roundRect": {
+        "0": "Corner radius"
+      },
+      "triangle": {
+        "0": "Apex position"
+      },
+      "rightArrow": {
+        "0": "Shaft width",
+        "1": "Arrowhead length"
+      },
+      "leftArrow": {
+        "0": "Shaft width",
+        "1": "Arrowhead length"
+      },
+      "upArrow": {
+        "0": "Shaft width",
+        "1": "Arrowhead length"
+      },
+      "downArrow": {
+        "0": "Shaft width",
+        "1": "Arrowhead length"
+      }
+    },
+    "adjustShape": {
+      "roundRect": {
+        "0": "Adjust corner radius"
+      },
+      "triangle": {
+        "0": "Adjust apex position"
+      },
+      "rightArrow": {
+        "0": "Adjust shaft width",
+        "1": "Adjust arrowhead length"
+      },
+      "leftArrow": {
+        "0": "Adjust shaft width",
+        "1": "Adjust arrowhead length"
+      },
+      "upArrow": {
+        "0": "Adjust shaft width",
+        "1": "Adjust arrowhead length"
+      },
+      "downArrow": {
+        "0": "Adjust shaft width",
+        "1": "Adjust arrowhead length"
+      }
+    },
+    "incompatibleShapePaste": "These shapes cannot be pasted into this presentation yet."
   },
   "projection": {
     "startButton": "Start projection",

@@ -8,10 +8,56 @@ import {
   getCharacterStyleValue,
   getPlainText,
   normalizeTextParagraphs,
-  resolveTypingStyle
+  resolveTypingStyle,
+  resolveParagraphListNumbers
 } from '../presentation-rich-text'
 
 describe('presentation rich text', () => {
+  it('keeps legacy numbering while honoring explicit independent sequences and levels', () => {
+    const paragraphs = normalizeTextParagraphs(
+      createTextElement({ text: 'plain\none\ntwo\nrestart\nnested' })
+    )
+    paragraphs[1].list = { kind: 'number', level: 0, format: 'arabicPeriod', startAt: 3 }
+    paragraphs[2].list = { kind: 'number', level: 0, format: 'arabicPeriod', startAt: 3 }
+    expect(resolveParagraphListNumbers(paragraphs)).toEqual([undefined, 4, 5, undefined, undefined])
+    paragraphs[1].list.sequenceId = 'first'
+    paragraphs[2].list.sequenceId = 'first'
+    paragraphs[3].list = {
+      kind: 'number',
+      level: 0,
+      format: 'arabicPeriod',
+      startAt: 1,
+      sequenceId: 'restart'
+    }
+    paragraphs[4].list = {
+      kind: 'number',
+      level: 1,
+      format: 'arabicPeriod',
+      startAt: 1,
+      sequenceId: 'first'
+    }
+    expect(resolveParagraphListNumbers(paragraphs)).toEqual([undefined, 3, 4, 1, 1])
+  })
+
+  it('keeps explicit no-highlight runs clear of the element fallback', () => {
+    const element = createTextElement({ text: 'AB', highlightColor: '#FFFF00' })
+    const run = {
+      text: 'A',
+      fontFamily: element.fontFamily,
+      fontSize: element.fontSize,
+      bold: false,
+      italic: false,
+      underline: false,
+      color: element.color,
+      highlightColor: '#FFFF00'
+    }
+    element.runs = [run, { ...run, text: 'B', highlightColor: null }]
+    expect(normalizeTextParagraphs(element)[0].runs.map((value) => value.highlightColor)).toEqual([
+      '#FFFF00',
+      null
+    ])
+  })
+
   it('normalizes legacy runs into paragraphs without flattening styles', () => {
     const element = createTextElement({
       text: 'Bold plain\nSecond',

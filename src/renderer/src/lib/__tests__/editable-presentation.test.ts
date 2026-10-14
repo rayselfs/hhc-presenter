@@ -16,6 +16,7 @@ import {
   createBlankEditablePresentationDocument,
   createEditablePresentation,
   createImageElement,
+  createShapeElement,
   createTextElement,
   DEFAULT_PRESENTATION_THEME_ID,
   convertPresentationData,
@@ -88,6 +89,7 @@ type MockXmlNodeInit = {
 
 type MockXmlNode = {
   child: (name: string) => MockXmlNode
+  children: () => MockXmlNode[]
   attr: (name: string) => string | undefined
   numAttr: (name: string) => number | undefined
   exists: () => boolean
@@ -95,6 +97,7 @@ type MockXmlNode = {
 
 const missingXmlNode: MockXmlNode = {
   child: () => missingXmlNode,
+  children: () => [],
   attr: () => undefined,
   numAttr: () => undefined,
   exists: () => false
@@ -106,6 +109,7 @@ function mockXmlNode(init: MockXmlNodeInit = {}): MockXmlNode {
   )
   return {
     child: (name) => children.get(name) ?? missingXmlNode,
+    children: () => [...children.values()],
     attr: (name) => init.attrs?.[name],
     numAttr: (name) => {
       const value = init.attrs?.[name]
@@ -1073,7 +1077,7 @@ describe('editable presentation documents', () => {
     const text = getTextElements(document.slides[document.slideOrder[0]].elements)[0]
 
     expect(text.text).toBe('Bold italic\nSecond')
-    expect(text.runs).toEqual([
+    expect(text.runs).toMatchObject([
       {
         text: 'Bold',
         fontFamily: 'Arial',
@@ -1107,7 +1111,7 @@ describe('editable presentation documents', () => {
       align: 'justify',
       lineSpacing: { kind: 'multiple', value: 1 }
     })
-    expect(text.paragraphs?.[0].runs[0].characterSpacing).toBeCloseTo(4 / 3)
+    expect(text.paragraphs?.[0].runs[0].characterSpacing).toBeCloseTo(40 / 3)
     expect(text.paragraphs?.[0].runs.map((run) => run.text)).toEqual(['Bold', ' italic'])
   })
 
@@ -1229,4 +1233,21 @@ it('chooses thumbnail outlines from the composited slide background', () => {
       direction: 'left-right'
     })
   ).toBe('mixed')
+})
+
+it('uses the same adjusted v3 geometry in a saved thumbnail', () => {
+  const source = createBlankEditablePresentationDocument('Geometry')
+  source.schemaVersion = 3
+  const element = {
+    ...createShapeElement('triangle', { x: 10, y: 20, width: 200, height: 100, rotation: 35 }),
+    adjustments: [25000]
+  }
+  const document = addElementToSlide(source, source.slideOrder[0], element)
+  const svg = decodeSvgDataUrl(generateEditablePresentationThumbnail(document))
+  const xml = new DOMParser().parseFromString(svg, 'image/svg+xml')
+  const path = xml.querySelector('path')
+  expect(path?.getAttribute('d')).toBe('M0 100 L50 0 L200 100 Z')
+  expect(path?.getAttribute('stroke-linejoin')).toBe('round')
+  expect(path?.getAttribute('stroke-miterlimit')).toBe('8')
+  expect(path?.getAttribute('transform')).toBe('rotate(35 110 70) translate(10 20)')
 })

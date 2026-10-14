@@ -18,6 +18,7 @@ import {
   addElementToSlide,
   createBlankEditablePresentationDocument,
   createTextElement,
+  createShapeElement,
   insertBlankEditableSlide,
   removeEditableSlides
 } from '@renderer/lib/editable-presentation'
@@ -684,6 +685,42 @@ describe('PresentationWorkspacePage session integration', () => {
       true
     )
   })
+
+  it.each([
+    { x: 4, altKey: true },
+    { x: 7, altKey: false }
+  ])(
+    'does not re-snap pointer previews in the workspace (x=$x, Alt=$altKey)',
+    async ({ x, altKey }) => {
+      const source = createBlankEditablePresentationDocument('Snapping')
+      const slideId = source.slideOrder[0]
+      const text = {
+        ...createTextElement({ text: 'Snap target' }),
+        x: 100,
+        y: 100,
+        width: 200,
+        height: 100,
+        autoSize: 'fixed' as const,
+        autoWidth: false
+      }
+      mocks.loadEditablePresentationSnapshot.mockResolvedValue({
+        document: addElementToSlide(source, slideId, text),
+        revision: 0
+      })
+      const session = await renderWorkspaceSession()
+      const content = document.querySelector<HTMLElement>(
+        '.presentation-stage [data-text-content]'
+      )!
+      fireEvent.pointerDown(content, { clientX: 140, clientY: 120, pointerId: 1 })
+      fireEvent.keyDown(content, { key: 'Escape' })
+      const edge = screen.getByTestId('text-frame-edge-left')
+      fireEvent.pointerDown(edge, { clientX: 100, clientY: 120, pointerId: 2 })
+      fireEvent.pointerMove(edge, { clientX: x, clientY: 120, pointerId: 2, altKey })
+      expect(session.getSnapshot().renderedDocument.slides[slideId].elements[text.id].x).toBe(x)
+      fireEvent.pointerUp(edge, { pointerId: 2 })
+      expect(session.getSnapshot().history.present.slides[slideId].elements[text.id].x).toBe(x)
+    }
+  )
 
   it('finalizes pending text on Escape instead of discarding its active edit transaction', async () => {
     const flushAnimationFrame = mockAnimationFrame()
@@ -2513,5 +2550,260 @@ describe('PresentationWorkspacePage session integration', () => {
       'overflow-y-hidden',
       'bg-surface'
     )
+  })
+
+  it('offers all eight new presets only in an explicit v3 document', async () => {
+    const source = createBlankEditablePresentationDocument('Shapes')
+    source.schemaVersion = 3
+    mocks.loadEditablePresentationSnapshot.mockResolvedValue({ document: source, revision: 0 })
+    const session = await renderWorkspaceSession()
+    fireEvent.click(screen.getByRole('button', { name: 'Shapes' }))
+    const items = mocks.showMenu.mock.calls.at(-1)?.[0] as Array<
+      { id?: string; onAction?: () => void } | string
+    >
+    const presets = [
+      'roundRect',
+      'triangle',
+      'rtTriangle',
+      'diamond',
+      'rightArrow',
+      'leftArrow',
+      'upArrow',
+      'downArrow'
+    ]
+    for (const preset of presets) {
+      const item = items.find((item) => typeof item !== 'string' && item.id === `insert-${preset}`)
+      expect(item).toBeDefined()
+      if (typeof item === 'string' || !item) throw new Error('Missing shape action')
+      act(() => item.onAction?.())
+      expect(
+        window.document.querySelector(`.presentation-stage svg[data-shape-kind="${preset}"] path`)
+      ).not.toBeNull()
+    }
+    expect(session.getSnapshot().renderedDocument.schemaVersion).toBe(3)
+    expect(session.getSnapshot().history.past).toHaveLength(8)
+    expect(mocks.startMediaProjection).not.toHaveBeenCalled()
+  })
+
+  it.each([1, 2] as const)('keeps the new preset menu gated for schema v%s', async (version) => {
+    const source = createBlankEditablePresentationDocument('Legacy')
+    source.schemaVersion = version
+    mocks.loadEditablePresentationSnapshot.mockResolvedValue({ document: source, revision: 0 })
+    await renderWorkspaceSession()
+    fireEvent.click(screen.getByRole('button', { name: 'Shapes' }))
+    const items = mocks.showMenu.mock.calls.at(-1)?.[0] as Array<{ id?: string } | string>
+    expect(
+      items.filter((item) => typeof item !== 'string').map((item) => (item as { id?: string }).id)
+    ).toEqual(['insert-rectangle', 'insert-ellipse', 'insert-line'])
+  })
+
+  it('edits a shape parameter through the numeric inspector and saves undo/redo state', async () => {
+    const source = createBlankEditablePresentationDocument('Shapes')
+    source.schemaVersion = 3
+    mocks.loadEditablePresentationSnapshot.mockResolvedValue({ document: source, revision: 0 })
+    const session = await renderWorkspaceSession()
+    fireEvent.click(screen.getByRole('button', { name: 'Shapes' }))
+    const items = mocks.showMenu.mock.calls.at(-1)?.[0] as Array<
+      { id?: string; onAction?: () => void } | string
+    >
+    const item = items.find((item) => typeof item !== 'string' && item.id === 'insert-roundRect')
+    expect(item).toBeDefined()
+    if (!item || typeof item === 'string') throw new Error('Missing rounded rectangle action')
+    act(() => item.onAction?.())
+    const input = screen.getByRole('spinbutton', { name: 'Corner radius (%)' })
+    expect(input).toHaveValue(16.667)
+    expect(input).toBeValid()
+    expect(input).toHaveAttribute('max', '50')
+    fireEvent.change(input, { target: { value: '25' } })
+    const current = session.getSnapshot().renderedDocument
+    const slideId = current.slideOrder[0]
+    const elementId = current.slides[slideId].elementOrder[0]
+    expect(current.slides[slideId].elements[elementId]).toMatchObject({
+      type: 'shape',
+      shape: 'roundRect',
+      adjustments: [25000]
+    })
+    expect(session.getSnapshot().history.past).toHaveLength(2)
+    act(() => session.undo())
+    expect(screen.getByRole('spinbutton', { name: 'Corner radius (%)' })).toHaveValue(16.667)
+    act(() => session.redo())
+    expect(screen.getByRole('spinbutton', { name: 'Corner radius (%)' })).toHaveValue(25)
+    await act(async () => {
+      await session.flush()
+    })
+    expect(mocks.persistEditablePresentationRevision).toHaveBeenLastCalledWith(
+      expect.objectContaining({ document: current })
+    )
+    expect(mocks.startMediaProjection).not.toHaveBeenCalled()
+  })
+
+  it('commits an adjustment drag as one undo entry in the real editor session', async () => {
+    const source = createBlankEditablePresentationDocument('Shapes')
+    source.schemaVersion = 3
+    const slideId = source.slideOrder[0]
+    const element = createShapeElement('triangle', { width: 200, height: 100, rotation: 90 })
+    mocks.loadEditablePresentationSnapshot.mockResolvedValue({
+      document: addElementToSlide(source, slideId, element),
+      revision: 0
+    })
+    const session = await renderWorkspaceSession()
+    const path = window.document.querySelector(
+      '.presentation-stage svg[data-shape-kind="triangle"] path'
+    )!
+    fireEvent.click(path.closest('[data-slide-element]')!)
+    const surface = path.closest('[data-slide-surface]')!
+    vi.spyOn(surface, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 960, 540))
+    const handle = screen.getByRole('button', { name: 'Adjust apex position' })
+    fireEvent.pointerDown(handle, { clientX: 100, clientY: 100, pointerId: 1 })
+    for (let index = 1; index <= 25; index++)
+      fireEvent.pointerMove(handle, { clientX: 100, clientY: 100 + index, pointerId: 1 })
+    fireEvent.pointerUp(handle, { clientX: 100, clientY: 125, pointerId: 1 })
+    expect(
+      session.getSnapshot().renderedDocument.slides[slideId].elements[element.id]
+    ).toMatchObject({ adjustments: [75000] })
+    expect(session.getSnapshot().history.past).toHaveLength(1)
+    act(() => session.undo())
+    expect(
+      session.getSnapshot().renderedDocument.slides[slideId].elements[element.id]
+    ).not.toHaveProperty('adjustments')
+    act(() => session.redo())
+    expect(
+      session.getSnapshot().renderedDocument.slides[slideId].elements[element.id]
+    ).toMatchObject({ adjustments: [75000] })
+  })
+
+  it('detaches original source identity when pasting an adjusted shape', async () => {
+    const source = createBlankEditablePresentationDocument('Shapes')
+    source.schemaVersion = 3
+    const slideId = source.slideOrder[0]
+    const shape = {
+      ...createShapeElement('triangle'),
+      adjustments: [25000],
+      pptxSourceNode: { id: '2', role: 'geometry' as const }
+    }
+    mocks.loadEditablePresentationSnapshot.mockResolvedValue({
+      document: addElementToSlide(source, slideId, shape),
+      revision: 0
+    })
+    const session = await renderWorkspaceSession()
+    fireEvent.click(window.document.querySelector('.presentation-stage [data-slide-element]')!)
+    fireEvent.keyDown(window.document.body, { key: 'c', code: 'KeyC', ctrlKey: true })
+    fireEvent.keyDown(window.document.body, { key: 'v', code: 'KeyV', ctrlKey: true })
+    const slide = session.getSnapshot().renderedDocument.slides[slideId]
+    expect(slide.elementOrder).toHaveLength(2)
+    const pasted = slide.elements[slide.elementOrder[1]]
+    expect(pasted).toMatchObject({ shape: 'triangle', adjustments: [25000] })
+    expect(pasted).not.toHaveProperty('pptxSourceNode')
+    expect(slide.elements[shape.id]).toHaveProperty('pptxSourceNode')
+  })
+
+  it('warns and preserves a legacy document when its slide clipboard contains v3 shapes', async () => {
+    const source = createBlankEditablePresentationDocument('Shapes')
+    source.schemaVersion = 3
+    const slideId = source.slideOrder[0]
+    mocks.loadEditablePresentationSnapshot.mockResolvedValue({
+      document: addElementToSlide(source, slideId, createShapeElement('triangle')),
+      revision: 0
+    })
+    const session = await renderWorkspaceSession()
+    const slideTab = window.document.querySelector<HTMLElement>('[data-slide-option]')!
+    fireEvent.keyDown(slideTab, { key: 'c', code: 'KeyC', ctrlKey: true })
+    const legacy = createBlankEditablePresentationDocument('Legacy')
+    act(() => session.commit(legacy))
+    const before = session.getSnapshot().history
+    fireEvent.keyDown(window.document.querySelector<HTMLElement>('[data-slide-option]')!, {
+      key: 'v',
+      code: 'KeyV',
+      ctrlKey: true
+    })
+    expect(session.getSnapshot().history).toBe(before)
+    expect(mocks.toastWarning).toHaveBeenCalledWith(
+      'These shapes cannot be pasted into this presentation yet.'
+    )
+  })
+
+  it('preserves the original document when an adjustment is already clamped', async () => {
+    const source = createBlankEditablePresentationDocument('Shapes')
+    source.schemaVersion = 3
+    const slideId = source.slideOrder[0]
+    const shape = { ...createShapeElement('triangle'), adjustments: [100000] }
+    mocks.loadEditablePresentationSnapshot.mockResolvedValue({
+      document: addElementToSlide(source, slideId, shape),
+      revision: 0
+    })
+    const session = await renderWorkspaceSession()
+    fireEvent.click(window.document.querySelector('.presentation-stage [data-slide-element]')!)
+    const before = session.getSnapshot().history
+    const handle = screen.getByRole('button', { name: 'Adjust apex position' })
+    fireEvent.pointerDown(handle, { clientX: 100, clientY: 100, pointerId: 1 })
+    fireEvent.pointerMove(handle, { clientX: 140, clientY: 100, pointerId: 1 })
+    fireEvent.pointerUp(handle, { pointerId: 1 })
+    expect(session.getSnapshot().history).toBe(before)
+    expect(mocks.persistEditablePresentationRevision).not.toHaveBeenCalled()
+  })
+
+  it('keeps integer precision and keyboard access for an arrow with an out-of-range raw parameter', async () => {
+    const source = createBlankEditablePresentationDocument('Shapes')
+    source.schemaVersion = 3
+    const slideId = source.slideOrder[0]
+    const shape = {
+      ...createShapeElement('rightArrow', { width: 333, height: 220 }),
+      adjustments: [25000, 2147483647]
+    }
+    mocks.loadEditablePresentationSnapshot.mockResolvedValue({
+      document: addElementToSlide(source, slideId, shape),
+      revision: 0
+    })
+    const session = await renderWorkspaceSession()
+    fireEvent.click(window.document.querySelector('.presentation-stage [data-slide-element]')!)
+    const head = screen.getByRole('spinbutton', { name: 'Arrowhead length (%)' })
+    expect(head).toHaveValue(151.364)
+    expect(head).toBeValid()
+    expect(session.getSnapshot().renderedDocument.slides[slideId].elements[shape.id]).toMatchObject(
+      { adjustments: [25000, 2147483647] }
+    )
+    const input = screen.getByRole('spinbutton', { name: 'Shaft width (%)' })
+    const user = userEvent.setup()
+    await user.click(input)
+    await user.keyboard('{Control>}a{/Control}30')
+    expect(input).toHaveValue(30)
+    expect(session.getSnapshot().renderedDocument.slides[slideId].elements[shape.id]).toMatchObject(
+      { adjustments: [30000, 2147483647] }
+    )
+    expect(mocks.startMediaProjection).not.toHaveBeenCalled()
+  })
+
+  it('opens shape parameters in the compact inspector without opening the background panel', async () => {
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+      matches: query === '(max-width: 1279px)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(() => true)
+    }))
+    const source = createBlankEditablePresentationDocument('Compact shapes')
+    source.schemaVersion = 3
+    const slideId = source.slideOrder[0]
+    const shape = createShapeElement('roundRect', { adjustments: [30000] })
+    mocks.loadEditablePresentationSnapshot.mockResolvedValue({
+      document: addElementToSlide(source, slideId, shape),
+      revision: 0
+    })
+    const session = await renderWorkspaceSession()
+    fireEvent.click(window.document.querySelector('.presentation-stage [data-slide-element]')!)
+    fireEvent.click(screen.getByRole('button', { name: 'Shape parameters' }))
+    const dialog = screen.getByRole('dialog', { name: 'Shape parameters' })
+    const input = within(dialog).getByRole('spinbutton', { name: 'Corner radius (%)' })
+    expect(input).toHaveValue(30)
+    fireEvent.change(input, { target: { value: '25' } })
+    expect(session.getSnapshot().renderedDocument.slides[slideId].elements[shape.id]).toMatchObject(
+      { adjustments: [25000] }
+    )
+    expect(within(dialog).queryByText('Format Background')).not.toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close Shape parameters' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

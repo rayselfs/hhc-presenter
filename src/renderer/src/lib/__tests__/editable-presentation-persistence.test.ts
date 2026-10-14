@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Blob as NodeBlob, File as NodeFile } from 'node:buffer'
 import type { FileItemRecord } from '@shared/types/folder'
-import { createBlankEditablePresentationDocument } from '../editable-presentation'
+import {
+  addElementToSlide,
+  createShapeElement,
+  loadEditablePresentation,
+  createBlankEditablePresentationDocument
+} from '../editable-presentation'
 import {
   openFileExplorerDB,
   resetFileExplorerDBForTests,
@@ -252,5 +257,21 @@ it('saves personal deck bytes and rename operations without overwriting an uploa
   expect(await db.get('personal-sync-nodes', item.id)).toMatchObject({
     localRevision: 3,
     syncedLocalRevision: 1
+  })
+})
+
+it('saves and reopens adjusted v3 shapes from the authoritative local blob', async () => {
+  await seedAuthority()
+  const source = createBlankEditablePresentationDocument('Geometry')
+  source.schemaVersion = 3
+  const slideId = source.slideOrder[0]
+  const shape = { ...createShapeElement('rightArrow'), adjustments: [25000, 2147483647] }
+  const document = addElementToSlide(source, slideId, shape)
+  await persistEditablePresentationRevision(createWrite({ document }))
+  const reopened = await loadEditablePresentation({ id: item.id, name: 'Geometry', url: item.url })
+  expect(reopened.schemaVersion).toBe(3)
+  expect(reopened.slides[slideId].elements[shape.id]).toMatchObject({
+    shape: 'rightArrow',
+    adjustments: [25000, 2147483647]
   })
 })

@@ -49,6 +49,20 @@ export function pasteSlideClipboard(
   clipboard: PresentationSlideClipboard,
   insertionIndex: number
 ): { document: EditablePresentationDocument; slideIds: string[] } {
+  if (
+    document.schemaVersion !== 3 &&
+    clipboard.slides.some((slide) =>
+      slide.elementOrder.some((id) => {
+        const element = slide.elements[id]
+        return (
+          element?.type === 'shape' &&
+          ((element.shape !== 'rectangle' && element.shape !== 'ellipse') ||
+            element.adjustments !== undefined)
+        )
+      })
+    )
+  )
+    throw new Error('Shape parameters require schema v3')
   const assets = { ...document.assets }
   const assetIds = new Map<string, string>()
   for (const [sourceId, asset] of Object.entries(clipboard.assets)) {
@@ -83,6 +97,7 @@ export function pasteSlideClipboard(
         const elementId = elementIds.get(sourceId)
         if (!element || !elementId) return []
         const next = { ...structuredClone(element), id: elementId }
+        delete next.pptxSourceNode
         if (next.type === 'image') next.assetId = assetIds.get(next.assetId) ?? next.assetId
         return [[elementId, next]]
       })
@@ -96,6 +111,7 @@ export function pasteSlideClipboard(
       elementOrder: sourceSlide.elementOrder.flatMap((id) => elementIds.get(id) ?? []),
       elements
     }
+    delete slides[slideId].pptxSourcePart
     return slideId
   })
   const safeIndex = Math.max(0, Math.min(insertionIndex, document.slideOrder.length))

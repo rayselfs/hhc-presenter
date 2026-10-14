@@ -1,4 +1,5 @@
 import { importEditablePptx } from '../pptx-import'
+import { PptxCompatibilityError } from '../pptx-compatibility'
 import { PPTX_MIME_TYPE } from '../presentation-media'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -717,4 +718,30 @@ it('imports PPTX directly as an editable deck without persisting a second raw it
   expect(importEditablePptx).toHaveBeenCalledWith(pptx, 'file-root')
   expect(addFileItemToStore).not.toHaveBeenCalled()
   expect(mediaJobQueue.enqueue).not.toHaveBeenCalled()
+})
+
+it('localizes a located PPTX failure while retaining retry and batch behavior', async () => {
+  await i18n.changeLanguage('zh-TW')
+  vi.mocked(importEditablePptx).mockRejectedValueOnce(
+    new PptxCompatibilityError(
+      {
+        code: 'shape',
+        slideNumber: 3,
+        objectNumber: 2,
+        sourcePart: 'ppt/slides/private.xml',
+        objectId: 'private-id'
+      },
+      '<p:sp name="Private label">debug XML</p:sp>'
+    )
+  )
+  const file = makeFile('Sunday.pptx', 1000, PPTX_MIME_TYPE)
+  expect(await uploadFiles([file], 'file-root')).toBe(0)
+  const reason = useMediaImportStore.getState().failures[0].reason
+  expect(reason).toContain('第 3 張投影片')
+  expect(reason).toContain('第 2 個物件')
+  expect(reason).toContain('形狀')
+  expect(reason).not.toMatch(/private|debug|<p:sp/i)
+  vi.mocked(importEditablePptx).mockResolvedValueOnce({ id: 'retry-pptx' } as never)
+  expect(await retryFailedImports()).toBe(1)
+  expect(useMediaImportStore.getState().failures).toEqual([])
 })

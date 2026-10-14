@@ -1261,6 +1261,7 @@ function EditableProjectionSurface({
       editablePresentation
         ? {
             id: itemId,
+            schemaVersion: editablePresentation.schemaVersion,
             name: fileName,
             width: editablePresentation.width,
             height: editablePresentation.height,

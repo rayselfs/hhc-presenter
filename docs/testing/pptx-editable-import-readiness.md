@@ -90,3 +90,7 @@ hidden navigator; the focused local Electron smoke passes at that viewport.
 The v2.6.8 macOS packaged smoke passed, but the desktop release was not published
 because the Windows gate failed. The immutable tag is retained; v2.6.9 repeats
 all CI and packaged release gates with the corrected regression.
+
+## DeckCraft-reference compatibility follow-up (2026-10-12)
+
+Upload and existing raw/read-only-provider editable-copy paths now share bounded package/source/conversion admission and located, localized failures. Unsupported content fails before item/blob/draft creation, and represented values retain the existing v1 workflow. The detailed input matrix, source no-op distinction, soft-break/note regressions and current local gate results are in [PPTX import compatibility](pptx-import-compatibility.md). This narrows accepted conversions where the old path silently omitted content; it does not claim general PowerPoint parity. Original raw viewing remains available.

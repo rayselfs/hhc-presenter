@@ -1,3 +1,4 @@
+import { serializePortablePresentation } from './portable-presentation'
 import {
   persistDraftRevision,
   getPresentationDraft,
@@ -40,10 +41,10 @@ export async function persistEditablePresentationRevision(
   write: EditablePresentationRevisionWrite,
   overrides: Partial<EditablePresentationPersistenceDependencies> = {}
 ): Promise<EditablePresentationRevisionResult> {
+  const body = serializePortablePresentation(write.document)
   if (await persistDraftRevision(write.itemId, write.document, write.revision, write.catalogName))
     return { revision: write.revision, mirrorWarnings: [] }
   const dependencies = { ...defaultDependencies, ...overrides }
-  const body = JSON.stringify(write.document)
   const blob = new Blob([body], { type: EDITABLE_PRESENTATION_MIME_TYPE })
   const db = await dependencies.openFileExplorerDB()
   const personalNode = await db.get('personal-sync-nodes', write.itemId)
