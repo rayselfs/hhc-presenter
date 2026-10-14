@@ -1,3 +1,4 @@
+import { snapSlideFrame, type SlideSnapGuides } from '@renderer/lib/presentation-snapping'
 import {
   getPresetShapeDescriptor,
   projectPresetAdjustment,
@@ -102,6 +103,7 @@ interface DragState {
   startY: number
   original: EditablePresentationElement
   hasPersistedChanges: boolean
+  snapGuides?: SlideSnapGuides
 }
 
 interface TextInsertState {
@@ -172,6 +174,7 @@ export default function EditableSlideSurface({
   const textEditFinalizerRef = useRef<(() => boolean) | null>(null)
   const scaleRef = useRef({ x: 1, y: 1 })
   const [surfaceScale, setSurfaceScale] = useState(1)
+  const [snapGuides, setSnapGuides] = useState<SlideSnapGuides>({})
   const [marquee, setMarquee] = useState<MarqueeState | null>(null)
 
   const setTextEditFinalizer = useCallback(
@@ -209,6 +212,7 @@ export default function EditableSlideSurface({
     const cancel = (): void => {
       const drag = dragRef.current
       dragRef.current = null
+      setSnapGuides({})
       drag?.cancel?.()
     }
     const onEscape = (event: KeyboardEvent): void => {
@@ -338,6 +342,28 @@ export default function EditableSlideSurface({
         height: Math.max(MIN_ELEMENT_SIZE, drag.original.height + dy)
       } as Partial<EditablePresentationElement>
     }
+    if (drag.mode === 'move' || drag.mode === 'resize') {
+      const snapped = snapSlideFrame({
+        original: drag.original,
+        frame: { ...drag.original, ...updates },
+        canvas: document,
+        unitsPerPixel: scaleRef.current,
+        mode: drag.mode,
+        handle: drag.handle,
+        previous: drag.snapGuides,
+        disabled: event.altKey,
+        keepAspectRatio: drag.original.type === 'image',
+        resizeHeight: drag.original.type !== 'text' || !hasContentHeight(drag.original),
+        minWidth: drag.original.type === 'text' ? TEXT_MIN_WIDTH : MIN_ELEMENT_SIZE,
+        minHeight: drag.original.type === 'text' ? TEXT_MIN_HEIGHT : MIN_ELEMENT_SIZE
+      })
+      // Preserve auto-height and move-only patch semantics.
+      for (const key of ['x', 'y', 'width', 'height'] as const) {
+        if (updates[key] !== undefined) updates[key] = snapped.frame[key]
+      }
+      drag.snapGuides = snapped.guides
+      setSnapGuides(snapped.guides)
+    }
     const rawHasPersistedChanges = hasElementPatchChanges(drag.original, updates)
     if (onTransformPreview) {
       drag.hasPersistedChanges =
@@ -416,6 +442,7 @@ export default function EditableSlideSurface({
     const drag = dragRef.current
     if (!drag) return
     dragRef.current = null
+    setSnapGuides({})
     if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
@@ -427,6 +454,7 @@ export default function EditableSlideSurface({
     const drag = dragRef.current
     if (!drag) return
     dragRef.current = null
+    setSnapGuides({})
     if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
@@ -620,7 +648,9 @@ export default function EditableSlideSurface({
       style={{
         background: getSlideBackgroundCss(slide.background),
         aspectRatio: `${document.width} / ${document.height}`,
-        border: showBorder ? `1px solid ${borderColor}` : undefined
+        // Keep the canvas origin and clipping bounds independent of its decorative frame.
+        outline: showBorder ? `1px solid ${borderColor}` : undefined,
+        outlineOffset: showBorder ? -1 : undefined
       }}
       onPointerDown={(event) => {
         if (!editable) return
@@ -709,6 +739,32 @@ export default function EditableSlideSurface({
           transformOrigin: 'top left'
         }}
       >
+        {editable && snapGuides.x && (
+          <div
+            aria-hidden="true"
+            data-snap-guide="x"
+            className="pointer-events-none absolute"
+            style={{
+              left: snapGuides.x.target,
+              top: 0,
+              height: document.height,
+              borderLeft: `${1 / surfaceScale}px solid #e879f9`
+            }}
+          />
+        )}
+        {editable && snapGuides.y && (
+          <div
+            aria-hidden="true"
+            data-snap-guide="y"
+            className="pointer-events-none absolute"
+            style={{
+              top: snapGuides.y.target,
+              left: 0,
+              width: document.width,
+              borderTop: `${1 / surfaceScale}px solid #e879f9`
+            }}
+          />
+        )}
         {orderedElements.map((element) => {
           const selected =
             element.id === selectedElementId || Boolean(selectedElementIds?.has(element.id))

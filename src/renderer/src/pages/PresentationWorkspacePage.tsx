@@ -110,7 +110,6 @@ import {
   nudgeElements,
   reorderSelectedSlides,
   selectElementsInBounds,
-  snapElementPosition,
   type ElementAlignment,
   type ElementDistribution
 } from '@renderer/lib/presentation-editor-commands'
@@ -693,10 +692,6 @@ function EditableSessionDocumentView({
   const [isNotesOpen, setIsNotesOpen] = useState(false)
   const [compactOverlay, setCompactOverlay] = useState<'navigator' | 'inspector' | null>(null)
   const formatBackgroundTriggerRef = useRef<HTMLElement>(null)
-  const [snapGuides, setSnapGuides] = useState<{
-    vertical?: number
-    horizontal?: number
-  }>({})
 
   const finalizeTextEditor = useCallback(
     (): boolean => textEditorFinalizerRef.current?.() ?? true,
@@ -2579,62 +2574,35 @@ function EditableSessionDocumentView({
                         const snapshot = session.getSnapshot()
                         const base = snapshot.history.present
                         const current = base.slides[activeSlideId]?.elements[elementId]
-                        let nextUpdates = updates
-                        if (current && (updates.x !== undefined || updates.y !== undefined)) {
-                          const snapped = snapElementPosition(
-                            { ...current, ...updates },
-                            { width: base.width, height: base.height },
-                            8
-                          )
-                          nextUpdates = { ...updates, x: snapped.x, y: snapped.y }
-                          setSnapGuides({
-                            vertical: snapped.verticalGuide,
-                            horizontal: snapped.horizontalGuide
-                          })
-                        }
                         if (
                           current &&
                           selectedElementIds.size > 1 &&
                           updates.width === undefined &&
                           updates.height === undefined &&
-                          (nextUpdates.x !== undefined || nextUpdates.y !== undefined)
+                          (updates.x !== undefined || updates.y !== undefined)
                         ) {
                           return session.previewDraft(
                             nudgeElements(
                               base,
                               activeSlideId,
                               [...selectedElementIds],
-                              (nextUpdates.x ?? current.x) - current.x,
-                              (nextUpdates.y ?? current.y) - current.y
+                              (updates.x ?? current.x) - current.x,
+                              (updates.y ?? current.y) - current.y
                             )
                           )
                         }
                         return session.previewDraft(
-                          updateElementInSlide(base, activeSlideId, elementId, nextUpdates)
+                          updateElementInSlide(base, activeSlideId, elementId, updates)
                         )
                       }}
                       onTransformCommit={() => {
-                        setSnapGuides({})
                         session.commitDraft()
                       }}
                       onTransformCancel={() => {
-                        setSnapGuides({})
                         session.cancelDraft()
                       }}
                       onUpdateElement={previewTextElement}
                     />
-                    {snapGuides.vertical !== undefined && (
-                      <span
-                        className="pointer-events-none absolute inset-y-0 w-px bg-accent"
-                        style={{ left: `${(snapGuides.vertical / document.width) * 100}%` }}
-                      />
-                    )}
-                    {snapGuides.horizontal !== undefined && (
-                      <span
-                        className="pointer-events-none absolute inset-x-0 h-px bg-accent"
-                        style={{ top: `${(snapGuides.horizontal / document.height) * 100}%` }}
-                      />
-                    )}
                   </div>
                 </div>
               </div>

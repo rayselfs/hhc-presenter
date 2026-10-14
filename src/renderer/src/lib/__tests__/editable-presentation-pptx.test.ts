@@ -282,6 +282,58 @@ describe('PPTX parser conversion contract', () => {
     ])
   })
 
+  it.each([0, 38100, undefined])(
+    'prefers explicit near-top text coordinates over layout coordinates (y=%s)',
+    async (offsetY) => {
+      let bytes: ArrayBuffer | undefined
+      await parseFixture(
+        undefined,
+        '<a:prstGeom prst="rect"/><a:solidFill><a:srgbClr val="000000"/></a:solidFill>',
+        undefined,
+        (buffer) => {
+          bytes = buffer
+        }
+      )
+      const zip = await JSZip.loadAsync(bytes!)
+      const slidePath = 'ppt/slides/slide1.xml'
+      const slideXml = await zip.file(slidePath)!.async('string')
+      zip.file(
+        slidePath,
+        offsetY === undefined
+          ? slideXml.replace(/<a:xfrm>.*?<\/a:xfrm>/, '')
+          : slideXml.replace('x="0" y="0"', `x="0" y="${offsetY}"`)
+      )
+      const layoutPath = 'ppt/slideLayouts/slideLayout1.xml'
+      zip.file(
+        layoutPath,
+        (await zip.file(layoutPath)!.async('string')).replace(
+          '<p:spPr/>',
+          '<p:spPr><a:xfrm><a:off x="1524000" y="1122363"/><a:ext cx="9144000" cy="2387600"/></a:xfrm></p:spPr>'
+        )
+      )
+      const presentation = buildPresentation(
+        await parseZip(await zip.generateAsync({ type: 'arraybuffer' }))
+      )
+      materializeAllSlideNodes(presentation)
+      const doc = convertPresentationData(
+        { id: 'test', name: 'Synthetic.pptx', url: 'blob:test' } as FileItemRecord,
+        presentation
+      )
+      const slide = doc.slides[doc.slideOrder[0]]
+      const text = Object.values(slide.elements).find((e) => e.type === 'text')!
+      const shape = Object.values(slide.elements).find((e) => e.type === 'shape')!
+      expect(shape).toMatchObject({ x: offsetY === undefined ? 160 : 0 })
+      expect(shape.y).toBeCloseTo((offsetY ?? 1122363) / 9525, 6)
+      expect(text).toMatchObject({
+        type: 'text',
+        align: 'center',
+        x: offsetY === undefined ? 160 : 0,
+        width: offsetY === undefined ? 960 : 1280
+      })
+      expect(text.y).toBeCloseTo((offsetY ?? 1122363) / 9525, 6)
+    }
+  )
+
   it('inherits master background, mapped text colors and layout paragraph formatting', async () => {
     const presentation = await parseFixture()
     const document = convertPresentationData(

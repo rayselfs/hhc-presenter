@@ -686,6 +686,42 @@ describe('PresentationWorkspacePage session integration', () => {
     )
   })
 
+  it.each([
+    { x: 4, altKey: true },
+    { x: 7, altKey: false }
+  ])(
+    'does not re-snap pointer previews in the workspace (x=$x, Alt=$altKey)',
+    async ({ x, altKey }) => {
+      const source = createBlankEditablePresentationDocument('Snapping')
+      const slideId = source.slideOrder[0]
+      const text = {
+        ...createTextElement({ text: 'Snap target' }),
+        x: 100,
+        y: 100,
+        width: 200,
+        height: 100,
+        autoSize: 'fixed' as const,
+        autoWidth: false
+      }
+      mocks.loadEditablePresentationSnapshot.mockResolvedValue({
+        document: addElementToSlide(source, slideId, text),
+        revision: 0
+      })
+      const session = await renderWorkspaceSession()
+      const content = document.querySelector<HTMLElement>(
+        '.presentation-stage [data-text-content]'
+      )!
+      fireEvent.pointerDown(content, { clientX: 140, clientY: 120, pointerId: 1 })
+      fireEvent.keyDown(content, { key: 'Escape' })
+      const edge = screen.getByTestId('text-frame-edge-left')
+      fireEvent.pointerDown(edge, { clientX: 100, clientY: 120, pointerId: 2 })
+      fireEvent.pointerMove(edge, { clientX: x, clientY: 120, pointerId: 2, altKey })
+      expect(session.getSnapshot().renderedDocument.slides[slideId].elements[text.id].x).toBe(x)
+      fireEvent.pointerUp(edge, { pointerId: 2 })
+      expect(session.getSnapshot().history.present.slides[slideId].elements[text.id].x).toBe(x)
+    }
+  )
+
   it('finalizes pending text on Escape instead of discarding its active edit transaction', async () => {
     const flushAnimationFrame = mockAnimationFrame()
     const sourceDocument = createBlankEditablePresentationDocument('Sunday')
