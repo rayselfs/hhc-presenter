@@ -5,6 +5,7 @@ import type { WindowManager } from '../windowManager'
 import { isMainWindow } from './validate'
 
 function getKeyFilePath(provider: string): string {
+  if (provider !== 'azure' && provider !== 'gcp') throw new Error('Invalid provider')
   return join(app.getPath('userData'), `speech-api-key-${provider}.enc`)
 }
 
@@ -16,8 +17,9 @@ export function registerSpeechKeyStorageHandlers(wm: WindowManager): void {
       if (typeof provider !== 'string' || !provider.trim()) throw new Error('Invalid provider')
       if (typeof apiKey !== 'string' || !apiKey.trim()) throw new Error('Invalid API key')
       try {
+        const filePath = getKeyFilePath(provider)
         const encrypted = safeStorage.encryptString(apiKey)
-        writeFileSync(getKeyFilePath(provider), encrypted)
+        writeFileSync(filePath, encrypted)
       } catch (error) {
         console.error(`[SPEECH] Failed to save key for ${provider}:`, error)
         throw error
