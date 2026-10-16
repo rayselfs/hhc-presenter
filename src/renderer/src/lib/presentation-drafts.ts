@@ -1,3 +1,4 @@
+import { validatePortablePresentation } from './portable-presentation'
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 import type { EditablePresentationDocument } from './editable-presentation'
 import { openFileExplorerDB } from './file-explorer-db'
@@ -68,6 +69,7 @@ export async function createPresentationDraft(
   document: EditablePresentationDocument
 ): Promise<FileItemRecord> {
   if (!isPersonalRecordVisible(source)) throw new Error('Personal account changed')
+  validatePortablePresentation(document)
   const item: FileItemRecord = {
     id: document.id,
     type: 'file',
@@ -126,6 +128,7 @@ export async function persistDraftRevision(
     }
     assertDraftOwner(draft)
     if (revision <= draft.revision) throw new Error('Draft revision is stale')
+    validatePortablePresentation(document)
     await tx.objectStore('presentation-drafts').put({
       ...draft,
       document,
@@ -176,6 +179,7 @@ export async function savePresentationDraft(
   )
     throw new Error('A file with this name already exists')
   const document = { ...draft.document, name: trimmed }
+  validatePortablePresentation(document)
   const blob = new Blob([JSON.stringify(document)], { type: EDITABLE_PRESENTATION_MIME_TYPE })
   const item: FileItemRecord = {
     ...draft.item,

@@ -107,7 +107,7 @@ test('images have eight visible handles and preserve negative coordinates after 
     return canvas.toDataURL().split(',')[1]
   })
   await page
-    .locator('input[accept="image/*"]')
+    .locator('input[accept*="image/png"]')
     .setInputFiles({ name: 'Image.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') })
   const handles = page.locator('.presentation-stage [data-resize-handle]')
   await expect(handles).toHaveCount(8)
