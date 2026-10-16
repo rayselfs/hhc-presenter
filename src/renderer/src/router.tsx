@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { createHashRouter, Navigate } from 'react-router-dom'
 import Layout from '@renderer/components/Control/Layout'
+import ControlAppShell from '@renderer/components/Control/ControlAppShell'
 import RouteError from '@renderer/components/RouteError'
 import { isOnboarded } from '@renderer/lib/onboarding'
 import WelcomePage from '@renderer/pages/WelcomePage'
@@ -20,7 +21,7 @@ function OnboardingGuard({ children }: { children: React.JSX.Element }): React.J
   return children
 }
 
-const routes = [
+const controlRoutes = [
   {
     path: '/',
     element: (
@@ -127,9 +128,19 @@ const routes = [
   },
   {
     path: '/welcome',
-    element: <WelcomePage />
+    element: <WelcomePage />,
+    ErrorBoundary: RouteError
+  },
+  {
+    path: '*',
+    loader: () => {
+      throw new Response('Not Found', { status: 404 })
+    },
+    ErrorBoundary: RouteError
   }
 ]
+
+const routes = [{ element: <ControlAppShell />, children: controlRoutes }]
 
 export default routes
 
