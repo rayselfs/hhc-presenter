@@ -23,3 +23,25 @@ The previously accepted advisory paths were closed by:
 
 The lockfile must reproduce with `npm ci`, and `npm audit --audit-level=low` must remain at
 0 vulnerabilities. Any advisory is a failed release gate and requires a new review.
+
+## 2026-10-17 gate wiring and current result
+
+The release quality job now runs the documented `npm audit --audit-level=low`
+command after dependency installation. Packaging and publication already depend on
+that job, so any advisory or audit failure blocks them. No release workflow was run
+while making this change.
+
+A fresh audit of the current lockfile reports **24 affected packages: 10 high and
+14 moderate**. The 2026-08-22 result above is historical, not the current gate state.
+The audit command exits nonzero; this gate is intentionally not bypassed with an
+allowlist, a higher severity threshold, or production-only filtering.
+
+The report includes Axios and Undici network-client advisories, Sharp native image
+library advisories, and development/build tooling paths through Vitest,
+electron-builder and other transitive dependencies. Some npm remediation suggestions
+change major versions or move electron-builder to a lower version; they require
+compatibility review and cannot be applied as a blind `npm audit fix --force`.
+
+Dependency remediation, a clean install and repeated full audit remain required
+before a future release. This wiring change does not claim those findings are
+resolved or that the affected paths are exploitable in Presenter.
