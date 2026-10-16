@@ -209,7 +209,7 @@ describe('refreshEditablePresentationThumbnail', () => {
   })
 })
 
-it('saves personal deck bytes and rename operations without overwriting an uploading revision', async () => {
+it('rejects unreadable personal revisions and saves valid bytes without overwriting uploads', async () => {
   await seedAuthority()
   const db = await openFileExplorerDB()
   await db.put('personal-sync-state', {
@@ -229,6 +229,30 @@ it('saves personal deck bytes and rename operations without overwriting an uploa
     remoteRevision: 1
   })
 
+  await expect(
+    persistEditablePresentationRevision(
+      createWrite({
+        document: {
+          ...initialDocument,
+          assets: {
+            image: {
+              id: 'image',
+              name: 'SVG',
+              mimeType: 'image/svg+xml',
+              dataUrl: 'data:image/svg+xml;base64,PHN2Zy8+'
+            }
+          }
+        }
+      })
+    )
+  ).rejects.toThrow()
+  expect(await db.get('folder-items', item.id)).toEqual(item)
+  expect(await db.getAll('personal-sync-outbox')).toEqual([])
+  expect(await db.getAllKeys('file-blobs')).toEqual(['deck-source'])
+  expect((await db.get('personal-sync-nodes', item.id))?.localRevision).toBe(1)
+  expect(await readBlobText((await db.get('file-blobs', 'deck-source'))?.blob)).toBe(
+    JSON.stringify(initialDocument)
+  )
   await persistEditablePresentationRevision(createWrite())
   const firstCatalog = await db.get('folder-items', item.id)
   const firstOperations = await db.getAll('personal-sync-outbox')
@@ -253,4 +277,108 @@ it('saves personal deck bytes and rename operations without overwriting an uploa
     localRevision: 3,
     syncedLocalRevision: 1
   })
+})
+
+it.each([
+  ['image/svg+xml', 'data:image/svg+xml;base64,PHN2Zy8+'],
+  ['image/avif', 'data:image/avif;base64,AAAA'],
+  ['image/png', 'data:image/png;base64,AAA=']
+])(
+  'rejects an unreadable %s revision without overwriting the saved body',
+  async (mimeType, dataUrl) => {
+    await seedAuthority()
+    const db = await openFileExplorerDB()
+    const before = await db.get('file-blobs', 'deck-source')
+    await expect(
+      persistEditablePresentationRevision(
+        createWrite({
+          document: {
+            ...initialDocument,
+            assets: { image: { id: 'image', name: 'Image', mimeType, dataUrl } }
+          }
+        })
+      )
+    ).rejects.toThrow()
+    const after = await db.get('file-blobs', 'deck-source')
+    expect(after?.revision).toBe(before?.revision)
+    expect(await readBlobText(after?.blob)).toBe(await readBlobText(before?.blob))
+    expect(await db.get('folder-items', item.id)).toEqual(item)
+  }
+)
+
+it('rejects an oversized image before replacing the saved revision', async () => {
+  await seedAuthority()
+  const document = {
+    ...initialDocument,
+    assets: {
+      image: {
+        id: 'image',
+        name: 'Large',
+        mimeType: 'image/png',
+        dataUrl: 'data:image/png;base64,' + 'A'.repeat(4 * Math.ceil((20 * 1024 * 1024 + 1) / 3))
+      }
+    }
+  }
+  await expect(persistEditablePresentationRevision(createWrite({ document }))).rejects.toThrow()
+  expect((await (await openFileExplorerDB()).get('file-blobs', 'deck-source'))?.revision).toBe(1)
+})
+
+it('keeps a recoverable draft unchanged when an image cannot be reloaded', async () => {
+  const db = await openFileExplorerDB()
+  await db.put('presentation-drafts', { id: item.id, item, document: initialDocument, revision: 1 })
+  const document = {
+    ...initialDocument,
+    assets: {
+      image: {
+        id: 'image',
+        name: 'Image',
+        mimeType: 'image/svg+xml',
+        dataUrl: 'data:image/svg+xml;base64,PHN2Zy8+'
+      }
+    }
+  }
+  await expect(persistEditablePresentationRevision(createWrite({ document }))).rejects.toThrow()
+  expect(await db.get('presentation-drafts', item.id)).toMatchObject({
+    document: initialDocument,
+    revision: 1
+  })
+})
+
+it('reloads a saved valid embedded image with identical content', async () => {
+  const { loadEditablePresentation, clearEditablePresentationCache } =
+    await import('../editable-presentation')
+  await seedAuthority()
+  const image = {
+    id: 'image',
+    name: 'Image.png',
+    mimeType: 'image/png',
+    dataUrl:
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6ZaoAAAAASUVORK5CYII='
+  }
+  await persistEditablePresentationRevision(
+    createWrite({ document: { ...initialDocument, assets: { image } } })
+  )
+  clearEditablePresentationCache()
+  expect((await loadEditablePresentation(item)).assets.image).toEqual(image)
+})
+
+it('preserves an existing unreadable draft when promotion is rejected', async () => {
+  const { savePresentationDraft } = await import('../presentation-drafts')
+  const db = await openFileExplorerDB()
+  const document = {
+    ...initialDocument,
+    assets: {
+      image: {
+        id: 'image',
+        name: 'SVG',
+        mimeType: 'image/svg+xml',
+        dataUrl: 'data:image/svg+xml;base64,PHN2Zy8+'
+      }
+    }
+  }
+  await db.put('presentation-drafts', { id: item.id, item, document, revision: 1 })
+  await expect(savePresentationDraft(item.id, 'file-root', 'Recovered')).rejects.toThrow()
+  expect(await db.get('presentation-drafts', item.id)).toMatchObject({ document, revision: 1 })
+  expect(await db.getAll('folder-items')).toEqual([])
+  expect(await db.getAll('file-blobs')).toEqual([])
 })
