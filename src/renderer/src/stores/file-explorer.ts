@@ -553,7 +553,7 @@ async function copyFileSnapshot(itemId: string, parentId: string): Promise<strin
 export async function copyExplorerFolder(
   id: string,
   parentId: string,
-  options: { includeDeleted?: boolean } = {}
+  options: { includeDeleted?: boolean; name?: string } = {}
 ): Promise<string> {
   const state = useFileExplorerStore.getState()
   const source = state.folders[id]
@@ -573,13 +573,20 @@ export async function copyExplorerFolder(
   const folders = loaded._foldersArray.filter(
     (folder) => folder.parentId === id && (options.includeDeleted || !folder.deletedAt)
   )
-  const target = await createExplorerFolder(source.name, parentId)
+  const isLocalCopy = !source.personalOwnerId && !loaded.folders[parentId]?.personalOwnerId
+  const target = await createExplorerFolder(
+    options.name ?? source.name,
+    parentId,
+    isLocalCopy ? source.expiresAt : undefined
+  )
   if (!target) throw new Error('Copy destination is unavailable')
   for (const item of items) {
     if (!(await useFileExplorerStore.getState().copyItem(item.id, target)))
       throw new Error('File copy failed')
   }
-  for (const folder of folders) await copyExplorerFolder(folder.id, target, options)
+  for (const folder of folders)
+    await copyExplorerFolder(folder.id, target, { includeDeleted: options.includeDeleted })
+  await useFileExplorerStore.getState().flushPersistence()
   return target
 }
 

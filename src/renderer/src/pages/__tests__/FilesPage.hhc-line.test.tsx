@@ -2,6 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CloudRemoteFolder } from '@renderer/lib/cloud-provider'
+import type { FolderRecord } from '@shared/types/folder'
 import type { HhcSession } from '@shared/hhc-auth'
 
 const mocks = vi.hoisted(() => ({
@@ -18,9 +19,11 @@ const mocks = vi.hoisted(() => ({
     refreshFolder: vi.fn()
   })),
   showEmptyAreaMenu: vi.fn(),
+  copyExplorerFolder: vi.fn(async () => 'copy'),
+  createExplorerFolder: vi.fn(async () => 'folder'),
   fileState: {
     currentFolderId: 'file-root',
-    folders: {},
+    folders: {} as Record<string, FolderRecord>,
     items: {},
     _foldersArray: [],
     _itemsByParent: {},
@@ -32,6 +35,7 @@ const mocks = vi.hoisted(() => ({
     getChildFolders: vi.fn(() => []),
     getItems: vi.fn(() => []),
     addFolder: vi.fn(),
+    ensureItemsLoaded: vi.fn(async () => undefined),
     moveItem: vi.fn(),
     copyItem: vi.fn(),
     moveFolder: vi.fn(),
@@ -58,8 +62,8 @@ vi.mock('react-router-dom', () => ({
 }))
 
 vi.mock('@renderer/stores/file-explorer', () => ({
-  createExplorerFolder: vi.fn(async () => 'folder'),
-  copyExplorerFolder: vi.fn(async () => 'copy'),
+  createExplorerFolder: mocks.createExplorerFolder,
+  copyExplorerFolder: mocks.copyExplorerFolder,
   FILE_EXPLORER_ROOT_ID: 'file-root',
   useFileExplorerStore: Object.assign(
     (selector: (state: typeof mocks.fileState) => unknown) => selector(mocks.fileState),
@@ -72,14 +76,17 @@ vi.mock('@renderer/stores/file-explorer', () => ({
 vi.mock('@renderer/components/Control/FileExplorer', () => ({
   FileExplorerShell: ({
     children,
-    actionContent
+    actionContent,
+    selectedCount
   }: {
     children: React.ReactNode
     actionContent?: React.ReactNode
+    selectedCount: number
   }) => (
     <>
       {children}
       {actionContent}
+      <span data-testid="selected-count">{selectedCount}</span>
     </>
   ),
   useFileContextMenu: () => ({
@@ -92,13 +99,27 @@ vi.mock('@renderer/components/Control/FileExplorer', () => ({
 
 vi.mock('@renderer/components/Control/FileExplorer/FileBrowser', () => ({
   default: ({
-    onEmptyAreaContextMenu
+    onEmptyAreaContextMenu,
+    onCopy,
+    onSelectionChange
   }: {
     onEmptyAreaContextMenu: (event: React.MouseEvent) => void
+    onCopy: (ids: Set<string>) => void
+    onSelectionChange: (ids: Set<string>) => void
   }) => (
-    <button onClick={() => onEmptyAreaContextMenu({} as React.MouseEvent)}>
-      Open file context menu
-    </button>
+    <>
+      <button onClick={() => onEmptyAreaContextMenu({} as React.MouseEvent)}>
+        Open file context menu
+      </button>
+      <button
+        onClick={() => {
+          onSelectionChange(new Set(['A']))
+          onCopy(new Set(['A']))
+        }}
+      >
+        Copy folder A
+      </button>
+    </>
   )
 }))
 vi.mock('@renderer/components/Control/FileExplorer/FileExplorerFAB', () => ({
@@ -279,5 +300,61 @@ describe('FilesPage HHC LINE role resolution', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Sync LINE group' }))
     expect(screen.getByText('LINE media picker open')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'LINE' })).toBeInTheDocument()
+  })
+})
+
+describe('FilesPage folder paste', () => {
+  beforeEach(() => {
+    mocks.session = null
+    mocks.fileState.currentFolderId = 'file-root'
+    mocks.fileState.folders = {
+      A: { id: 'A', parentId: 'file-root', name: 'A', sortIndex: 0, createdAt: 1, expiresAt: 1000 },
+      B: { id: 'B', parentId: 'A', name: 'B', sortIndex: 0, createdAt: 1, expiresAt: 2000 }
+    }
+    mocks.createExplorerFolder.mockClear()
+    mocks.copyExplorerFolder.mockClear()
+    mocks.showEmptyAreaMenu.mockClear()
+  })
+
+  it.each(['A', 'B'])('rejects pasting A into %s before creating a folder', async (target) => {
+    const view = render(<FilesPage />)
+    await userEvent.click(screen.getByRole('button', { name: 'Copy folder A' }))
+    mocks.fileState.currentFolderId = target
+    view.rerender(<FilesPage />)
+    await userEvent.click(screen.getByRole('button', { name: 'Open file context menu' }))
+    const options = mocks.showEmptyAreaMenu.mock.calls.at(-1)![0]
+    await act(async () => {
+      await options.onPaste()
+    })
+    expect(mocks.createExplorerFolder).not.toHaveBeenCalled()
+    expect(mocks.copyExplorerFolder).not.toHaveBeenCalled()
+  })
+
+  it('routes a legal local paste through the guarded copy command', async () => {
+    render(<FilesPage />)
+    await userEvent.click(screen.getByRole('button', { name: 'Copy folder A' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Open file context menu' }))
+    const options = mocks.showEmptyAreaMenu.mock.calls.at(-1)![0]
+    await act(async () => {
+      await options.onPaste()
+    })
+    expect(mocks.createExplorerFolder).not.toHaveBeenCalled()
+    expect(mocks.copyExplorerFolder).toHaveBeenCalledWith('A', 'file-root', { name: 'A' })
+  })
+  it('keeps the clipboard and selection available after a failed copy', async () => {
+    mocks.copyExplorerFolder.mockRejectedValueOnce(new Error('Disk unavailable'))
+    render(<FilesPage />)
+    await userEvent.click(screen.getByRole('button', { name: 'Copy folder A' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Open file context menu' }))
+    await act(async () => {
+      await mocks.showEmptyAreaMenu.mock.calls.at(-1)![0].onPaste()
+    })
+    expect(screen.getByTestId('selected-count')).toHaveTextContent('1')
+    await userEvent.click(screen.getByRole('button', { name: 'Open file context menu' }))
+    await act(async () => {
+      await mocks.showEmptyAreaMenu.mock.calls.at(-1)![0].onPaste()
+    })
+    expect(mocks.copyExplorerFolder).toHaveBeenCalledTimes(2)
+    expect(screen.getByTestId('selected-count')).toHaveTextContent('0')
   })
 })
