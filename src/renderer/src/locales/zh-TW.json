@@ -461,6 +461,7 @@
     "audioFile": "{{ext}} 音訊"
   },
   "fileExplorer": {
+    "copyIntoSelf": "無法將資料夾複製到自身或子資料夾",
     "title": "檔案",
     "search": {
       "placeholder": "搜尋檔案...",
