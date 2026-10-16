@@ -20,6 +20,7 @@ const projectionRecoveryMock = {
   },
   ensureProjectionOpen: vi.fn(() => Promise.resolve({ ok: true as const, generation: 1 })),
   blackoutProjection: vi.fn(() => Promise.resolve()),
+  getProjectionIntentRevision: vi.fn(() => 0),
   getProjectionSnapshot: vi.fn(() => null)
 }
 
