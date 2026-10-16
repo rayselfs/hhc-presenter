@@ -1,3 +1,4 @@
+import { validatePortablePresentation } from './portable-presentation'
 import {
   persistDraftRevision,
   getPresentationDraft,
@@ -42,6 +43,7 @@ export async function persistEditablePresentationRevision(
 ): Promise<EditablePresentationRevisionResult> {
   if (await persistDraftRevision(write.itemId, write.document, write.revision, write.catalogName))
     return { revision: write.revision, mirrorWarnings: [] }
+  validatePortablePresentation(write.document)
   const dependencies = { ...defaultDependencies, ...overrides }
   const body = JSON.stringify(write.document)
   const blob = new Blob([body], { type: EDITABLE_PRESENTATION_MIME_TYPE })

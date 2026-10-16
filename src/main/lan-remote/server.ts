@@ -108,7 +108,14 @@ export function createLanRemoteServer(
           return
         }
         if (req.method === 'GET' && req.url?.startsWith('/pair/')) {
-          const secret = decodeURIComponent(req.url.slice('/pair/'.length))
+          let secret: string
+          try {
+            secret = decodeURIComponent(req.url.slice('/pair/'.length))
+          } catch {
+            res.statusCode = 400
+            res.end('Invalid pairing URL')
+            return
+          }
           const pairing = consumePairing(secret)
           if (!pairing) {
             res.statusCode = 403
