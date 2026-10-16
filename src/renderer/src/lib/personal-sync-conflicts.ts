@@ -233,6 +233,7 @@ export async function preservePersonalContentConflict(
         parent.ownerId !== ownerId ||
         !parent.remoteRevision ||
         parent.remoteHead?.deletedAt ||
+        parent.remoteHead?.purged ||
         !parentFolder ||
         parentFolder.deletedAt)
     )

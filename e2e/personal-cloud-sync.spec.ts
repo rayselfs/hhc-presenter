@@ -1,4 +1,4 @@
-import { expect, test, type BrowserContext, type Page } from '@playwright/test'
+import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test'
 import { completeOnboarding } from './helpers'
 import type {
   PersonalMutationRequest,
@@ -6,9 +6,7 @@ import type {
   PersonalRemoteNode
 } from '../src/shared/personal-cloud'
 
-test('two clients preserve an offline rename conflict and replay a lost commit response', async ({
-  browser
-}) => {
+async function verifyConflict(browser: Browser, purged: boolean): Promise<void> {
   test.setTimeout(90000)
   const contexts = await Promise.all([browser.newContext(), browser.newContext()])
   const png = Buffer.from(
@@ -152,6 +150,15 @@ test('two clients preserve an offline rename conflict and replay a lost commit r
     await expect(b.getByText('Cloud folder · Synced', { exact: true })).toHaveCount(0)
     expect(requests.filter((request) => request.name === 'cloud.png')).toHaveLength(2)
     expect(receipts.size).toBe(1)
+    if (purged) {
+      remote = {
+        ...remote,
+        revision: remote.revision + 1,
+        assetId: undefined,
+        deletedAt: new Date().toISOString(),
+        purged: true
+      }
+    }
     await contexts[0].setOffline(false)
     await a.evaluate(() => window.dispatchEvent(new Event('online')))
     await expect(a.getByRole('button', { name: 'Save a local copy', exact: true })).toBeVisible({
@@ -162,28 +169,56 @@ test('two clients preserve an offline rename conflict and replay a lost commit r
       .getByRole('alertdialog')
       .getByRole('button', { name: 'Save a local copy', exact: true })
       .click()
-    await expect(
-      a.locator('[data-file-item][role="button"]').filter({ hasText: 'cloud.png' })
-    ).toBeVisible({ timeout: 20000 })
+    const cloudItem = a.locator('[data-file-item][role="button"]').filter({ hasText: 'cloud.png' })
+    if (purged) {
+      await expect(a.getByRole('button', { name: 'Save a local copy', exact: true })).toBeHidden({
+        timeout: 20000
+      })
+      await expect(cloudItem).toHaveCount(0)
+    } else {
+      await expect(cloudItem).toBeVisible({ timeout: 20000 })
+    }
     const copies = await a.evaluate(async () => {
       const db = await new Promise<IDBDatabase>((resolve, reject) => {
         const request = indexedDB.open('hhc-file-explorer')
         request.onsuccess = () => resolve(request.result)
         request.onerror = () => reject(request.error)
       })
-      const tx = db.transaction('folder-items')
-      const items = await new Promise<Array<{ name: string; personalOwnerId?: string }>>(
-        (resolve) => {
-          const request = tx.objectStore('folder-items').getAll()
-          request.onsuccess = () => resolve(request.result)
-        }
-      )
+      const tx = db.transaction(['folder-items', 'file-blobs'])
+      const blobs = new Promise<Array<{ id: string; blob: Blob }>>((resolve, reject) => {
+        const request = tx.objectStore('file-blobs').getAll()
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error)
+      })
+      const items = await new Promise<
+        Array<{ name: string; url: string; personalOwnerId?: string }>
+      >((resolve) => {
+        const request = tx.objectStore('folder-items').getAll()
+        request.onsuccess = () => resolve(request.result)
+      })
+      const sources = await blobs
       db.close()
-      return items.filter((item) => item.name === 'offline.png' && !item.personalOwnerId).length
+      return Promise.all(
+        items
+          .filter((item) => item.name === 'offline.png' && !item.personalOwnerId)
+          .map(async (item) => {
+            const source = sources.find((record) => record.id === item.url.slice(5))
+            if (!source?.blob) throw new Error('Missing local backup bytes')
+            return Array.from(new Uint8Array(await source.blob.arrayBuffer()))
+          })
+      )
     })
-    expect(copies).toBe(1)
+    expect(copies).toEqual([Array.from(png)])
     expect(remote.name).toBe('cloud.png')
   } finally {
     await Promise.all(contexts.map((context) => context.close()))
   }
-})
+}
+
+for (const purged of [false, true]) {
+  test(`two clients preserve an offline rename after a remote ${purged ? 'purge' : 'rename'} and replay a lost commit response`, async ({
+    browser
+  }) => {
+    await verifyConflict(browser, purged)
+  })
+}

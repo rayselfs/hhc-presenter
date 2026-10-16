@@ -45,6 +45,7 @@ export async function pullPersonalChanges(
     if (
       remote.kind !== 'file' ||
       remote.deletedAt ||
+      remote.purged ||
       (node &&
         (node.localRevision !== node.syncedLocalRevision || node.remoteRevision > remote.revision))
     )
@@ -159,32 +160,83 @@ export async function commitPersonalChangePage(
     for (const remote of page.items) {
       if ((latest.get(remote.id)?.revision ?? -1) < remote.revision) latest.set(remote.id, remote)
     }
+    const protectedIds = new Set<string>()
+    const purgeHeads = new Map<string, PersonalRemoteNode>()
+    for (const node of existing) {
+      if (node.remoteHead?.purged) purgeHeads.set(node.remoteId, node.remoteHead)
+    }
+    for (const remote of latest.values()) {
+      if (remote.revision >= (purgeHeads.get(remote.id)?.revision ?? -1)) {
+        purgeHeads.set(remote.id, remote)
+      }
+    }
+    const purges = [...purgeHeads.values()].filter((remote) => {
+      const previous = byRemote.get(remote.id)
+      return remote.purged && previous && previous.remoteRevision <= remote.revision
+    })
+    if (purges.length) {
+      const outbox = tx.objectStore('personal-sync-outbox')
+      const pending = await outbox.index('by-owner').getAll(ownerId)
+      const catalog = [
+        ...(await tx.objectStore('folder-records').getAll()),
+        ...(await tx.objectStore('folder-items').getAll())
+      ].filter((item) => item.personalOwnerId === ownerId)
+      const children = new Map<string, string[]>()
+      for (const item of catalog) {
+        if (!item.parentId) continue
+        const siblings = children.get(item.parentId) ?? []
+        siblings.push(item.id)
+        children.set(item.parentId, siblings)
+      }
+      // Inspect the whole page before deleting; parents may follow children or arrive on earlier pages.
+      for (const remote of purges) {
+        const previous = byRemote.get(remote.id)
+        if (!previous) continue
+        const subtree = new Set([previous.id])
+        for (const id of subtree) {
+          for (const child of children.get(id) ?? []) subtree.add(child)
+        }
+        const members = existing.filter((node) => subtree.has(node.id))
+        const remoteIds = new Set(members.map((node) => node.remoteId))
+        const dependencies = pending.filter(
+          (operation) =>
+            subtree.has(operation.nodeId) ||
+            operation.subtree?.some((member) => subtree.has(member.nodeId)) ||
+            ('parentId' in operation.mutation && remoteIds.has(operation.mutation.parentId))
+        )
+        if (
+          !dependencies.length &&
+          !members.some((node) => node.localRevision !== node.syncedLocalRevision)
+        )
+          continue
+        for (const id of subtree) protectedIds.add(id)
+        for (const operation of dependencies) {
+          await outbox.put({ ...operation, failure: 'conflict', failureData: undefined })
+        }
+      }
+    }
     let revision = state.pullRevision ?? state.collectionRevision
     for (const remote of latest.values()) {
       signal.throwIfAborted()
       revision = Math.max(revision, remote.revision)
       const previous = byRemote.get(remote.id)
+      if (
+        previous &&
+        Math.max(previous.remoteRevision, previous.remoteHead?.revision ?? 0) > remote.revision
+      )
+        continue
       if (remote.purged) {
         if (!previous) continue
+        if (protectedIds.has(previous.id)) {
+          await nodes.put({ ...previous, remoteHead: remote })
+          continue
+        }
         const items = tx.objectStore('folder-items')
         const item = await items.get(previous.id)
         const blobs = tx.objectStore('file-blobs')
         if (item?.type === 'file') {
           const blob = await blobs.get(getBlobId(item))
           if (blob) await blobs.put({ ...blob, refCount: Math.max(0, (blob.refCount ?? 1) - 1) })
-        }
-        const outbox = tx.objectStore('personal-sync-outbox')
-        for (const operation of await outbox.index('by-owner').getAll(ownerId)) {
-          if (operation.nodeId !== previous.id) continue
-          if (operation.snapshotBlobId) {
-            const snapshot = await blobs.get(operation.snapshotBlobId)
-            if (snapshot)
-              await blobs.put({
-                ...snapshot,
-                refCount: Math.max(0, (snapshot.refCount ?? 1) - 1)
-              })
-          }
-          await outbox.delete(operation.id)
         }
         await items.delete(previous.id)
         await tx.objectStore('folder-records').delete(previous.id)
@@ -198,7 +250,6 @@ export async function commitPersonalChangePage(
         Date.parse(remote.deletedAt) <= Date.now() - 30 * 86_400_000
       )
         continue
-      if (previous && previous.remoteRevision > remote.revision) continue
       if (previous && previous.localRevision !== previous.syncedLocalRevision) {
         await nodes.put({ ...previous, remoteHead: remote })
         continue
