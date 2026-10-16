@@ -43,7 +43,7 @@ import {
   buildSyncRefreshPlan,
   collectSyncChangePages
 } from './sync-refresh'
-import { refreshImportedMediaAssets } from './local-sync-import'
+import { refreshImportedMediaAssets } from './sync-media-preparation'
 import { isIgnoredSystemPath } from '@shared/file-ignore-policy'
 import { dispatchPlannedSyncDownloads } from './sync-transfer-dispatch'
 

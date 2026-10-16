@@ -19,7 +19,7 @@ import {
 import * as syncDB from '../sync-db'
 import * as syncRefresh from '../sync-refresh'
 import * as syncDownloadQueue from '../sync-download-queue'
-import * as localSyncImport from '../local-sync-import'
+import * as syncMediaPreparation from '../sync-media-preparation'
 import { isHhcLineRootAuthorized } from '../hhc-line-access'
 import {
   importHhcLineCollection,
@@ -777,7 +777,7 @@ describe('HHC LINE collection connection', () => {
     })
     const enqueue = vi.spyOn(syncDownloadQueue, 'enqueueSyncDownload').mockResolvedValue(null)
     const refreshAssets = vi
-      .spyOn(localSyncImport, 'refreshImportedMediaAssets')
+      .spyOn(syncMediaPreparation, 'refreshImportedMediaAssets')
       .mockResolvedValue(undefined)
 
     await importHhcLineCollection(

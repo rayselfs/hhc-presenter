@@ -12,7 +12,7 @@ import {
 import type { OneDriveReadonlyProvider } from '../onedrive-provider'
 import type { SyncChangePage } from '../sync-provider'
 import { openFileExplorerDB } from '../file-explorer-db'
-import { refreshImportedMediaAssets } from '../local-sync-import'
+import { refreshImportedMediaAssets } from '../sync-media-preparation'
 import {
   getSyncCursor,
   listProviderConnectionsByType,
@@ -138,7 +138,7 @@ vi.mock('../file-explorer-db', () => ({
   openFileExplorerDB: vi.fn()
 }))
 
-vi.mock('../local-sync-import', () => ({
+vi.mock('../sync-media-preparation', () => ({
   refreshImportedMediaAssets: vi.fn(async () => undefined)
 }))
 
