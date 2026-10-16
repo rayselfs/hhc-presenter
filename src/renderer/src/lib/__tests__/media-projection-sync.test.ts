@@ -29,13 +29,15 @@ const remoteMocks = vi.hoisted(() => ({
   ensurePersistent: vi.fn()
 }))
 const payloadMocks = vi.hoisted(() => ({ fallback: vi.fn() }))
-const projectionState = { activeOwner: 'media' as 'media' | 'timer' | 'bible' }
+const projectionState = { activeOwner: 'media' as 'media' | 'timer' | 'bible', intentRevision: 0 }
 
 vi.mock('@renderer/contexts/ProjectionContext', () => ({
   useProjection: () => ({
     project: mockProject,
     startProjection: mockStartProjection,
     stopProjection: mockStopProjection,
+    getProjectionIntentRevision: () => projectionState.intentRevision,
+    getProjectionSnapshot: () => ({ owner: projectionState.activeOwner }),
     activeOwner: projectionState.activeOwner
   })
 }))
@@ -156,10 +158,11 @@ beforeEach(() => {
   registryMocks.finalizeAndFlush.mockReset()
   Object.defineProperty(window, 'api', { configurable: true, value: undefined })
   projectionState.activeOwner = 'media'
+  projectionState.intentRevision = 0
   registryMocks.get.mockReturnValue(undefined)
   registryMocks.finalizeAndFlush.mockResolvedValue(null)
-  remoteMocks.prepare.mockResolvedValue(null)
-  remoteMocks.ensurePersistent.mockResolvedValue(false)
+  remoteMocks.prepare.mockReset().mockResolvedValue(null)
+  remoteMocks.ensurePersistent.mockReset().mockResolvedValue(false)
   usePresentationWorkspaceStore.setState({ activeSlideIdByItemId: {} })
   useMediaProjectionStore.setState({
     playlist: [makeFile('a', 'a.png'), makeFile('b', 'b.png')],
@@ -1433,6 +1436,150 @@ describe('media projection sync', () => {
         })
       ]
     ])
+  })
+
+  it.each(['bible', 'timer', 'media'] as const)(
+    'discards a pending native source after a newer %s intent without waiting for React',
+    async (owner) => {
+      const pending = deferred<unknown>()
+      const releaseContentLease = vi.fn(async () => undefined)
+      Object.defineProperty(window, 'api', {
+        configurable: true,
+        value: { hhcAssets: { releaseContentLease } }
+      })
+      setRemotePresentationItem()
+      remoteMocks.prepare.mockReturnValueOnce(pending.promise)
+      renderSync({
+        auth: {
+          getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
+          getAccessToken: vi.fn(),
+          refreshAfterUnauthorized: vi.fn(),
+          endSession: vi.fn()
+        }
+      })
+      await waitFor(() => expect(remoteMocks.prepare).toHaveBeenCalledOnce())
+      projectionState.activeOwner = owner
+      projectionState.intentRevision += 1
+      await act(async () => {
+        pending.resolve({
+          providerConnectionId: 'hhc-line:user-1',
+          remoteItemId: 'asset-1',
+          rootRemoteFolderId: 'collection-1',
+          source: {
+            kind: 'native-lease',
+            url: 'hhc-media://lease/stale',
+            leaseId: 'stale',
+            etag: 'old'
+          }
+        })
+        await pending.promise
+      })
+      expect(mockStartProjection).not.toHaveBeenCalled()
+      expect(mockProject).not.toHaveBeenCalled()
+      expect(releaseContentLease).toHaveBeenCalledWith('stale')
+      expect(useMediaProjectionStore.getState().snapshot?.entries[0].sourceUrl).toBe('blob:remote')
+    }
+  )
+
+  it.each(['pending', 'before-start'] as const)(
+    'does not renew a retained Media source after a Bible intent (%s)',
+    async (transition) => {
+      vi.useFakeTimers()
+      const pending = deferred<unknown>()
+      const source = {
+        providerConnectionId: 'hhc-line:user-1',
+        remoteItemId: 'asset-1',
+        rootRemoteFolderId: 'collection-1',
+        source: {
+          kind: 'ticket',
+          url: 'https://example.test/first',
+          expiresAt: Date.now() + 60_000,
+          etag: 'old'
+        }
+      }
+      setRemotePresentationItem()
+      remoteMocks.prepare.mockResolvedValueOnce(source).mockReturnValueOnce(pending.promise)
+      renderSync({
+        auth: {
+          getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
+          getAccessToken: vi.fn(),
+          refreshAfterUnauthorized: vi.fn(),
+          endSession: vi.fn()
+        }
+      })
+      await act(async () => Promise.resolve())
+      expect(mockStartProjection).toHaveBeenCalledOnce()
+      mockStartProjection.mockClear()
+      if (transition === 'pending') {
+        await act(async () => vi.advanceTimersByTimeAsync(30_000))
+        expect(remoteMocks.prepare).toHaveBeenCalledTimes(2)
+      }
+      projectionState.activeOwner = 'bible'
+      projectionState.intentRevision += 1
+      if (transition === 'before-start') {
+        await act(async () => vi.advanceTimersByTimeAsync(30_000))
+        expect(remoteMocks.prepare).toHaveBeenCalledOnce()
+      }
+      await act(async () => {
+        pending.resolve({
+          ...source,
+          source: { ...source.source, url: 'https://example.test/late' }
+        })
+        await pending.promise
+      })
+      expect(mockStartProjection).not.toHaveBeenCalled()
+      expect(mockProject).not.toHaveBeenCalled()
+      expect(useMediaProjectionStore.getState().snapshot?.entries[0].sourceUrl).toBe(
+        source.source.url
+      )
+    }
+  )
+
+  it('does not stop a newer owner for a late access-revoked response', async () => {
+    const pending = deferred<unknown>()
+    const onAccessRevoked = vi.fn()
+    setRemotePresentationItem()
+    remoteMocks.prepare.mockImplementationOnce(async () => {
+      await pending.promise
+      throw Object.assign(new HhcAssetApiError('access-revoked', 403), {
+        providerConnectionId: 'hhc-line:user-1',
+        remoteItemId: 'asset-1'
+      })
+    })
+    renderSync({
+      onAccessRevoked,
+      auth: {
+        getSession: () => ({ userId: 'user-1', displayName: 'Ada', roles: [] }),
+        getAccessToken: vi.fn(),
+        refreshAfterUnauthorized: vi.fn(),
+        endSession: vi.fn()
+      }
+    })
+    await waitFor(() => expect(remoteMocks.prepare).toHaveBeenCalledOnce())
+    projectionState.intentRevision += 1
+    await act(async () => {
+      pending.resolve(null)
+      await pending.promise
+    })
+    expect(mockStopProjection).not.toHaveBeenCalled()
+    expect(onAccessRevoked).not.toHaveBeenCalled()
+  })
+
+  it('discards a pending editable load after Timer reclaims projection', async () => {
+    const editable = makeFile('editable-deck', 'Sunday.lpdeck', EDITABLE_PRESENTATION_MIME_TYPE)
+    const pending = deferred<unknown>()
+    payloadMocks.fallback.mockReturnValueOnce(pending.promise)
+    useMediaProjectionStore.setState({ playlist: [editable], isPresenting: true, snapshot: null })
+    renderSync()
+    await waitFor(() => expect(payloadMocks.fallback).toHaveBeenCalledOnce())
+    projectionState.intentRevision += 1
+    projectionState.activeOwner = 'timer'
+    await act(async () => {
+      pending.resolve({ itemId: editable.id })
+      await pending.promise
+    })
+    expect(mockStartProjection).not.toHaveBeenCalled()
+    expect(mockProject).not.toHaveBeenCalled()
   })
 
   it('does not project a deferred remote source after an explicit replacement start', async () => {

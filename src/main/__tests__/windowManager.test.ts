@@ -558,6 +558,8 @@ describe('WindowManager', () => {
     const wm = WindowManager.getInstance()
     wm.markProjectionReady(wm.createProjectionWindow())
     const projection = FakeBrowserWindow.instances[0]
+    projection.emitOnce('ready-to-show')
+    projection.showInactive.mockClear()
 
     wm.closeProjection()
 
@@ -580,6 +582,114 @@ describe('WindowManager', () => {
       lifecycle: { generation: 2, status: 'opening', reason: 'created' }
     })
   })
+
+  it('recovers a reused renderer and applies the crash budget to its current session', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(1_000)
+    const wm = WindowManager.getInstance()
+    wm.markProjectionReady(wm.createProjectionWindow())
+    const original = FakeBrowserWindow.instances[0]
+    original.emitOnce('ready-to-show')
+    wm.closeProjection()
+    wm.markProjectionReady(wm.createProjectionWindow())
+
+    original.emitWebContents('render-process-gone', {}, { reason: 'crashed' })
+
+    expect(original.destroy).toHaveBeenCalledOnce()
+    expect(wm.getProjectionState().lifecycle).toEqual({
+      generation: 3,
+      status: 'recovering',
+      reason: 'renderer-crash'
+    })
+    const replacement = FakeBrowserWindow.instances[1]
+    original.emitWebContents('did-start-loading')
+    original.emitWebContents('did-finish-load')
+    original.emitWebContents('render-process-gone', {}, { reason: 'crashed' })
+    original.emit('closed')
+    expect(wm.getProjectionWindow()).toBe(replacement)
+    expect(wm.getProjectionState().lifecycle.generation).toBe(3)
+
+    replacement.emitWebContents('render-process-gone', {}, { reason: 'crashed' })
+    expect(wm.getProjectionState().lifecycle).toEqual({
+      generation: 3,
+      status: 'failed',
+      reason: 'renderer-crash'
+    })
+    expect(wm.retryProjectionWindow()).toEqual({ retried: true, generation: 4 })
+  })
+
+  it('reports repeated reloads for the current reused session', () => {
+    const wm = WindowManager.getInstance()
+    wm.markProjectionReady(wm.createProjectionWindow())
+    const projection = FakeBrowserWindow.instances[0]
+    projection.emitOnce('ready-to-show')
+    projection.showInactive.mockClear()
+    projection.emitWebContents('did-finish-load')
+    wm.closeProjection()
+    const generation = wm.createProjectionWindow()
+    wm.markProjectionReady(generation)
+
+    for (let reload = 0; reload < 2; reload += 1) {
+      projection.emitWebContents('did-start-loading')
+      expect(wm.getProjectionState().lifecycle).toEqual({
+        generation,
+        status: 'opening',
+        reason: 'reload'
+      })
+      projection.emitWebContents('did-finish-load')
+      expect(wm.markProjectionReady(generation)).toBe(true)
+    }
+    expect(wm.markProjectionReady(generation - 1)).toBe(false)
+  })
+
+  it('does not reopen a hidden output for late load or crash events', () => {
+    const wm = WindowManager.getInstance()
+    wm.createProjectionWindow()
+    const projection = FakeBrowserWindow.instances[0]
+    projection.emitOnce('ready-to-show')
+    projection.showInactive.mockClear()
+    projection.emitWebContents('did-finish-load')
+    wm.closeProjection()
+
+    projection.emitOnce('ready-to-show')
+    projection.emitWebContents('did-start-loading')
+    projection.emitWebContents('did-finish-load')
+    expect(projection.showInactive).not.toHaveBeenCalled()
+    expect(wm.getProjectionState().lifecycle.status).toBe('closed')
+    projection.emitWebContents('render-process-gone', {}, { reason: 'crashed' })
+    expect(projection.destroy).toHaveBeenCalledOnce()
+    expect(wm.getProjectionWindow()).toBeNull()
+    expect(wm.getProjectionState().lifecycle.status).toBe('closed')
+    expect(FakeBrowserWindow.instances).toHaveLength(1)
+    expect(wm.createProjectionWindow()).toBe(2)
+    expect(FakeBrowserWindow.instances).toHaveLength(2)
+  })
+
+  it.each(['win32', 'darwin'])(
+    'initializes a replacement after stopping before ready on %s',
+    (platform) => {
+      Object.defineProperty(process, 'platform', { value: platform })
+      const wm = WindowManager.getInstance()
+      wm.createProjectionWindow('2')
+      const stopped = FakeBrowserWindow.instances[0]
+      wm.closeProjection()
+      stopped.emitOnce('ready-to-show')
+      expect(stopped.showInactive).not.toHaveBeenCalled()
+
+      expect(wm.createProjectionWindow('2')).toBe(2)
+      expect(stopped.destroy).toHaveBeenCalledOnce()
+      const replacement = FakeBrowserWindow.instances[1]
+      replacement.emitOnce('ready-to-show')
+      expect(replacement.showInactive).toHaveBeenCalledOnce()
+      if (platform === 'win32') {
+        expect(replacement.setFullScreen).toHaveBeenCalledWith(true)
+        expect(replacement.setResizable).toHaveBeenCalledWith(false)
+      } else {
+        expect(replacement.setSimpleFullScreen).toHaveBeenCalledWith(true)
+        expect(replacement.setFocusable).toHaveBeenCalledWith(false)
+      }
+    }
+  )
 
   it('does not focus a crash recovery or display replacement', () => {
     vi.useFakeTimers()

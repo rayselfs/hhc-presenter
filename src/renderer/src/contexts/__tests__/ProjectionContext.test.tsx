@@ -52,6 +52,8 @@ vi.mock('@renderer/lib/projection-adapter', () => ({
 
 import { getFileBlobRecord } from '@renderer/lib/file-explorer-db'
 import { useMediaProjectionStore } from '@renderer/stores/media-projection'
+import { registerMediaProjectionPreflight } from '@renderer/lib/media-projection-preflight'
+import { EDITABLE_PRESENTATION_MIME_TYPE } from '@renderer/lib/presentation-media'
 import { isElectron } from '@renderer/lib/env'
 import { ProjectionProvider, useProjection } from '../ProjectionContext'
 
@@ -97,6 +99,90 @@ describe('ProjectionContext web recovery', () => {
         }
       }
     })
+  })
+
+  it('fences preparation synchronously on claims, starts and stop before native shutdown resolves', async () => {
+    const { result } = renderProjection()
+    let previous = result.current.getProjectionIntentRevision()
+    act(() => result.current.claimProjection('bible'))
+    expect(result.current.getProjectionIntentRevision()).toBeGreaterThan(previous)
+    previous = result.current.getProjectionIntentRevision()
+    act(() => {
+      void result.current.startProjection('timer')
+    })
+    expect(result.current.getProjectionIntentRevision()).toBeGreaterThan(previous)
+    previous = result.current.getProjectionIntentRevision()
+    let finishStop!: () => void
+    mockProjectionVlcStop.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishStop = resolve
+      })
+    )
+    let stopping!: Promise<void>
+    act(() => {
+      stopping = result.current.stopProjection()
+    })
+    expect(result.current.getProjectionIntentRevision()).toBeGreaterThan(previous)
+    await act(async () => {
+      finishStop()
+      await stopping
+    })
+  })
+
+  it('supersedes Media preflight when a newer owner claims projection', async () => {
+    const { result } = renderProjection()
+    let finish!: (ready: boolean) => void
+    const unregister = registerMediaProjectionPreflight(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finish = resolve
+        })
+    )
+    const item = {
+      id: 'pending-deck',
+      name: 'Pending',
+      mimeType: EDITABLE_PRESENTATION_MIME_TYPE,
+      type: 'file' as const,
+      parentId: 'root',
+      sortIndex: 0,
+      size: 1,
+      url: 'blob:pending-deck',
+      createdAt: 1,
+      expiresAt: null
+    }
+    const starting = useMediaProjectionStore.getState().startPresentation([item], 0)
+    act(() => result.current.claimProjection('bible'))
+    await act(async () => {
+      finish(true)
+      await starting
+    })
+    expect(await starting).toEqual({ status: 'superseded' })
+    expect(result.current.getProjectionSnapshot()?.owner).toBe('bible')
+    expect(mockWindowOpen).not.toHaveBeenCalled()
+    unregister()
+  })
+
+  it('does not close a newer projection when an older native stop completes', async () => {
+    const { result } = renderProjection()
+    let finishStop!: () => void
+    mockProjectionVlcStop.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishStop = resolve
+      })
+    )
+    let stopping!: Promise<void>
+    act(() => {
+      stopping = result.current.stopProjection()
+    })
+    act(() => {
+      void result.current.startProjection('bible')
+    })
+    await act(async () => {
+      finishStop()
+      await stopping
+    })
+    expect(result.current.getProjectionSnapshot()?.owner).toBe('bible')
+    expect(result.current.isProjectionOpen).toBe(true)
   })
 
   it('does not open projection on mount', () => {
