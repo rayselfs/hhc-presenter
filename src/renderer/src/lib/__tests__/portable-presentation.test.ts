@@ -135,3 +135,56 @@ it.each([
   slide.elementOrder.push(text.id)
   await expect(load(document)).rejects.toThrow('Invalid portable presentation document')
 })
+
+it.each([
+  { type: 'image/svg+xml', size: 100 },
+  { type: 'image/avif', size: 100 },
+  { type: '', size: 100 },
+  { type: 'image/png', size: 0 },
+  { type: 'image/png', size: 20 * 1024 * 1024 + 1 }
+])('rejects inadmissible image inputs before reading bytes: %j', async (file) => {
+  const { assertPresentationImageFile } = await import('../portable-presentation')
+  expect(() => assertPresentationImageFile(file)).toThrow()
+})
+
+it.each(['image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/webp'])(
+  'accepts a supported %s input at the size boundary',
+  async (type) => {
+    const { assertPresentationImageFile } = await import('../portable-presentation')
+    expect(() => assertPresentationImageFile({ type, size: 20 * 1024 * 1024 })).not.toThrow()
+  }
+)
+
+it('does not create a catalog entry or draft for an unreadable converted document', async () => {
+  const { createEditablePresentationItem } = await import('../editable-presentation')
+  const { createPresentationDraft } = await import('../presentation-drafts')
+  const document = createBlankEditablePresentationDocument('Invalid converted source')
+  document.assets.image = {
+    id: 'image',
+    name: 'SVG',
+    mimeType: 'image/svg+xml',
+    dataUrl: 'data:image/svg+xml;base64,PHN2Zy8+'
+  }
+  await expect(createEditablePresentationItem(document, 'file-root')).rejects.toThrow()
+  await expect(
+    createPresentationDraft(
+      {
+        id: 'raw',
+        parentId: 'file-root',
+        type: 'file',
+        name: 'Raw.pptx',
+        url: 'blob:raw',
+        mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        size: 1,
+        sortIndex: 0,
+        createdAt: 1,
+        expiresAt: null
+      },
+      document
+    )
+  ).rejects.toThrow()
+  const db = await openFileExplorerDB()
+  expect(await db.getAll('folder-items')).toEqual([])
+  expect(await db.getAll('file-blobs')).toEqual([])
+  expect(await db.getAll('presentation-drafts')).toEqual([])
+})
