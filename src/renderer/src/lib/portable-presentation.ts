@@ -145,14 +145,34 @@ function textElement(value: Record<string, unknown>): void {
   }
 }
 
-function validateImage(mimeType: unknown, dataUrl: unknown): void {
+export const PRESENTATION_IMAGE_MIME_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/bmp',
+  'image/webp'
+] as const
+export const MAX_PRESENTATION_IMAGE_BYTES = 20 * 1024 * 1024
+
+export function assertPresentationImageFile(file: Pick<File, 'type' | 'size'>): void {
+  if (
+    !PRESENTATION_IMAGE_MIME_TYPES.some((mimeType) => mimeType === file.type) ||
+    file.size <= 0 ||
+    file.size > MAX_PRESENTATION_IMAGE_BYTES
+  )
+    throw new Error('Use a PNG, JPEG, GIF, BMP or WebP image no larger than 20 MiB')
+}
+
+export function validatePresentationImage(mimeType: unknown, dataUrl: unknown): void {
   requireValid(typeof mimeType === 'string' && typeof dataUrl === 'string')
   const prefix = `data:${mimeType};base64,`
   requireValid(dataUrl.startsWith(prefix))
   const encoded = dataUrl.slice(prefix.length)
-  requireValid(encoded.length <= 4 * Math.ceil((20 * 1024 * 1024) / 3))
+  requireValid(encoded.length <= 4 * Math.ceil(MAX_PRESENTATION_IMAGE_BYTES / 3))
   const data = atob(encoded)
-  requireValid(data.length > 0 && data.length <= 20 * 1024 * 1024 && btoa(data) === encoded)
+  requireValid(
+    data.length > 0 && data.length <= MAX_PRESENTATION_IMAGE_BYTES && btoa(data) === encoded
+  )
   switch (mimeType) {
     case 'image/png':
       requireValid(data.startsWith('\x89PNG\r\n\x1a\n'))
@@ -239,6 +259,6 @@ export function validatePortablePresentation(
   }
   for (const [id, asset] of Object.entries(assets)) {
     requireValid(id && record(asset) && asset.id === id)
-    validateImage(asset.mimeType, asset.dataUrl)
+    validatePresentationImage(asset.mimeType, asset.dataUrl)
   }
 }
