@@ -104,6 +104,7 @@ vi.mock('@renderer/contexts/ProjectionContext', async (importOriginal) => {
       retryProjection: vi.fn(),
       closeProjection: vi.fn(),
       blackoutProjection: vi.fn(),
+      getProjectionIntentRevision: vi.fn(() => 0),
       getProjectionSnapshot: vi.fn(() => null),
       project: vi.fn(),
       send: vi.fn(),

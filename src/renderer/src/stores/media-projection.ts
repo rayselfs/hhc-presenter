@@ -122,8 +122,12 @@ const initialState = {
 let releaseProjectionLocks: (() => void) | null = null
 let projectionActionGeneration = 0
 
-function beginProjectionAction(): number {
+export function invalidatePendingMediaProjectionActions(): void {
   projectionActionGeneration += 1
+}
+
+function beginProjectionAction(): number {
+  invalidatePendingMediaProjectionActions()
   return projectionActionGeneration
 }
 

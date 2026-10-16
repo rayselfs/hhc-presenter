@@ -48,7 +48,14 @@ const RENEWAL_LEAD_MS = 30_000
 const RENEWAL_RETRY_MS = 5_000
 
 export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {}): void {
-  const { project, startProjection, stopProjection, activeOwner } = useProjection()
+  const {
+    project,
+    startProjection,
+    stopProjection,
+    activeOwner,
+    getProjectionIntentRevision,
+    getProjectionSnapshot
+  } = useProjection()
   const registry = usePresentationSessionRegistry()
   const projectSequenceRef = useRef(0)
   const editableOwnershipRef = useRef(
@@ -182,8 +189,11 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
       startSession = false,
       forceRemoteSource = false
     ): Promise<void> => {
-      if (!startSession && activeOwner !== 'media') return
+      if (!startSession && getProjectionSnapshot()?.owner !== 'media') return
       const sequence = ++projectSequenceRef.current
+      const intentRevision = getProjectionIntentRevision()
+      const isCurrent = (): boolean =>
+        sequence === projectSequenceRef.current && intentRevision === getProjectionIntentRevision()
       const item = state.currentItem()
       let currentState = state
       const snapshotEntry = state.snapshot?.entries.find((entry) => entry.itemId === item?.id)
@@ -200,7 +210,7 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
             if (!sharedAvailable) return
             const latest = useMediaProjectionStore.getState()
             const latestItem = latest.currentItem()
-            if (sequence !== projectSequenceRef.current || latestItem?.id !== item.id) return
+            if (!isCurrent() || latestItem?.id !== item.id) return
             useMediaProjectionStore.setState((current) => {
               const snapshot = current.snapshot
               if (!snapshot || current.currentItem()?.id !== item.id) return current
@@ -227,7 +237,7 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
             if (available !== true) return
             const latest = useMediaProjectionStore.getState()
             const latestItem = latest.currentItem()
-            if (sequence !== projectSequenceRef.current || latestItem?.id !== item.id) return
+            if (!isCurrent() || latestItem?.id !== item.id) return
             useMediaProjectionStore.setState((current) => {
               const snapshot = current.snapshot
               if (!snapshot || current.currentItem()?.id !== item.id) return current
@@ -251,15 +261,15 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
             const { prepareHhcLinePresentationSource } =
               await import('@renderer/lib/hhc-line-connect')
             const prepared = await prepareHhcLinePresentationSource(auth, item)
-            if (prepared && sequence !== projectSequenceRef.current) {
-              if (prepared.source.kind === 'native-lease') releaseLease(prepared.source.leaseId)
+            if (!isCurrent()) {
+              if (prepared?.source.kind === 'native-lease') releaseLease(prepared.source.leaseId)
               return
             }
             if (!prepared && activeRemoteRef.current?.itemId === item.id) {
               clearRemoteSource()
               currentState = useMediaProjectionStore.getState()
             }
-            if (prepared && sequence === projectSequenceRef.current) {
+            if (prepared && isCurrent()) {
               const previous = activeRemoteRef.current
               const leaseId =
                 prepared.source.kind === 'native-lease' ? prepared.source.leaseId : undefined
@@ -312,7 +322,7 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
             }
           }
         } catch (error) {
-          if (sequence !== projectSequenceRef.current) return
+          if (!isCurrent()) return
           const classified = error as {
             classification?: string
             status?: number
@@ -345,7 +355,7 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
       }
       const latest = useMediaProjectionStore.getState()
       if (
-        sequence !== projectSequenceRef.current ||
+        !isCurrent() ||
         latest.sessionRevision !== state.sessionRevision ||
         latest.currentItem()?.url !== item?.url ||
         latest.currentItem()?.mimeType !== item?.mimeType ||
@@ -384,7 +394,7 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
           if (session) return
           payload = await buildFileProjectionPayloadWithEditableSlide(currentState)
           if (
-            sequence !== projectSequenceRef.current ||
+            !isCurrent() ||
             registry.get(item.id) !== undefined ||
             useMediaProjectionStore.getState().sessionRevision !== state.sessionRevision
           ) {
@@ -394,7 +404,7 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
       }
       if (!payload) return
 
-      if (sequence === projectSequenceRef.current) {
+      if (isCurrent()) {
         if (startSession) {
           void startProjection('media', [['file:show', payload]])
         } else {
@@ -403,9 +413,10 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
       }
     },
     [
-      activeOwner,
       auth,
       clearRemoteSource,
+      getProjectionIntentRevision,
+      getProjectionSnapshot,
       onAccessRevoked,
       project,
       registry,

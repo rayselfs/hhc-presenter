@@ -50,6 +50,8 @@ export interface ProjectionSessionCoordinator {
   fail(generation: number, reason: ProjectionFailure['reason']): void
   waitForReady(generation: number): Promise<ProjectionOperationResult>
   endSession(): void
+  getIntentRevision(): number
+  invalidateIntent(): void
   getSnapshot(): ProjectionSessionSnapshot | null
   getRecoveryState(): ProjectionRecoveryState
   subscribe(listener: () => void): () => void
@@ -279,6 +281,7 @@ export function createProjectionSessionCoordinator(
     generation: 0,
     failure: null
   }
+  let intentRevision = 0
   let contentRevision = 0
   let replayedGeneration = 0
   let pendingFileControls: ProjectionPendingFileControls | null = null
@@ -331,6 +334,7 @@ export function createProjectionSessionCoordinator(
 
   const api: ProjectionSessionCoordinator = {
     startSession(owner, payloads) {
+      intentRevision += 1
       snapshot = createEmptySnapshot(owner)
       pendingFileControls = null
       for (const [channel, original] of payloads) {
@@ -353,6 +357,7 @@ export function createProjectionSessionCoordinator(
     },
 
     claim(owner, unblank = false) {
+      intentRevision += 1
       if (!snapshot) snapshot = createEmptySnapshot(owner)
       const ownerChanged = snapshot.owner !== owner
       if (ownerChanged && snapshot.media.show) {
@@ -636,6 +641,7 @@ export function createProjectionSessionCoordinator(
     },
 
     endSession() {
+      intentRevision += 1
       const generation = recovery.generation
       snapshot = null
       pendingFileControls = null
@@ -645,6 +651,14 @@ export function createProjectionSessionCoordinator(
         resolveWaiter({ ok: false, generation, reason: 'ready-timeout' })
       }
       notify()
+    },
+
+    getIntentRevision() {
+      return intentRevision
+    },
+
+    invalidateIntent() {
+      intentRevision += 1
     },
 
     getSnapshot() {
