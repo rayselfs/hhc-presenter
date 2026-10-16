@@ -10,6 +10,10 @@ test('a real Worker keeps an extended countdown moving past its original deadlin
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text())
   })
+  await context.route('**/api/bible/v2/versions', (route) => route.fulfill({ json: [] }))
+  await context.route('**/api/account/v1/session', (route) =>
+    route.fulfill({ json: { authenticated: false } })
+  )
   await page.goto('/')
   await completeOnboarding(page)
   await page.locator('.timer-digits').first().click()
