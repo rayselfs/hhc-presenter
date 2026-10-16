@@ -2142,6 +2142,7 @@ function escapeXml(value: string): string {
 }
 
 function createDocumentBlob(document: EditablePresentationDocument): Blob {
+  validatePortablePresentation(document)
   return new Blob([JSON.stringify(document)], { type: EDITABLE_PRESENTATION_MIME_TYPE })
 }
 

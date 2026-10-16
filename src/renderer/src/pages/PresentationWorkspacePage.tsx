@@ -1,3 +1,8 @@
+import {
+  assertPresentationImageFile,
+  PRESENTATION_IMAGE_MIME_TYPES,
+  validatePresentationImage
+} from '@renderer/lib/portable-presentation'
 import { getPresentationItem } from '@renderer/lib/presentation-drafts'
 import React, {
   useCallback,
@@ -2215,7 +2220,7 @@ function EditableSessionDocumentView({
         <input
           ref={imageInputRef}
           type="file"
-          accept="image/*"
+          accept={PRESENTATION_IMAGE_MIME_TYPES.join(',')}
           className="hidden"
           onChange={(event) => {
             const file = event.currentTarget.files?.[0]
@@ -3101,7 +3106,9 @@ function getAngleForDirection(direction: EditableGradientDirection): number {
 async function readImageFile(
   file: File
 ): Promise<{ dataUrl: string; width: number; height: number }> {
+  assertPresentationImageFile(file)
   const dataUrl = await readFileAsDataUrl(file)
+  validatePresentationImage(file.type, dataUrl)
   const size = await readImageSize(dataUrl)
   return { dataUrl, ...size }
 }
