@@ -87,3 +87,25 @@ it('pairs a browser session and accepts authorized commands', async () => {
 
   await server.stop()
 })
+
+it('keeps serving after malformed unauthenticated pairing requests', async () => {
+  const commandHandler = vi.fn(async () => ({ requestId: 'x', status: 'accepted' as const }))
+  const server = createLanRemoteServer({ commandHandler })
+  const host = getPrivateHost()
+  await server.start({ host, port: 0 })
+  const origin = `http://${host}:${server.getStatus().port}`
+  try {
+    for (const path of ['%', '%GG', '%E0%A4%A']) {
+      const response = await fetch(`${origin}/pair/${path}`)
+      expect(response.status).toBe(400)
+      await response.text()
+    }
+    const response = await fetch(`${origin}/`)
+    expect(response.status).toBe(200)
+    expect(await response.text()).toContain('<html')
+    expect(commandHandler).not.toHaveBeenCalled()
+    expect(server.getStatus().enabled).toBe(true)
+  } finally {
+    await server.stop()
+  }
+})
