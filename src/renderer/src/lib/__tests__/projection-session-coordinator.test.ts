@@ -55,6 +55,28 @@ describe('ProjectionSessionCoordinator', () => {
     vi.useRealTimers()
   })
 
+  it('invalidates pending preparation on every explicit intent, not ticks or recovery', () => {
+    const coordinator = createProjectionSessionCoordinator(send)
+    let previous = coordinator.getIntentRevision()
+    for (const intent of [
+      () => coordinator.startSession('media', [['file:show', fileShow]]),
+      () => coordinator.claim('timer'),
+      () => coordinator.claim('media'),
+      () => coordinator.claim('media'),
+      () => coordinator.invalidateIntent(),
+      () => coordinator.endSession()
+    ]) {
+      intent()
+      expect(coordinator.getIntentRevision()).toBeGreaterThan(previous)
+      previous = coordinator.getIntentRevision()
+    }
+    coordinator.project('timer:tick', timerTick)
+    coordinator.beginGeneration({ generation: 1, status: 'opening', reason: 'created' })
+    coordinator.ready(1)
+    expect(coordinator.getIntentRevision()).toBe(previous)
+    coordinator.dispose()
+  })
+
   it('replaces timer and bible final-state payloads', () => {
     const coordinator = createProjectionSessionCoordinator(send)
     const nextTick = { ...timerTick, remainingSeconds: 59, mainDisplay: '00:59' }
