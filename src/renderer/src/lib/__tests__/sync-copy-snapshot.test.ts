@@ -19,6 +19,7 @@ beforeEach(async () => {
   vi.stubGlobal('File', NodeFile)
   vi.stubGlobal('fetch', fetchSource)
   vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
+    if (!('size' in blob)) throw new Error('Expected a Blob source')
     const url = `blob:${crypto.randomUUID()}`
     urls.set(url, blob)
     return url
