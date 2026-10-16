@@ -79,17 +79,17 @@ describe('BibleSearchEngine', () => {
     it('creates a Worker and posts INIT message', async () => {
       const engine = new BibleSearchEngine()
       const initPromise = engine.init()
-      mockWorker._triggerMessage({ type: 'READY' })
+      mockWorker._triggerMessage({ type: 'READY', id: 1 })
       await initPromise
 
       expect(MockWorkerConstructor).toHaveBeenCalledOnce()
-      expect(mockWorker.postMessage).toHaveBeenCalledWith({ type: 'INIT' })
+      expect(mockWorker.postMessage).toHaveBeenCalledWith({ type: 'INIT', id: 1 })
     })
 
     it('resolves when READY message is received', async () => {
       const engine = new BibleSearchEngine()
       const initPromise = engine.init()
-      mockWorker._triggerMessage({ type: 'READY' })
+      mockWorker._triggerMessage({ type: 'READY', id: 1 })
       await expect(initPromise).resolves.toBeUndefined()
     })
 
@@ -97,7 +97,7 @@ describe('BibleSearchEngine', () => {
       const engine = new BibleSearchEngine()
       expect(engine.isReady()).toBe(false)
       const initPromise = engine.init()
-      mockWorker._triggerMessage({ type: 'READY' })
+      mockWorker._triggerMessage({ type: 'READY', id: 1 })
       await initPromise
       expect(engine.isReady()).toBe(true)
     })
@@ -105,7 +105,7 @@ describe('BibleSearchEngine', () => {
     it('rejects when ERROR message is received during init', async () => {
       const engine = new BibleSearchEngine()
       const initPromise = engine.init()
-      mockWorker._triggerMessage({ type: 'ERROR', message: 'init failed' })
+      mockWorker._triggerMessage({ type: 'ERROR', id: 1, message: 'init failed' })
       await expect(initPromise).rejects.toThrow('init failed')
     })
 
@@ -119,7 +119,7 @@ describe('BibleSearchEngine', () => {
     it('does nothing and returns immediately if already initialized', async () => {
       const engine = new BibleSearchEngine()
       const p1 = engine.init()
-      mockWorker._triggerMessage({ type: 'READY' })
+      mockWorker._triggerMessage({ type: 'READY', id: 1 })
       await p1
 
       const callCount = MockWorkerConstructor.mock.calls.length
@@ -132,7 +132,7 @@ describe('BibleSearchEngine', () => {
     async function makeReadyEngine(): Promise<BibleSearchEngine> {
       const engine = new BibleSearchEngine()
       const p = engine.init()
-      mockWorker._triggerMessage({ type: 'READY' })
+      mockWorker._triggerMessage({ type: 'READY', id: 1 })
       await p
       return engine
     }
@@ -145,10 +145,10 @@ describe('BibleSearchEngine', () => {
       ]
 
       const buildPromise = engine.buildIndex(verses)
-      mockWorker._triggerMessage({ type: 'INDEX_COMPLETE', total: 2 })
+      mockWorker._triggerMessage({ type: 'INDEX_COMPLETE', id: 2, total: 2 })
       await buildPromise
 
-      expect(mockWorker.postMessage).toHaveBeenCalledWith({ type: 'BUILD_INDEX', verses })
+      expect(mockWorker.postMessage).toHaveBeenCalledWith({ type: 'BUILD_INDEX', verses, id: 2 })
     })
 
     it('resolves when INDEX_COMPLETE is received', async () => {
@@ -156,7 +156,7 @@ describe('BibleSearchEngine', () => {
       const verses = [{ id: 1, text: 'test verse' }]
 
       const buildPromise = engine.buildIndex(verses)
-      mockWorker._triggerMessage({ type: 'INDEX_COMPLETE', total: 1 })
+      mockWorker._triggerMessage({ type: 'INDEX_COMPLETE', id: 2, total: 1 })
       await expect(buildPromise).resolves.toBeUndefined()
     })
 
@@ -170,7 +170,7 @@ describe('BibleSearchEngine', () => {
     it('rejects on ERROR message during build', async () => {
       const engine = await makeReadyEngine()
       const buildPromise = engine.buildIndex([{ id: 1, text: 'x' }])
-      mockWorker._triggerMessage({ type: 'ERROR', message: 'build failed' })
+      mockWorker._triggerMessage({ type: 'ERROR', id: 2, message: 'build failed' })
       await expect(buildPromise).rejects.toThrow('build failed')
     })
 
@@ -179,10 +179,10 @@ describe('BibleSearchEngine', () => {
       const verses = Array.from({ length: 2000 }, (_, i) => ({ id: i + 1, text: `verse ${i + 1}` }))
 
       const buildPromise = engine.buildIndex(verses)
-      mockWorker._triggerMessage({ type: 'PROGRESS', indexed: 1000, total: 2000 })
+      mockWorker._triggerMessage({ type: 'PROGRESS', id: 2, indexed: 1000, total: 2000 })
       expect(engine.getProgress()).toEqual({ indexed: 1000, total: 2000 })
 
-      mockWorker._triggerMessage({ type: 'INDEX_COMPLETE', total: 2000 })
+      mockWorker._triggerMessage({ type: 'INDEX_COMPLETE', id: 2, total: 2000 })
       await buildPromise
     })
   })
@@ -191,7 +191,7 @@ describe('BibleSearchEngine', () => {
     async function makeIndexedEngine(): Promise<BibleSearchEngine> {
       const engine = new BibleSearchEngine()
       const p = engine.init()
-      mockWorker._triggerMessage({ type: 'READY' })
+      mockWorker._triggerMessage({ type: 'READY', id: 1 })
       await p
 
       const buildPromise = engine.buildIndex([
@@ -199,7 +199,7 @@ describe('BibleSearchEngine', () => {
         { id: 2, text: 'And God said let there be light' },
         { id: 3, text: 'God saw that the light was good' }
       ])
-      mockWorker._triggerMessage({ type: 'INDEX_COMPLETE', total: 3 })
+      mockWorker._triggerMessage({ type: 'INDEX_COMPLETE', id: 2, total: 3 })
       await buildPromise
 
       return engine
@@ -265,13 +265,13 @@ describe('BibleSearchEngine', () => {
       await expect(engine.search('test')).rejects.toThrow('BibleSearchEngine not initialized')
     })
 
-    it('rejects all pending searches on ERROR message', async () => {
+    it('rejects all pending searches on Worker crash', async () => {
       const engine = await makeIndexedEngine()
 
       const s1 = engine.search('God')
       const s2 = engine.search('earth')
 
-      mockWorker._triggerMessage({ type: 'ERROR', message: 'worker crashed' })
+      mockWorker._triggerError('worker crashed')
 
       await expect(s1).rejects.toThrow('worker crashed')
       await expect(s2).rejects.toThrow('worker crashed')
@@ -287,11 +287,11 @@ describe('BibleSearchEngine', () => {
     it('returns updated values after INDEX_COMPLETE', async () => {
       const engine = new BibleSearchEngine()
       const p = engine.init()
-      mockWorker._triggerMessage({ type: 'READY' })
+      mockWorker._triggerMessage({ type: 'READY', id: 1 })
       await p
 
       const buildPromise = engine.buildIndex([{ id: 1, text: 'x' }])
-      mockWorker._triggerMessage({ type: 'INDEX_COMPLETE', total: 1 })
+      mockWorker._triggerMessage({ type: 'INDEX_COMPLETE', id: 2, total: 1 })
       await buildPromise
 
       expect(engine.getProgress()).toEqual({ indexed: 1, total: 1 })
@@ -302,7 +302,7 @@ describe('BibleSearchEngine', () => {
     it('terminates the worker', async () => {
       const engine = new BibleSearchEngine()
       const p = engine.init()
-      mockWorker._triggerMessage({ type: 'READY' })
+      mockWorker._triggerMessage({ type: 'READY', id: 1 })
       await p
 
       engine.dispose()
@@ -312,7 +312,7 @@ describe('BibleSearchEngine', () => {
     it('sets isReady() to false after dispose', async () => {
       const engine = new BibleSearchEngine()
       const p = engine.init()
-      mockWorker._triggerMessage({ type: 'READY' })
+      mockWorker._triggerMessage({ type: 'READY', id: 1 })
       await p
 
       engine.dispose()
@@ -322,11 +322,11 @@ describe('BibleSearchEngine', () => {
     it('rejects pending searches with "disposed" error', async () => {
       const engine = new BibleSearchEngine()
       const p = engine.init()
-      mockWorker._triggerMessage({ type: 'READY' })
+      mockWorker._triggerMessage({ type: 'READY', id: 1 })
       await p
 
       const buildPromise = engine.buildIndex([{ id: 1, text: 'x' }])
-      mockWorker._triggerMessage({ type: 'INDEX_COMPLETE', total: 1 })
+      mockWorker._triggerMessage({ type: 'INDEX_COMPLETE', id: 2, total: 1 })
       await buildPromise
 
       const searchPromise = engine.search('test')
@@ -337,15 +337,129 @@ describe('BibleSearchEngine', () => {
     it('resets progress to 0 after dispose', async () => {
       const engine = new BibleSearchEngine()
       const p = engine.init()
-      mockWorker._triggerMessage({ type: 'READY' })
+      mockWorker._triggerMessage({ type: 'READY', id: 1 })
       await p
 
       const buildPromise = engine.buildIndex([{ id: 1, text: 'x' }])
-      mockWorker._triggerMessage({ type: 'INDEX_COMPLETE', total: 1 })
+      mockWorker._triggerMessage({ type: 'INDEX_COMPLETE', id: 2, total: 1 })
       await buildPromise
 
       engine.dispose()
       expect(engine.getProgress()).toEqual({ indexed: 0, total: 0 })
     })
+  })
+})
+
+describe('index request isolation', () => {
+  async function ready(): Promise<BibleSearchEngine> {
+    const engine = new BibleSearchEngine()
+    const pending = engine.init()
+    mockWorker._triggerMessage({ type: 'READY', id: 1 })
+    await pending
+    return engine
+  }
+
+  it('does not settle a second version cache with the first version response', async () => {
+    const engine = await ready()
+    const first = engine.buildCacheOnly([{ id: 11, text: 'first version' }])
+    const firstId = mockWorker.postMessage.mock.calls.at(-1)![0].id
+    const second = engine.buildCacheOnly([{ id: 22, text: 'second version' }])
+    const secondId = mockWorker.postMessage.mock.calls.at(-1)![0].id
+    const resolved = vi.fn()
+    void second.then(resolved)
+    const a = [{ key: 'a', data: 'first' }]
+    const b = [{ key: 'b', data: 'second' }]
+    mockWorker._triggerMessage({ type: 'CACHE_BUILT', id: firstId, chunks: a })
+    expect(await first).toEqual(a)
+    await Promise.resolve()
+    expect(resolved).not.toHaveBeenCalled()
+    mockWorker._triggerMessage({ type: 'CACHE_BUILT', id: secondId, chunks: b })
+    expect(await second).toEqual(b)
+  })
+})
+
+describe('index request lifetime', () => {
+  async function ready(): Promise<BibleSearchEngine> {
+    const engine = new BibleSearchEngine()
+    const pending = engine.init()
+    mockWorker._triggerMessage({ type: 'READY', id: 1 })
+    await pending
+    return engine
+  }
+
+  it('rejects only the request identified by an operation error', async () => {
+    const engine = await ready()
+    const failed = engine.buildCacheOnly([{ id: 1, text: 'one' }])
+    const succeeded = engine.buildCacheOnly([{ id: 2, text: 'two' }])
+    mockWorker._triggerMessage({ type: 'ERROR', id: 2, message: 'bad index' })
+    mockWorker._triggerMessage({ type: 'CACHE_BUILT', id: 3, chunks: [] })
+    await expect(failed).rejects.toThrow('bad index')
+    await expect(succeeded).resolves.toEqual([])
+    expect(engine.isReady()).toBe(true)
+  })
+
+  it.each(['dispose', 'crash'] as const)('settles all index operations on %s', async (reason) => {
+    const engine = await ready()
+    const requests = [
+      engine.buildIndex([]),
+      engine.buildCacheOnly([]),
+      engine.exportIndex(),
+      engine.loadIndex([]),
+      engine.search('word')
+    ]
+    const outcomes = Promise.allSettled(requests)
+    if (reason === 'dispose') engine.dispose()
+    else mockWorker._triggerError('worker crashed')
+    expect((await outcomes).map((result) => result.status)).toEqual(Array(5).fill('rejected'))
+    expect(engine.isReady()).toBe(false)
+  })
+
+  it('settles initialization on dispose and ignores events from the previous worker', async () => {
+    const engine = new BibleSearchEngine()
+    const oldWorker = mockWorker
+    const first = engine.init()
+    engine.dispose()
+    await expect(first).rejects.toThrow('disposed')
+    mockWorker = makeMockWorker()
+    const second = engine.init()
+    oldWorker._triggerMessage({ type: 'READY', id: 1 })
+    oldWorker._triggerError('late error')
+    expect(engine.isReady()).toBe(false)
+    mockWorker._triggerMessage({ type: 'READY', id: 2 })
+    await second
+    expect(engine.isReady()).toBe(true)
+  })
+
+  it('correlates concurrent load and export operations', async () => {
+    const engine = await ready()
+    const a = engine.exportIndex()
+    const b = engine.exportIndex()
+    const load = engine.loadIndex([])
+    const first = [{ key: 'a', data: 'one' }]
+    const second = [{ key: 'b', data: 'two' }]
+    mockWorker._triggerMessage({ type: 'INDEX_EXPORTED', id: 3, chunks: second })
+    mockWorker._triggerMessage({ type: 'INDEX_LOADED', id: 4 })
+    mockWorker._triggerMessage({ type: 'INDEX_EXPORTED', id: 2, chunks: first })
+    expect(await a).toEqual(first)
+    expect(await b).toEqual(second)
+    await expect(load).resolves.toBeUndefined()
+  })
+
+  it('does not mark a disposed Worker ready after its READY response', async () => {
+    const engine = new BibleSearchEngine()
+    const pending = engine.init()
+    mockWorker._triggerMessage({ type: 'READY', id: 1 })
+    engine.dispose()
+    await expect(pending).rejects.toThrow('disposed')
+    expect(engine.isReady()).toBe(false)
+  })
+
+  it('rejects postMessage errors without keeping an unresolved request', async () => {
+    const engine = await ready()
+    mockWorker.postMessage.mockImplementationOnce(() => {
+      throw new Error('clone failed')
+    })
+    await expect(engine.buildCacheOnly([])).rejects.toThrow('clone failed')
+    engine.dispose()
   })
 })
