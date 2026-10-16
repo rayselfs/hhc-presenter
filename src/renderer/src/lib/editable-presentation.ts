@@ -1086,13 +1086,14 @@ export function convertPresentationData(
   const slides: Record<string, EditablePresentationSlide> = {}
   const slideOrder: string[] = []
   const assets: Record<string, EditablePresentationAsset> = {}
+  const assetIdsByMediaPath = new Map<string, string>()
   const width = normalizeCanvasLength(presentation.width, DEFAULT_WIDTH)
   const themes = convertPresentationThemes(presentation, width)
   const defaultThemeId = Object.keys(themes)[0] ?? DEFAULT_PRESENTATION_THEME_ID
 
   for (const slide of presentation.slides) {
     const slideId = crypto.randomUUID()
-    const convertedSlide = convertSlide(slide, presentation, assets)
+    const convertedSlide = convertSlide(slide, presentation, assets, assetIdsByMediaPath)
     slides[slideId] = {
       ...convertedSlide,
       id: slideId,
@@ -1162,7 +1163,8 @@ function resolveSlideThemeId(slide: SlideData, presentation: PresentationData): 
 function convertSlide(
   slide: SlideData,
   presentation: PresentationData,
-  assets: Record<string, EditablePresentationAsset>
+  assets: Record<string, EditablePresentationAsset>,
+  assetIdsByMediaPath: Map<string, string>
 ): Omit<EditablePresentationSlide, 'id' | 'name'> {
   const elementOrder: string[] = []
   const elements: Record<string, EditablePresentationElement> = {}
@@ -1189,7 +1191,7 @@ function convertSlide(
   }
 
   for (const node of slide.nodes) {
-    const converted = convertNode(node, slide, presentation, assets)
+    const converted = convertNode(node, slide, presentation, assets, assetIdsByMediaPath)
     for (const element of converted) {
       elementOrder.push(element.id)
       elements[element.id] = element
@@ -1233,10 +1235,12 @@ function convertNode(
   node: SlideNode,
   slide: SlideData,
   presentation: PresentationData,
-  assets: Record<string, EditablePresentationAsset>
+  assets: Record<string, EditablePresentationAsset>,
+  assetIdsByMediaPath: Map<string, string>
 ): EditablePresentationElement[] {
   if (node.nodeType === 'shape') return convertShapeNode(node, slide, presentation)
-  if (node.nodeType === 'picture') return convertPictureNode(node, slide, presentation, assets)
+  if (node.nodeType === 'picture')
+    return convertPictureNode(node, slide, presentation, assets, assetIdsByMediaPath)
   return [createLockedElement(node, `${node.nodeType} object`)]
 }
 
@@ -1343,9 +1347,10 @@ function convertPictureNode(
   node: PicNodeData,
   slide: SlideData,
   presentation: PresentationData,
-  assets: Record<string, EditablePresentationAsset>
+  assets: Record<string, EditablePresentationAsset>,
+  assetIdsByMediaPath: Map<string, string>
 ): EditablePresentationElement[] {
-  const asset = resolvePictureAsset(node, slide, presentation, assets)
+  const asset = resolvePictureAsset(node, slide, presentation, assets, assetIdsByMediaPath)
   if (!asset) return [createLockedElement(node, 'Picture')]
   return [
     {
@@ -1367,17 +1372,18 @@ function resolvePictureAsset(
   node: PicNodeData,
   slide: SlideData,
   presentation: PresentationData,
-  assets: Record<string, EditablePresentationAsset>
+  assets: Record<string, EditablePresentationAsset>,
+  assetIdsByMediaPath: Map<string, string>
 ): EditablePresentationAsset | null {
   if (!node.blipEmbed) return null
   const rel = slide.rels.get(node.blipEmbed)
   if (!rel || rel.targetMode) return null
   const mediaPath = resolveRelTarget(getDirname(slide.slidePath), rel.target)
-  const bytes =
-    presentation.media.get(mediaPath) ??
-    presentation.media.get(mediaPath.replace(/^ppt\//, '')) ??
-    findMediaByBasename(presentation, mediaPath)
-  if (!bytes) return null
+  const entry = findMediaEntry(presentation, mediaPath)
+  if (!entry) return null
+  const [entryPath, bytes] = entry
+  const existingId = assetIdsByMediaPath.get(entryPath)
+  if (existingId) return assets[existingId]
   const assetId = crypto.randomUUID()
   const mimeType = getMimeTypeFromPath(mediaPath)
   const asset: EditablePresentationAsset = {
@@ -1387,6 +1393,7 @@ function resolvePictureAsset(
     dataUrl: uint8ArrayToDataUrl(bytes, mimeType)
   }
   assets[assetId] = asset
+  assetIdsByMediaPath.set(entryPath, assetId)
   return asset
 }
 
@@ -1883,14 +1890,18 @@ function getDirname(path: string): string {
   return index === -1 ? '' : path.slice(0, index)
 }
 
-function findMediaByBasename(
+function findMediaEntry(
   presentation: PresentationData,
   mediaPath: string
-): Uint8Array | undefined {
+): [string, Uint8Array] | undefined {
+  for (const path of [mediaPath, mediaPath.replace(/^ppt\//, '')]) {
+    const bytes = presentation.media.get(path)
+    if (bytes) return [path, bytes]
+  }
   const basename = mediaPath.split('/').at(-1)
   if (!basename) return undefined
   for (const [key, value] of presentation.media) {
-    if (key.split('/').at(-1) === basename) return value
+    if (key.split('/').at(-1) === basename) return [key, value]
   }
   return undefined
 }
