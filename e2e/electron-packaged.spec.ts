@@ -1,9 +1,9 @@
-import { _electron as electron, expect, test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import type { ElectronApplication, Page, TestInfo } from '@playwright/test'
 import { access, mkdir, readFile, readdir, stat, utimes, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { dirname, join, resolve } from 'node:path'
-import { completeOnboarding } from './helpers'
+import { launchPackaged as launchPackagedApp } from './helpers/packaged-app'
 import { pageDeck } from './helpers/presentation-fixtures'
 import { verifyVlcFixtures } from './helpers/vlc-fixtures'
 
@@ -49,20 +49,9 @@ async function launchPackaged(
   executablePath: string,
   userDataPath: string
 ): Promise<{ app: ElectronApplication; control: Page }> {
-  const app = await electron.launch({
-    executablePath,
-    args: [`--user-data-dir=${userDataPath}`],
-    timeout: 15_000
+  return launchPackagedApp(executablePath, userDataPath, (chunk) => {
+    processLogs = `${processLogs}${chunk}`.slice(-64 * 1024)
   })
-  for (const stream of [app.process().stdout, app.process().stderr]) {
-    stream?.on('data', (chunk) => {
-      processLogs = `${processLogs}${String(chunk)}`.slice(-64 * 1024)
-    })
-  }
-  const control = await app.firstWindow()
-  await expect(control).toHaveTitle(/HHC Presenter|HHC 投影系統|HHC 投影系统/)
-  await completeOnboarding(control)
-  return { app, control }
 }
 
 async function installVlcEvidenceCapture(control: Page): Promise<void> {
