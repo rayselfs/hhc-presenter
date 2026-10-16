@@ -6,6 +6,7 @@ import {
   retryResourceCleanup
 } from '@renderer/lib/resource-cleanup-journal'
 import { isElectron } from '@renderer/lib/env'
+import { isFolderReadOnlyBySyncLink } from '@renderer/lib/sync-readonly'
 import { isPersonalRecordVisible, usePersonalSyncStore } from './personal-sync'
 import { create, type Mutate, type StoreApi, type UseBoundStore } from 'zustand'
 import { persist } from 'zustand/middleware'
@@ -207,7 +208,8 @@ export const useFileExplorerCustomOrder = create<FileExplorerCustomOrderState>()
 export async function addFileItemToStore(
   file: File,
   parentId: string,
-  canonicalMimeType = file.type || 'application/octet-stream'
+  canonicalMimeType = file.type || 'application/octet-stream',
+  notes?: string
 ): Promise<string> {
   const parent =
     useFileExplorerStore.getState().folders[parentId] ??
@@ -248,6 +250,7 @@ export async function addFileItemToStore(
       url: `blob:${id}`,
       size: file.size,
       mimeType: canonicalMimeType,
+      ...(notes !== undefined ? { notes } : {}),
       sortIndex: useFileExplorerStore.getState().getItems(parentId).length,
       createdAt: now,
       expiresAt: parentId === FILE_EXPLORER_ROOT_ID ? now + FOLDER_DURATION_MS['1day'] : null
@@ -524,22 +527,23 @@ function reportPersonalWriteError(error: unknown): void {
   })
 }
 
-async function copyPersonalBoundaryFile(itemId: string, parentId: string): Promise<string | null> {
+async function copyFileSnapshot(itemId: string, parentId: string): Promise<string | null> {
   const item = useFileExplorerStore.getState().items[itemId]
   if (!item || item.type !== 'file' || !isPersonalRecordVisible(item)) return null
   const db = await openFileExplorerDB()
   const { getBlobId } = await import('@renderer/lib/blob-identity')
   const source = await getFileSource(db, getBlobId(item), item.mimeType)
-  if (!source) throw new Error('Personal copy source is not available offline')
+  if (!source) throw new Error('Copy source is not available offline')
   try {
     const response = await fetch(source.url)
-    if (!response.ok) throw new Error('Personal copy source could not be read')
+    if (!response.ok) throw new Error('Copy source could not be read')
     const blob = await response.blob()
     if (!isPersonalRecordVisible(item)) throw new Error('Personal account changed')
     return addFileItemToStore(
       new File([blob], item.name, { type: item.mimeType }),
       parentId,
-      item.mimeType
+      item.mimeType,
+      item.notes
     )
   } finally {
     source.revoke()
@@ -639,7 +643,7 @@ useFileExplorerStore.setState({
       return localFileActions.moveItem(id, parentId)
     if (source?.personalOwnerId && source.personalOwnerId === destination?.personalOwnerId)
       personalWrite(id, { type: 'move', parentId })
-    else void copyPersonalBoundaryFile(id, parentId).catch(reportPersonalWriteError)
+    else void copyFileSnapshot(id, parentId).catch(reportPersonalWriteError)
   },
   moveFolder: (id, parentId) => {
     const state = useFileExplorerStore.getState()
@@ -650,10 +654,15 @@ useFileExplorerStore.setState({
     else void copyExplorerFolder(id, parentId).catch(reportPersonalWriteError)
   },
   copyItem: async (id, parentId) => {
-    if (!isPersonalNode(id) && !isPersonalNode(parentId))
+    if (!isPersonalNode(id) && !isPersonalNode(parentId)) {
+      const state = useFileExplorerStore.getState()
+      const source = state.items[id]
+      if (source && isFolderReadOnlyBySyncLink(source.parentId, state.folders))
+        return copyFileSnapshot(id, parentId)
       return localFileActions.copyItem(id, parentId)
+    }
     try {
-      return await copyPersonalBoundaryFile(id, parentId)
+      return await copyFileSnapshot(id, parentId)
     } catch (error) {
       reportPersonalWriteError(error)
       return null
