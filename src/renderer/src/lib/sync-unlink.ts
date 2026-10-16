@@ -91,12 +91,14 @@ export async function unlinkSyncConnectionFromApp(
 ): Promise<UnlinkSyncConnectionResult> {
   invalidateSyncRefresh(providerConnectionId)
   await cancelSyncDownloadsAndWait({ providerConnectionId })
+  if (!providerConnectionId.startsWith('onedrive:'))
+    return runSyncConnectionUnlink(providerConnectionId)
   return withSyncConnectionMutation(providerConnectionId, () =>
-    unlinkSyncConnectionUnderLock(providerConnectionId)
+    runSyncConnectionUnlink(providerConnectionId)
   )
 }
 
-async function unlinkSyncConnectionUnderLock(
+async function runSyncConnectionUnlink(
   providerConnectionId: string
 ): Promise<UnlinkSyncConnectionResult> {
   const releaseFence = fenceVideoPosterScope(providerConnectionId)
@@ -180,14 +182,13 @@ export async function unlinkSyncRootFolderFromApp(
     providerConnectionId: syncLink.providerConnectionId,
     rootRemoteFolderId: syncLink.remoteFolderId
   })
+  if (syncLink.providerType !== 'onedrive') return runSyncRootUnlink(rootFolder)
   return withSyncConnectionMutation(syncLink.providerConnectionId, () =>
-    unlinkSyncRootUnderLock(rootFolder)
+    runSyncRootUnlink(rootFolder)
   )
 }
 
-async function unlinkSyncRootUnderLock(
-  rootFolder: FolderRecord
-): Promise<UnlinkSyncConnectionResult> {
+async function runSyncRootUnlink(rootFolder: FolderRecord): Promise<UnlinkSyncConnectionResult> {
   const syncLink = rootFolder.syncLink!
   const releaseFence = fenceVideoPosterScope(syncLink.providerConnectionId, syncLink.remoteFolderId)
   try {
