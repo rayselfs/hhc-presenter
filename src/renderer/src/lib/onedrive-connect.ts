@@ -1,5 +1,10 @@
 import type { FileItemRecord, FolderRecord, SyncOfflinePolicy } from '@shared/types/folder'
-import { FILE_EXPLORER_ROOT_ID, useFileExplorerStore } from '@renderer/stores/file-explorer'
+import {
+  FILE_EXPLORER_ROOT_ID,
+  useFileExplorerStore,
+  mergePersistedSyncCatalog,
+  publishPersistedSyncRoot
+} from '@renderer/stores/file-explorer'
 import { getEffectiveOneDriveClientId, useSettingsStore } from '@renderer/stores/settings'
 import { isElectron } from './env'
 import {
@@ -50,26 +55,6 @@ import { dispatchPlannedSyncDownloads } from './sync-transfer-dispatch'
 const ONEDRIVE_WEB_CALLBACK_PATH = '/onedrive-callback.html'
 const ONEDRIVE_WEB_CALLBACK_STORAGE_KEY = 'hhc-presenter:onedrive-callback'
 const ONEDRIVE_WEB_CALLBACK_TIMEOUT_MS = 2 * 60_000
-
-function publishOneDriveRootFolder(root: FolderRecord): void {
-  useFileExplorerStore.setState((state) => {
-    const folders = { ...state.folders, [root.id]: root }
-    const siblings = [
-      ...(state._childFoldersByParent[root.parentId!] ?? []).filter(
-        (folder) => folder.id !== root.id
-      ),
-      root
-    ].sort((left, right) => left.sortIndex - right.sortIndex)
-    return {
-      folders,
-      _foldersArray: Object.values(folders),
-      _childFoldersByParent: {
-        ...state._childFoldersByParent,
-        [root.parentId!]: siblings
-      }
-    }
-  })
-}
 
 function rootOwner(
   id: string | undefined,
@@ -253,52 +238,6 @@ function classifyRemoteFile(
     disabled: decision.action === 'platform-unsupported',
     skip: false
   }
-}
-
-function sortByIndex<T extends { sortIndex: number }>(items: T[]): T[] {
-  return items.slice().sort((a, b) => a.sortIndex - b.sortIndex)
-}
-
-function mergeImportedRecordsIntoStore(folders: FolderRecord[], items: FileItemRecord[]): void {
-  const importedParentIds = new Set<string>(folders.map((folder) => folder.id))
-  importedParentIds.add(FILE_EXPLORER_ROOT_ID)
-  for (const item of items) importedParentIds.add(item.parentId)
-
-  useFileExplorerStore.setState((state) => {
-    const nextFolders = { ...state.folders }
-    const nextItems = { ...state.items }
-    for (const folder of folders) nextFolders[folder.id] = folder
-    for (const item of items) nextItems[item.id] = item
-
-    const childFoldersByParent: typeof state._childFoldersByParent = {}
-    for (const folder of Object.values(nextFolders)) {
-      if (folder.parentId === null) continue
-      const list = childFoldersByParent[folder.parentId] ?? []
-      list.push(folder)
-      childFoldersByParent[folder.parentId] = list
-    }
-    for (const parentId of Object.keys(childFoldersByParent)) {
-      childFoldersByParent[parentId] = sortByIndex(childFoldersByParent[parentId])
-    }
-
-    const loadedParents = new Set([...state.loadedParents, ...importedParentIds])
-    const itemsByParent: typeof state._itemsByParent = {}
-    for (const parentId of loadedParents) {
-      itemsByParent[parentId] = sortByIndex(
-        Object.values(nextItems).filter((item) => item.parentId === parentId)
-      )
-    }
-
-    return {
-      folders: nextFolders,
-      items: nextItems,
-      _foldersArray: Object.values(nextFolders),
-      _itemsArray: Object.values(nextItems),
-      _childFoldersByParent: childFoldersByParent,
-      _itemsByParent: itemsByParent,
-      loadedParents
-    }
-  })
 }
 
 export function buildOneDriveImportPlan(input: {
@@ -780,7 +719,7 @@ export async function importOneDriveFolder(
     })
   }
 
-  mergeImportedRecordsIntoStore(plan.folders, plan.items)
+  mergePersistedSyncCatalog(plan.folders, plan.items)
 
   if (defaultSyncOfflinePolicy === 'always-offline') {
     dispatchPlannedSyncDownloads({
@@ -962,7 +901,7 @@ async function runOneDriveFolderRefresh(
   }
   if (refreshedRoot !== rootFolder) {
     await db.put('folder-records', refreshedRoot)
-    publishOneDriveRootFolder(refreshedRoot)
+    publishPersistedSyncRoot(refreshedRoot)
   }
 
   const downloadedCount = 0
