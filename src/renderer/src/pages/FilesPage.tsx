@@ -89,7 +89,9 @@ function isInsideAnyFolder(
   foldersById: Record<string, FolderRecord>
 ): boolean {
   let currentId: string | null = folderId
-  while (currentId) {
+  const seen = new Set<string>()
+  while (currentId && !seen.has(currentId)) {
+    seen.add(currentId)
     if (targetFolderIds.has(currentId)) return true
     currentId = foldersById[currentId]?.parentId ?? null
   }
@@ -651,33 +653,20 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
     if (!clipboard) return
     if (isCurrentFolderReadOnly) return
 
-    async function copyFolderRecursive(
-      sourceId: string,
-      targetParentId: string,
-      folderName: string,
-      expiresAt: number | null | undefined
-    ): Promise<void> {
-      const current = useFileExplorerStore.getState()
-      if (
-        current.folders[sourceId]?.personalOwnerId ||
-        current.folders[targetParentId]?.personalOwnerId
-      ) {
-        await copyExplorerFolder(sourceId, targetParentId)
-        return
-      }
-      const newFolderId = await addFolder(folderName, targetParentId, expiresAt)
-      await useFileExplorerStore.getState().ensureItemsLoaded(sourceId)
-      const s = useFileExplorerStore.getState()
-      for (const item of s.getItems(sourceId)) {
-        const newId = await copyItem(item.id, newFolderId)
-        if (!newId) continue
-      }
-      for (const sub of s.getChildFolders(sourceId)) {
-        await copyFolderRecursive(sub.id, newFolderId, sub.name, sub.expiresAt)
-      }
-    }
-
     const state = useFileExplorerStore.getState()
+    if (
+      clipboard.mode === 'copy' &&
+      isInsideAnyFolder(
+        currentFolderId,
+        new Set([...clipboard.itemIds].filter((id) => state.folders[id])),
+        state.folders
+      )
+    ) {
+      toast.danger(
+        t('fileExplorer.copyIntoSelf', 'Cannot copy a folder into itself or a subfolder')
+      )
+      return
+    }
     const usedFolderNames = new Set(state.getChildFolders(currentFolderId).map((f) => f.name))
     const usedItemNames = new Set(
       state
@@ -686,43 +675,40 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
         .map((i) => i.name)
     )
 
-    for (const id of clipboard.itemIds) {
-      if (state.folders[id]) {
-        if (clipboard.mode === 'copy') {
-          const uniqueName = resolveUniqueName(state.folders[id].name, [...usedFolderNames])
-          usedFolderNames.add(uniqueName)
-          await copyFolderRecursive(id, currentFolderId, uniqueName, state.folders[id].expiresAt)
-        } else {
-          moveFolder(id, currentFolderId)
-        }
-      } else if (state.items[id]) {
-        const item = state.items[id]
-        if (!isFileItem(item)) continue
-        if (clipboard.mode === 'copy') {
-          const uniqueName = resolveUniqueFileName(item.name, [...usedItemNames])
-          usedItemNames.add(uniqueName)
-          const newId = await copyItem(id, currentFolderId)
-          if (!newId) continue
-          if (uniqueName !== item.name) {
-            useFileExplorerStore.getState().updateItem?.(newId, { name: uniqueName })
+    try {
+      for (const id of clipboard.itemIds) {
+        if (state.folders[id]) {
+          if (clipboard.mode === 'copy') {
+            const uniqueName = resolveUniqueName(state.folders[id].name, [...usedFolderNames])
+            usedFolderNames.add(uniqueName)
+            await copyExplorerFolder(id, currentFolderId, { name: uniqueName })
+          } else {
+            moveFolder(id, currentFolderId)
           }
-        } else {
-          moveItem(id, currentFolderId)
+        } else if (state.items[id]) {
+          const item = state.items[id]
+          if (!isFileItem(item)) continue
+          if (clipboard.mode === 'copy') {
+            const uniqueName = resolveUniqueFileName(item.name, [...usedItemNames])
+            usedItemNames.add(uniqueName)
+            const newId = await copyItem(id, currentFolderId)
+            if (!newId) continue
+            if (uniqueName !== item.name) {
+              useFileExplorerStore.getState().updateItem?.(newId, { name: uniqueName })
+            }
+          } else {
+            moveItem(id, currentFolderId)
+          }
         }
       }
+    } catch (error) {
+      toast.danger(error instanceof Error ? error.message : String(error))
+      return
     }
 
     if (clipboard.mode === 'cut') setClipboard(null)
     setSelectedIds(new Set())
-  }, [
-    clipboard,
-    currentFolderId,
-    addFolder,
-    copyItem,
-    moveFolder,
-    moveItem,
-    isCurrentFolderReadOnly
-  ])
+  }, [clipboard, currentFolderId, copyItem, moveFolder, moveItem, isCurrentFolderReadOnly, t])
 
   const openEditModal = useCallback((id: string): void => {
     const state = useFileExplorerStore.getState()

@@ -461,6 +461,7 @@
     "audioFile": "{{ext}} Audio"
   },
   "fileExplorer": {
+    "copyIntoSelf": "Cannot copy a folder into itself or a subfolder",
     "title": "FILES",
     "search": {
       "placeholder": "Search files...",
