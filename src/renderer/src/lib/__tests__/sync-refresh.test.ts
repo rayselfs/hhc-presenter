@@ -1128,3 +1128,38 @@ describe('collectSyncChangePages', () => {
     expect(incrementalChanges).toHaveBeenCalledTimes(1_000)
   })
 })
+
+describe('guarded catalog commit', () => {
+  it('rechecks the root in the catalog transaction before writing any plan record', async () => {
+    const db = await openFileExplorerDB()
+    await db.put('folder-records', rootFolder)
+    const plan = buildSyncRefreshPlan({
+      providerConnectionId: 'connection-1',
+      providerType: 'local-fs',
+      rootFolder,
+      rootRemoteFolderId: '.',
+      offlinePolicy: 'on-demand',
+      platform: 'electron',
+      existingFolders: [rootFolder],
+      existingItems: [],
+      existingEntries: [],
+      remoteItems: [
+        {
+          remoteItemId: 'new-file',
+          parentRemoteItemId: '.',
+          kind: 'file',
+          name: 'new.jpg',
+          mimeType: 'image/jpeg',
+          size: 4
+        }
+      ]
+    })
+    await db.delete('folder-records', rootFolder.id)
+    await expect(applySyncRefreshPlan(plan, [], rootFolder)).rejects.toThrow(
+      'Sync refresh root was revoked'
+    )
+    expect(await db.getAll('folder-records')).toEqual([])
+    expect(await db.getAll('folder-items')).toEqual([])
+    expect(await getSyncEntryByRemoteItem('connection-1', 'new-file')).toBeUndefined()
+  })
+})

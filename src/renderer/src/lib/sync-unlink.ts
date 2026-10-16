@@ -1,3 +1,4 @@
+import { invalidateSyncRefresh, withSyncConnectionMutation } from './sync-refresh-lifetime'
 import type { FolderRecord } from '@shared/types/folder'
 import { isElectron } from './env'
 import {
@@ -88,9 +89,18 @@ async function cleanupSyncFileResources(
 export async function unlinkSyncConnectionFromApp(
   providerConnectionId: string
 ): Promise<UnlinkSyncConnectionResult> {
+  invalidateSyncRefresh(providerConnectionId)
+  await cancelSyncDownloadsAndWait({ providerConnectionId })
+  return withSyncConnectionMutation(providerConnectionId, () =>
+    unlinkSyncConnectionUnderLock(providerConnectionId)
+  )
+}
+
+async function unlinkSyncConnectionUnderLock(
+  providerConnectionId: string
+): Promise<UnlinkSyncConnectionResult> {
   const releaseFence = fenceVideoPosterScope(providerConnectionId)
   try {
-    await cancelSyncDownloadsAndWait({ providerConnectionId })
     const entries = await listSyncEntriesByProviderConnection(providerConnectionId)
     const linkedRoots = (await (await openFileExplorerDB()).getAll('folder-records')).filter(
       (folder) => folder.syncLink?.providerConnectionId === providerConnectionId
@@ -165,12 +175,22 @@ export async function unlinkSyncRootFolderFromApp(
     return result
   }
 
+  invalidateSyncRefresh(syncLink.providerConnectionId, rootFolder.id)
+  await cancelSyncDownloadsAndWait({
+    providerConnectionId: syncLink.providerConnectionId,
+    rootRemoteFolderId: syncLink.remoteFolderId
+  })
+  return withSyncConnectionMutation(syncLink.providerConnectionId, () =>
+    unlinkSyncRootUnderLock(rootFolder)
+  )
+}
+
+async function unlinkSyncRootUnderLock(
+  rootFolder: FolderRecord
+): Promise<UnlinkSyncConnectionResult> {
+  const syncLink = rootFolder.syncLink!
   const releaseFence = fenceVideoPosterScope(syncLink.providerConnectionId, syncLink.remoteFolderId)
   try {
-    await cancelSyncDownloadsAndWait({
-      providerConnectionId: syncLink.providerConnectionId,
-      rootRemoteFolderId: syncLink.remoteFolderId
-    })
     const entries = await listSyncEntriesByProviderConnection(syncLink.providerConnectionId)
     const targetEntries = collectEntrySubtree(entries, syncLink.remoteFolderId)
 
