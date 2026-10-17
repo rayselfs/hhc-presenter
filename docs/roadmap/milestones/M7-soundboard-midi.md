@@ -2,14 +2,16 @@
 
 ## Status
 
-Foundation implemented; deferred. The workspace remains hidden from navigation and preferences
-until operator and MIDI/device acceptance is complete.
+Legacy implementation retired on 2026-10-18. The existing `/soundboard` redirect to Timer and
+shared audio/media capabilities remain. The scope and source anchors below are historical;
+new Ableton-oriented functionality requires separate investigation and implementation.
+See the [retirement execution record](../../reports/2026-10-18-legacy-retirement-execution.md).
 
 ## Goal
 
 Add a top-level Soundboard workspace for live audio cue playback with mouse-first operation and optional MIDI input.
 
-## Implemented Scope
+## Historical implemented scope
 
 - Dormant Soundboard route implementation; the public route redirects to Timer.
 - Audio media capability support in the shared media registry.
@@ -22,7 +24,7 @@ Add a top-level Soundboard workspace for live audio cue playback with mouse-firs
 - Dormant Soundboard preferences implementation; the category remains hidden.
 - Asset-delete warning when audio files are referenced by pads.
 
-## Source Anchors
+## Historical source anchors
 
 - `src/renderer/src/pages/SoundboardPage.tsx`
 - `src/renderer/src/components/Control/Soundboard/`
@@ -42,7 +44,7 @@ Add a top-level Soundboard workspace for live audio cue playback with mouse-firs
 - Settings persist without storing runtime playback state.
 - Audio assets remain managed by the shared media library.
 
-## Verification
+## Historical verification
 
 ```bash
 npx vitest run src/renderer/src/lib/__tests__/media-capabilities.test.ts
@@ -55,7 +57,7 @@ npm run typecheck
 npm run lint
 ```
 
-## Follow-Up Candidates
+## Historical follow-up candidates
 
 - MIDI mapping import/export.
 - Multiple controller profiles.

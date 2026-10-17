@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CloudRemoteFolder } from '@renderer/lib/cloud-provider'
-import type { FolderRecord } from '@shared/types/folder'
+import type { AnyItemRecord, FolderRecord } from '@shared/types/folder'
 import type { HhcSession } from '@shared/hhc-auth'
 
 const mocks = vi.hoisted(() => ({
@@ -22,13 +22,15 @@ const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   unlinkSyncRoot: vi.fn(),
   deleteResult: vi.fn(),
+  deleteFolderFromStore: vi.fn<() => Promise<void>>(),
+  removeFileItemFromStore: vi.fn<() => Promise<void>>(),
   moveExplorerEntry: vi.fn(),
   copyExplorerFolder: vi.fn(async () => 'copy'),
   createExplorerFolder: vi.fn(async () => 'folder'),
   fileState: {
     currentFolderId: 'file-root',
     folders: {} as Record<string, FolderRecord>,
-    items: {},
+    items: {} as Record<string, AnyItemRecord>,
     _foldersArray: [],
     _itemsByParent: {},
     _childFoldersByParent: {},
@@ -74,8 +76,8 @@ vi.mock('@renderer/stores/file-explorer', () => ({
     (selector: (state: typeof mocks.fileState) => unknown) => selector(mocks.fileState),
     { getState: () => mocks.fileState }
   ),
-  deleteFolderFromStore: vi.fn(),
-  removeFileItemFromStore: vi.fn()
+  deleteFolderFromStore: mocks.deleteFolderFromStore,
+  removeFileItemFromStore: mocks.removeFileItemFromStore
 }))
 
 vi.mock('@renderer/components/Control/FileExplorer', () => ({
@@ -137,6 +139,14 @@ vi.mock('@renderer/components/Control/FileExplorer/FileBrowser', () => ({
         Delete sync root
       </button>
       <button
+        onClick={async () => {
+          selection.setSelectedIds(new Set(['target']))
+          mocks.deleteResult(await onDelete(new Set(['target'])))
+        }}
+      >
+        Delete target
+      </button>
+      <button
         onClick={() => {
           selection.setSelectedIds(new Set(['A']))
           onCopy(new Set(['A']))
@@ -180,9 +190,6 @@ vi.mock('@renderer/components/Common/FolderPersistenceStatus', () => ({
   FolderPersistenceStatus: () => null
 }))
 vi.mock('@renderer/contexts/ConfirmDialogContext', () => ({ useConfirm: () => mocks.confirm }))
-vi.mock('@renderer/stores/soundboard', () => ({
-  useSoundboardStore: { getState: () => ({ findPadsUsingAsset: () => [] }) }
-}))
 vi.mock('@renderer/lib/cloud-provider', () => ({
   getCloudProviderAdapter: mocks.getCloudProviderAdapter
 }))
@@ -452,4 +459,84 @@ describe('FilesPage sync-root deletion completion', () => {
       expect(mocks.unlinkSyncRoot).toHaveBeenCalledTimes(outcome === 'cancel' ? 0 : 1)
     }
   )
+})
+
+describe.each(['file', 'folder'] as const)('FilesPage ordinary %s deletion', (kind) => {
+  beforeEach(() => {
+    mocks.session = null
+    mocks.fileState.currentFolderId = 'file-root'
+    const root: FolderRecord = {
+      id: 'file-root',
+      parentId: null,
+      name: 'Files',
+      sortIndex: 0,
+      createdAt: 1,
+      expiresAt: null
+    }
+    mocks.fileState.folders = { [root.id]: root }
+    mocks.fileState.items = {}
+    if (kind === 'folder') {
+      mocks.fileState.folders.target = {
+        ...root,
+        id: 'target',
+        parentId: root.id,
+        name: 'Audio folder'
+      }
+    } else {
+      mocks.fileState.items.target = {
+        ...root,
+        id: 'target',
+        parentId: root.id,
+        type: 'file',
+        name: 'Audio.wav',
+        url: 'blob:audio',
+        mimeType: 'audio/wav',
+        size: 44
+      }
+    }
+    mocks.confirm.mockReset()
+    mocks.deleteResult.mockReset()
+    mocks.deleteFolderFromStore.mockReset().mockResolvedValue(undefined)
+    mocks.removeFileItemFromStore.mockReset().mockResolvedValue(undefined)
+  })
+
+  it.each(['cancel', 'failure', 'success'])(
+    'preserves completion semantics on %s',
+    async (outcome) => {
+      mocks.confirm.mockResolvedValue(outcome !== 'cancel')
+      const remove = kind === 'folder' ? mocks.deleteFolderFromStore : mocks.removeFileItemFromStore
+      if (outcome === 'failure') remove.mockRejectedValueOnce(new Error('Disk unavailable'))
+      render(<FilesPage />)
+      await userEvent.click(screen.getByRole('button', { name: 'Delete target' }))
+      await waitFor(() => expect(mocks.deleteResult).toHaveBeenCalledWith(outcome === 'success'))
+      expect(mocks.confirm).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'This action cannot be undone.',
+          status: 'danger'
+        })
+      )
+      expect(remove).toHaveBeenCalledTimes(outcome === 'cancel' ? 0 : 1)
+      expect(
+        kind === 'folder' ? mocks.removeFileItemFromStore : mocks.deleteFolderFromStore
+      ).not.toHaveBeenCalled()
+      expect(screen.getByTestId('selected-count')).toHaveTextContent(
+        outcome === 'success' ? '0' : '1'
+      )
+    }
+  )
+
+  it('refuses a read-only sync descendant before confirmation or mutation', async () => {
+    mocks.fileState.folders['file-root'].syncLink = {
+      providerType: 'onedrive',
+      providerConnectionId: 'connection',
+      remoteFolderId: 'remote'
+    }
+    render(<FilesPage />)
+    await userEvent.click(screen.getByRole('button', { name: 'Delete target' }))
+    await waitFor(() => expect(mocks.deleteResult).toHaveBeenCalledWith(false))
+    expect(mocks.confirm).not.toHaveBeenCalled()
+    expect(mocks.deleteFolderFromStore).not.toHaveBeenCalled()
+    expect(mocks.removeFileItemFromStore).not.toHaveBeenCalled()
+    expect(screen.getByTestId('selected-count')).toHaveTextContent('1')
+  })
 })

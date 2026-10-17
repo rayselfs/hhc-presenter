@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path'
 import { closePackaged, launchPackaged } from './helpers/packaged-app'
 import { verifyLegacyRetirement } from './helpers/legacy-retirement'
 
-test('Electron preserves retired Service settings and shared assets without restoring live output', async () => {
+test('Electron preserves retired Service and Soundboard settings and shared assets without restoring live output', async () => {
   const executable = process.env.PACKAGED_APP_PATH
   if (!executable) throw new Error('PACKAGED_APP_PATH is required')
   const userData = await mkdtemp(join(tmpdir(), 'hhc-legacy-retirement-'))

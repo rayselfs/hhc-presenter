@@ -28,7 +28,7 @@ Media, and PowerPoint-like Presentation work is tracked separately in
 | M4 | Implemented | `milestones/M4-slide-ppt-template-system.md` | PPTX is a media item with a PowerPoint-like workspace, page-level document model, and media projection integration. |
 | M5 | Implemented | `milestones/M5-bible-professional-workflow.md` | Existing Bible tools become a live scripture workflow integrated with cues and templates. |
 | M6 | Implemented | `milestones/M6-professional-media-playback.md` | Image, PDF, and video playback are production-grade and reusable across features. |
-| M7 | Foundation implemented; deferred | `milestones/M7-soundboard-midi.md` | Soundboard remains hidden from navigation and preferences pending operator acceptance. |
+| M7 | Legacy implementation retired | `milestones/M7-soundboard-midi.md` | The legacy UI/store/Web Audio/MIDI engines and pad-delete coupling are removed; shared audio/media and the Timer redirect remain. Ableton-oriented functionality is separate work. |
 | M8A | Implemented | `milestones/M8A-recovery-center.md` | Recovery Center derives actionable issues from existing media, sync, storage, and projection state. |
 | M8B | Implemented | `milestones/M8B-lan-remote.md` | LAN-only mobile remote for live controls without cloud relay. |
 | M9 | Implemented | `milestones/M9-release-license-distribution.md` | Public release path, license, notices, packaging, and unsigned distribution. |
