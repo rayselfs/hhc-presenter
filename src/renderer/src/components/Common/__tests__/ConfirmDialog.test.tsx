@@ -1,4 +1,7 @@
-import { render, screen } from '@testing-library/react'
+vi.unmock('@heroui/react/alert-dialog')
+vi.unmock('@heroui/react/button')
+
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect } from 'vitest'
 import '@renderer/i18n'
@@ -129,4 +132,17 @@ describe('ConfirmDialog', () => {
     // Assert that confirm function reference is stable
     expect(confirmRef2).toBe(confirmRef1)
   })
+})
+
+it('returns focus to the trigger after Escape with the real dialog', async () => {
+  const user = userEvent.setup()
+  const result = vi.fn()
+  renderWithProvider(result)
+  const trigger = screen.getByRole('button', { name: 'Open' })
+  await user.click(trigger)
+  const dialog = await screen.findByRole('alertdialog')
+  await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true))
+  await user.keyboard('{Escape}')
+  await waitFor(() => expect(result).toHaveBeenCalledWith(false))
+  await waitFor(() => expect(trigger).toHaveFocus())
 })
