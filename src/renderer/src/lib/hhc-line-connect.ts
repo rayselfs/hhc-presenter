@@ -32,7 +32,7 @@ import {
   type ProviderConnectionRecord,
   type SyncEntryRecord
 } from './sync-db'
-import { refreshImportedMediaAssets } from './local-sync-import'
+import { refreshImportedMediaAssets } from './sync-media-preparation'
 import {
   applySyncRefreshPlan,
   buildSyncDeltaRefreshPlan,

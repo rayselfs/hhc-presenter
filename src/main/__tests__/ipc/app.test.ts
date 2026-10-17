@@ -61,10 +61,6 @@ vi.mock('fs', () => ({
   }
 }))
 
-vi.mock('../../ipc/onedrive-credentials', () => ({
-  clearOneDriveCredentials: mockClearOneDriveCredentials
-}))
-
 vi.mock('https', () => ({
   default: {
     request: vi.fn(),
@@ -95,7 +91,7 @@ beforeEach(() => {
   mockClearOneDriveCredentials.mockResolvedValue(undefined)
   ipcHandlers.clear()
   protocolHandlers.clear()
-  registerAppIpc(wm, hhcAuthService)
+  registerAppIpc(wm, hhcAuthService, { clearCredentials: mockClearOneDriveCredentials })
   registerLocalModelProtocol()
 })
 

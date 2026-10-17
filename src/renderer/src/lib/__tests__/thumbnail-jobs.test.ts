@@ -22,6 +22,9 @@ vi.mock('../thumbnail-db', () => ({
   savePdfPageThumbBlobs: mockSavePdfPages
 }))
 
+vi.mock('../pptx-renderer-service', () => ({ generatePptxFirstSlideThumbnail: vi.fn() }))
+
+import { generatePptxFirstSlideThumbnail } from '../pptx-renderer-service'
 import { enqueueCoverThumbnailJob } from '../cover-thumbnail-jobs'
 import { ensurePdfPageJob } from '../pdf-page-jobs'
 import { BackgroundRenderingUnavailableError } from '../thumbnail-worker-client'
@@ -105,5 +108,26 @@ describe('background thumbnail jobs', () => {
         blockedReason: 'configuration'
       })
     })
+  })
+  it('fails a PPTX rendering job without publishing a ready event', async () => {
+    vi.mocked(generatePptxFirstSlideThumbnail).mockRejectedValue(new Error('Render failed'))
+    const ready = vi.fn()
+    window.addEventListener('hhc:thumbnail-ready', ready)
+    try {
+      const mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+      await enqueueCoverThumbnailJob({
+        sourceBlobId: 'failed-pptx',
+        itemId: 'failed-item',
+        file: new File(['pptx'], 'slides.pptx', { type: mimeType }),
+        mimeType
+      })
+      await vi.waitFor(async () => {
+        expect((await listMediaJobs())[0]).toMatchObject({ status: 'failed' })
+      })
+      expect(ready).not.toHaveBeenCalled()
+      expect(mockSaveCover).not.toHaveBeenCalled()
+    } finally {
+      window.removeEventListener('hhc:thumbnail-ready', ready)
+    }
   })
 })

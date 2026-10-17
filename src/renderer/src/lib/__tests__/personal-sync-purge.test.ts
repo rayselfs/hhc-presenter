@@ -14,7 +14,7 @@ import {
   pullPersonalChanges
 } from '../personal-sync-pull'
 
-vi.mock('../local-sync-import', () => ({ refreshImportedMediaAssets: vi.fn() }))
+vi.mock('../sync-media-preparation', () => ({ refreshImportedMediaAssets: vi.fn() }))
 
 const signal = (): AbortSignal => new AbortController().signal
 const localId = (id: string): string => personalLocalNodeId('space', id)

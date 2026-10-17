@@ -2,6 +2,9 @@ import { expect, test, type Page } from '@playwright/test'
 import { completeOnboarding } from './helpers'
 import { multiPagePdf } from './helpers/pdf-fixtures'
 
+// Keep the startup-delay route observable; hosted-artifact tests cover Service Worker delivery.
+test.use({ serviceWorkers: 'block' })
+
 async function expectSinglePage(page: Page, selector: string, number: number): Promise<void> {
   await expect
     .poll(() =>
@@ -34,7 +37,7 @@ test('keeps a real 40-page PDF synchronized through navigation, continuous scrol
     })
   await expect(page.getByText('Forty pages.pdf')).toBeVisible()
   let delayedWorkers = 0
-  await context.route('**/*pdf.worker*', async (route) => {
+  await context.route('**/*pdf-worker-polyfill.worker*', async (route) => {
     delayedWorkers++
     await new Promise((resolve) => setTimeout(resolve, 1200))
     await route.continue()

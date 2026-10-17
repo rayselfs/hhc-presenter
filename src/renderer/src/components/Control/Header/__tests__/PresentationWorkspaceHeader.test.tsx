@@ -1,3 +1,4 @@
+import { makeEditableItem } from '@renderer/test/presentation-fixtures'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -8,7 +9,6 @@ import {
   createBlankEditablePresentationDocument,
   insertBlankEditableSlide
 } from '@renderer/lib/editable-presentation'
-import { EDITABLE_PRESENTATION_MIME_TYPE } from '@renderer/lib/presentation-media'
 import type {
   PresentationEditorSession,
   PresentationSessionSnapshot
@@ -94,21 +94,6 @@ vi.mock('@renderer/lib/projection-actions', () => ({
   startMediaProjection: mocks.startMediaProjection,
   stopProjectionSession: mocks.stopProjectionSession
 }))
-
-function makeEditableItem(id = 'deck-1'): FileItemRecord {
-  return {
-    id,
-    parentId: 'file-root',
-    type: 'file',
-    sortIndex: 0,
-    createdAt: 1,
-    expiresAt: null,
-    name: 'Sunday.lpdeck',
-    url: `blob:${id}`,
-    size: 1024,
-    mimeType: EDITABLE_PRESENTATION_MIME_TYPE
-  }
-}
 
 function makeReadinessReport(
   item: FileItemRecord,

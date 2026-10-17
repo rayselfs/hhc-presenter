@@ -91,6 +91,7 @@ export type TimerCommand =
  * Timer tick payload — high-frequency update for display
  */
 export interface TimerTickPayload {
+  runtime?: TimerRuntimeSnapshot
   mode: TimerMode
   remainingSeconds: number
   phase: TimerPhase
@@ -123,3 +124,34 @@ export interface StopwatchTickPayload {
   formattedTime: string
   status: StopwatchStatus
 }
+
+export interface TimerRuntimeConfiguration {
+  settings: TimerSettings
+  reminderMode: 'subtract' | 'add'
+}
+
+export interface TimerRuntimeSnapshot {
+  revision: number
+  configuration: TimerRuntimeConfiguration
+  timer: TimerState
+  stopwatch: StopwatchState
+}
+
+export type TimerRuntimeCommand =
+  | Exclude<TimerCommand, { type: 'setReminder' }>
+  | { type: 'setReminder'; enabled: boolean; durationSeconds: number; color?: string }
+  | { type: 'setReminderMode'; mode: 'subtract' | 'add' }
+  | { type: 'resumeStopwatch' }
+
+export type TimerRuntimeResult =
+  | { status: 'accepted'; snapshot: TimerRuntimeSnapshot }
+  | {
+      status: 'rejected'
+      reason:
+        | 'invalid-command'
+        | 'invalid-configuration'
+        | 'not-initialized'
+        | 'unauthorized-sender'
+        | 'host-unavailable'
+        | 'disposed'
+    }

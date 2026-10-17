@@ -4,11 +4,13 @@ import { build } from 'esbuild'
 type SpeechHarness =
   typeof import('../src/renderer/src/lib/speech-adapter/providers/gcp-speech-adapter') &
     Pick<typeof import('../src/renderer/src/lib/speech-key-storage'), 'saveSpeechKey'>
-type SpeechWindow = Window & {
-  SpeechHarness: SpeechHarness
-  speechStream: MediaStream
-  speechAdapter: InstanceType<SpeechHarness['GcpSpeechAdapter']>
-  speechEvents: string[]
+declare global {
+  interface Window {
+    SpeechHarness: SpeechHarness
+    speechStream: MediaStream
+    speechAdapter: InstanceType<SpeechHarness['GcpSpeechAdapter']>
+    speechEvents: string[]
+  }
 }
 
 test.use({
@@ -53,7 +55,7 @@ test('real MediaRecorder stops its synthetic microphone at the GCP session limit
   await page.goto('/')
   await page.addScriptTag({ url: '/__test-speech.js' })
   await page.evaluate(async () => {
-    const target = window as SpeechWindow
+    const target = window
     const getUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
     navigator.mediaDevices.getUserMedia = async (constraints) => {
       target.speechStream = await getUserMedia(constraints)
@@ -77,20 +79,16 @@ test('real MediaRecorder stops its synthetic microphone at the GCP session limit
     await adapter.start()
   })
   await expect
-    .poll(() => page.evaluate(() => (window as SpeechWindow).speechEvents))
+    .poll(() => page.evaluate(() => window.speechEvents))
     .toEqual(['sessionStarted', 'sessionStopped', 'maxDurationReached'])
   expect(requests).toBe(1)
   expect(
     await page.evaluate(() =>
-      (window as SpeechWindow).speechStream
-        .getTracks()
-        .every((track) => track.readyState === 'ended')
+      window.speechStream.getTracks().every((track) => track.readyState === 'ended')
     )
   ).toBe(true)
   await page.waitForTimeout(2200)
   expect(requests).toBe(1)
-  expect(await page.evaluate(() => (window as SpeechWindow).speechAdapter.isRecognizing())).toBe(
-    false
-  )
-  await page.evaluate(() => (window as SpeechWindow).speechAdapter.dispose())
+  expect(await page.evaluate(() => window.speechAdapter.isRecognizing())).toBe(false)
+  await page.evaluate(() => window.speechAdapter.dispose())
 })

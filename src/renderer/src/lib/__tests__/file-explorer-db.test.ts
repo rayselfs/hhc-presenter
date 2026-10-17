@@ -256,7 +256,8 @@ describe('copyItem blob sharing', () => {
     const { openFileExplorerDB, resetFileExplorerDBForTests } = await import('../file-explorer-db')
     await resetFileExplorerDBForTests()
     const db = await openFileExplorerDB()
-    const { useFileExplorerStore } = await import('@renderer/stores/file-explorer')
+    const { copyExplorerFile, useFileExplorerStore } =
+      await import('@renderer/stores/file-explorer')
     const source = {
       id: 'file-1',
       parentId: 'file-root',
@@ -288,7 +289,7 @@ describe('copyItem blob sharing', () => {
       _itemsByParent: { 'file-root': [source] },
       isLoading: false
     })
-    const copiedId = await useFileExplorerStore.getState().copyItem('file-1', 'target-folder')
+    const copiedId = await copyExplorerFile('file-1', 'target-folder')
     expect(copiedId).toEqual(expect.any(String))
     expect((await db.get('file-blobs', 'file-1'))?.refCount).toBe(2)
     expect(await db.get('folder-items', copiedId!)).toMatchObject({
