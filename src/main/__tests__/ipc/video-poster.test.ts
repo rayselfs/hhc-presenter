@@ -1,3 +1,4 @@
+vi.mock('../../lib/native-storage', () => ({ getNativeFilePath: mockGetNativeFilePath }))
 import { EventEmitter } from 'events'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -60,9 +61,7 @@ vi.mock('../../video-engine-runtime', () => ({
   resolveFfmpegRuntime: mockResolveFfmpegPosterRuntime
 }))
 
-vi.mock('../../ipc/native-fs', () => ({
-  getNativeFilePath: mockGetNativeFilePath
-}))
+vi.mock('../../ipc/native-fs', () => ({}))
 
 import type { WindowManager } from '../../windowManager'
 import { registerVideoPosterHandlers } from '../../ipc/video-poster'

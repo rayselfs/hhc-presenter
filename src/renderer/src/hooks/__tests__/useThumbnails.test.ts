@@ -77,15 +77,19 @@ describe('useThumbnails', () => {
     const items = [makeItem('personal-item')]
     const { result, unmount } = renderHook(() => useThumbnails(items))
 
+    await waitFor(() => expect(result.current['personal-item']).toBeNull())
+    mockGetThumbnail.mockResolvedValue('data:image/jpeg;base64,dGh1bWI=')
     act(() => {
       window.dispatchEvent(
         new CustomEvent('hhc:thumbnail-ready', {
-          detail: { itemId: 'personal-item', dataUrl: 'data:image/jpeg;base64,dGh1bWI=' }
+          detail: { itemId: 'personal-item', sourceBlobId: 'personal-item' }
         })
       )
     })
 
-    expect(result.current['personal-item']).toBe('data:image/jpeg;base64,dGh1bWI=')
+    await waitFor(() =>
+      expect(result.current['personal-item']).toBe('data:image/jpeg;base64,dGh1bWI=')
+    )
     unmount()
   })
 

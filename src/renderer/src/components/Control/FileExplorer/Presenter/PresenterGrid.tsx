@@ -9,7 +9,7 @@ import {
   type MediaProjectionActionResult
 } from '@renderer/stores/media-projection'
 import { SHORTCUTS } from '@renderer/config/shortcuts'
-import { matchesConfig } from '@renderer/hooks/useKeyboardShortcuts'
+import { matchesConfig } from '@renderer/lib/shortcut-config'
 import { useThumbnails } from '@renderer/hooks/useThumbnails'
 import GlassDivider from '@renderer/components/Common/GlassDivider'
 import { getMediaType } from '@renderer/lib/presentability'
@@ -113,7 +113,7 @@ function FileGrid({ previewCache }: PresenterGridProps): React.JSX.Element {
   const playlist = useMediaProjectionStore((s) => s.playlist)
   const jumpTo = useMediaProjectionStore((s) => s.jumpTo)
   const toggleGrid = useMediaProjectionStore((s) => s.toggleGrid)
-  const fallbackThumbnails = useThumbnails(playlist)
+  const fallbackThumbnails = useThumbnails(previewCache ? [] : playlist)
   const thumbnails = previewCache ?? fallbackThumbnails
   const failureMessageRef = useRef(
     t('presentationWorkspace.saveFailed', 'Unable to save presentation')

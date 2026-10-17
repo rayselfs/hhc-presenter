@@ -75,3 +75,67 @@ test('date groups preserve days, persist disabled grouping, and support extra-la
   await expect(page.locator('[data-file-item][role="button"]')).toHaveCount(6)
   await expect(page.locator('[data-date-group]')).toHaveCount(0)
 })
+
+test('shares selection across Files paste and Favorites/Trash keyboard actions', async ({
+  page
+}) => {
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+  await page.goto('/')
+  await completeOnboarding(page)
+  await page.evaluate(async () => {
+    const request = indexedDB.open('hhc-file-explorer')
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+    const tx = db.transaction('folder-records', 'readwrite')
+    for (let index = 0; index < 4; index++) {
+      tx.objectStore('folder-records').put({
+        id: `selection-${index}`,
+        parentId: 'file-root',
+        name: `Selection ${index}`,
+        sortIndex: index,
+        createdAt: Date.now(),
+        expiresAt: null,
+        isFavorited: index < 2,
+        ...(index >= 2 ? { deletedAt: Date.now(), originalParentId: 'file-root' } : {})
+      })
+    }
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+    db.close()
+  })
+  await page.reload()
+  await page.goto('/#/files')
+  const cards = page.locator('[data-file-item][role="button"]')
+  const selected = page.locator('[data-file-item].bg-surface')
+  await expect(cards).toHaveCount(2)
+  await page.keyboard.press('ControlOrMeta+a')
+  await expect(selected).toHaveCount(2)
+  await page.keyboard.press('ControlOrMeta+x')
+  await page.keyboard.press('ControlOrMeta+v')
+  await expect(selected).toHaveCount(0)
+  await expect(cards).toHaveCount(2)
+
+  await cards.first().click({ button: 'right' })
+  await expect(selected).toHaveCount(1)
+  await page.keyboard.press('Escape')
+  await cards.first().dblclick()
+  await expect(cards).toHaveCount(0)
+  await expect(selected).toHaveCount(0)
+
+  for (const route of ['favorites', 'trash']) {
+    await page.goto(`/#/${route}`)
+    await expect(page.locator('[data-file-item]')).toHaveCount(2)
+    await page.locator('[data-file-item]').first().click()
+    await expect(selected).toHaveCount(1)
+    await page.keyboard.press('ControlOrMeta+a')
+    await expect(selected).toHaveCount(2)
+    await page.keyboard.press('Escape')
+    await expect(selected).toHaveCount(0)
+  }
+  expect(errors).toEqual([])
+})

@@ -1,3 +1,4 @@
+import { notifyThumbnailReady } from './thumbnail-events'
 import { PPTX_MIME_TYPE } from './presentation-media'
 import { useMediaImportStore } from '@renderer/stores/media-import'
 import { openFileExplorerDB } from './file-explorer-db'
@@ -230,12 +231,8 @@ async function enrichUploadedFile(
     if (canGenerateThumbnail(classification.mimeType, file.name)) {
       if (classification.kind === 'video' && isWeb()) {
         const dataUrl = await generateThumbnail(file, classification.mimeType)
-        if (typeof dataUrl === 'string') await saveThumbnail(id, dataUrl)
-        window.dispatchEvent(
-          new CustomEvent('hhc:thumbnail-ready', {
-            detail: { itemId: id, dataUrl: typeof dataUrl === 'string' ? dataUrl : null }
-          })
-        )
+        if (typeof dataUrl === 'string') await saveThumbnail(sourceBlobId, dataUrl)
+        notifyThumbnailReady(id, sourceBlobId)
       } else if (classification.kind !== 'video') {
         await enqueueCoverThumbnailJob({
           sourceBlobId,

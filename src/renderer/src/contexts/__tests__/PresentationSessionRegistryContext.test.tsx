@@ -1,3 +1,4 @@
+import { makeEditableItem as makeEditableFixture } from '@renderer/test/presentation-fixtures'
 import { act, render } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -39,18 +40,7 @@ vi.mock('@renderer/lib/presentation-editor-session', async (importOriginal) => {
 })
 
 function makeEditableItem(id: string): FileItemRecord {
-  return {
-    id,
-    parentId: 'file-root',
-    type: 'file',
-    sortIndex: 0,
-    createdAt: 1,
-    expiresAt: null,
-    name: `${id}.lpdeck`,
-    url: `blob:${id}`,
-    size: 1024,
-    mimeType: 'application/vnd.hhc.presenter+json'
-  }
+  return makeEditableFixture(id, `${id}.lpdeck`)
 }
 
 function makeDocument(name: string, itemId: string): EditablePresentationDocument {

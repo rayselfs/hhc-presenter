@@ -1,3 +1,5 @@
+import * as syncDb from '../sync-db'
+import type { SyncEntryRecord } from '../sync-db'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   ReadOnlySyncProvider,
@@ -6,6 +8,7 @@ import type {
 } from '../sync-provider'
 import {
   cancelSyncDownloads,
+  cancelSyncDownloadsAndWait,
   enqueueSyncDownload,
   resetSyncDownloadQueueForTests,
   SYNC_DOWNLOAD_CONCURRENCY
@@ -438,6 +441,59 @@ describe('sync download queue', () => {
 
     await expect(pending).resolves.toBeNull()
     expect(onDownloaded).not.toHaveBeenCalled()
+  })
+
+  it('does not recreate failure metadata after another renderer revokes and deletes the source', async () => {
+    const done = deferred<SyncDownloadResult>()
+    let authorized = true
+    const provider = makeProvider(vi.fn(async () => done.promise))
+    const onFailed = vi.fn()
+    const pending = enqueueSyncDownload({
+      provider,
+      request: {
+        providerConnectionId: 'connection-1',
+        rootRemoteFolderId: 'folder-1',
+        remoteItemId: 'remote-1',
+        targetBlobId: 'item-1',
+        offlinePolicy: 'always-offline'
+      },
+      entry: makeEntry('remote-1', 'item-1'),
+      canCommit: () => authorized,
+      onFailed
+    })
+    await vi.waitFor(() => expect(provider.downloadContent).toHaveBeenCalledOnce())
+    authorized = false
+    await syncDb.deleteSyncEntriesByProviderConnection('connection-1')
+    done.reject(new Error('late network error'))
+    await expect(pending).resolves.toBeNull()
+    expect(await getSyncEntryByRemoteItem('connection-1', 'remote-1')).toBeUndefined()
+    expect(onFailed).not.toHaveBeenCalled()
+  })
+
+  it('settles cancellation even if persisting a download failure rejects', async () => {
+    const done = deferred<SyncDownloadResult>()
+    const failedWrite = deferred<SyncEntryRecord>()
+    const provider = makeProvider(vi.fn(async () => done.promise))
+    const pending = enqueueSyncDownload({
+      provider,
+      request: {
+        providerConnectionId: 'connection-1',
+        rootRemoteFolderId: 'folder-1',
+        remoteItemId: 'remote-1',
+        targetBlobId: 'item-1',
+        offlinePolicy: 'always-offline'
+      },
+      entry: makeEntry('remote-1', 'item-1')
+    })
+    await vi.waitFor(() => expect(provider.downloadContent).toHaveBeenCalledOnce())
+    const write = vi.spyOn(syncDb, 'putSyncEntry').mockReturnValueOnce(failedWrite.promise)
+    done.reject(new Error('network error'))
+    await vi.waitFor(() => expect(write).toHaveBeenCalledOnce())
+    const cancelling = cancelSyncDownloadsAndWait({ providerConnectionId: 'connection-1' })
+    failedWrite.reject(new Error('storage unavailable'))
+    await expect(pending).resolves.toBeNull()
+    await expect(cancelling).resolves.toBe(1)
+    write.mockRestore()
   })
 
   it('skips a stale queued job when the file is already available offline', async () => {

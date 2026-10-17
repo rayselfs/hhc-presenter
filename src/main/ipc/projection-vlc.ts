@@ -9,7 +9,7 @@ import type {
   ProjectionVlcStartRequest,
   ProjectionVlcStopRequest
 } from '@shared/ipc-channels'
-import type { VideoPreparationPhase } from '../../shared/projection-messages'
+import type { ProjectionPayload, VideoPreparationPhase } from '../../shared/projection-messages'
 import type { WindowManager } from '../windowManager'
 import { isKnownWindow, isMainWindow } from './validate'
 import { lockVideoPlaybackSource, resolveVideoPlaybackPath } from './video-remux'
@@ -29,6 +29,9 @@ interface PendingVlcControls {
 
 interface OwnedVlcSession {
   itemId: string
+  sourceFileId: string
+  playbackVariant: 'source' | 'matroska-remux'
+  contentRevision?: number
   releaseSource: () => void
   preview: (() => Promise<VlcLiveFrame | null>) | null
   attemptId: string
@@ -51,6 +54,13 @@ interface OwnedVlcSession {
   watchdog: ReturnType<typeof setTimeout> | null
 }
 
+const authoritativeContent = new WeakMap<
+  WindowManager,
+  {
+    generation: number
+    show: ProjectionPayload<'file:show'> | null
+  }
+>()
 let activeSession: OwnedVlcSession | null = null
 let lifecycleVersion = 0
 
@@ -177,6 +187,8 @@ function validateVlcStartRequest(value: unknown): ProjectionVlcStartRequest {
     (value.attemptId !== undefined &&
       (typeof value.attemptId !== 'string' || value.attemptId.length === 0)) ||
     !isValidNativeFileId(value.sourceFileId) ||
+    (value.contentRevision !== undefined &&
+      (!Number.isSafeInteger(value.contentRevision) || Number(value.contentRevision) <= 0)) ||
     value.container !== '#vlc-player' ||
     !isOptionalFiniteNumber(value.durationMs, 0) ||
     !isOptionalFiniteNumber(value.initialPositionSeconds, 0) ||
@@ -367,6 +379,8 @@ function sendState(
         : 'ready'
   wm.sendToMain('projection:message', session.generation, 'file:playback-state', {
     itemId: session.itemId,
+    blobId: session.sourceFileId,
+    contentRevision: session.contentRevision,
     phase,
     currentTime,
     duration,
@@ -535,6 +549,41 @@ function continueStartupAfterReadiness(wm: WindowManager, session: OwnedVlcSessi
   applyFinalTransport(wm, session)
 }
 
+export function updateVlcContentRevision(
+  wm: WindowManager,
+  generation: number,
+  show: ProjectionPayload<'file:show'> | null
+): void {
+  if (wm.getProjectionState().lifecycle.generation !== generation) return
+  const previous = authoritativeContent.get(wm)
+  if (show && (!Number.isSafeInteger(show.contentRevision) || Number(show.contentRevision) <= 0))
+    return
+  if (
+    show &&
+    previous?.generation === generation &&
+    previous.show?.contentRevision !== undefined &&
+    show.contentRevision! < previous.show.contentRevision
+  )
+    return
+  authoritativeContent.set(wm, { generation, show: show ? { ...show } : null })
+  const session = activeSession
+  if (
+    !session ||
+    !show ||
+    !ownsSession(wm, session) ||
+    session.generation !== generation ||
+    show.playbackMode !== 'vlc-embedded' ||
+    session.itemId !== show.itemId ||
+    session.sourceFileId !== show.blobId ||
+    session.playbackVariant !== (show.playbackVariant ?? 'source') ||
+    !Number.isSafeInteger(show.contentRevision) ||
+    Number(show.contentRevision) <= 0 ||
+    (session.contentRevision !== undefined && show.contentRevision! < session.contentRevision)
+  )
+    return
+  session.contentRevision = show.contentRevision
+}
+
 async function startVlc(
   wm: WindowManager,
   loadRuntime: LoadVlcPlayerRuntime,
@@ -545,10 +594,27 @@ async function startVlc(
     throw new Error('Projection window not open')
   const generation = wm.getProjectionState().lifecycle.generation
   if (generation <= 0) return
+  let contentRevision = request.contentRevision
+  const current = authoritativeContent.get(wm)
+  if (contentRevision !== undefined && current?.generation === generation) {
+    const show = current.show
+    if (
+      !show ||
+      show.playbackMode !== 'vlc-embedded' ||
+      show.itemId !== request.itemId ||
+      show.blobId !== request.sourceFileId ||
+      (show.playbackVariant ?? 'source') !== (request.playbackVariant ?? 'source')
+    )
+      return
+    contentRevision = show.contentRevision
+  }
   const previousSession = activeSession
   const startVersion = ++lifecycleVersion
   const session: OwnedVlcSession = {
     itemId: request.itemId,
+    sourceFileId: request.sourceFileId,
+    playbackVariant: request.playbackVariant ?? 'source',
+    contentRevision,
     releaseSource: lockVideoPlaybackSource(request.sourceFileId),
     preview: null,
     attemptId: request.attemptId ?? `${request.itemId}-${startVersion}`,
@@ -587,6 +653,8 @@ async function startVlc(
     if (!ownsSession(wm, session)) return
     wm.sendToMain('projection:message', session.generation, 'file:playback-state', {
       itemId: session.itemId,
+      blobId: session.sourceFileId,
+      contentRevision: session.contentRevision,
       phase: 'preparing',
       preparationPhase,
       currentTime: request.initialPositionSeconds ?? 0,
@@ -853,6 +921,7 @@ export function registerProjectionVlcHandlers(
   wm: WindowManager,
   loadRuntime: LoadVlcPlayerRuntime = loadVlcPlayerRuntime
 ): void {
+  authoritativeContent.delete(wm)
   ipcMain.handle('projection-vlc:get-info', async (event): Promise<ProjectionVlcInfo> => {
     if (!isKnownWindow(wm, event)) return { status: 'error', message: 'Unauthorized VLC access' }
     return (await resolveVlcInfo(loadRuntime)).info

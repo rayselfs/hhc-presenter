@@ -72,7 +72,7 @@ export interface FolderStoreConfig {
   isVisible?: (record: FolderRecord | AnyItemRecord) => boolean
   rootId: string
   rootName: string
-  getDB: () => Promise<unknown>
+  persistence: FolderPersistence
 }
 
 export type FolderDuration = '1day' | '1week' | '1month' | 'permanent'
@@ -126,4 +126,23 @@ export function isFolderRecord(node: unknown): node is FolderRecord {
     'parentId' in node &&
     !('type' in node)
   )
+}
+
+export interface FolderPersistence {
+  loadAllFolders: () => Promise<FolderRecord[]>
+  saveFolder: (folder: FolderRecord) => Promise<void>
+  saveFolders: (folders: FolderRecord[]) => Promise<void>
+  deleteFolders: (ids: string[]) => Promise<void>
+  loadItemsByParent: (parentId: string) => Promise<AnyItemRecord[]>
+  saveItem: (item: AnyItemRecord) => Promise<void>
+  saveItems: (items: AnyItemRecord[]) => Promise<void>
+  deleteItem: (id: string) => Promise<void>
+  deleteItems: (ids: string[]) => Promise<void>
+  deleteItemsByParent: (parentId: string) => Promise<void>
+  deleteExpiredFolders: (now: number) => Promise<string[]>
+  deleteExpiredItems: (now: number) => Promise<string[]>
+  purgeTrashOlderThan: (
+    now: number,
+    retentionMs: number
+  ) => Promise<{ folderIds: string[]; itemIds: string[] }>
 }

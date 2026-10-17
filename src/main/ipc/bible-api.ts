@@ -1,3 +1,4 @@
+import { parseBibleStream } from '@shared/bible-stream'
 import { ipcMain } from 'electron'
 import type { WindowManager } from '../windowManager'
 import { isMainWindow } from './validate'
@@ -20,55 +21,7 @@ async function fetchContent(versionId: number): Promise<BibleBook[]> {
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     if (!response.body) throw new Error('Response body is null')
 
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    const books: BibleBook[] = []
-    let buffer = ''
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
-
-      const events = buffer.split('\n\n')
-      buffer = events.pop() ?? ''
-
-      for (const block of events) {
-        const lines = block.split('\n')
-        let dataLine = ''
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            dataLine = line.slice(6)
-          }
-        }
-        if (!dataLine) continue
-        let parsed: unknown
-        try {
-          parsed = JSON.parse(dataLine)
-        } catch {
-          continue
-        }
-        if (
-          typeof parsed !== 'object' ||
-          parsed === null ||
-          !('number' in parsed) ||
-          !('chapters' in parsed)
-        ) {
-          continue
-        }
-        books.push(parsed as BibleBook)
-      }
-    }
-
-    books.sort((a, b) => a.number - b.number)
-    for (const book of books) {
-      book.chapters.sort((a, b) => a.number - b.number)
-      for (const chapter of book.chapters) {
-        chapter.verses.sort((a, b) => a.number - b.number)
-      }
-    }
-
-    return books
+    return await parseBibleStream(response.body)
   } finally {
     clearTimeout(timeout)
   }

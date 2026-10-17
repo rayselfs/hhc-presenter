@@ -24,7 +24,7 @@ import {
 } from './sync-db'
 import { applySyncRefreshPlan, buildSyncRefreshPlan, collectSyncChangePages } from './sync-refresh'
 import { dispatchPlannedSyncDownloads } from './sync-transfer-dispatch'
-import { refreshImportedMediaAssets } from './local-sync-import'
+import { refreshImportedMediaAssets } from './sync-media-preparation'
 import { unlinkSyncRootFolderFromApp } from './sync-unlink'
 import { getBlobId } from './blob-identity'
 import { enqueueSyncDownload } from './sync-download-queue'

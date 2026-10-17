@@ -7,7 +7,6 @@ import { getPresentationItem } from '@renderer/lib/presentation-drafts'
 import React, {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -101,7 +100,6 @@ import {
 } from '@renderer/lib/presentation-rich-text'
 import type { HhcLineCloudAuth } from '@renderer/lib/cloud-provider'
 import { prepareHhcLinePresentationSource } from '@renderer/lib/hhc-line-connect'
-import { isMac } from '@renderer/lib/env'
 import {
   alignElements,
   distributeElements,
@@ -123,7 +121,10 @@ import { useSettingsStore } from '@renderer/stores/settings'
 import { usePresentationSessionRegistry } from '@renderer/contexts/PresentationSessionRegistryContext'
 import type { PresentationEditorSession } from '@renderer/lib/presentation-editor-session'
 import { ensurePresentationPageDocument } from '@renderer/lib/presentation-page-document'
-import { calculateFitZoomPercent } from '@renderer/lib/presentation-viewport'
+import {
+  PRESENTATION_CANVAS_WIDTH,
+  usePresentationViewport
+} from '@renderer/hooks/usePresentationViewport'
 import {
   createSlideClipboard,
   cutSlides,
@@ -144,14 +145,11 @@ import { isFileItem, type FileItemRecord } from '@shared/types/folder'
 import type { SlideHandle } from '@aiden0z/pptx-renderer'
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'failed'
-type ZoomMode = 'fit' | 'custom'
 
 const FONT_FAMILIES = ['Inter Variable', 'Noto Sans TC Variable', 'Noto Sans SC Variable', 'Arial']
 const FONT_SIZES = [
   8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 54, 60, 66, 72, 80, 88, 96
 ]
-const PRESENTATION_CANVAS_WIDTH = 1024
-const PRESENTATION_VIEWPORT_PADDING = 64
 const NATIVE_CONTROL_CLASS =
   'presentation-native-control h-7 rounded-md border border-separator bg-surface-secondary px-2 text-sm text-foreground outline-none'
 const RANGE_CLASS = 'presentation-range w-full'
@@ -375,10 +373,12 @@ export function PptxDocumentView({
 
   useEffect(() => {
     let cancelled = false
-    const target = canvasRef.current
-    if (!target) return
-    const container = target
-    container.innerHTML = ''
+    const container = canvasRef.current
+    if (!container) return
+    const target = document.createElement('div')
+    target.className = 'w-full'
+    container.replaceChildren(target)
+    const controller = new AbortController()
     viewerRef.current?.destroy()
     viewerRef.current = null
 
@@ -396,7 +396,10 @@ export function PptxDocumentView({
           readPresentationArrayBuffer
         )
         if (cancelled) return
-        const handle = await openPptxViewer(buffer, container, { renderMode: 'slide' })
+        const handle = await openPptxViewer(buffer, target, {
+          renderMode: 'slide',
+          signal: controller.signal
+        })
         if (cancelled) {
           handle.destroy()
           return
@@ -425,6 +428,8 @@ export function PptxDocumentView({
     void open()
     return () => {
       cancelled = true
+      controller.abort()
+      target.remove()
       viewerRef.current?.destroy()
       viewerRef.current = null
     }
@@ -433,11 +438,16 @@ export function PptxDocumentView({
   useEffect(() => {
     const current = viewerRef.current
     if (!current || status !== 'ready') return
+    let cancelled = false
     void current.viewer.renderSlide(activeSlide).catch((renderError) => {
+      if (cancelled || viewerRef.current !== current) return
       setStatus('failed')
       setError(renderError instanceof Error ? renderError.message : String(renderError))
     })
-  }, [activeSlide, status])
+    return () => {
+      cancelled = true
+    }
+  }, [activeSlide, status, viewer])
 
   const slideIndexes = useMemo(
     () => Array.from({ length: viewer?.slideCount ?? deck.slideCount ?? 0 }, (_, index) => index),
@@ -633,18 +643,9 @@ function EditableSessionDocumentView({
       : Math.min(lastActiveSlideIndex, Math.max(0, document.slideOrder.length - 1))
   const activeSlideId = document.slideOrder[activeSlideIndex] ?? null
   const imageInputRef = useRef<HTMLInputElement>(null)
-  const canvasViewportRef = useRef<HTMLDivElement>(null)
-  const canvasRef = useRef<HTMLDivElement>(null)
   const textDraftStartedAtRef = useRef<number | null>(null)
   const textCommitTimerRef = useRef<number | null>(null)
   const textEditorFinalizerRef = useRef<TextEditFinalizer | null>(null)
-  const pendingZoomAnchorRef = useRef<{
-    clientX: number
-    clientY: number
-    logicalX: number
-    logicalY: number
-    nextZoom: number
-  } | null>(null)
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
   const newEmptyTextRef = useRef<string | null>(null)
   const [selectedElementIds, setSelectedElementIds] = useState<Set<string>>(() => new Set())
@@ -666,19 +667,8 @@ function EditableSessionDocumentView({
   const hasRequestedLocalFontsRef = useRef(false)
   const [draggingSlideIds, setDraggingSlideIds] = useState<string[]>([])
   const [railWidth, setRailWidth] = useState(240)
-  const [zoomMode, setZoomMode] = useState<ZoomMode>('fit')
-  const [customZoomPercent, setZoomPercent] = useState(100)
-  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
-  const zoomPercent =
-    zoomMode === 'fit' && viewportSize.width > 0 && viewportSize.height > 0
-      ? calculateFitZoomPercent(
-          viewportSize.width,
-          viewportSize.height,
-          PRESENTATION_CANVAS_WIDTH,
-          (PRESENTATION_CANVAS_WIDTH * document.height) / document.width,
-          PRESENTATION_VIEWPORT_PADDING
-        )
-      : customZoomPercent
+  const { canvasViewportRef, canvasRef, zoomMode, zoomPercent, setCustomZoom, fitZoom } =
+    usePresentationViewport(document.width, document.height)
   const [isNotesOpen, setIsNotesOpen] = useState(false)
   const [compactOverlay, setCompactOverlay] = useState<'navigator' | 'inspector' | null>(null)
   const formatBackgroundTriggerRef = useRef<HTMLElement>(null)
@@ -731,29 +721,6 @@ function EditableSessionDocumentView({
     },
     []
   )
-
-  useEffect(() => {
-    const viewport = canvasViewportRef.current
-    if (!viewport) return
-    const observer = new ResizeObserver(([entry]) => {
-      if (!entry) return
-      setViewportSize({ width: entry.contentRect.width, height: entry.contentRect.height })
-    })
-    observer.observe(viewport)
-    return () => observer.disconnect()
-  }, [])
-
-  useLayoutEffect(() => {
-    const pending = pendingZoomAnchorRef.current
-    const viewport = canvasViewportRef.current
-    const canvas = canvasRef.current
-    if (!pending || !viewport || !canvas || pending.nextZoom !== zoomPercent) return
-    const rect = canvas.getBoundingClientRect()
-    const scale = zoomPercent / 100
-    viewport.scrollLeft += rect.left + pending.logicalX * scale - pending.clientX
-    viewport.scrollTop += rect.top + pending.logicalY * scale - pending.clientY
-    pendingZoomAnchorRef.current = null
-  }, [zoomPercent])
 
   useEffect(() => {
     setSlideCount(deck.itemId, document.slideOrder.length)
@@ -834,38 +801,6 @@ function EditableSessionDocumentView({
   function commitNotes(): void {
     if (session.getSnapshot().draftKind === 'notes') session.commitDraft()
   }
-
-  const setCustomZoom = (nextZoom: number): void => {
-    setZoomMode('custom')
-    setZoomPercent(Math.max(25, Math.min(200, nextZoom)))
-  }
-
-  useEffect(() => {
-    const viewport = canvasViewportRef.current
-    if (!viewport) return
-    const handleWheel = (event: WheelEvent): void => {
-      if (!(event.ctrlKey || (isMac() && event.metaKey))) return
-      event.preventDefault()
-      if (event.deltaY === 0) return
-      const nextZoom = Math.max(25, Math.min(200, zoomPercent + (event.deltaY < 0 ? 5 : -5)))
-      setZoomMode('custom')
-      if (nextZoom === zoomPercent) return
-      const canvas = canvasRef.current
-      if (!canvas) return
-      const rect = canvas.getBoundingClientRect()
-      const scale = zoomPercent / 100
-      pendingZoomAnchorRef.current = {
-        clientX: event.clientX,
-        clientY: event.clientY,
-        logicalX: (event.clientX - rect.left) / scale,
-        logicalY: (event.clientY - rect.top) / scale,
-        nextZoom
-      }
-      setZoomPercent(nextZoom)
-    }
-    viewport.addEventListener('wheel', handleWheel, { passive: false })
-    return () => viewport.removeEventListener('wheel', handleWheel)
-  }, [zoomPercent])
 
   const previewTextElement = useCallback(
     (slideId: string, elementId: string, updates: Partial<EditablePresentationElement>): void => {
@@ -1982,7 +1917,7 @@ function EditableSessionDocumentView({
         id: 'presentation-zoom-fit',
         config: SHORTCUTS.PRESENTATION.ZOOM_FIT,
         description: t('presentationWorkspace.fit', 'Fit'),
-        handler: () => setZoomMode('fit')
+        handler: fitZoom
       },
       {
         id: 'presentation-bold',
@@ -2660,7 +2595,7 @@ function EditableSessionDocumentView({
                   <Button
                     size="sm"
                     variant={zoomMode === 'fit' ? 'primary' : 'ghost'}
-                    onPress={() => setZoomMode('fit')}
+                    onPress={fitZoom}
                     aria-pressed={zoomMode === 'fit'}
                   >
                     {t('presentationWorkspace.fit', 'Fit')}
@@ -3175,6 +3110,7 @@ export default function PresentationWorkspacePage(): React.JSX.Element {
       {activeDocument ? (
         activeDocument.mode === 'editable' ? (
           <EditableDocumentView
+            key={activeDocument.itemId}
             deck={activeDocument}
             isBackgroundPanelOpen={backgroundPanel.isOpen}
             onBackgroundPanelOpenChange={(isOpen) =>
@@ -3184,7 +3120,7 @@ export default function PresentationWorkspacePage(): React.JSX.Element {
             onSlideClipboardChange={setSlideClipboard}
           />
         ) : (
-          <PptxDocumentView deck={activeDocument} />
+          <PptxDocumentView key={activeDocument.itemId} deck={activeDocument} />
         )
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">

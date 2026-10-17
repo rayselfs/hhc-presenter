@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 interface InlineRenameInputProps {
   initialValue: string
   ariaLabel: string
-  onSubmit: (value: string) => void
+  onSubmit: (value: string) => boolean | void | Promise<boolean | void>
   onCancel: () => void
 }
 
@@ -14,6 +14,7 @@ export function InlineRenameInput({
   onCancel
 }: InlineRenameInputProps): React.JSX.Element {
   const [value, setValue] = useState(initialValue)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const composingRef = useRef(false)
   const submittedRef = useRef(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -33,10 +34,23 @@ export function InlineRenameInput({
   const submit = (): void => {
     if (submittedRef.current) return
     submittedRef.current = true
-    onSubmit(value)
+    setIsSubmitting(true)
+    void (async () => {
+      let completed = false
+      try {
+        completed = (await onSubmit(value)) !== false
+      } finally {
+        setIsSubmitting(false)
+        if (!completed) {
+          submittedRef.current = false
+          inputRef.current?.focus()
+        }
+      }
+    })().catch(() => undefined)
   }
 
   const cancel = (): void => {
+    if (submittedRef.current) return
     submittedRef.current = true
     onCancel()
   }
@@ -47,6 +61,8 @@ export function InlineRenameInput({
       aria-label={ariaLabel}
       value={value}
       rows={1}
+      readOnly={isSubmitting}
+      aria-busy={isSubmitting}
       className="max-h-24 w-full resize-none overflow-hidden rounded border border-primary/40 bg-background px-1 text-center text-sm text-foreground outline-none"
       onChange={(event) => setValue(event.target.value)}
       onClick={(event) => event.stopPropagation()}

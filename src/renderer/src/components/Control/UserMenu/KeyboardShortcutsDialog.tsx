@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Timer, BookOpen, Film, Monitor, Camera } from 'lucide-react'
 import { SHORTCUTS } from '@renderer/config/shortcuts'
 import { getMetaKeyLabel } from '@renderer/lib/env'
-import { ShortcutConfig, getPlatformShortcut } from '@renderer/hooks/useKeyboardShortcuts'
+import { ShortcutConfig, getPlatformShortcut } from '@renderer/lib/shortcut-config'
 import { ShortcutScope } from '@renderer/contexts/ShortcutScopeContext'
 
 interface KeyboardShortcutsDialogProps {

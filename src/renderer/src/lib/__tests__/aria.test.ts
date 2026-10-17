@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { formatAriaShortcut } from '../aria'
-import type { ShortcutConfig } from '@renderer/hooks/useKeyboardShortcuts'
+import type { ShortcutConfig } from '@renderer/lib/shortcut-config'
 
 describe('formatAriaShortcut', () => {
   const originalUserAgentData = Object.getOwnPropertyDescriptor(navigator, 'userAgentData')
