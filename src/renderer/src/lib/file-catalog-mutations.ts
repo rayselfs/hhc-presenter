@@ -328,3 +328,85 @@ export async function createLocalCatalogFolder(
     throw error
   }
 }
+
+export async function softDeleteLocalCatalogEntry(
+  kind: 'folder' | 'file',
+  id: string
+): Promise<{ folders: FolderRecord[]; items: FileItemRecord[] }> {
+  const db = await openFileExplorerDB()
+  const tx = db.transaction(['folder-items', 'folder-records', 'catalog-deletions'], 'readwrite')
+  try {
+    const record =
+      kind === 'folder'
+        ? await tx.objectStore('folder-records').get(id)
+        : await tx.objectStore('folder-items').get(id)
+    if (
+      !record ||
+      record.personalOwnerId ||
+      record.sharedRecipientId ||
+      !record.parentId ||
+      ('type' in record && record.type !== 'file')
+    )
+      throw new Error('Trash source is unavailable')
+    const folders = await tx.objectStore('folder-records').getAll()
+    const byId = Object.fromEntries(folders.map((folder) => [folder.id, folder]))
+    if (isFolderReadOnlyBySyncLink(kind === 'folder' ? id : record.parentId, byId))
+      throw new Error('Trash source is read-only')
+    let ancestor: string | null = id
+    const seen = new Set<string>()
+    while (ancestor) {
+      if (seen.has(ancestor)) throw new Error('Trash source is unavailable')
+      seen.add(ancestor)
+      if (await tx.objectStore('catalog-deletions').get(ancestor))
+        throw new Error('Trash source was deleted')
+      if (ancestor === id) ancestor = record.parentId
+      else {
+        const folder: FolderRecord | undefined = byId[ancestor]
+        if (!folder || folder.personalOwnerId || folder.sharedRecipientId)
+          throw new Error('Trash source is unavailable')
+        ancestor = folder.parentId
+      }
+    }
+    const deleted = {
+      ...record,
+      deletedAt: record.deletedAt ?? Date.now(),
+      originalParentId: record.originalParentId ?? record.parentId
+    }
+    const updatedFolders: FolderRecord[] = []
+    const updatedItems: FileItemRecord[] = []
+    if ('type' in deleted) {
+      if (deleted.type !== 'file') throw new Error('Trash source is unavailable')
+      updatedItems.push(deleted)
+      await tx.objectStore('folder-items').put(deleted)
+    } else {
+      updatedFolders.push({ ...deleted, isFavorited: false })
+      const children = new Map<string, FolderRecord[]>()
+      for (const folder of folders) {
+        if (!folder.parentId || folder.personalOwnerId || folder.sharedRecipientId) continue
+        const siblings = children.get(folder.parentId) ?? []
+        siblings.push(folder)
+        children.set(folder.parentId, siblings)
+      }
+      const pending = [...(children.get(id) ?? [])]
+      const visited = new Set([id])
+      while (pending.length > 0) {
+        const folder = pending.pop()!
+        if (visited.has(folder.id)) continue
+        visited.add(folder.id)
+        if (folder.isFavorited) updatedFolders.push({ ...folder, isFavorited: false })
+        pending.push(...(children.get(folder.id) ?? []))
+      }
+      for (const folder of updatedFolders) await tx.objectStore('folder-records').put(folder)
+    }
+    await tx.done
+    return { folders: updatedFolders, items: updatedItems }
+  } catch (error) {
+    try {
+      tx.abort()
+    } catch {
+      /* Already completed. */
+    }
+    await tx.done.catch(() => undefined)
+    throw error
+  }
+}

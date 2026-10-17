@@ -86,7 +86,7 @@ export interface FileBrowserProps {
   onSelectionChange?: (selectedIds: Set<string>) => void
   onCopy?: (selectedIds: Set<string>) => void
   onCut?: (selectedIds: Set<string>) => void
-  onDelete?: (selectedIds: Set<string>) => void | Promise<void>
+  onDelete?: (selectedIds: Set<string>) => boolean | void | Promise<boolean | void>
   onPaste?: () => void
   clipboard?: ClipboardState | null
   onEscape?: () => void
@@ -1011,31 +1011,35 @@ export function FileBrowser({
   const handleDeleteSelected = useCallback(async (): Promise<void> => {
     if (isCurrentFolderReadOnly) return
     if (selectedIds.size === 0) return
-    if (onDelete) {
-      await onDelete(new Set(selectedIds))
-      clearSelection()
-      return
-    }
-
-    const confirmed = await confirm({
-      title: t('folder.deleteSelectedTitle', {
-        count: selectedIds.size,
-        defaultValue: `Delete ${selectedIds.size} item(s)?`
-      }),
-      description: t('folder.deleteItemDescription', 'This action cannot be undone.'),
-      status: 'danger'
-    })
-
-    if (!confirmed) return
-
-    for (const id of selectedIds) {
-      if (folderIds.includes(id)) {
-        await deleteFolderFromStore(id)
-      } else {
-        await removeFileItemFromStore(id)
+    try {
+      if (onDelete) {
+        if ((await onDelete(new Set(selectedIds))) === false) return
+        clearSelection()
+        return
       }
+
+      const confirmed = await confirm({
+        title: t('folder.deleteSelectedTitle', {
+          count: selectedIds.size,
+          defaultValue: `Delete ${selectedIds.size} item(s)?`
+        }),
+        description: t('folder.deleteItemDescription', 'This action cannot be undone.'),
+        status: 'danger'
+      })
+
+      if (!confirmed) return
+
+      for (const id of selectedIds) {
+        if (folderIds.includes(id)) {
+          await deleteFolderFromStore(id)
+        } else {
+          await removeFileItemFromStore(id)
+        }
+      }
+      clearSelection()
+    } catch (error) {
+      toast.danger(error instanceof Error ? error.message : String(error))
     }
-    clearSelection()
   }, [selectedIds, onDelete, confirm, t, folderIds, clearSelection, isCurrentFolderReadOnly])
 
   const handleCopySelected = useCallback((): void => {
