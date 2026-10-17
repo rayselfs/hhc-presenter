@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
 import {
   copyExplorerFolder,
+  copyExplorerFile,
   FILE_EXPLORER_ROOT_ID,
   refreshPersonalCatalog,
   useFileExplorerStore
@@ -86,7 +87,7 @@ function PersonalCloudAccountStatus({ ownerId }: { ownerId: string }): React.JSX
           const catalog = useFileExplorerStore.getState()
           if (catalog.folders[id])
             await copyExplorerFolder(id, FILE_EXPLORER_ROOT_ID, { includeDeleted: true })
-          else if (!(await catalog.copyItem(id, FILE_EXPLORER_ROOT_ID)))
+          else if (!(await copyExplorerFile(id, FILE_EXPLORER_ROOT_ID)))
             throw new Error(t('personalCloud.backupFailed'))
         }
       }
