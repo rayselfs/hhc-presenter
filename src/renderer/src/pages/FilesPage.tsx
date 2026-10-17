@@ -14,6 +14,7 @@ import { FolderModal } from '@renderer/components/Control/Folder/FolderModal'
 import {
   createExplorerFolder,
   copyExplorerFolder,
+  copyExplorerFile,
   deleteFolderFromStore,
   removeFileItemFromStore,
   useFileExplorerStore,
@@ -187,7 +188,6 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   const getChildFolders = useFileExplorerStore((state) => state.getChildFolders)
   const addFolder = createExplorerFolder
   const moveItem = useFileExplorerStore((state) => state.moveItem)
-  const copyItem = useFileExplorerStore((state) => state.copyItem)
   const moveFolder = useFileExplorerStore((state) => state.moveFolder)
   const updateFolder = useFileExplorerStore((state) => state.updateFolder)
   const persistenceStatus = useFileExplorerStore((state) => state.persistenceStatus)
@@ -691,7 +691,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
           if (clipboard.mode === 'copy') {
             const uniqueName = resolveUniqueFileName(item.name, [...usedItemNames])
             usedItemNames.add(uniqueName)
-            const newId = await copyItem(id, currentFolderId)
+            const newId = await copyExplorerFile(id, currentFolderId)
             if (!newId) continue
             if (uniqueName !== item.name) {
               useFileExplorerStore.getState().updateItem?.(newId, { name: uniqueName })
@@ -708,7 +708,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
 
     if (clipboard.mode === 'cut') setClipboard(null)
     setSelectedIds(new Set())
-  }, [clipboard, currentFolderId, copyItem, moveFolder, moveItem, isCurrentFolderReadOnly, t])
+  }, [clipboard, currentFolderId, moveFolder, moveItem, isCurrentFolderReadOnly, t])
 
   const openEditModal = useCallback((id: string): void => {
     const state = useFileExplorerStore.getState()
