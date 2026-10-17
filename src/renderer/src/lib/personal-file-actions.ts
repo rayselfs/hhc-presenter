@@ -181,8 +181,10 @@ export async function mutatePersonalNode(
     | { type: 'rename'; name: string }
     | { type: 'move'; parentId: string }
     | { type: 'delete' }
-    | { type: 'restore'; name?: string }
+    | { type: 'restore'; name?: string },
+  signal?: AbortSignal
 ): Promise<void> {
+  signal?.throwIfAborted()
   const ownerId = activeOwner()
   const db = await openFileExplorerDB()
   const node = await db.get('personal-sync-nodes', id)
@@ -227,15 +229,18 @@ export async function mutatePersonalNode(
       break
     }
   }
-  await commitPersonalLocalMutation({
-    ownerId,
-    nodeId: id,
-    remoteId: node.remoteId,
-    localRevision: node.localRevision + 1,
-    operationId: crypto.randomUUID(),
-    catalog,
-    mutation: operation
-  })
+  await commitPersonalLocalMutation(
+    {
+      ownerId,
+      nodeId: id,
+      remoteId: node.remoteId,
+      localRevision: node.localRevision + 1,
+      operationId: crypto.randomUUID(),
+      catalog,
+      mutation: operation
+    },
+    signal
+  )
   await publish(ownerId)
 }
 
