@@ -234,6 +234,27 @@ describe('validateProjectionTransportTuple', () => {
     expect(validateProjectionTransportTuple([4, '__system:ready', { generation: 3 }])).toBe(false)
   })
 
+  it.each([0, -1, 1.5, NaN, Infinity, '2'])(
+    'rejects invalid playback content revision %s',
+    (contentRevision) => {
+      expect(
+        validateProjectionMessageTuple([
+          'file:playback-state',
+          {
+            itemId: 'video',
+            blobId: 'blob',
+            contentRevision,
+            phase: 'ready',
+            currentTime: 0,
+            duration: 0,
+            isPlaying: false,
+            isEnded: false
+          }
+        ])
+      ).toBe(false)
+    }
+  )
+
   it('accepts optional VLC playback capability and volume state', () => {
     expect(
       validateProjectionMessageTuple([
