@@ -1,7 +1,8 @@
 import { validateDisplayName } from '@renderer/lib/file-naming'
 import { createPersistenceOperationQueue } from '@renderer/lib/persistence-operation-queue'
 import {
-  renameLocalCatalogEntry,
+  createLocalCatalogFolder,
+  updateLocalCatalogEntry,
   restoreLocalCatalogEntry
 } from '@renderer/lib/file-catalog-mutations'
 import { createFileExplorerFolderDB } from '@renderer/lib/folder-db'
@@ -595,7 +596,13 @@ export async function createExplorerFolder(
   if (destination?.personalOwnerId) {
     return (await import('@renderer/lib/personal-file-actions')).createPersonalFolder(name, parent)
   }
-  return store.addFolder(name, parent, expiresAt)
+  let createdId = ''
+  await filePersistenceQueue.commit(async () => {
+    const folder = await createLocalCatalogFolder(name, parent, expiresAt, isPersonalRecordVisible)
+    publishPersistedExplorerEntry(folder)
+    createdId = folder.id
+  })
+  return createdId
 }
 
 function reportPersonalWriteError(error: unknown): void {
@@ -676,6 +683,22 @@ export function renameExplorerEntry(
   id: string,
   name: string
 ): Promise<void> {
+  return updateExplorerEntry(kind, id, { name })
+}
+
+export function updateExplorerFolderProperties(
+  id: string,
+  updates: { name: string; expiresAt: number | null }
+): Promise<void> {
+  return updateExplorerEntry('folder', id, { ...updates })
+}
+
+function updateExplorerEntry(
+  kind: 'folder' | 'file',
+  id: string,
+  updates: { name: string; expiresAt?: number | null }
+): Promise<void> {
+  const { name } = updates
   return withExplorerEntryWrite(id, async () => {
     if (!validateDisplayName(name)) throw new Error('Rename name is invalid')
     const db = await openFileExplorerDB()
@@ -688,7 +711,7 @@ export function renameExplorerEntry(
       return
     }
     await filePersistenceQueue.commit(async () => {
-      publishPersistedExplorerEntry(await renameLocalCatalogEntry(kind, id, name))
+      publishPersistedExplorerEntry(await updateLocalCatalogEntry(kind, id, updates))
     })
   })
 }
