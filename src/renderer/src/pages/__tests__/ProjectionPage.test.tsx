@@ -1,5 +1,7 @@
 import { render, screen, act, waitFor } from '@testing-library/react'
 import type { TimerTickPayload, StopwatchTickPayload } from '@shared/types/timer'
+import type { ProjectionMediaReplayState } from '@shared/projection-messages'
+import { createProjectionSessionCoordinator } from '@renderer/lib/projection-session-coordinator'
 import { useSettingsStore } from '@renderer/stores/settings'
 
 vi.mock('@renderer/lib/env', () => ({
@@ -14,15 +16,18 @@ vi.mock('@renderer/components/Projection/DefaultProjection', () => ({
 vi.mock('@renderer/components/Projection/FileProjection', () => ({
   default: ({
     controlEvent,
-    projectionSessionId
+    projectionSessionId,
+    initialReplayState
   }: {
     controlEvent?: { data: { action: string } } | null
     projectionSessionId?: string
+    initialReplayState?: ProjectionMediaReplayState | null
   }) => (
     <div
       data-testid="file-projection"
       data-control-action={controlEvent?.data.action ?? ''}
       data-projection-session={projectionSessionId}
+      data-playlist-ended={initialReplayState?.playlistEnded ?? false}
     />
   )
 }))
@@ -90,6 +95,37 @@ beforeEach(() => {
 })
 
 describe('ProjectionPage', () => {
+  it('retains terminal state when the playlist ends before the file child mounts', () => {
+    render(<ProjectionPage />)
+    const coordinator = createProjectionSessionCoordinator((channel, data) => {
+      mockAdapter._trigger(channel, data)
+    })
+    try {
+      act(() => {
+        coordinator.startSession('media', [
+          [
+            'file:show',
+            {
+              itemId: 'image-1',
+              blobId: 'blob-1',
+              fileName: 'image.png',
+              mimeType: 'image/png',
+              playlist: [],
+              currentIndex: 0
+            }
+          ]
+        ])
+        coordinator.beginGeneration({ generation: 4, status: 'opening', reason: 'created' })
+        coordinator.ready(4)
+        // End before React mounts a child that could subscribe to file:end.
+        coordinator.sendOneShot('file:end', null)
+      })
+      expect(screen.getByTestId('file-projection')).toHaveAttribute('data-playlist-ended', 'true')
+    } finally {
+      coordinator.dispose()
+    }
+  })
+
   it('renders default content when no timer data received', () => {
     render(<ProjectionPage />)
     expect(screen.getByTestId('default-projection')).toBeInTheDocument()

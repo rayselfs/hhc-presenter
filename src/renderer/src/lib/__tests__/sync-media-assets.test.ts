@@ -38,7 +38,7 @@ vi.mock('../thumbnail-db', () => ({
 }))
 
 import { openFileExplorerDB, resetFileExplorerDBForTests } from '../file-explorer-db'
-import { refreshImportedMediaAssets } from '../local-sync-import'
+import { refreshImportedMediaAssets } from '../sync-media-preparation'
 
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
   let resolve!: (value: T) => void

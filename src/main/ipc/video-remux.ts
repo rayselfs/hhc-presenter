@@ -6,7 +6,7 @@ import { join, resolve } from 'path'
 import { isValidNativeFileId } from '../../shared/native-media'
 import { resolveFfmpegRuntime } from '../video-engine-runtime'
 import { runFfmpegProcess } from './ffmpeg-process'
-import { getNativeFilePath } from './native-fs'
+import { getNativeFilePath } from '../lib/native-storage'
 
 export type VideoPlaybackVariant = 'source' | 'matroska-remux'
 

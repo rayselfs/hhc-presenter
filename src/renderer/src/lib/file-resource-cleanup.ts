@@ -188,7 +188,13 @@ async function cleanupFileResourcesAfterJobFence(request: CleanupRequest): Promi
   )
   for (const id of protectedIds) folderIds.delete(id)
 
-  const blobReferenceRemovals = new Map<string, number>()
+  const targetItemIds = new Set(targetItems.map((item) => item.id))
+  const remainingReferencesByBlob = new Map<string, number>()
+  for (const item of items) {
+    if (!isFileItem(item) || targetItemIds.has(item.id)) continue
+    const blobId = getBlobId(item)
+    remainingReferencesByBlob.set(blobId, (remainingReferencesByBlob.get(blobId) ?? 0) + 1)
+  }
   const thumbnailIdsByBlob = new Map<string, string[]>()
   const nonFileThumbnailIds: string[] = []
   for (const item of targetItems) {
@@ -197,24 +203,19 @@ async function cleanupFileResourcesAfterJobFence(request: CleanupRequest): Promi
       continue
     }
     const blobId = getBlobId(item)
-    blobReferenceRemovals.set(blobId, (blobReferenceRemovals.get(blobId) ?? 0) + 1)
-    thumbnailIdsByBlob.set(blobId, [...(thumbnailIdsByBlob.get(blobId) ?? []), item.id])
+    const thumbnailIds = thumbnailIdsByBlob.get(blobId) ?? []
+    thumbnailIds.push(item.id)
+    thumbnailIdsByBlob.set(blobId, thumbnailIds)
   }
 
   const cleanupRecords: ResourceCleanupJournalRecord[] = []
-  for (const blobId of blobReferenceRemovals.keys()) {
+  for (const [blobId, itemThumbnailIds] of thumbnailIdsByBlob) {
     const record = await blobStore.get(blobId)
-    const itemThumbnailIds = thumbnailIdsByBlob.get(blobId) ?? []
     if (!record) {
       cleanupRecords.push(makeCleanupRecord(blobId, undefined, itemThumbnailIds, true))
       continue
     }
-    const remainingReferences = items.filter(
-      (item) =>
-        item.type === 'file' &&
-        getBlobId(item) === blobId &&
-        !targetItems.some((target) => target.id === item.id)
-    ).length
+    const remainingReferences = remainingReferencesByBlob.get(blobId) ?? 0
     if (remainingReferences <= 0) {
       await blobStore.put({ ...record, refCount: 0 })
       cleanupRecords.push(makeCleanupRecord(blobId, record.storage, itemThumbnailIds, true))

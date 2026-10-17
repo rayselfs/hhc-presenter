@@ -1,7 +1,8 @@
+import { getNativeFilePath, getNativeFsDir } from '../lib/native-storage'
 import { app, ipcMain, protocol } from 'electron'
 import { randomUUID } from 'crypto'
 import { createReadStream, promises as fs } from 'fs'
-import { dirname, isAbsolute, join, resolve } from 'path'
+import { isAbsolute, join, resolve } from 'path'
 import { Readable } from 'stream'
 import { isValidNativeFileId } from '../../shared/native-media'
 import type { WindowManager } from '../windowManager'
@@ -17,19 +18,6 @@ const nativeMediaLeases = new Map<string, { filePath: string; mimeType: string }
 
 function getNativeMediaLeaseDir(): string {
   return resolve(app.getPath('userData'), 'hhc-asset-leases')
-}
-
-function getNativeFsDir(): string {
-  return resolve(app.getPath('userData'), 'native-files')
-}
-
-export function getNativeFilePath(id: unknown): string {
-  if (!isValidNativeFileId(id)) throw new Error('Invalid native file id')
-
-  const baseDir = getNativeFsDir()
-  const filePath = resolve(baseDir, id)
-  if (dirname(filePath) !== baseDir) throw new Error('Native file path escapes storage directory')
-  return filePath
 }
 
 export function parseNativeMediaUrl(requestUrl: string): { id: string; mimeType: string } | null {
