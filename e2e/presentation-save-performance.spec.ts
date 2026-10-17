@@ -14,6 +14,12 @@ type Metrics = {
   durableRevisions: number[]
 }
 
+declare global {
+  interface Window {
+    saveMetrics: Metrics
+  }
+}
+
 test.describe.configure({ mode: 'serial' })
 
 async function installFixture(
@@ -140,18 +146,20 @@ for (const count of [10, 100]) {
           durableAt: 0,
           durableRevisions: []
         }
-        ;(window as Window & { saveMetrics?: Metrics }).saveMetrics = metrics
+        window.saveMetrics = metrics
         const stringify = JSON.stringify
-        JSON.stringify = function (...args: Parameters<typeof JSON.stringify>): string {
-          const start = performance.now()
-          const body = stringify.apply(JSON, args)
-          const value = args[0] as Partial<EditablePresentationDocument> | undefined
-          if (value?.slides && value.slideOrder) {
-            metrics.stringifyMs.push(performance.now() - start)
-            metrics.serializedBytes += new Blob([body]).size
+        JSON.stringify = new Proxy(stringify, {
+          apply(target, thisArg, args) {
+            const start = performance.now()
+            const body: string = Reflect.apply(target, thisArg, args)
+            const value = args[0] as Partial<EditablePresentationDocument> | undefined
+            if (value?.slides && value.slideOrder) {
+              metrics.stringifyMs.push(performance.now() - start)
+              metrics.serializedBytes += new Blob([body]).size
+            }
+            return body
           }
-          return body
-        }
+        })
         const put = IDBObjectStore.prototype.put
         IDBObjectStore.prototype.put = function (
           ...args: Parameters<typeof put>
@@ -228,13 +236,13 @@ for (const count of [10, 100]) {
       await expect
         .poll(() =>
           page.evaluate(() => {
-            const metrics = (window as Window & { saveMetrics: Metrics }).saveMetrics
+            const metrics = window.saveMetrics
             return metrics.thumbnailReady > 0 && metrics.thumbnailReady === metrics.thumbnailWrites
           })
         )
         .toBe(true)
       const metrics = await page.evaluate(
-        () => (window as Window & { saveMetrics: Metrics }).saveMetrics
+        () => window.saveMetrics
       )
       // Existing Chromium baselines write 5–6 revisions; retain headroom for checkpoint timing.
       expect(metrics.sourceWrites).toBeGreaterThan(0)
