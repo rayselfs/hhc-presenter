@@ -148,10 +148,6 @@ async function collectFromEntry(
   return []
 }
 
-export function isSupportedFile(file: File): boolean {
-  return classifyMediaImport(file, getUploadMediaPlatform()).action === 'accept'
-}
-
 export function canGenerateThumbnail(mimeType: string, fileName?: string): boolean {
   return canGenerateMediaThumbnail(resolveMediaCapability({ mimeType, fileName }))
 }
@@ -466,13 +462,6 @@ export async function uploadFolderFiles(
     await budget.yieldIfNeeded()
   }
   return uploadPreparedFiles(destinations)
-}
-
-export async function uploadFolderFilesFromStore(
-  allFiles: File[],
-  currentFolderId: string
-): Promise<number> {
-  return uploadFolderFiles(allFiles, currentFolderId, createExplorerFolder)
 }
 
 export async function uploadFromDataTransfer(
