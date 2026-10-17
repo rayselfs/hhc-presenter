@@ -194,6 +194,25 @@ describe('refreshEditablePresentationThumbnail', () => {
     })
   })
 
+  it('saves and notifies using the catalog source blob identity', async () => {
+    const db = await openFileExplorerDB()
+    await db.put('folder-items', { ...item, id: initialDocument.id, url: 'blob:independent-body' })
+    const listener = vi.fn()
+    window.addEventListener('hhc:thumbnail-ready', listener)
+    try {
+      await refreshEditablePresentationThumbnail(initialDocument)
+      expect(await getDerivedAsset('independent-body', 'cover-thumbnail')).toMatchObject({
+        status: 'ready'
+      })
+      expect((listener.mock.calls[0][0] as CustomEvent).detail).toEqual({
+        itemId: initialDocument.id,
+        sourceBlobId: 'independent-body'
+      })
+    } finally {
+      window.removeEventListener('hhc:thumbnail-ready', listener)
+    }
+  })
+
   it('publishes the refreshed cover to mounted file views', async () => {
     const listener = vi.fn()
     window.addEventListener('hhc:thumbnail-ready', listener)
@@ -203,7 +222,7 @@ describe('refreshEditablePresentationThumbnail', () => {
     expect(listener).toHaveBeenCalledTimes(1)
     expect((listener.mock.calls[0][0] as CustomEvent).detail).toMatchObject({
       itemId: initialDocument.id,
-      dataUrl: expect.stringMatching(/^data:image\/svg\+xml;base64,/)
+      sourceBlobId: initialDocument.id
     })
     window.removeEventListener('hhc:thumbnail-ready', listener)
   })

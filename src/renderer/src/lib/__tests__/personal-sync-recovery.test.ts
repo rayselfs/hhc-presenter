@@ -7,6 +7,8 @@ import {
   acquirePersonalSyncLease
 } from '../personal-sync-db'
 import { recoverPersonalOperation } from '../personal-sync-runtime'
+import { useFileExplorerStore } from '../../stores/file-explorer'
+import * as fileExplorer from '../../stores/file-explorer'
 import { usePersonalSyncStore } from '../../stores/personal-sync'
 
 const sessions = {
@@ -157,12 +159,11 @@ it('rejects pending editor work after finalization even when the catalog is unch
 
 it('preserves original refs and durable backup if edits arrive during backup', async () => {
   const db = await openFileExplorerDB()
-  const originalPut = db.put.bind(db)
-  vi.spyOn(db, 'put').mockImplementation(async (...args: Parameters<typeof db.put>) => {
-    const result = await originalPut(...args)
-    if (args[0] === 'folder-items' && 'id' in args[1] && args[1].id !== 'file')
-      sessions.hasPendingEditorWork.mockReturnValue(true)
-    return result
+  const originalBackup = fileExplorer.createLocalRecoveryFileBackup
+  vi.spyOn(fileExplorer, 'createLocalRecoveryFileBackup').mockImplementation(async (...args) => {
+    const id = await originalBackup(...args)
+    sessions.hasPendingEditorWork.mockReturnValue(true)
+    return id
   })
   await expect(
     recoverPersonalOperation('alice', 'operation', 'backup-cancel', sessions)
@@ -221,10 +222,11 @@ it.each(['account', 'lease', 'catalog', 'dependent'])(
   async (change) => {
     const db = await openFileExplorerDB()
     const originalPut = db.put.bind(db)
+    const originalBackup = fileExplorer.createLocalRecoveryFileBackup
     let changed = false
-    vi.spyOn(db, 'put').mockImplementation(async (...args: Parameters<typeof db.put>) => {
-      const result = await originalPut(...args)
-      if (args[0] === 'folder-items' && 'id' in args[1] && args[1].id !== 'file' && !changed) {
+    vi.spyOn(fileExplorer, 'createLocalRecoveryFileBackup').mockImplementation(async (...args) => {
+      const result = await originalBackup(...args)
+      if (!changed) {
         changed = true
         if (change === 'account')
           usePersonalSyncStore.getState().setAccount('authenticated', 'bob', true)
@@ -263,3 +265,86 @@ it.each(['account', 'lease', 'catalog', 'dependent'])(
     expect(await db.get('file-blobs', 'snapshot')).toMatchObject({ refCount: 2 })
   }
 )
+
+it('never publishes a temporary expiring recovery backup before its permanent retention is durable', async () => {
+  const seen: Array<number | null> = []
+  const prior = new Set(Object.keys(useFileExplorerStore.getState().items))
+  const unsubscribe = useFileExplorerStore.subscribe((state) => {
+    for (const item of Object.values(state.items))
+      if (item.type === 'file' && !item.personalOwnerId && !prior.has(item.id))
+        seen.push(item.expiresAt)
+  })
+  try {
+    await recoverPersonalOperation('alice', 'operation', 'backup-cancel', sessions)
+  } finally {
+    unsubscribe()
+  }
+  expect(seen.length).toBeGreaterThan(0)
+  expect(seen.every((expiresAt) => expiresAt === null)).toBe(true)
+})
+
+it('rolls back backup catalog creation if its owner switches away and back after add succeeds', async () => {
+  const originalAdd = IDBObjectStore.prototype.add
+  let switched = 0
+  vi.spyOn(IDBObjectStore.prototype, 'add').mockImplementation(function (
+    this: IDBObjectStore,
+    value: unknown,
+    key?: IDBValidKey
+  ) {
+    const request = originalAdd.call(this, value, key)
+    if (this.name === 'folder-items')
+      request.addEventListener(
+        'success',
+        () => {
+          switched++
+          usePersonalSyncStore.getState().setAccount('authenticated', 'bob', true)
+          usePersonalSyncStore.getState().setAccount('authenticated', 'alice', true)
+        },
+        { once: true }
+      )
+    return request
+  })
+  await expect(
+    recoverPersonalOperation('alice', 'operation', 'backup-cancel', sessions)
+  ).rejects.toMatchObject({ name: 'AbortError' })
+  const db = await openFileExplorerDB()
+  expect(switched).toBe(1)
+  expect(await db.getAll('folder-items')).toEqual([
+    expect.objectContaining({ id: 'file', personalOwnerId: 'alice' })
+  ])
+  expect(await db.get('personal-sync-outbox', 'operation')).toBeDefined()
+  expect(await db.get('file-blobs', 'snapshot')).toMatchObject({ refCount: 2 })
+  expect((await db.getAll('file-blobs')).map((record) => record.id)).toEqual(['snapshot'])
+  expect(await db.getAll('resource-cleanup-journal')).toEqual([])
+})
+
+it('keeps ordinary root upload retention and notes while recovery backups are permanent', async () => {
+  const before = Date.now()
+  const id = await fileExplorer.addFileItemToStore(
+    new File(['two'], 'Upload.txt', { type: 'text/plain' }),
+    'file-root',
+    'text/plain',
+    'Keep notes'
+  )
+  const db = await openFileExplorerDB()
+  const item = await db.get('folder-items', id)
+  expect(item).toMatchObject({ name: 'Upload.txt', notes: 'Keep notes', size: 3 })
+  expect(item?.expiresAt).toBeGreaterThanOrEqual(before + 86_400_000)
+  expect(item?.expiresAt).toBeLessThanOrEqual(Date.now() + 86_400_000)
+})
+
+it('does not stage bytes or metadata for an already cancelled recovery command', async () => {
+  const controller = new AbortController()
+  controller.abort()
+  await expect(
+    fileExplorer.createLocalRecoveryFileBackup(
+      new File(['two'], 'Cancelled.txt'),
+      'text/plain',
+      controller.signal
+    )
+  ).rejects.toMatchObject({ name: 'AbortError' })
+  const db = await openFileExplorerDB()
+  expect(await db.getAll('folder-items')).toEqual([expect.objectContaining({ id: 'file' })])
+  expect((await db.getAll('file-blobs')).map((record) => record.id)).toEqual(['snapshot'])
+  expect(await db.getAll('resource-cleanup-journal')).toEqual([])
+})

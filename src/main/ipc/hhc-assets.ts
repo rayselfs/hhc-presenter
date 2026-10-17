@@ -1,3 +1,5 @@
+import { saveAssetContent } from '../lib/asset-stream-writer'
+import { getNativeFilePath } from '../lib/native-storage'
 import { app, ipcMain, net } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { promises as fs } from 'node:fs'
@@ -17,7 +19,6 @@ import type { WindowManager } from '../windowManager'
 import type { HhcAuthService } from './hhc-auth'
 import {
   clearNativeMediaLeases,
-  getNativeFilePath,
   registerNativeMediaLease,
   releaseNativeMediaLease
 } from './native-fs'
@@ -27,7 +28,6 @@ import { mutateVideoSource } from './video-remux'
 const HHC_ASSET_ORIGIN = APP_CONFIG.hhcAssetOrigin
 const OPAQUE_ID_PATTERN = /^[A-Za-z0-9_-]{1,255}$/
 const MAX_CURSOR_BYTES = 2048
-const MAX_CONTENT_BYTES = 200 * 1024 * 1024
 const MAX_JSON_BYTES = 2 * 1024 * 1024
 const activeDownloads = new Map<string, AbortController>()
 const INVALID_BODY = 'HHC_ASSET_FATAL:INVALID_BODY'
@@ -216,50 +216,6 @@ async function downloadContent(
     { headers: { accept: '*/*' }, signal }
   )
   return saveAssetContent(response, destinationPath, signal)
-}
-
-export async function saveAssetContent(
-  response: Response,
-  destinationPath: string,
-  signal?: AbortSignal
-): Promise<{ size: number; mimeType: string; etag: string }> {
-  const declaredSize = Number(response.headers.get('content-length') ?? 0)
-  if (!Number.isFinite(declaredSize) || declaredSize < 0 || declaredSize > MAX_CONTENT_BYTES) {
-    throw requestError()
-  }
-  if (!response.body) throw requestError()
-
-  await fs.mkdir(dirname(destinationPath), { recursive: true })
-  const file = await fs.open(destinationPath, 'wx')
-  const reader = response.body.getReader()
-  let size = 0
-  try {
-    for (;;) {
-      const { done, value } = await reader.read()
-      if (done) break
-      if (signal?.aborted) throw requestError('HHC_ASSET_DOWNLOAD_CANCELLED')
-      if (!value) continue
-      size += value.byteLength
-      if (size > MAX_CONTENT_BYTES) throw requestError()
-      await file.writeFile(Buffer.from(value))
-    }
-  } catch (error) {
-    await reader.cancel().catch(() => undefined)
-    if (signal?.aborted) throw requestError('HHC_ASSET_DOWNLOAD_CANCELLED')
-    throw error
-  } finally {
-    await file.close()
-  }
-  if ((declaredSize > 0 && size !== declaredSize) || size === 0) {
-    await fs.rm(destinationPath, { force: true })
-    throw requestError()
-  }
-  if (signal?.aborted) throw requestError('HHC_ASSET_DOWNLOAD_CANCELLED')
-  return {
-    size,
-    mimeType: response.headers.get('content-type') ?? 'application/octet-stream',
-    etag: response.headers.get('etag') ?? ''
-  }
 }
 
 export function registerHhcAssetHandlers(wm: WindowManager, auth: HhcAuthService): void {

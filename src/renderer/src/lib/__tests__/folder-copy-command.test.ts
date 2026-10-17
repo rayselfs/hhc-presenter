@@ -65,12 +65,9 @@ it('preserves the chosen root name, subtree expiry and lazily loaded files', asy
 })
 
 it('reports a failed file copy instead of reporting the partial folder as complete', async () => {
-  const copy = vi.spyOn(useFileExplorerStore.getState(), 'copyItem').mockResolvedValue(null)
-  try {
-    await expect(copyExplorerFolder('A', 'file-root')).rejects.toThrow('File copy failed')
-  } finally {
-    copy.mockRestore()
-  }
+  const db = await openFileExplorerDB()
+  await db.delete('file-blobs', 'source-file')
+  await expect(copyExplorerFolder('A', 'file-root')).rejects.toThrow('File source is unavailable')
 })
 
 it('rejects an empty folder copy when the persistence queue cannot commit', async () => {

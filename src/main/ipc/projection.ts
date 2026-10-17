@@ -1,6 +1,7 @@
 import { isCameraMessageFrom } from '@shared/camera'
 import { BrowserWindow, ipcMain } from 'electron'
 import { WindowManager } from '../windowManager'
+import { updateVlcContentRevision } from './projection-vlc'
 import { isKnownWindow, isMainWindow, validateProjectionTransportTuple } from './validate'
 
 const CLOSED_PROJECTION_STATE = {
@@ -57,6 +58,14 @@ export function registerProjectionHandlers(windowManager: WindowManager): void {
     if (channel === 'file:playback-error' || channel === 'file:render-status') return
     if (!isCameraMessageFrom(channel, data, 'main')) return
     if (windowManager.getProjectionState().lifecycle.generation !== generation) return
+    if (channel === 'file:show') updateVlcContentRevision(windowManager, generation, data)
+    if (channel === 'file:end') updateVlcContentRevision(windowManager, generation, null)
+    if (channel === '__system:replay')
+      updateVlcContentRevision(
+        windowManager,
+        generation,
+        data.snapshot.media.state?.playlistEnded ? null : data.snapshot.media.show
+      )
     windowManager.sendToProjection('projection:message', ...args)
   })
 

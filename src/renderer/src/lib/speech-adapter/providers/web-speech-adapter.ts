@@ -48,6 +48,8 @@ export interface WebSpeechAdapterConfig {
 export class WebSpeechAdapter implements SpeechAdapter {
   private recognition: IWebSpeechRecognition | null = null
   private active = false
+  private disposed = false
+  private maxDurationTimer: ReturnType<typeof setTimeout> | null = null
   private listeners: Map<
     SpeechAdapterEventType,
     Set<SpeechAdapterEventListener<SpeechAdapterEventType>>
@@ -59,6 +61,8 @@ export class WebSpeechAdapter implements SpeechAdapter {
   }
 
   async start(): Promise<void> {
+    if (this.disposed) throw new Error('Speech adapter is disposed')
+    if (this.recognition) return
     const win = window as unknown as Record<string, unknown>
     const SpeechRecognitionCtor = win['SpeechRecognition'] || win['webkitSpeechRecognition']
     if (!SpeechRecognitionCtor) {
@@ -66,12 +70,15 @@ export class WebSpeechAdapter implements SpeechAdapter {
     }
 
     this.recognition = new (SpeechRecognitionCtor as new () => IWebSpeechRecognition)()
+    const recognition = this.recognition
     this.recognition.continuous = true
     this.recognition.interimResults = true
     this.recognition.lang = this.config.language
 
     this.recognition.onresult = (event: WebSpeechRecognitionEvent) => {
+      if (this.recognition !== recognition) return
       for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (this.recognition !== recognition) return
         const result = event.results[i]
         const text = result[0].transcript
         if (result.isFinal) {
@@ -82,7 +89,8 @@ export class WebSpeechAdapter implements SpeechAdapter {
             verse: 0,
             confidence: 'fuzzy'
           })
-          this.emit('rawRecognized', { text, confidence: result[0].confidence })
+          if (this.recognition === recognition)
+            this.emit('rawRecognized', { text, confidence: result[0].confidence })
         } else {
           this.emit('recognizing', { text })
         }
@@ -90,26 +98,57 @@ export class WebSpeechAdapter implements SpeechAdapter {
     }
 
     this.recognition.onerror = (event: WebSpeechRecognitionErrorEvent) => {
+      if (this.recognition !== recognition) return
+      this.cleanup()
       this.emit('error', { error: new Error(event.error), message: event.error })
     }
 
     this.recognition.onend = () => {
-      this.active = false
-      this.emit('sessionStopped', undefined)
+      if (this.recognition === recognition) this.cleanup(false)
     }
 
     this.recognition.onstart = () => {
+      if (this.recognition !== recognition) return
       this.active = true
+      this.maxDurationTimer = setTimeout(
+        () => {
+          if (this.recognition !== recognition) return
+          this.cleanup()
+          this.emit('maxDurationReached', undefined)
+        },
+        this.config.maxSessionMs ?? 60 * 60 * 1000
+      )
       this.emit('sessionStarted', undefined)
     }
 
-    this.recognition.start()
+    try {
+      recognition.start()
+    } catch (error) {
+      this.cleanup()
+      throw error
+    }
+  }
+
+  private cleanup(stop = true): void {
+    const recognition = this.recognition
+    this.recognition = null
+    this.active = false
+    if (this.maxDurationTimer) clearTimeout(this.maxDurationTimer)
+    this.maxDurationTimer = null
+    if (!recognition) return
+    recognition.onstart = null
+    recognition.onend = null
+    recognition.onresult = null
+    recognition.onerror = null
+    try {
+      if (stop) recognition.stop()
+    } finally {
+      this.emit('sessionStopped', undefined)
+    }
   }
 
   async stop(): Promise<void> {
-    if (this.recognition) {
-      this.recognition.stop()
-    }
+    this.cleanup()
   }
 
   isRecognizing(): boolean {
@@ -132,12 +171,9 @@ export class WebSpeechAdapter implements SpeechAdapter {
   }
 
   dispose(): void {
-    if (this.recognition) {
-      this.recognition.stop()
-      this.recognition = null
-    }
+    this.disposed = true
     this.listeners.clear()
-    this.active = false
+    this.cleanup()
   }
 
   private emit<T extends SpeechAdapterEventType>(event: T, data: SpeechAdapterEventMap[T]): void {

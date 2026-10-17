@@ -1,10 +1,18 @@
 import { useSyncExternalStore } from 'react'
 import { useTimerConfigStore } from './timer-config'
-import { useTimerRuntimeStore, formatTime, computeProgress } from './timer-runtime'
+import { useTimerRuntimeStore, formatTime } from './timer-runtime'
 import type { TimerConfigState } from './timer-config'
 import type { TimerRuntimeState } from './timer-runtime'
-import type { TimerMode, TimerStatus, TimerPhase } from '@shared/types/timer'
+import type {
+  TimerMode,
+  TimerStatus,
+  TimerPhase,
+  TimerSettings,
+  TimerRuntimeConfiguration,
+  TimerRuntimeSnapshot
+} from '@shared/types/timer'
 import { useSettingsStore } from './settings'
+import { useStopwatchStore } from './stopwatch'
 
 export { useTimerConfigStore } from './timer-config'
 export { useTimerRuntimeStore } from './timer-runtime'
@@ -120,16 +128,38 @@ useTimerStore.subscribe = subscribeTimerStore
 
 useTimerStore.persist = useTimerConfigStore.persist
 
-useTimerConfigStore.persist.onFinishHydration((state) => {
-  const runtime = useTimerRuntimeStore.getState()
-  if (runtime.status === 'stopped') {
-    useTimerRuntimeStore.setState({
-      remainingSeconds: state.totalDuration,
-      progress: computeProgress(state.totalDuration, state.totalDuration),
-      formattedTime: formatTime(state.totalDuration)
-    })
+export function getTimerRuntimeConfiguration(): TimerRuntimeConfiguration {
+  const settings = useTimerConfigStore.getState()
+  return {
+    settings: {
+      mode: settings.mode,
+      totalDuration: settings.totalDuration,
+      reminderEnabled: settings.reminderEnabled,
+      reminderDuration: settings.reminderDuration,
+      reminderColor: settings.reminderColor,
+      overtimeMessageEnabled: settings.overtimeMessageEnabled,
+      overtimeMessage: settings.overtimeMessage
+    },
+    reminderMode: useSettingsStore.getState().reminderMode
   }
-})
+}
+
+export function applyTimerRuntimeSnapshot(snapshot: TimerRuntimeSnapshot): void {
+  const configuration = useTimerConfigStore.getState()
+  if (
+    Object.entries(snapshot.configuration.settings).some(
+      ([key, value]) => configuration[key as keyof TimerSettings] !== value
+    )
+  )
+    useTimerConfigStore.setState(snapshot.configuration.settings)
+  if (useSettingsStore.getState().reminderMode !== snapshot.configuration.reminderMode)
+    useSettingsStore.setState({ reminderMode: snapshot.configuration.reminderMode })
+  useTimerRuntimeStore.setState({ ...snapshot.timer, hostRevision: snapshot.revision })
+  useStopwatchStore.setState({
+    status: snapshot.stopwatch.status,
+    elapsedMs: snapshot.stopwatch.elapsedMs
+  })
+}
 
 export interface DisplayValues {
   mainDisplay: string
