@@ -6,16 +6,21 @@ type Metrics = {
   stringifyMs: number[]
   serializedBytes: number
   sourceWrites: number
+  thumbnailReady: number
   thumbnailWrites: number
   layoutMeasurements: number
   longTasks: number[]
   durableAt: number
+  durableRevisions: number[]
 }
 
 test.describe.configure({ mode: 'serial' })
 
-async function installFixture(page: Page, count: number): Promise<void> {
-  await page.evaluate(async (count) => {
+async function installFixture(
+  page: Page,
+  count: number
+): Promise<{ sourceId: string; revision: number }> {
+  const fixture = await page.evaluate(async (count) => {
     const result = <T>(request: IDBRequest<T>): Promise<T> =>
       new Promise((resolve, reject) => {
         request.onsuccess = () => resolve(request.result)
@@ -102,9 +107,11 @@ async function installFixture(page: Page, count: number): Promise<void> {
       tx.onerror = () => reject(tx.error)
     })
     db.close()
+    return { sourceId: record.id, revision: (record.revision ?? 0) + 1 }
   }, count)
   await page.reload()
   await expect(page.locator('[data-slide-option]')).toHaveCount(count)
+  return fixture
 }
 
 for (const count of [10, 100]) {
@@ -119,17 +126,19 @@ for (const count of [10, 100]) {
       await page.getByRole('menuitem', { name: 'Create Presentation', exact: true }).click()
       await expect(page.locator('[data-slide-option]')).toHaveCount(1)
       await page.waitForTimeout(1500)
-      await installFixture(page, count)
+      const fixture = await installFixture(page, count)
       await page.waitForTimeout(2000)
-      await page.evaluate(() => {
+      await page.evaluate((sourceId) => {
         const metrics: Metrics = {
           stringifyMs: [],
           serializedBytes: 0,
           sourceWrites: 0,
+          thumbnailReady: 0,
           thumbnailWrites: 0,
           layoutMeasurements: 0,
           longTasks: [],
-          durableAt: 0
+          durableAt: 0,
+          durableRevisions: []
         }
         ;(window as Window & { saveMetrics?: Metrics }).saveMetrics = metrics
         const stringify = JSON.stringify
@@ -147,16 +156,32 @@ for (const count of [10, 100]) {
         IDBObjectStore.prototype.put = function (
           ...args: Parameters<typeof put>
         ): IDBRequest<IDBValidKey> {
-          if (this.name === 'file-blobs') {
+          const record = args[0] as {
+            id?: string
+            kind?: string
+            sourceBlobId?: string
+            revision: number
+          }
+          if (
+            this.name === 'derived-assets' &&
+            record.kind === 'cover-thumbnail' &&
+            record.sourceBlobId === sourceId
+          ) {
+            metrics.thumbnailWrites++
+          }
+          if (this.name === 'file-blobs' && record.id === sourceId) {
             metrics.sourceWrites++
+            const revision = (args[0] as { revision: number }).revision
             this.transaction.addEventListener('complete', () => {
               metrics.durableAt = performance.now()
+              metrics.durableRevisions.push(revision)
             })
           }
           return put.apply(this, args)
         }
-        window.addEventListener('hhc:thumbnail-ready', () => {
-          metrics.thumbnailWrites++
+        window.addEventListener('hhc:thumbnail-ready', (event) => {
+          if ((event as CustomEvent<{ itemId: string }>).detail.itemId === sourceId)
+            metrics.thumbnailReady++
         })
         const clone = Node.prototype.cloneNode
         Node.prototype.cloneNode = function (deep?: boolean): Node {
@@ -167,7 +192,7 @@ for (const count of [10, 100]) {
         new PerformanceObserver((list) => {
           metrics.longTasks.push(...list.getEntries().map((entry) => entry.duration))
         }).observe({ type: 'longtask', buffered: false })
-      })
+      }, fixture.sourceId)
       const slides = page.locator('[data-slide-option]')
       await slides.nth(1).click()
       const text = page.locator('.presentation-stage [data-text-content]').first()
@@ -199,10 +224,53 @@ for (const count of [10, 100]) {
       await page.getByRole('button', { name: 'Undo', exact: true }).click()
       await page.getByRole('button', { name: 'Redo', exact: true }).click()
       const lastEditAt = await page.evaluate(() => performance.now())
-      await page.waitForTimeout(2200)
+      await expect(page.getByText(/^(Saved|已儲存|已保存)$/)).toBeVisible()
+      await expect
+        .poll(() =>
+          page.evaluate(() => {
+            const metrics = (window as Window & { saveMetrics: Metrics }).saveMetrics
+            return metrics.thumbnailReady > 0 && metrics.thumbnailReady === metrics.thumbnailWrites
+          })
+        )
+        .toBe(true)
       const metrics = await page.evaluate(
         () => (window as Window & { saveMetrics: Metrics }).saveMetrics
       )
+      // Existing Chromium baselines write 5–6 revisions; retain headroom for checkpoint timing.
+      expect(metrics.sourceWrites).toBeGreaterThan(0)
+      expect(metrics.sourceWrites).toBeLessThanOrEqual(8)
+      expect(metrics.thumbnailWrites).toBeGreaterThan(0)
+      expect(metrics.thumbnailWrites).toBeLessThanOrEqual(2)
+      expect(metrics.durableRevisions).toHaveLength(metrics.sourceWrites)
+      expect(
+        metrics.durableRevisions.every(
+          (revision, index, revisions) =>
+            revision > (index === 0 ? fixture.revision : revisions[index - 1])
+        )
+      ).toBe(true)
+      const persisted = await page.evaluate(async (sourceId) => {
+        const result = <T>(request: IDBRequest<T>): Promise<T> =>
+          new Promise((resolve, reject) => {
+            request.onsuccess = () => resolve(request.result)
+            request.onerror = () => reject(request.error)
+          })
+        const db = await result(indexedDB.open('hhc-file-explorer'))
+        const record = await result(
+          db.transaction('file-blobs').objectStore('file-blobs').get(sourceId)
+        )
+        db.close()
+        return {
+          revision: record.revision as number,
+          document: JSON.parse(await record.blob.text()) as EditablePresentationDocument
+        }
+      }, fixture.sourceId)
+      expect(persisted.revision).toBe(metrics.durableRevisions.at(-1))
+      const storedSlides = persisted.document.slideOrder.map((id) => persisted.document.slides[id])
+      expect(storedSlides[0].elements['text-0']).toMatchObject({ text: 'Changed cover' })
+      expect(storedSlides[1].elements['text-0']).toMatchObject({
+        text: `Slide 1 text 0${'abcdefghij'.repeat(10)}`
+      })
+      expect(storedSlides[1].notes).toBe('Note 19')
       await testInfo.attach('metrics', {
         body: JSON.stringify({
           ...metrics,
