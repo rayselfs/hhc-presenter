@@ -126,6 +126,15 @@ describe('timer:initialize', () => {
     expect(timerService.initializeState).not.toHaveBeenCalled()
   })
 
+  it.each(['totalDuration', 'reminderDuration'])(
+    'rejects NaN in %s before service initialization',
+    (field) => {
+      vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockMainWindow as never)
+      getHandler('timer:initialize')(makeEvent(), { ...validSettings, [field]: NaN })
+      expect(timerService.initializeState).not.toHaveBeenCalled()
+    }
+  )
+
   it('unknown sender does NOT call timerService.initializeState', () => {
     vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockUnknownWindow as never)
     const handler = getHandler('timer:initialize')
