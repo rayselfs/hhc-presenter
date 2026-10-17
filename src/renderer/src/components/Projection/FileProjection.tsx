@@ -7,6 +7,8 @@ import type {
   ProjectionMediaReplayState,
   ProjectionPayload
 } from '@shared/projection-messages'
+import { useProjectionMediaPlayback } from '@renderer/hooks/useProjectionMediaPlayback'
+import VlcProjectionSurface from './VlcProjectionSurface'
 import PptxSlideSurface from '@renderer/components/Common/PptxSlideSurface'
 import EditableSlideSurface from '@renderer/components/Common/EditableSlideSurface'
 import {
@@ -54,15 +56,6 @@ type LoadFileOptions = {
   durationMs?: number
 }
 
-type PendingVideoControl = {
-  itemId: string | null
-  seekTo?: number
-  shouldPlay?: boolean
-  volume?: number
-  playbackRate?: number
-}
-
-const HAVE_METADATA = 1
 export { PDF_CONTINUOUS_CANVAS_RADIUS } from '@renderer/hooks/useProjectionPdfOwner'
 
 export default function FileProjection({
@@ -94,9 +87,21 @@ export default function FileProjection({
     initialReplayState?.itemId === initialItemId && initialReplayState?.playlistEnded === true
   const [isEnded, setIsEnded] = useState(replayPlaylistEnded)
   const [displayName, setDisplayName] = useState(fileName ?? '')
-  const mediaRef = useRef<HTMLMediaElement | null>(null)
   const adapterSendRef = useRef<ReturnType<typeof createProjectionAdapter>['send'] | null>(null)
   const currentItemIdRef = useRef<string | null>(null)
+  const {
+    mediaRef,
+    isControlForCurrentItem,
+    applyPendingVideoControl,
+    queueVideoControl,
+    sendVideoPlaybackState,
+    configurePlayback,
+    prepareMediaReplay,
+    clearPendingMediaControl,
+    getPlaybackMode,
+    isSeekable,
+    getDurationMs
+  } = useProjectionMediaPlayback({ currentItemIdRef, adapterSendRef, initialDurationMs })
   const currentBlobIdRef = useRef<string | null>(null)
   const imageReadyRef = useRef(false)
   const objectUrlRef = useRef(objectUrl)
@@ -106,10 +111,6 @@ export default function FileProjection({
   const reportedErrorSequenceRef = useRef(0)
   const [playbackError, setPlaybackError] = useState(false)
   const sourceRevokeRef = useRef<(() => void) | null>(null)
-  const pendingVideoControlRef = useRef<PendingVideoControl | null>(null)
-  const seekableRef = useRef(true)
-  const playbackModeRef = useRef<FileProjectionProps['initialPlaybackMode']>('native')
-  const durationMsRef = useRef<number | undefined>(initialDurationMs)
   const loadSequenceRef = useRef(0)
   const endedRef = useRef(false)
   const initialPdfRef = useRef(initialPdf)
@@ -158,89 +159,6 @@ export default function FileProjection({
   const replayStateRef = useRef(initialReplayState)
   replayStateRef.current = initialReplayState
 
-  const isControlForCurrentItem = useCallback((data: FileControlPayload): boolean => {
-    if (!('itemId' in data) || data.itemId === undefined) return true
-    return data.itemId === currentItemIdRef.current
-  }, [])
-
-  const clampVideoTime = useCallback((video: HTMLMediaElement, value: number): number => {
-    const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : value
-    return Math.max(0, Math.min(value, duration))
-  }, [])
-
-  const applyPendingVideoControl = useCallback((): void => {
-    const pending = pendingVideoControlRef.current
-    const video = mediaRef.current
-    if (!pending || !video) return
-    if (pending.itemId && pending.itemId !== currentItemIdRef.current) {
-      pendingVideoControlRef.current = null
-      return
-    }
-
-    if (pending.volume !== undefined) {
-      video.muted = false
-      video.volume = Math.max(0, Math.min(1, pending.volume))
-      delete pending.volume
-    }
-
-    if (pending.playbackRate !== undefined) {
-      video.playbackRate = pending.playbackRate
-      delete pending.playbackRate
-    }
-
-    if (pending.seekTo !== undefined) {
-      if (!seekableRef.current) {
-        delete pending.seekTo
-      } else {
-        if (video.readyState < HAVE_METADATA) return
-        try {
-          video.currentTime = clampVideoTime(video, pending.seekTo)
-          delete pending.seekTo
-        } catch {
-          return
-        }
-      }
-    }
-
-    if (pending.shouldPlay !== undefined) {
-      if (pending.shouldPlay) {
-        const mustApplySeekBeforePlay = pending.seekTo !== undefined && seekableRef.current
-        if (mustApplySeekBeforePlay && video.readyState < HAVE_METADATA) return
-        video.muted = false
-        video.play().catch((error) => {
-          console.error('[file-projection] Video play failed', error)
-        })
-      } else {
-        video.pause()
-      }
-      delete pending.shouldPlay
-    }
-
-    if (
-      pending.seekTo === undefined &&
-      pending.shouldPlay === undefined &&
-      pending.volume === undefined &&
-      pending.playbackRate === undefined
-    ) {
-      pendingVideoControlRef.current = null
-    }
-  }, [clampVideoTime])
-
-  const queueVideoControl = useCallback(
-    (data: FileControlPayload, control: Omit<PendingVideoControl, 'itemId'>): void => {
-      if (!isControlForCurrentItem(data)) return
-      const itemId =
-        'itemId' in data && data.itemId !== undefined ? data.itemId : currentItemIdRef.current
-      pendingVideoControlRef.current = {
-        ...(pendingVideoControlRef.current ?? {}),
-        itemId,
-        ...control
-      }
-      applyPendingVideoControl()
-    },
-    [applyPendingVideoControl, isControlForCurrentItem]
-  )
-
   const isCurrentPdfSource = useCallback(
     (itemId: string, sequence: number): boolean =>
       loadSequenceRef.current === sequence &&
@@ -278,53 +196,18 @@ export default function FileProjection({
     reportRenderStatus
   })
 
-  const sendVideoPlaybackState = useCallback(
-    (next?: { isPlaying?: boolean; isEnded?: boolean }): void => {
-      const video = mediaRef.current
-      const itemId = currentItemIdRef.current
-      const send = adapterSendRef.current
-      if (!video || !itemId || !send) return
-      const metadataDuration =
-        durationMsRef.current !== undefined && durationMsRef.current > 0
-          ? durationMsRef.current / 1000
-          : undefined
-      const duration =
-        metadataDuration ??
-        (Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0)
-      send('file:playback-state', {
-        itemId,
-        phase:
-          (next?.isEnded ?? video.ended)
-            ? 'ended'
-            : (next?.isPlaying ?? !video.paused)
-              ? 'playing'
-              : video.currentTime > 0
-                ? 'paused'
-                : 'ready',
-        currentTime: Number.isFinite(video.currentTime) ? video.currentTime : 0,
-        duration,
-        isPlaying: next?.isPlaying ?? !video.paused,
-        isEnded: next?.isEnded ?? video.ended,
-        playbackRate: Number.isFinite(video.playbackRate) ? video.playbackRate : 1,
-        seekable: seekableRef.current,
-        volume: Number.isFinite(video.volume) ? video.volume : 1
-      })
-    },
-    []
-  )
-
   const endPlaylist = useCallback(() => {
     endedRef.current = true
     loadSequenceRef.current += 1
     cancelPendingImageRef.current?.()
     cancelPendingImageRef.current = null
-    pendingVideoControlRef.current = null
+    clearPendingMediaControl()
     sourceRevokeRef.current?.()
     sourceRevokeRef.current = null
     disposePdf()
     setObjectUrl(null)
     setIsEnded(true)
-  }, [disposePdf])
+  }, [disposePdf, clearPendingMediaControl])
 
   const loadFile = useCallback(
     async (itemId: string, blobId: string, fileMimeType: string, options: LoadFileOptions = {}) => {
@@ -350,14 +233,12 @@ export default function FileProjection({
       setPlaybackError(false)
       setDocumentFailed(false)
       endedRef.current = false
-      const previousPlaybackMode = playbackModeRef.current
+      const previousPlaybackMode = getPlaybackMode()
       const nextPlaybackMode = options.playbackMode ?? 'native'
       const liveVideo = currentItemIdRef.current === itemId ? mediaRef.current : null
       currentItemIdRef.current = itemId
       currentBlobIdRef.current = blobId
-      playbackModeRef.current = nextPlaybackMode
-      seekableRef.current = options.seekable !== false
-      durationMsRef.current = options.durationMs
+      configurePlayback(options)
       if (previousPlaybackMode === 'vlc-embedded' && nextPlaybackMode !== 'vlc-embedded') {
         await window.api?.projectionVlc?.stop({ force: true }).catch((error) => {
           console.error('[file-projection] Failed to stop VLC before loading next item', error)
@@ -375,15 +256,7 @@ export default function FileProjection({
               playbackRate: liveVideo.playbackRate
             }
           : null)
-      pendingVideoControlRef.current = videoReplay
-        ? {
-            itemId,
-            seekTo: videoReplay.positionSeconds,
-            shouldPlay: videoReplay.isPlaying && !videoReplay.isEnded,
-            volume: videoReplay.volume,
-            playbackRate: videoReplay.playbackRate ?? 1
-          }
-        : null
+      prepareMediaReplay(itemId, videoReplay)
       preparePdf({
         page: replay?.pdfPage ?? initialPdfRef.current?.page ?? 1,
         scroll: replay?.pdfScroll ?? initialPdfRef.current?.scroll ?? 0,
@@ -485,7 +358,11 @@ export default function FileProjection({
       cancelPendingPdfLoad,
       hasPdfDocument,
       preparePdf,
-      resetPdfSurface
+      resetPdfSurface,
+      getPlaybackMode,
+      configurePlayback,
+      prepareMediaReplay,
+      mediaRef
     ]
   )
 
@@ -494,21 +371,21 @@ export default function FileProjection({
       if (endedRef.current || !isControlForCurrentItem(data)) return
       switch (data.action) {
         case 'play':
-          if (playbackModeRef.current === 'vlc-embedded') {
+          if (getPlaybackMode() === 'vlc-embedded') {
             void window.api?.projectionVlc?.control({ action: 'play', itemId: data.itemId })
             break
           }
           queueVideoControl(data, { shouldPlay: true })
           break
         case 'pause':
-          if (playbackModeRef.current === 'vlc-embedded') {
+          if (getPlaybackMode() === 'vlc-embedded') {
             void window.api?.projectionVlc?.control({ action: 'pause', itemId: data.itemId })
             break
           }
           queueVideoControl(data, { shouldPlay: false })
           break
         case 'seek':
-          if (playbackModeRef.current === 'vlc-embedded') {
+          if (getPlaybackMode() === 'vlc-embedded') {
             void window.api?.projectionVlc?.control({
               action: 'seek',
               itemId: data.itemId,
@@ -516,7 +393,7 @@ export default function FileProjection({
             })
             break
           }
-          if (!seekableRef.current) break
+          if (!isSeekable()) break
           queueVideoControl(data, { seekTo: data.value })
           break
         case 'zoom':
@@ -536,7 +413,7 @@ export default function FileProjection({
           setPdfViewMode(data.value)
           break
         case 'volume':
-          if (playbackModeRef.current === 'vlc-embedded') {
+          if (getPlaybackMode() === 'vlc-embedded') {
             void window.api?.projectionVlc?.control({
               action: 'volume',
               itemId: data.itemId,
@@ -548,7 +425,15 @@ export default function FileProjection({
           break
       }
     },
-    [queueVideoControl, isControlForCurrentItem, setPdfPage, setPdfScroll, setPdfViewMode]
+    [
+      queueVideoControl,
+      isControlForCurrentItem,
+      setPdfPage,
+      setPdfScroll,
+      setPdfViewMode,
+      getPlaybackMode,
+      isSeekable
+    ]
   )
 
   useEffect(() => {
@@ -639,6 +524,30 @@ export default function FileProjection({
       : undefined
 
   const renderedLoadSequence = loadSequenceRef.current
+  const reportMediaPlayback = (
+    element: HTMLMediaElement,
+    next?: { isPlaying?: boolean; isEnded?: boolean }
+  ): void => {
+    if (
+      element !== mediaRef.current ||
+      renderedLoadSequence !== loadSequenceRef.current ||
+      loadedContentRevision !== initialContentRevision ||
+      objectUrl !== objectUrlRef.current ||
+      endedRef.current ||
+      !initialItemId ||
+      !initialBlobId
+    )
+      return
+    sendVideoPlaybackState(
+      element,
+      {
+        itemId: initialItemId,
+        blobId: initialBlobId,
+        contentRevision: loadedContentRevision
+      },
+      next
+    )
+  }
 
   if (isEnded || replayPlaylistEnded) {
     return (
@@ -785,7 +694,7 @@ export default function FileProjection({
               !initialItemId ||
               !initialBlobId ||
               !initialContentRevision ||
-              playbackModeRef.current === 'vlc-embedded'
+              getPlaybackMode() === 'vlc-embedded'
             )
               return
             reportedErrorSequenceRef.current = renderedLoadSequence
@@ -803,7 +712,7 @@ export default function FileProjection({
           }}
           ref={mediaRef as React.RefObject<HTMLVideoElement>}
           src={objectUrl}
-          preload={seekableRef.current ? 'metadata' : 'none'}
+          preload={isSeekable() ? 'metadata' : 'none'}
           style={{
             width: '100%',
             height: '100%',
@@ -812,18 +721,22 @@ export default function FileProjection({
             transformOrigin: 'center center'
           }}
           muted
-          onLoadedMetadata={() => {
-            sendVideoPlaybackState()
+          onLoadedMetadata={(event) => {
+            reportMediaPlayback(event.currentTarget)
             applyPendingVideoControl()
           }}
-          onCanPlay={() => {
-            sendVideoPlaybackState()
+          onCanPlay={(event) => {
+            reportMediaPlayback(event.currentTarget)
             applyPendingVideoControl()
           }}
-          onTimeUpdate={() => sendVideoPlaybackState()}
-          onPlay={() => sendVideoPlaybackState({ isPlaying: true, isEnded: false })}
-          onPause={() => sendVideoPlaybackState({ isPlaying: false })}
-          onEnded={() => sendVideoPlaybackState({ isPlaying: false, isEnded: true })}
+          onTimeUpdate={(event) => reportMediaPlayback(event.currentTarget)}
+          onPlay={(event) =>
+            reportMediaPlayback(event.currentTarget, { isPlaying: true, isEnded: false })
+          }
+          onPause={(event) => reportMediaPlayback(event.currentTarget, { isPlaying: false })}
+          onEnded={(event) =>
+            reportMediaPlayback(event.currentTarget, { isPlaying: false, isEnded: true })
+          }
         />
         {playbackError && (
           <p role="alert" className="absolute text-white">
@@ -838,21 +751,26 @@ export default function FileProjection({
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-black overflow-hidden">
         <audio
+          key={`${loadedContentRevision ?? 0}:${renderedLoadSequence}`}
           ref={mediaRef as React.RefObject<HTMLAudioElement>}
           src={objectUrl}
-          preload={seekableRef.current ? 'metadata' : 'none'}
-          onLoadedMetadata={() => {
-            sendVideoPlaybackState()
+          preload={isSeekable() ? 'metadata' : 'none'}
+          onLoadedMetadata={(event) => {
+            reportMediaPlayback(event.currentTarget)
             applyPendingVideoControl()
           }}
-          onCanPlay={() => {
-            sendVideoPlaybackState()
+          onCanPlay={(event) => {
+            reportMediaPlayback(event.currentTarget)
             applyPendingVideoControl()
           }}
-          onTimeUpdate={() => sendVideoPlaybackState()}
-          onPlay={() => sendVideoPlaybackState({ isPlaying: true, isEnded: false })}
-          onPause={() => sendVideoPlaybackState({ isPlaying: false })}
-          onEnded={() => sendVideoPlaybackState({ isPlaying: false, isEnded: true })}
+          onTimeUpdate={(event) => reportMediaPlayback(event.currentTarget)}
+          onPlay={(event) =>
+            reportMediaPlayback(event.currentTarget, { isPlaying: true, isEnded: false })
+          }
+          onPause={(event) => reportMediaPlayback(event.currentTarget, { isPlaying: false })}
+          onEnded={(event) =>
+            reportMediaPlayback(event.currentTarget, { isPlaying: false, isEnded: true })
+          }
         />
       </div>
     )
@@ -864,7 +782,8 @@ export default function FileProjection({
         <VlcProjectionSurface
           itemId={initialItemId ?? null}
           blobId={initialBlobId}
-          durationMs={durationMsRef.current}
+          contentRevision={initialContentRevision}
+          durationMs={getDurationMs()}
           replayState={initialReplayState}
           playbackVariant={initialPlaybackVariant}
           startRevision={vlcStartRevision}
@@ -1047,55 +966,6 @@ function EditableProjectionSurface({
       </div>
     </div>
   )
-}
-
-function VlcProjectionSurface({
-  itemId,
-  blobId,
-  durationMs,
-  replayState,
-  playbackVariant,
-  startRevision
-}: {
-  itemId: string | null
-  blobId?: string
-  durationMs?: number
-  replayState?: ProjectionMediaReplayState | null
-  playbackVariant?: 'source' | 'matroska-remux'
-  startRevision?: number
-}): React.JSX.Element {
-  useEffect(() => {
-    if (!itemId || !blobId) return undefined
-    const attemptId = crypto.randomUUID()
-    void window.api?.projectionVlc
-      ?.start({
-        itemId,
-        attemptId,
-        sourceFileId: blobId,
-        container: '#vlc-player',
-        durationMs,
-        playbackVariant,
-        initialPositionSeconds:
-          replayState?.itemId === itemId ? replayState.positionSeconds : undefined,
-        initialVolume: replayState?.itemId === itemId ? replayState.volume : undefined,
-        initialPlaybackState:
-          replayState?.itemId !== itemId
-            ? undefined
-            : replayState.isEnded
-              ? 'ended'
-              : replayState.isPlaying
-                ? 'playing'
-                : 'paused'
-      })
-      .catch((error) => {
-        console.error('[projection-vlc] Failed to start embedded VLC playback', error)
-      })
-    return () => {
-      void window.api?.projectionVlc?.stop({ itemId, attemptId })
-    }
-  }, [blobId, durationMs, itemId, playbackVariant, replayState, startRevision])
-
-  return <div id="vlc-player" className="h-full w-full bg-black" />
 }
 
 function PdfCanvas({

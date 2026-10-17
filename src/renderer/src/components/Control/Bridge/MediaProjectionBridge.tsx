@@ -12,7 +12,7 @@ export default function MediaProjectionBridge({
 }: {
   onHhcAccessRevoked?: (scope: HhcProjectionAccessRevoked) => void
 }): null {
-  const { on, isProjectionOpen, recovery } = useProjection()
+  const { isProjectionOpen, recovery } = useProjection()
   const { session, getAccessToken, getAuthGeneration, refreshAfterUnauthorized, endSession } =
     useHhcAuth()
   const auth = useMemo(
@@ -27,25 +27,6 @@ export default function MediaProjectionBridge({
   )
 
   useMediaProjectionSync({ auth, onAccessRevoked: onHhcAccessRevoked })
-
-  useEffect(() => {
-    return on('file:playback-state', (data) => {
-      const state = useMediaProjectionStore.getState()
-      if (state.currentItem()?.id !== data.itemId) return
-      const current = state.typeStates.video
-      state.setTypeState('video', {
-        phase: data.phase,
-        preparationPhase: data.preparationPhase,
-        hasStarted: (current?.hasStarted ?? false) || data.currentTime > 0 || data.isPlaying,
-        isPlaying: data.isPlaying,
-        isEnded: data.isEnded,
-        currentTime: data.currentTime,
-        duration: data.duration,
-        seekable: data.seekable,
-        volume: data.volume
-      })
-    })
-  }, [on])
 
   useEffect(() => {
     if (isProjectionOpen || recovery.status !== 'closed') return
