@@ -40,11 +40,9 @@ vi.mock('@renderer/pages/MediaWorkspacePage', () => ({
 
 vi.mock('@renderer/lib/timer-adapter', () => ({
   createTimerAdapter: vi.fn(() => ({
-    onTick: vi.fn(),
-    onFinished: vi.fn(),
-    onStopwatchTick: vi.fn(),
-    sendCommand: vi.fn(),
-    syncMode: vi.fn(),
+    initialize: vi.fn().mockResolvedValue({ status: 'rejected', reason: 'host-unavailable' }),
+    execute: vi.fn().mockResolvedValue({ status: 'rejected', reason: 'host-unavailable' }),
+    onSnapshot: vi.fn(() => vi.fn()),
     dispose: vi.fn()
   }))
 }))

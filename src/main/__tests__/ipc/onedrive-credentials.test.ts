@@ -63,11 +63,10 @@ vi.mock('fs', () => {
 
 import { BrowserWindow } from 'electron'
 import type { WindowManager } from '../../windowManager'
-import {
-  clearOneDriveCredentials,
-  handleOneDriveAuthCallbackUrl,
-  registerOneDriveCredentialHandlers
-} from '../../ipc/onedrive-credentials'
+import { registerOneDriveCredentialHandlers } from '../../ipc/onedrive-credentials'
+import { createOneDriveService } from '../../onedrive-service'
+
+let service = createOneDriveService()
 
 const wm = mockWindowManager as unknown as WindowManager
 
@@ -82,6 +81,8 @@ function getHandler(channel: string): (...args: unknown[]) => unknown {
 }
 
 beforeEach(() => {
+  service.dispose()
+  service = createOneDriveService()
   vi.clearAllMocks()
   handleHandlers.clear()
   mockMkdir.mockReset()
@@ -114,7 +115,7 @@ beforeEach(() => {
     value.toString('utf8').replace(/^encrypted:/, '')
   )
   vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockMainWindow as never)
-  registerOneDriveCredentialHandlers(wm)
+  registerOneDriveCredentialHandlers(wm, service)
 })
 
 describe('OneDrive credential IPC', () => {
@@ -359,7 +360,7 @@ describe('OneDrive credential IPC', () => {
       string | null
     >
 
-    handleOneDriveAuthCallbackUrl('hhc-presenter://auth/onedrive?code=code-1&state=state-1', wm)
+    service.handleAuthCallbackUrl('hhc-presenter://auth/onedrive?code=code-1&state=state-1', wm)
 
     await expect(waiting).resolves.toBe('hhc-presenter://auth/onedrive?code=code-1&state=state-1')
     expect(mockMainWindow.show).toHaveBeenCalled()
@@ -367,13 +368,13 @@ describe('OneDrive credential IPC', () => {
   })
 
   it('ignores stale queued auth callbacks with a different state', async () => {
-    handleOneDriveAuthCallbackUrl('hhc-presenter://auth/onedrive?code=old-code&state=old-state', wm)
+    service.handleAuthCallbackUrl('hhc-presenter://auth/onedrive?code=old-code&state=old-state', wm)
 
     const waiting = getHandler('onedrive:wait-auth-callback')(makeEvent(), 'state-1') as Promise<
       string | null
     >
 
-    handleOneDriveAuthCallbackUrl('hhc-presenter://auth/onedrive?code=code-1&state=state-1', wm)
+    service.handleAuthCallbackUrl('hhc-presenter://auth/onedrive?code=code-1&state=state-1', wm)
 
     await expect(waiting).resolves.toBe('hhc-presenter://auth/onedrive?code=code-1&state=state-1')
   })
@@ -441,7 +442,7 @@ describe('OneDrive credential mutation ordering', () => {
       () => 'rejected'
     )
     await vi.waitFor(() => expect(mockNetFetch).toHaveBeenCalledOnce())
-    await clearOneDriveCredentials()
+    await service.clearCredentials()
     finish(tokenResponse())
     expect(await outcome).toBe('rejected')
     expect(mockRename).not.toHaveBeenCalled()
@@ -610,9 +611,139 @@ describe('OneDrive credential mutation ordering', () => {
       () => 'resolved',
       () => 'rejected'
     )
-    await clearOneDriveCredentials()
+    await service.clearCredentials()
     finish(tokenResponse())
     expect(await outcome).toBe('rejected')
     expect(mockWriteFile).not.toHaveBeenCalled()
+  })
+})
+
+describe('OneDrive service lifecycle', () => {
+  it.each(['token', 'profile'])(
+    'rejects late completeAuth after disposal during %s',
+    async (stage) => {
+      let finish!: (response: Response) => void
+      const deferred = new Promise<Response>((resolve) => {
+        finish = resolve
+      })
+      const token = (): Response =>
+        new Response(JSON.stringify({ access_token: 'late', refresh_token: 'late-refresh' }), {
+          status: 200
+        })
+      const profile = (): Response =>
+        new Response(JSON.stringify({ id: 'late-account' }), { status: 200 })
+      mockNetFetch
+        .mockReturnValueOnce(stage === 'token' ? deferred : Promise.resolve(token()))
+        .mockReturnValueOnce(stage === 'profile' ? deferred : Promise.resolve(profile()))
+      const pending = service.completeAuth({
+        clientId: '4f4c2f2c-8f2a-4c4b-9d2e-8c3a7d638c02',
+        redirectUri: 'hhc-presenter://auth/onedrive',
+        code: 'late-code',
+        codeVerifier: 'late-verifier'
+      })
+      const outcome = pending.then(
+        () => 'resolved',
+        () => 'rejected'
+      )
+      await vi.waitFor(() => expect(mockNetFetch).toHaveBeenCalledTimes(stage === 'token' ? 1 : 2))
+      service.dispose()
+      finish(stage === 'token' ? token() : profile())
+      expect(await outcome).toBe('rejected')
+      expect(mockWriteFile).not.toHaveBeenCalled()
+      expect(mockRename).not.toHaveBeenCalled()
+      expect(mockRm).not.toHaveBeenCalled()
+    }
+  )
+
+  it('revokes a late refresh without overwriting a new instance login', async () => {
+    const clientId = '4f4c2f2c-8f2a-4c4b-9d2e-8c3a7d638c02'
+    const connectionId = 'onedrive:replacement'
+    mockReadFile.mockResolvedValue(
+      Buffer.from(
+        `encrypted:${JSON.stringify({ connectionId, refreshToken: 'old', updatedAt: 1 })}`
+      )
+    )
+    let finish!: (response: Response) => void
+    mockNetFetch.mockReturnValueOnce(
+      new Promise<Response>((resolve) => {
+        finish = resolve
+      })
+    )
+    const pending = service.getAccessToken({ connectionId, clientId })
+    const outcome = pending.then(
+      () => 'resolved',
+      () => 'rejected'
+    )
+    await vi.waitFor(() => expect(mockNetFetch).toHaveBeenCalledOnce())
+    service.dispose()
+    const next = createOneDriveService()
+    try {
+      mockNetFetch
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ access_token: 'new', refresh_token: 'new-refresh' }), {
+            status: 200
+          })
+        )
+        .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'replacement' }), { status: 200 }))
+      await next.completeAuth({
+        clientId,
+        redirectUri: 'hhc-presenter://auth/onedrive',
+        code: 'new-code',
+        codeVerifier: 'new-verifier'
+      })
+      expect(mockRename).toHaveBeenCalledOnce()
+      finish(
+        new Response(JSON.stringify({ access_token: 'late', refresh_token: 'late-refresh' }), {
+          status: 200
+        })
+      )
+      expect(await outcome).toBe('rejected')
+      expect(mockRename).toHaveBeenCalledOnce()
+      expect(mockWriteFile).toHaveBeenCalledOnce()
+      expect(mockRm).not.toHaveBeenCalled()
+    } finally {
+      next.dispose()
+    }
+  })
+
+  it('settles and isolates callback waiters across service instances', async () => {
+    const next = createOneDriveService()
+    const oldWait = service.waitForAuthCallback('old')
+    const nextWait = next.waitForAuthCallback('new')
+    service.dispose()
+    await expect(oldWait).resolves.toBeNull()
+    expect(service.handleAuthCallbackUrl('hhc-presenter://auth/onedrive?code=old&state=old')).toBe(
+      false
+    )
+    next.handleAuthCallbackUrl('hhc-presenter://auth/onedrive?code=new&state=new')
+    await expect(nextWait).resolves.toBe('hhc-presenter://auth/onedrive?code=new&state=new')
+    expect(mockRm).not.toHaveBeenCalled()
+    next.dispose()
+  })
+
+  it('clears queued callbacks and pending waiters with clear-data', async () => {
+    service.handleAuthCallbackUrl('hhc-presenter://auth/onedrive?code=old&state=old')
+    await service.clearCredentials()
+    const waiting = service.waitForAuthCallback('old')
+    await service.clearCredentials()
+    await expect(waiting).resolves.toBeNull()
+  })
+
+  it('does not start new credential operations after disposal', async () => {
+    service.dispose()
+    await expect(service.getCredentialStatus('onedrive:account-1')).rejects.toThrow('disposed')
+    await expect(service.waitForAuthCallback('state')).rejects.toThrow('disposed')
+    expect(mockReadFile).not.toHaveBeenCalled()
+  })
+
+  it('settles callback waiters on timeout', async () => {
+    vi.useFakeTimers()
+    try {
+      const waiting = service.waitForAuthCallback('timeout')
+      await vi.advanceTimersByTimeAsync(5 * 60_000)
+      await expect(waiting).resolves.toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

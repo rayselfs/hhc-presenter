@@ -45,6 +45,16 @@ jobs:
           VITE_BIBLE_API_V2_PREFIX: ${{ vars.VITE_BIBLE_API_V2_PREFIX }}
         run: npm run build
 
+      - name: Build hosted renderer
+        env:
+          VITE_HHC_ACCOUNT_ORIGIN: ${{ vars.VITE_HHC_ACCOUNT_ORIGIN }}
+          VITE_HHC_ASSET_ORIGIN: ${{ vars.VITE_HHC_ASSET_ORIGIN }}
+          VITE_ONEDRIVE_CLIENT_ID: ${{ vars.VITE_ONEDRIVE_CLIENT_ID }}
+          VITE_BIBLE_API_HOST: ${{ vars.VITE_BIBLE_API_HOST }}
+          VITE_BIBLE_API_V1_PREFIX: ${{ vars.VITE_BIBLE_API_V1_PREFIX }}
+          VITE_BIBLE_API_V2_PREFIX: ${{ vars.VITE_BIBLE_API_V2_PREFIX }}
+        run: npm run build:web
+
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 

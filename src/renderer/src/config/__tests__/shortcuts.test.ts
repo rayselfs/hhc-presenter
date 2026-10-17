@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SHORTCUTS } from '../shortcuts'
-import { matchesConfig, type ShortcutConfig } from '@renderer/hooks/useKeyboardShortcuts'
+import { matchesConfig, type ShortcutConfig } from '@renderer/lib/shortcut-config'
 
 let mockIsMac = false
 

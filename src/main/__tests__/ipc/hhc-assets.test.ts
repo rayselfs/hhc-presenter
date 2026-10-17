@@ -1,3 +1,6 @@
+vi.mock('../../lib/native-storage', () => ({
+  getNativeFilePath: (id: string) => `/tmp/hhc-user-data/native-files/${id}`
+}))
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
@@ -54,7 +57,6 @@ vi.mock('node:fs', () => {
 })
 
 vi.mock('../../ipc/native-fs', () => ({
-  getNativeFilePath: (id: string) => `/tmp/hhc-user-data/native-files/${id}`,
   registerNativeMediaLease: mockRegisterLease,
   releaseNativeMediaLease: mockReleaseLease,
   clearNativeMediaLeases: mockClearLeases

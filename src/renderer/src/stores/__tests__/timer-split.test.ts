@@ -20,6 +20,7 @@ import {
 } from '@renderer/stores/timer-config'
 import { useTimerRuntimeStore, DEFAULT_STATE } from '@renderer/stores/timer-runtime'
 import { useTimerStore } from '@renderer/stores/timer'
+import { installTimerRuntimeHarness } from '@renderer/test/timer-runtime-harness'
 
 const INITIAL_CONFIG = {
   mode: DEFAULT_SETTINGS.mode,
@@ -39,13 +40,16 @@ const INITIAL_RUNTIME = {
   overtimeSeconds: DEFAULT_STATE.overtimeSeconds,
   progress: DEFAULT_STATE.progress,
   formattedTime: DEFAULT_STATE.formattedTime,
-  targetEndTime: null
+  hostRevision: -1
 }
 
+let host: ReturnType<typeof installTimerRuntimeHarness>
 beforeEach(() => {
   useTimerConfigStore.setState(INITIAL_CONFIG)
   useTimerRuntimeStore.setState(INITIAL_RUNTIME)
+  host = installTimerRuntimeHarness()
 })
+afterEach(() => host.dispose())
 
 describe('timer-config store', () => {
   it('initializes with default settings', () => {
@@ -102,7 +106,7 @@ describe('timer-runtime store', () => {
     expect(s.overtimeSeconds).toBe(0)
     expect(s.progress).toBe(1)
     expect(s.formattedTime).toBe('05:00')
-    expect(s.targetEndTime).toBeNull()
+    expect(s).not.toHaveProperty('targetEndTime')
   })
 
   it('has no persist middleware', () => {

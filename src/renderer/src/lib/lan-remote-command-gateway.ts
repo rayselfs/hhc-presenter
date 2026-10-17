@@ -5,6 +5,7 @@ import {
 import { useStopwatchStore } from '@renderer/stores/stopwatch'
 import { useTimerStore } from '@renderer/stores/timer'
 import { getMediaType } from '@renderer/lib/presentability'
+import { executeTimerRuntimeCommand } from './timer-runtime-client'
 import {
   sanitizeLanRemoteSnapshot,
   type LanRemoteAck,
@@ -94,10 +95,15 @@ export async function executeLanRemoteCommand(command: LanRemoteCommand): Promis
       })
       return accept(command.requestId)
     }
-    case 'timer:command':
-      if (!window.api?.timer) return rejected(command.requestId, 'timer-api-unavailable')
-      await window.api.timer.timerCommand(command.command)
+    case 'timer:command': {
+      const result = await executeTimerRuntimeCommand(command.command)
+      if (result.status === 'rejected')
+        return rejected(
+          command.requestId,
+          result.reason === 'host-unavailable' ? 'timer-api-unavailable' : result.reason
+        )
       return accept(command.requestId)
+    }
   }
 }
 

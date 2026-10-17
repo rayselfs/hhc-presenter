@@ -1,3 +1,6 @@
+import { parseTimerCommand } from '@shared/timer-command'
+import { parseLanRemoteCommand } from '@shared/lan-remote'
+import { MAX_DURATION_SECONDS } from '@shared/constants/timer'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockMainWindow = { id: 1 }
@@ -166,6 +169,26 @@ describe('validateTimerSettings', () => {
   it('returns true for valid settings', () => {
     expect(validateTimerSettings(valid)).toBe(true)
   })
+  it.each([NaN, Infinity, -Infinity])('rejects non-finite durations %s', (value) => {
+    expect(validateTimerSettings({ ...valid, totalDuration: value })).toBe(false)
+    expect(validateTimerSettings({ ...valid, reminderDuration: value })).toBe(false)
+    expect(
+      validateProjectionMessageTuple([
+        'timer:sync',
+        {
+          settings: { ...valid, totalDuration: value },
+          state: { status: 'stopped', remainingSeconds: 0 },
+          stopwatchState: { status: 'stopped', elapsedMs: 0 }
+        }
+      ])
+    ).toBe(false)
+  })
+
+  it.each([0, 0.5])('retains finite duration %s', (value) => {
+    expect(validateTimerSettings({ ...valid, totalDuration: value, reminderDuration: value })).toBe(
+      true
+    )
+  })
 
   it('returns false for null', () => {
     expect(validateTimerSettings(null)).toBe(false)
@@ -233,6 +256,27 @@ describe('validateProjectionTransportTuple', () => {
   it('rejects a ready payload for another generation', () => {
     expect(validateProjectionTransportTuple([4, '__system:ready', { generation: 3 }])).toBe(false)
   })
+
+  it.each([0, -1, 1.5, NaN, Infinity, '2'])(
+    'rejects invalid playback content revision %s',
+    (contentRevision) => {
+      expect(
+        validateProjectionMessageTuple([
+          'file:playback-state',
+          {
+            itemId: 'video',
+            blobId: 'blob',
+            contentRevision,
+            phase: 'ready',
+            currentTime: 0,
+            duration: 0,
+            isPlaying: false,
+            isEnded: false
+          }
+        ])
+      ).toBe(false)
+    }
+  )
 
   it('accepts optional VLC playback capability and volume state', () => {
     expect(
@@ -439,4 +483,57 @@ it('validates bounded document render reports and PDF initial state', () => {
       { ...show, pdf: { page: 0, scroll: Infinity, viewMode: 'continuous' } }
     ])
   ).toBe(false)
+})
+
+describe('shared seconds command parser', () => {
+  const cases: Array<[unknown, boolean]> = [
+    ...[
+      'start',
+      'pause',
+      'resume',
+      'reset',
+      'startStopwatch',
+      'pauseStopwatch',
+      'resetStopwatch'
+    ].map((type): [unknown, boolean] => [{ type }, true]),
+    ...['setDuration', 'addTime', 'removeTime'].flatMap(
+      (type): Array<[unknown, boolean]> => [
+        [{ type, seconds: 0 }, true],
+        [{ type, seconds: 0.5 }, true],
+        [{ type, seconds: MAX_DURATION_SECONDS }, true],
+        [{ type, seconds: -1 }, false],
+        [{ type, seconds: MAX_DURATION_SECONDS + 1 }, false],
+        [{ type, seconds: NaN }, false],
+        [{ type, seconds: Infinity }, false],
+        [{ type, seconds: '1' }, false]
+      ]
+    ),
+    [{ type: 'setMode', mode: 'stopwatch' }, true],
+    [{ type: 'setMode', mode: 'other' }, false],
+    [{ type: 'setReminder', enabled: true, durationSeconds: 0.5 }, true],
+    [{ type: 'setReminder', enabled: 1, durationSeconds: 1 }, false],
+    [{ type: 'setReminder', enabled: true, durationSeconds: NaN }, false],
+    [{ type: 'setOvertimeMessage', enabled: false, message: 'x'.repeat(1000) }, true],
+    [{ type: 'setOvertimeMessage', enabled: true, message: 'x'.repeat(1001) }, false],
+    [null, false],
+    [{ type: 'unknown' }, false]
+  ]
+
+  it.each(cases)('keeps IPC and LAN acceptance for %j', (input, accepted) => {
+    expect(validateTimerCommand(input)).toBe(accepted)
+    expect(parseTimerCommand(input) !== null).toBe(accepted)
+    expect(
+      parseLanRemoteCommand({ requestId: 'r', type: 'timer:command', command: input }) !== null
+    ).toBe(accepted)
+  })
+
+  it('returns only fields allowed for the command', () => {
+    expect(parseTimerCommand({ type: 'start', seconds: 99, other: 'discard' })).toEqual({
+      type: 'start'
+    })
+    expect(parseTimerCommand({ type: 'addTime', seconds: 0.5, other: 'discard' })).toEqual({
+      type: 'addTime',
+      seconds: 0.5
+    })
+  })
 })
