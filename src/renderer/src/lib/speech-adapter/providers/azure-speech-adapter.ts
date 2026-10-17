@@ -199,6 +199,7 @@ export class AzureSpeechAdapter implements SpeechAdapter {
           }
 
           this.emit('rawRecognized', { text, confidence })
+          if (!isCurrent()) return
 
           if (!text || text.trim().length === 0) {
             return
@@ -221,7 +222,7 @@ export class AzureSpeechAdapter implements SpeechAdapter {
         if (!isCurrent()) return
         this.isActive = false
         this.emit('sessionStopped', undefined)
-        if (this.cancelStart) void this.stop()
+        if (isCurrent() && this.cancelStart) void this.stop()
       }
 
       this.recognizer.canceled = (_s, e) => {
@@ -229,11 +230,12 @@ export class AzureSpeechAdapter implements SpeechAdapter {
         this.isActive = false
         const reason = sdk.CancellationReason[e.reason]
         this.emit('canceled', { reason })
+        if (!isCurrent()) return
 
         if (e.reason === sdk.CancellationReason.Error) {
           this.handleCancellationError(e.errorDetails)
         }
-        if (this.cancelStart) void this.stop()
+        if (isCurrent() && this.cancelStart) void this.stop()
       }
 
       await new Promise<void>((resolve, reject) => {

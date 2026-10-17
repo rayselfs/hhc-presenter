@@ -185,3 +185,24 @@ describe('Whisper session lifetime', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 })
+
+it('does not let an old duration callback stop a listener restart', async () => {
+  getUserMedia.mockImplementation(async () => microphone().stream)
+  const adapter = new WhisperSpeechAdapter({ maxSessionMs: 1000 })
+  let replacement!: Promise<void>
+  adapter.on('maxDurationReached', () => {
+    void adapter.stop()
+    replacement = adapter.start()
+    void replacement.catch(() => {})
+  })
+  try {
+    await adapter.start()
+    await vi.advanceTimersByTimeAsync(1000)
+    await expect(replacement).resolves.toBeUndefined()
+    expect(TestWorker.instances).toHaveLength(2)
+    expect(TestWorker.instances[1].terminate).not.toHaveBeenCalled()
+    expect(adapter.isRecognizing()).toBe(true)
+  } finally {
+    adapter.dispose()
+  }
+})

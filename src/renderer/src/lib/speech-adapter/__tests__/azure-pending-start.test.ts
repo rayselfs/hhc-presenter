@@ -231,3 +231,53 @@ describe('Azure pending recognition start', () => {
     }
   )
 })
+
+it.each(['sessionStopped', 'canceled'] as const)(
+  'does not let an old %s callback cancel a listener restart',
+  async (event) => {
+    const first = adapter.start()
+    const old = recognizer()
+    succeed(old)
+    await first
+    let replacement!: Promise<void>
+    adapter.on(event, () => {
+      replacement = adapter.start()
+      void replacement.catch(() => {})
+    })
+    if (event === 'sessionStopped')
+      old.sessionStopped(old, { sessionId: 'old' } as sdk.SessionEventArgs)
+    else
+      old.canceled(old, {
+        reason: sdk.CancellationReason.EndOfStream
+      } as sdk.SpeechRecognitionCanceledEventArgs)
+    const next = recognizer()
+    expect(next).not.toBe(old)
+    succeed(next)
+    await expect(replacement).resolves.toBeUndefined()
+    expect(next.close).not.toHaveBeenCalled()
+    expect(adapter.isRecognizing()).toBe(true)
+  }
+)
+
+it('does not parse an old result after a raw-result listener restarts recognition', async () => {
+  const parse = vi.spyOn(
+    adapter as unknown as { handleRecognizedText: (text: string) => void },
+    'handleRecognizedText'
+  )
+  const first = adapter.start()
+  const old = recognizer()
+  succeed(old)
+  await first
+  let replacement!: Promise<void>
+  adapter.on('rawRecognized', () => {
+    void adapter.stop()
+    replacement = adapter.start()
+  })
+  old.recognized(old, {
+    result: { reason: sdk.ResultReason.RecognizedSpeech, text: 'John 3:16' }
+  } as sdk.SpeechRecognitionEventArgs)
+  expect(parse).not.toHaveBeenCalled()
+  succeed()
+  await replacement
+  expect(adapter.isRecognizing()).toBe(true)
+})

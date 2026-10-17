@@ -184,7 +184,7 @@ it.each(['sessionStopped', 'canceled', 'idleTimeout', 'maxDurationReached', 'err
     await act(async () => {
       await hook.result.current.start()
     })
-    act(() => {
+    await act(async () => {
       if (event === 'error') adapter.emit(event, { error: new Error('Failed'), message: 'Failed' })
       else if (event === 'canceled') adapter.emit(event, { reason: 'Canceled' })
       else adapter.emit(event, undefined)
@@ -321,4 +321,25 @@ it('retains only the active session resources across StrictMode effect replay', 
   hook.unmount()
   expect(adapter.dispose).toHaveBeenCalledOnce()
   expect(vi.getTimerCount()).toBe(0)
+})
+
+it('rejects results after sessionStopped while retaining the following terminal error', async () => {
+  const adapter = new Adapter()
+  const config = options(adapter)
+  const hook = renderHook(() => useSpeechSession(config))
+  await act(async () => {
+    await hook.result.current.start()
+  })
+  await act(async () => {
+    adapter.emit('sessionStopped', undefined)
+    adapter.emit('rawRecognized', { text: 'late', confidence: null })
+    adapter.emit('recognized', recognized)
+    adapter.emit('error', { error: new Error('Failed'), message: 'Failed' })
+  })
+  expect(config.onRawRecognized).not.toHaveBeenCalled()
+  expect(config.onRecognized).not.toHaveBeenCalled()
+  expect(hook.result.current.error).toBe('start-failed')
+  expect(adapter.dispose).toHaveBeenCalledOnce()
+  expect(vi.getTimerCount()).toBe(0)
+  hook.unmount()
 })

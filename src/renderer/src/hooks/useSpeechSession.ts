@@ -101,24 +101,31 @@ export function useSpeechSession(options: SpeechSessionOptions): {
         return
       }
       session.adapter = adapter
+      let ended = false
       const finish = (message: string | null): void => {
         if (!isCurrent()) return
         stop()
         setError(message)
       }
       adapter.on('recognized', (result) => {
-        if (isCurrent() && result.text) optionsRef.current.onRecognized(result.text)
+        if (isCurrent() && !ended && result.text) optionsRef.current.onRecognized(result.text)
       })
       adapter.on('rawRecognized', (result) => {
-        if (isCurrent()) optionsRef.current.onRawRecognized(result)
+        if (isCurrent() && !ended) optionsRef.current.onRawRecognized(result)
       })
       adapter.on('error', () => finish('start-failed'))
-      adapter.on('sessionStopped', () => finish(null))
+      adapter.on('sessionStopped', () => {
+        if (!isCurrent()) return
+        ended = true
+        setStatus('idle')
+        // Providers emit their terminal reason immediately after sessionStopped.
+        void Promise.resolve().then(() => finish(null))
+      })
       adapter.on('canceled', () => finish('start-failed'))
       adapter.on('idleTimeout', () => finish('idle-timeout'))
       adapter.on('maxDurationReached', () => finish('max-duration'))
       await adapter.start()
-      if (!isCurrent()) {
+      if (!isCurrent() || ended) {
         adapter.dispose()
         return
       }

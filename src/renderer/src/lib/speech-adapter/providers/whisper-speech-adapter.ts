@@ -86,8 +86,10 @@ export class WhisperSpeechAdapter implements SpeechAdapter {
       recorder.start(100)
       if (this.config.maxSessionMs) {
         this.maxSessionTimer = setTimeout(() => {
+          if (generation !== this.generation || this.worker !== worker || !this.active) return
           this.emit('maxDurationReached', undefined)
-          this.stop().catch(() => {})
+          if (generation === this.generation && this.worker === worker && this.active)
+            this.stop().catch(() => {})
         }, this.config.maxSessionMs)
       }
       this.batchIntervalId = setInterval(() => {
