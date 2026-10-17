@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import type { ProjectionMediaReplayState } from '@shared/projection-messages'
 
 export default function VlcProjectionSurface({
   itemId,
   blobId,
+  contentRevision,
   durationMs,
   replayState,
   playbackVariant,
@@ -11,17 +12,23 @@ export default function VlcProjectionSurface({
 }: {
   itemId: string | null
   blobId?: string
+  contentRevision?: number
   durationMs?: number
   replayState?: ProjectionMediaReplayState | null
   playbackVariant?: 'source' | 'matroska-remux'
   startRevision?: number
 }): React.JSX.Element {
+  const contentRevisionRef = useRef(contentRevision)
+  useEffect(() => {
+    contentRevisionRef.current = contentRevision
+  }, [contentRevision])
   useEffect(() => {
     if (!itemId || !blobId) return undefined
     const attemptId = crypto.randomUUID()
     void window.api?.projectionVlc
       ?.start({
         itemId,
+        contentRevision: contentRevisionRef.current,
         attemptId,
         sourceFileId: blobId,
         container: '#vlc-player',
