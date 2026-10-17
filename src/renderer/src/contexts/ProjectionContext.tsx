@@ -4,12 +4,22 @@ import {
   useMediaProjectionStore,
   invalidatePendingMediaProjectionActions
 } from '@renderer/stores/media-projection'
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore
+} from 'react'
 import { createProjectionAdapter, type ProjectionAdapter } from '@renderer/lib/projection-adapter'
 import { isElectron } from '@renderer/lib/env'
 import {
   createProjectionSessionCoordinator,
   type ProjectionRecoveryState,
+  type ProjectionCoordinatorViewState,
   type ProjectionSessionCoordinator,
   type ReplayableProjectionChannel
 } from '@renderer/lib/projection-session-coordinator'
@@ -82,6 +92,12 @@ const CLOSED_RECOVERY_STATE: ProjectionRecoveryState = {
   failure: null
 }
 
+const CLOSED_VIEW_STATE: ProjectionCoordinatorViewState = {
+  snapshot: null,
+  recovery: CLOSED_RECOVERY_STATE,
+  activeOwner: 'timer'
+}
+
 const ProjectionContext = createContext<ProjectionContextValue | null>(null)
 
 function getProjectionUrl(generation: number, sessionId: string): string {
@@ -121,12 +137,7 @@ function usesDocumentRenderStatus(mimeType: string | undefined): boolean {
 export function ProjectionProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   const [isProjectionOpen, setIsProjectionOpen] = useState(false)
   const [projectionReadyCount, setProjectionReadyCount] = useState(0)
-  const [activeOwner, setActiveOwner] = useState<ProjectionOwner>('timer')
-  const [recovery, setRecovery] = useState<ProjectionRecoveryState>(CLOSED_RECOVERY_STATE)
   const [vlcFailure, setVlcFailure] = useState<ProjectionVlcFailure | null>(null)
-  const [projectionSnapshot, setProjectionSnapshot] = useState<ProjectionSessionSnapshot | null>(
-    null
-  )
   const projectionDisplayId = useSettingsStore((state) => state.projectionDisplayId)
   const [browserSessionId] = useState(() => crypto.randomUUID())
   const adapterRef = useRef<ProjectionAdapter | null>(null)
@@ -150,6 +161,20 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
     }
     return coordinatorRef.current
   }, [browserSessionId])
+
+  const subscribeCoordinator = useCallback(
+    (listener: () => void) => getCoordinator().subscribe(listener),
+    [getCoordinator]
+  )
+  const readCoordinator = useCallback(
+    () => coordinatorRef.current?.getViewState() ?? CLOSED_VIEW_STATE,
+    []
+  )
+  const {
+    recovery,
+    activeOwner,
+    snapshot: projectionSnapshot
+  } = useSyncExternalStore(subscribeCoordinator, readCoordinator, readCoordinator)
 
   const stopPolling = useCallback((): void => {
     if (pollTimerRef.current) clearInterval(pollTimerRef.current)
@@ -176,11 +201,6 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
     const coordinator = getCoordinator()
     const syncCoordinatorState = (): void => {
       const next = coordinator.getRecoveryState()
-      setRecovery({
-        ...next,
-        failure: next.failure ? { ...next.failure } : null
-      })
-      setProjectionSnapshot(coordinator.getSnapshot())
       const renderSnapshot = coordinator.getSnapshot()
       const show = renderSnapshot?.media.show
       const media = useMediaProjectionStore.getState()
@@ -256,7 +276,21 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
       useMediaProjectionStore.setState({ projectionRenderStatus: data })
     })
     const unsubscribePlayback = adapter.on('file:playback-state', (data) => {
-      coordinator.recordPlayback(adapter.getGeneration(), data)
+      if (!coordinator.recordPlayback(adapter.getGeneration(), data)) return
+      const state = useMediaProjectionStore.getState()
+      if (state.currentItem()?.id !== data.itemId) return
+      const current = state.typeStates.video
+      state.setTypeState('video', {
+        phase: data.phase,
+        preparationPhase: data.preparationPhase,
+        hasStarted: (current?.hasStarted ?? false) || data.currentTime > 0 || data.isPlaying,
+        isPlaying: data.isPlaying,
+        isEnded: data.isEnded,
+        currentTime: data.currentTime,
+        duration: data.duration,
+        seekable: data.seekable,
+        volume: data.volume
+      })
     })
 
     let active = true
@@ -560,7 +594,6 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
   const claimProjection = useCallback(
     (owner: ProjectionOwner, options?: { unblank?: boolean }): void => {
       invalidatePendingMediaProjectionActions()
-      setActiveOwner(owner)
       getCoordinator().claim(owner, options?.unblank)
     },
     [getCoordinator]
@@ -592,7 +625,6 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
       const coordinator = getCoordinator()
       invalidatePendingMediaProjectionActions()
       coordinator.startSession(owner, payloads)
-      setActiveOwner(owner)
 
       let result: ProjectionOperationResult
       if (coordinator.getRecoveryState().status === 'ready') {

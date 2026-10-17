@@ -2,6 +2,7 @@ import { validateDisplayName } from '@renderer/lib/file-naming'
 import { createPersistenceOperationQueue } from '@renderer/lib/persistence-operation-queue'
 import {
   createLocalCatalogFolder,
+  moveLocalCatalogEntry,
   softDeleteLocalCatalogEntry,
   updateLocalCatalogEntry,
   restoreLocalCatalogEntry
@@ -303,6 +304,28 @@ export async function addFileItemToStore(
       canonicalMimeType
     )
   }
+  return addLocalFileItem(file, parentId, canonicalMimeType, notes)
+}
+
+export function createLocalRecoveryFileBackup(
+  file: File,
+  mimeType: string,
+  signal: AbortSignal
+): Promise<string> {
+  return addLocalFileItem(file, FILE_EXPLORER_ROOT_ID, mimeType, undefined, {
+    expiresAt: null,
+    signal
+  })
+}
+
+async function addLocalFileItem(
+  file: File,
+  parentId: string,
+  canonicalMimeType: string,
+  notes?: string,
+  options: { expiresAt?: null; signal?: AbortSignal } = {}
+): Promise<string> {
+  options.signal?.throwIfAborted()
   const db = await openFileExplorerDB()
   const id = crypto.randomUUID()
   const stagingLock = `local-blob:${id}`
@@ -319,7 +342,9 @@ export async function addFileItemToStore(
     })
     await db.add('resource-cleanup-journal', cleanup)
     await storeFileBlob(db, id, file)
+    options.signal?.throwIfAborted()
     await useFileExplorerStore.getState().flushPersistence()
+    options.signal?.throwIfAborted()
     assertLocalDestination(parentId, Object.values(useFileExplorerStore.getState().folders))
     const now = Date.now()
     const item: FileItemRecord = {
@@ -333,9 +358,15 @@ export async function addFileItemToStore(
       ...(notes !== undefined ? { notes } : {}),
       sortIndex: useFileExplorerStore.getState().getItems(parentId).length,
       createdAt: now,
-      expiresAt: parentId === FILE_EXPLORER_ROOT_ID ? now + FOLDER_DURATION_MS['1day'] : null
+      expiresAt:
+        options.expiresAt === null
+          ? null
+          : parentId === FILE_EXPLORER_ROOT_ID
+            ? now + FOLDER_DURATION_MS['1day']
+            : null
     }
-    await commitLocalFileItem(item, { stagingCleanupId: cleanup.id })
+    await commitLocalFileItem(item, { stagingCleanupId: cleanup.id, signal: options.signal })
+    options.signal?.throwIfAborted()
     publishPersistedFileItem(item)
   }
   try {
@@ -725,6 +756,37 @@ export function softDeleteExplorerEntry(kind: 'folder' | 'file', id: string): Pr
     const count = (pendingExplorerTrashRoots.get(id) ?? 1) - 1
     if (count === 0) pendingExplorerTrashRoots.delete(id)
     else pendingExplorerTrashRoots.set(id, count)
+  })
+}
+
+export function moveExplorerEntry(
+  kind: 'folder' | 'file',
+  id: string,
+  parentId: string
+): Promise<void> {
+  return withExplorerEntryWrite(id, async () => {
+    const db = await openFileExplorerDB()
+    const [record, destination] = await Promise.all([
+      kind === 'folder' ? db.get('folder-records', id) : db.get('folder-items', id),
+      db.get('folder-records', parentId)
+    ])
+    if (
+      !record ||
+      !isPersonalRecordVisible(record) ||
+      (destination && !isPersonalRecordVisible(destination))
+    )
+      throw new Error('Move source or destination is unavailable')
+    if (record.personalOwnerId || destination?.personalOwnerId) {
+      if (record.personalOwnerId && record.personalOwnerId === destination?.personalOwnerId)
+        await mutateExplorerPersonalNode(record.personalOwnerId, id, { type: 'move', parentId })
+      else if (kind === 'folder') await copyExplorerFolder(id, parentId)
+      else if (!(await copyFileSnapshot(id, parentId))) throw new Error('File copy failed')
+      return
+    }
+    await filePersistenceQueue.commit(async () => {
+      const moved = await moveLocalCatalogEntry(kind, id, parentId, isPersonalRecordVisible)
+      publishPersistedExplorerEntry(moved)
+    })
   })
 }
 
