@@ -22,7 +22,7 @@ export interface ListViewProps {
   onItemDoubleClick: (id: string, event: React.MouseEvent) => void
   onItemContextMenu: (id: string, event: React.MouseEvent) => void
   renamingItemId?: string | null
-  onRenameSubmit?: (id: string, baseName: string) => void
+  onRenameSubmit?: (id: string, baseName: string) => boolean | void | Promise<boolean | void>
   onRenameCancel?: () => void
   renderItemWrapper?: (item: GridViewItem, children: React.ReactNode) => React.ReactNode
 }
