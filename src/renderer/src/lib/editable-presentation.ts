@@ -1,3 +1,4 @@
+import { assertEditablePptxDocument, assertEditablePptxFeatures } from './editable-pptx-policy'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
 import {
   createPresentationDraft,
@@ -1035,8 +1036,10 @@ export async function convertPptxToEditablePresentation(
     await import('@aiden0z/pptx-renderer')
   const files = await parseZip(buffer, RECOMMENDED_ZIP_LIMITS)
   const presentation = buildPresentation(files)
+  assertEditablePptxFeatures(files, presentation)
   materializeAllSlideNodes(presentation)
   const document = convertPresentationData(item, presentation)
+  assertEditablePptxDocument(document)
   if (ownerId !== usePersonalSyncStore.getState().activeOwnerId)
     throw new Error('Personal account changed')
   if (await isReadonlyPresentationSource(item)) return createPresentationDraft(item, document)
