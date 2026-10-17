@@ -1,4 +1,5 @@
 import { copyBibleFolder } from '@renderer/lib/bible-folder-copy'
+import type { FolderPersistence } from '@shared/types/folder'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 const mockLoadAllFolders = vi.fn()
@@ -15,8 +16,8 @@ const mockDeleteExpiredFolders = vi.fn()
 const mockDeleteExpiredItems = vi.fn()
 const mockPurgeTrashOlderThan = vi.fn()
 
-vi.mock('@renderer/lib/folder-db', () => ({
-  createFolderDB: () => ({
+vi.mock('@renderer/lib/folder-db', () => {
+  const factory = (): FolderPersistence => ({
     loadAllFolders: (...args: unknown[]) => mockLoadAllFolders(...args),
     loadItemsByParent: (...args: unknown[]) => mockLoadItemsByParent(...args),
     saveFolder: (...args: unknown[]) => mockSaveFolder(...args),
@@ -31,7 +32,8 @@ vi.mock('@renderer/lib/folder-db', () => ({
     deleteExpiredItems: (...args: unknown[]) => mockDeleteExpiredItems(...args),
     purgeTrashOlderThan: (...args: unknown[]) => mockPurgeTrashOlderThan(...args)
   })
-}))
+  return { createBibleFolderDB: factory, createFileExplorerFolderDB: factory }
+})
 
 vi.mock('@renderer/lib/bible-db', () => ({
   openBibleDB: vi.fn()

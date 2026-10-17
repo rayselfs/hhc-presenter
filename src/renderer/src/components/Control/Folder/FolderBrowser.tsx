@@ -1,5 +1,6 @@
 import { toast } from '@heroui/react/toast'
 import { copyBibleFolder } from '@renderer/lib/bible-folder-copy'
+import { assertFolderCopyTarget } from '@renderer/lib/folder-copy-target'
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import {
   DndContext,
@@ -304,6 +305,9 @@ export function FolderBrowser({
           }
         }
       } else {
+        for (const id of clipboard.itemIds) {
+          if (state.folders[id]) assertFolderCopyTarget(id, currentFolderId, state.folders)
+        }
         for (const id of clipboard.itemIds) {
           if (state.folders[id]) {
             await copyBibleFolder(store.getState, id, currentFolderId)
