@@ -1,3 +1,4 @@
+import { isSameActiveSyncRoot } from './sync-refresh-lifetime'
 import type {
   FileItemRecord,
   FolderRecord,
@@ -626,10 +627,18 @@ export function buildSyncDeltaRefreshPlan(input: BuildSyncRefreshPlanInput): Syn
 
 export async function applySyncRefreshPlan(
   plan: SyncRefreshPlan,
-  blobs: FileBlobRecord[] = []
+  blobs: FileBlobRecord[] = [],
+  expectedRoot?: FolderRecord
 ): Promise<void> {
   const db = await openFileExplorerDB()
   const tx = db.transaction(['folder-records', 'folder-items', 'file-blobs'], 'readwrite')
+  if (expectedRoot) {
+    const current = await tx.objectStore('folder-records').get(expectedRoot.id)
+    if (!isSameActiveSyncRoot(current, expectedRoot)) {
+      await tx.done
+      throw new Error('Sync refresh root was revoked')
+    }
+  }
   await Promise.all([
     ...plan.folders.map((folder) => tx.objectStore('folder-records').put(folder)),
     ...plan.items.map((item) => tx.objectStore('folder-items').put(item)),

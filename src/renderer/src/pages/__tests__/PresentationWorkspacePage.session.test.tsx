@@ -356,6 +356,35 @@ describe('PresentationWorkspacePage session integration', () => {
     usePresentationWorkspaceStore.getState().openDocument(item)
   })
 
+  it.each([false, true])(
+    'isolates a failed document from the next session (already open: %s)',
+    async (alreadyOpen) => {
+      const next = makeEditableItem('deck-2', 'Healthy.lpdeck')
+      const document = createBlankEditablePresentationDocument('Healthy')
+      mocks.loadEditablePresentationSnapshot.mockImplementation(async (item: FileItemRecord) => {
+        if (item.id === 'deck-1') throw new Error('Broken first document')
+        return { document, revision: 0 }
+      })
+      useFileExplorerStore.setState((state) => ({ items: { ...state.items, [next.id]: next } }))
+      let registry: PresentationSessionRegistry | null = null
+      render(
+        <PresentationSessionRegistryProvider>
+          <Workspace showPage onSession={(value) => (registry = value)} />
+        </PresentationSessionRegistryProvider>
+      )
+      await screen.findByText('Broken first document')
+      if (alreadyOpen)
+        await act(async () => {
+          await registry!.open(next)
+        })
+      const existing = registry!.get(next.id)
+      act(() => usePresentationWorkspaceStore.getState().openDocument(next))
+      await screen.findByTestId('presentation-ribbon-frame')
+      expect(screen.queryByText('Broken first document')).toBeNull()
+      if (existing) expect(registry!.get(next.id)).toBe(existing)
+    }
+  )
+
   it('orders Home around supported commands without captions or geometry fields', async () => {
     render(
       <PresentationSessionRegistryProvider>
