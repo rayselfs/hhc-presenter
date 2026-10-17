@@ -1,6 +1,6 @@
 import { Index } from 'flexsearch'
 
-export type WorkerIncomingMessage =
+export type WorkerIncomingMessage = { id: number } & (
   | { type: 'INIT' }
   | { type: 'BUILD_INDEX'; verses: { id: number; text: string }[] }
   | {
@@ -11,8 +11,9 @@ export type WorkerIncomingMessage =
   | { type: 'EXPORT_INDEX' }
   | { type: 'SEARCH'; query: string; limit?: number; id: number }
   | { type: 'GET_PROGRESS'; id: number }
+)
 
-export type WorkerOutgoingMessage =
+export type WorkerOutgoingMessage = { id: number } & (
   | { type: 'READY' }
   | { type: 'INDEX_COMPLETE'; total: number }
   | { type: 'INDEX_LOADED' }
@@ -22,6 +23,7 @@ export type WorkerOutgoingMessage =
   | { type: 'SEARCH_RESULT'; id: number; results: number[] }
   | { type: 'PROGRESS_RESULT'; id: number; indexed: number; total: number }
   | { type: 'ERROR'; message: string }
+)
 
 const BATCH_SIZE = 1000
 
@@ -67,18 +69,19 @@ function createIndex(): Index {
   return new Index({ encode: cjkCharEncode, tokenize: 'forward' })
 }
 
-function handleInit(): void {
+function handleInit(id: number): void {
   try {
     flexIndex = createIndex()
-    self.postMessage({ type: 'READY' } satisfies WorkerOutgoingMessage)
+    self.postMessage({ type: 'READY', id } satisfies WorkerOutgoingMessage)
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
-    self.postMessage({ type: 'ERROR', message } satisfies WorkerOutgoingMessage)
+    self.postMessage({ type: 'ERROR', message, id } satisfies WorkerOutgoingMessage)
   }
 }
 
 async function buildIntoIndex(
   target: Index,
+  id: number,
   verses: { id: number; text: string }[]
 ): Promise<void> {
   total = verses.length
@@ -91,40 +94,45 @@ async function buildIntoIndex(
       target.add(verse.id, verse.text)
     }
     indexed = Math.min(i + BATCH_SIZE, verses.length)
-    self.postMessage({ type: 'PROGRESS', indexed, total } satisfies WorkerOutgoingMessage)
+    self.postMessage({ type: 'PROGRESS', indexed, total, id } satisfies WorkerOutgoingMessage)
     await new Promise<void>((resolve) => setTimeout(resolve, 0))
   }
   indexed = total
 }
 
-async function handleBuildIndex(verses: { id: number; text: string }[]): Promise<void> {
+async function handleBuildIndex(id: number, verses: { id: number; text: string }[]): Promise<void> {
   if (!flexIndex) {
     self.postMessage({
       type: 'ERROR',
+      id,
       message: 'Index not initialized'
     } satisfies WorkerOutgoingMessage)
     return
   }
 
-  await buildIntoIndex(flexIndex, verses)
-  self.postMessage({ type: 'INDEX_COMPLETE', total } satisfies WorkerOutgoingMessage)
+  await buildIntoIndex(flexIndex, id, verses)
+  self.postMessage({ type: 'INDEX_COMPLETE', total, id } satisfies WorkerOutgoingMessage)
 }
 
-async function handleBuildCacheOnly(verses: { id: number; text: string }[]): Promise<void> {
+async function handleBuildCacheOnly(
+  id: number,
+  verses: { id: number; text: string }[]
+): Promise<void> {
   const tempIndex = createIndex()
-  await buildIntoIndex(tempIndex, verses)
+  await buildIntoIndex(tempIndex, id, verses)
 
   const chunks: { key: string; data: string }[] = []
   await tempIndex.export((key: string, data: string) => {
     if (data) chunks.push({ key, data })
   })
-  self.postMessage({ type: 'CACHE_BUILT', chunks } satisfies WorkerOutgoingMessage)
+  self.postMessage({ type: 'CACHE_BUILT', chunks, id } satisfies WorkerOutgoingMessage)
 }
 
-function handleLoadIndex(chunks: { key: string; data: string }[]): void {
+function handleLoadIndex(id: number, chunks: { key: string; data: string }[]): void {
   if (!flexIndex) {
     self.postMessage({
       type: 'ERROR',
+      id,
       message: 'Index not initialized'
     } satisfies WorkerOutgoingMessage)
     return
@@ -134,13 +142,14 @@ function handleLoadIndex(chunks: { key: string; data: string }[]): void {
   for (const chunk of chunks) {
     flexIndex.import(chunk.key, chunk.data)
   }
-  self.postMessage({ type: 'INDEX_LOADED' } satisfies WorkerOutgoingMessage)
+  self.postMessage({ type: 'INDEX_LOADED', id } satisfies WorkerOutgoingMessage)
 }
 
-async function handleExportIndex(): Promise<void> {
+async function handleExportIndex(id: number): Promise<void> {
   if (!flexIndex) {
     self.postMessage({
       type: 'ERROR',
+      id,
       message: 'Index not initialized'
     } satisfies WorkerOutgoingMessage)
     return
@@ -150,13 +159,14 @@ async function handleExportIndex(): Promise<void> {
   await flexIndex.export((key: string, data: string) => {
     if (data) chunks.push({ key, data })
   })
-  self.postMessage({ type: 'INDEX_EXPORTED', chunks } satisfies WorkerOutgoingMessage)
+  self.postMessage({ type: 'INDEX_EXPORTED', chunks, id } satisfies WorkerOutgoingMessage)
 }
 
 function handleSearch(query: string, limit: number, id: number): void {
   if (!flexIndex) {
     self.postMessage({
       type: 'ERROR',
+      id,
       message: 'Index not initialized'
     } satisfies WorkerOutgoingMessage)
     return
@@ -178,7 +188,7 @@ function handleGetProgress(id: number): void {
   } satisfies WorkerOutgoingMessage)
 }
 
-type QueuedTask = () => Promise<void>
+type QueuedTask = { id: number; run: () => void | Promise<void> }
 const taskQueue: QueuedTask[] = []
 let processing = false
 
@@ -188,40 +198,45 @@ async function processQueue(): Promise<void> {
   while (taskQueue.length > 0) {
     const task = taskQueue.shift()!
     try {
-      await task()
+      await task.run()
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e)
-      self.postMessage({ type: 'ERROR', message } satisfies WorkerOutgoingMessage)
+      self.postMessage({ type: 'ERROR', message, id: task.id } satisfies WorkerOutgoingMessage)
     }
   }
   processing = false
 }
 
-function enqueue(task: QueuedTask): void {
-  taskQueue.push(task)
-  processQueue()
+function enqueue(id: number, run: QueuedTask['run']): void {
+  taskQueue.push({ id, run })
+  void processQueue()
 }
 
 self.onmessage = (event: MessageEvent<WorkerIncomingMessage>) => {
   const { data } = event
   switch (data.type) {
     case 'INIT':
-      enqueue(() => Promise.resolve(handleInit()))
+      enqueue(data.id, () => handleInit(data.id))
       break
     case 'BUILD_INDEX':
-      enqueue(() => handleBuildIndex(data.verses))
+      enqueue(data.id, () => handleBuildIndex(data.id, data.verses))
       break
     case 'BUILD_CACHE_ONLY':
-      enqueue(() => handleBuildCacheOnly(data.verses))
+      enqueue(data.id, () => handleBuildCacheOnly(data.id, data.verses))
       break
     case 'LOAD_INDEX':
-      enqueue(() => Promise.resolve(handleLoadIndex(data.chunks)))
+      enqueue(data.id, () => handleLoadIndex(data.id, data.chunks))
       break
     case 'EXPORT_INDEX':
-      enqueue(() => handleExportIndex())
+      enqueue(data.id, () => handleExportIndex(data.id))
       break
     case 'SEARCH':
-      handleSearch(data.query, data.limit ?? 20, data.id)
+      try {
+        handleSearch(data.query, data.limit ?? 20, data.id)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        self.postMessage({ type: 'ERROR', message, id: data.id } satisfies WorkerOutgoingMessage)
+      }
       break
     case 'GET_PROGRESS':
       handleGetProgress(data.id)

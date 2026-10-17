@@ -41,6 +41,16 @@ const cleanupMocks = vi.hoisted(() => ({
   cleanupFileResources: vi.fn(async () => ({ folderIds: [], itemIds: [] }))
 }))
 
+vi.mock('../sync-refresh-lifetime', async () => {
+  const actual = await vi.importActual<typeof import('../sync-refresh-lifetime')>(
+    '../sync-refresh-lifetime'
+  )
+  return {
+    ...actual,
+    withSyncConnectionMutation: (_id: string, operation: () => Promise<unknown>) => operation()
+  }
+})
+
 vi.mock('../env', () => ({
   isElectron: vi.fn(() => true),
   isWeb: vi.fn(() => false)
@@ -294,6 +304,7 @@ function setupTwoRootRefresh(options: {
   useFileExplorerStore.getState().items = Object.fromEntries(items.map((item) => [item.id, item]))
   vi.mocked(listSyncEntriesByProviderConnection).mockResolvedValueOnce(entries)
   vi.mocked(openFileExplorerDB).mockResolvedValue({
+    get: vi.fn(async (_store: string, id: string) => folders.find((folder) => folder.id === id)),
     getAll: vi.fn(async (store: string) => {
       if (store === 'folder-records') return folders
       if (store === 'folder-items') return items
@@ -304,7 +315,7 @@ function setupTwoRootRefresh(options: {
     transaction: () => ({
       objectStore: () => ({
         delete: vi.fn(async () => undefined),
-        get: vi.fn(async () => undefined),
+        get: vi.fn(async (id: string) => folders.find((folder) => folder.id === id)),
         getAll: vi.fn(async () => []),
         put: vi.fn(async () => undefined)
       }),
@@ -600,12 +611,13 @@ describe('refreshOneDriveFolder', () => {
     useFileExplorerStore.getState().folders = { [rootFolder.id]: rootFolder }
     settingsMocks.offlinePolicy = 'always-offline'
     vi.mocked(openFileExplorerDB).mockResolvedValue({
+      get: vi.fn(async () => rootFolder),
       getAll: vi.fn(async (store: string) => (store === 'folder-records' ? [rootFolder] : [])),
       put,
       transaction: () => ({
         objectStore: () => ({
           delete: vi.fn(async () => undefined),
-          get: vi.fn(async () => undefined),
+          get: vi.fn(async () => rootFolder),
           getAll: vi.fn(async () => []),
           put: vi.fn(async () => undefined)
         }),
@@ -1530,6 +1542,26 @@ describe('refreshOneDriveFolder', () => {
     expect(putSyncCursor).not.toHaveBeenCalled()
   })
 
+  it('does not publish a deferred scan after its root was unlinked', async () => {
+    const { rootA } = setupTwoRootRefresh({ rootAOfflinePolicy: 'on-demand', availableA: false })
+    const scan = deferred<SyncChangePage>()
+    providerMocks.initialScan.mockReturnValueOnce(scan.promise)
+    const refreshing = refreshOneDriveFolder(rootA.id)
+    const outcome = refreshing.then(
+      () => 'resolved',
+      () => 'rejected'
+    )
+    await vi.waitFor(() => expect(providerMocks.initialScan).toHaveBeenCalled())
+    const db = await openFileExplorerDB()
+    vi.mocked(db.getAll).mockResolvedValue([])
+    vi.mocked(db.get).mockResolvedValue(undefined)
+    scan.resolve(rootASnapshot())
+    expect(await outcome).toBe('rejected')
+    expect(putSyncEntry).not.toHaveBeenCalled()
+    expect(putSyncCursor).not.toHaveBeenCalled()
+    expect(providerMocks.downloadContent).not.toHaveBeenCalled()
+  })
+
   it('coalesces concurrent refreshes for the same root folder', async () => {
     const scan = deferred<SyncChangePage>()
     const rootFolder = {
@@ -1547,6 +1579,7 @@ describe('refreshOneDriveFolder', () => {
       }
     }
     vi.mocked(openFileExplorerDB).mockResolvedValue({
+      get: vi.fn(async () => rootFolder),
       getAll: vi.fn(async (store: string) => {
         if (store === 'folder-records') return [rootFolder]
         return []
@@ -1554,7 +1587,7 @@ describe('refreshOneDriveFolder', () => {
       transaction: () => ({
         objectStore: () => ({
           delete: vi.fn(async () => undefined),
-          get: vi.fn(async () => undefined),
+          get: vi.fn(async () => rootFolder),
           getAll: vi.fn(async () => []),
           put: vi.fn(async () => undefined)
         }),

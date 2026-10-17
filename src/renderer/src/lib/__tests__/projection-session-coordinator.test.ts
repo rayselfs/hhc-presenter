@@ -225,6 +225,7 @@ describe('ProjectionSessionCoordinator', () => {
 
     expect(coordinator.getSnapshot()?.media.state).toEqual({
       itemId: 'video-2',
+      playlistEnded: false,
       positionSeconds: 0,
       durationSeconds: 0,
       isPlaying: false,
@@ -285,15 +286,36 @@ describe('ProjectionSessionCoordinator', () => {
     })
   })
 
-  it('never writes file:end into the replay snapshot', () => {
+  it('replays playlist termination and rejects late playback until an explicit show', () => {
     const coordinator = createProjectionSessionCoordinator(send)
     coordinator.startSession('media', [['file:show', fileShow]])
-    const before = coordinator.getSnapshot()
-
+    coordinator.beginGeneration({ generation: 3, status: 'opening', reason: 'created' })
+    coordinator.recordPlayback(3, playback)
     coordinator.sendOneShot('file:end', null)
+    coordinator.project('file:control', { action: 'play', itemId: fileShow.itemId })
+    coordinator.recordPlayback(3, playback)
 
-    expect(coordinator.getSnapshot()).toEqual(before)
-    expect(send).not.toHaveBeenCalled()
+    expect(coordinator.getSnapshot()?.media.state).toMatchObject({
+      playlistEnded: true,
+      isPlaying: false,
+      isEnded: false
+    })
+    coordinator.ready(3)
+    expect(send).toHaveBeenCalledWith(
+      '__system:replay',
+      expect.objectContaining({
+        snapshot: expect.objectContaining({
+          media: expect.objectContaining({
+            state: expect.objectContaining({ playlistEnded: true })
+          })
+        })
+      })
+    )
+    coordinator.blackout(true)
+    coordinator.blackout(false)
+    expect(coordinator.getSnapshot()?.media.state?.playlistEnded).toBe(true)
+    coordinator.project('file:show', fileShow)
+    expect(coordinator.getSnapshot()?.media.state).toMatchObject({ playlistEnded: false })
   })
 
   it('clears the snapshot on explicit session end', () => {
@@ -481,13 +503,15 @@ describe('ProjectionSessionCoordinator', () => {
     expect(send).not.toHaveBeenCalled()
 
     coordinator.ready(2)
+    coordinator.project('file:show', fileShow)
     send.mockClear()
     coordinator.project('file:control', { action: 'play', itemId: 'video-1' })
     coordinator.sendOneShot('file:end', null)
 
     expect(send.mock.calls).toEqual([
       ['file:control', { action: 'play', itemId: 'video-1' }],
-      ['file:end', null]
+      ['file:end', null],
+      ['__system:replay', { generation: 2, snapshot: coordinator.getSnapshot() }]
     ])
   })
 

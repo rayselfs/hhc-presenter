@@ -1,3 +1,4 @@
+import { createSyncRefreshGuard, withSyncConnectionMutation } from './sync-refresh-lifetime'
 import type { FileItemRecord, FolderRecord, SyncOfflinePolicy } from '@shared/types/folder'
 import {
   FILE_EXPLORER_ROOT_ID,
@@ -811,6 +812,7 @@ async function runOneDriveFolderRefresh(
   if (!rootFolder || !syncLink || syncLink.providerType !== 'onedrive') {
     throw new Error('OneDrive root folder not found')
   }
+  const canCommit = createSyncRefreshGuard(rootFolder)
   const refreshedRoot =
     syncLink.offlinePolicy === offlinePolicy
       ? rootFolder
@@ -890,19 +892,22 @@ async function runOneDriveFolderRefresh(
     plan.removedItemIds = []
   }
 
-  await applySyncRefreshPlan(plan)
-  if (!scope.protectRemovals && scan.nextCursor) {
-    await putSyncCursor({
-      providerConnectionId: syncLink.providerConnectionId,
-      remoteFolderId: syncLink.remoteFolderId,
-      cursor: scan.nextCursor,
-      updatedAt: Date.now()
-    })
-  }
-  if (refreshedRoot !== rootFolder) {
-    await db.put('folder-records', refreshedRoot)
-    publishPersistedSyncRoot(refreshedRoot)
-  }
+  await withSyncConnectionMutation(syncLink.providerConnectionId, async () => {
+    if (!(await canCommit())) throw new Error('Sync refresh was revoked')
+    await applySyncRefreshPlan(plan, [], rootFolder)
+    if (!scope.protectRemovals && scan.nextCursor) {
+      await putSyncCursor({
+        providerConnectionId: syncLink.providerConnectionId,
+        remoteFolderId: syncLink.remoteFolderId,
+        cursor: scan.nextCursor,
+        updatedAt: Date.now()
+      })
+    }
+    if (refreshedRoot !== rootFolder) {
+      await db.put('folder-records', refreshedRoot)
+      publishPersistedSyncRoot(refreshedRoot)
+    }
+  })
 
   const downloadedCount = 0
   const failedFileCount = 0
@@ -915,15 +920,22 @@ async function runOneDriveFolderRefresh(
     .map((entry) => entry.nextRetryAt)
     .filter((value): value is number => typeof value === 'number')
     .sort((a, b) => a - b)[0]
+  if (!(await canCommit())) throw new Error('Sync refresh was revoked')
   dispatchPlannedSyncDownloads({
     provider,
+    canCommit,
+    withCommitLock: (mutation) =>
+      withSyncConnectionMutation(syncLink.providerConnectionId, mutation),
     providerConnectionId: syncLink.providerConnectionId,
     rootRemoteFolderId: syncLink.remoteFolderId,
     offlinePolicy,
     plan,
     remoteItems: scan.remoteItems,
     existingEntries,
-    onDownloaded: (item) => refreshImportedMediaAssets([item])
+    onDownloaded: (item, guard) =>
+      withSyncConnectionMutation(syncLink.providerConnectionId, () =>
+        refreshImportedMediaAssets([item], guard)
+      )
   })
 
   const changedCount =

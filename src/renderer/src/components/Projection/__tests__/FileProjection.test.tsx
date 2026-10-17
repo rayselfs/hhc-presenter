@@ -277,6 +277,63 @@ describe('FileProjection copied media identity', () => {
     expect(video.currentTime).toBe(35)
   })
 
+  it.each(['image/png', 'application/pdf', 'video/mp4'])(
+    'renders a terminal replay without loading the last %s resource',
+    async (mimeType) => {
+      const { getByText, container } = render(
+        <FileProjection
+          initialItemId="ended-item"
+          initialBlobId="ended-blob"
+          initialMimeType={mimeType}
+          initialReplayState={{
+            itemId: 'ended-item',
+            positionSeconds: 0,
+            durationSeconds: 0,
+            isPlaying: false,
+            isEnded: false,
+            playlistEnded: true,
+            volume: 1,
+            pdfPage: 1,
+            pdfScroll: 0,
+            pdfViewMode: 'single',
+            zoom: 1,
+            pan: { x: 0, y: 0 }
+          }}
+        />
+      )
+      expect(getByText('投影結束')).toBeVisible()
+      expect(container.querySelector('video, img, canvas')).toBeNull()
+      expect(mockGetFileSource).not.toHaveBeenCalled()
+      expect(mockLoadPdfjsLib).not.toHaveBeenCalled()
+    }
+  )
+
+  it('keeps a naturally ended video visible when replaying an older snapshot', async () => {
+    const { container, queryByText } = render(
+      <FileProjection
+        initialItemId="ended-video"
+        initialBlobId="video-blob"
+        initialMimeType="video/mp4"
+        initialReplayState={{
+          itemId: 'ended-video',
+          positionSeconds: 100,
+          durationSeconds: 100,
+          isPlaying: false,
+          isEnded: true,
+          volume: 1,
+          pdfPage: 1,
+          pdfScroll: 0,
+          pdfViewMode: 'single',
+          zoom: 1,
+          pan: { x: 0, y: 0 }
+        }}
+      />
+    )
+    await waitFor(() => expect(container.querySelector('video')).not.toBeNull())
+    expect(queryByText('投影結束')).toBeNull()
+    expect(container.querySelector('video')?.play).not.toHaveBeenCalled()
+  })
+
   it('applies replay seek and volume before resuming a playing video', async () => {
     const { container } = render(
       <FileProjection
@@ -356,6 +413,42 @@ describe('FileProjection copied media identity', () => {
     const attemptId = vi.mocked(window.api.projectionVlc.start).mock.calls[0][0].attemptId
     unmount()
     expect(mockProjectionVlcStop).toHaveBeenCalledWith({ itemId: 'video-id', attemptId })
+  })
+
+  it('does not restart a mounted VLC surface when terminal replay arrives', async () => {
+    const props = {
+      initialItemId: 'video-id',
+      initialBlobId: 'video-blob',
+      initialMimeType: 'video/x-matroska',
+      initialPlaybackMode: 'vlc-embedded' as const
+    }
+    const { rerender, getByText } = render(<FileProjection {...props} />)
+    await waitFor(() => expect(window.api.projectionVlc.start).toHaveBeenCalledOnce())
+    const attemptId = vi.mocked(window.api.projectionVlc.start).mock.calls[0][0].attemptId
+    rerender(
+      <FileProjection
+        {...props}
+        initialReplayState={{
+          itemId: 'video-id',
+          positionSeconds: 20,
+          durationSeconds: 100,
+          isPlaying: false,
+          isEnded: false,
+          playlistEnded: true,
+          volume: 1,
+          pdfPage: 1,
+          pdfScroll: 0,
+          pdfViewMode: 'single',
+          zoom: 1,
+          pan: { x: 0, y: 0 }
+        }}
+      />
+    )
+    expect(getByText('投影結束')).toBeVisible()
+    expect(window.api.projectionVlc.start).toHaveBeenCalledOnce()
+    expect(mockProjectionVlcStop).toHaveBeenCalledWith({ itemId: 'video-id', attemptId })
+    rerender(<FileProjection {...props} initialContentRevision={2} />)
+    await waitFor(() => expect(window.api.projectionVlc.start).toHaveBeenCalledTimes(2))
   })
 
   it('forwards embedded VLC seek to the owner session even before renderer capability state', async () => {
