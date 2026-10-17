@@ -279,6 +279,7 @@ export interface ProjectionMediaReplayState {
   durationSeconds: number
   isPlaying: boolean
   isEnded: boolean
+  playlistEnded?: boolean
   volume: number
   playbackRate?: number
   seekable?: boolean
