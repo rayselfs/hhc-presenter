@@ -3,6 +3,7 @@ import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 import {
   FILE_EXPLORER_ROOT_ID,
   mergePersistedSyncCatalog,
+  mergePersistedSyncRefresh,
   publishPersistedSyncRoot,
   useFileExplorerStore
 } from '@renderer/stores/file-explorer'
@@ -79,5 +80,58 @@ describe('persisted sync catalog publication', () => {
     expect(state.loadedParents.has(root.id)).toBe(false)
     expect(state.items).toBe(before.items)
     expect(state._itemsByParent).toBe(before._itemsByParent)
+  })
+})
+
+describe('persisted refresh publication', () => {
+  it('removes records and loaded parents, rebuilds sorted indexes and falls back only from a removed folder', () => {
+    const removed = folder('removed')
+    const retained = folder('retained')
+    const deleted = item('deleted', removed.id)
+    const unchanged = item('unchanged', retained.id, 0)
+    const moving = item('moving', removed.id, 1)
+    mergePersistedSyncCatalog([removed, retained], [deleted, moving, unchanged])
+    useFileExplorerStore.setState({ currentFolderId: removed.id })
+    const added = folder('empty-new', FILE_EXPLORER_ROOT_ID, -1)
+    const updated = { ...retained, name: 'Updated retained' }
+    const moved = { ...moving, parentId: retained.id, sortIndex: -1 }
+    const plan = {
+      folders: [updated, added],
+      items: [moved],
+      removedFolderIds: [removed.id],
+      removedItemIds: [deleted.id]
+    }
+    mergePersistedSyncRefresh(plan)
+    mergePersistedSyncRefresh(plan)
+    const state = useFileExplorerStore.getState()
+    expect(state.folders).toEqual({ retained: updated, 'empty-new': added })
+    expect(state.items).toEqual({ unchanged, moving: moved })
+    expect(state._foldersArray).toEqual(Object.values(state.folders))
+    expect(state._itemsArray).toEqual(Object.values(state.items))
+    expect(state._childFoldersByParent[FILE_EXPLORER_ROOT_ID]).toEqual([added, updated])
+    expect(state._itemsByParent[retained.id]).toEqual([moved, unchanged])
+    expect(state._itemsByParent[removed.id]).toBeUndefined()
+    expect(state.loadedParents).toEqual(new Set([FILE_EXPLORER_ROOT_ID, retained.id]))
+    expect(state.loadedParents.has(added.id)).toBe(false)
+    expect(state.currentFolderId).toBe(FILE_EXPLORER_ROOT_ID)
+  })
+
+  it('keeps unrelated navigation and existing loaded data', () => {
+    const retained = folder('retained')
+    const unchanged = item('unchanged', retained.id)
+    mergePersistedSyncCatalog([retained], [unchanged])
+    useFileExplorerStore.setState({ currentFolderId: retained.id })
+    mergePersistedSyncRefresh({
+      folders: [folder('new')],
+      items: [],
+      removedFolderIds: [],
+      removedItemIds: []
+    })
+    const state = useFileExplorerStore.getState()
+    expect(state.currentFolderId).toBe(retained.id)
+    expect(state._itemsByParent[retained.id]).toEqual([unchanged])
+    expect(state.items[unchanged.id]).toBe(unchanged)
+    expect(state.loadedParents.has(retained.id)).toBe(true)
+    expect(state.loadedParents.has('new')).toBe(false)
   })
 })

@@ -169,6 +169,63 @@ export function mergePersistedSyncCatalog(folders: FolderRecord[], items: FileIt
   })
 }
 
+export function mergePersistedSyncRefresh(plan: {
+  folders: FolderRecord[]
+  items: FileItemRecord[]
+  removedFolderIds: string[]
+  removedItemIds: string[]
+}): void {
+  const removedFolderIds = new Set(plan.removedFolderIds)
+  const removedItemIds = new Set(plan.removedItemIds)
+  const touchedParents = new Set<string>()
+  for (const folder of plan.folders) {
+    if (folder.parentId) touchedParents.add(folder.parentId)
+  }
+  for (const item of plan.items) touchedParents.add(item.parentId)
+
+  useFileExplorerStore.setState((state) => {
+    const folders = { ...state.folders }
+    const items = { ...state.items }
+    for (const id of removedFolderIds) delete folders[id]
+    for (const id of removedItemIds) delete items[id]
+    for (const folder of plan.folders) folders[folder.id] = folder
+    for (const item of plan.items) items[item.id] = item
+
+    const childFoldersByParent: typeof state._childFoldersByParent = {}
+    for (const folder of Object.values(folders)) {
+      if (folder.parentId === null) continue
+      const list = childFoldersByParent[folder.parentId] ?? []
+      list.push(folder)
+      childFoldersByParent[folder.parentId] = list
+    }
+    for (const parentId of Object.keys(childFoldersByParent)) {
+      childFoldersByParent[parentId] = sortByIndex(childFoldersByParent[parentId])
+    }
+
+    const loadedParents = new Set([...state.loadedParents, ...touchedParents])
+    const itemsByParent: typeof state._itemsByParent = {}
+    for (const parentId of loadedParents) {
+      if (removedFolderIds.has(parentId)) continue
+      itemsByParent[parentId] = sortByIndex(
+        Object.values(items).filter((item) => item.parentId === parentId)
+      )
+    }
+
+    return {
+      folders,
+      items,
+      _foldersArray: Object.values(folders),
+      _itemsArray: Object.values(items),
+      _childFoldersByParent: childFoldersByParent,
+      _itemsByParent: itemsByParent,
+      loadedParents: new Set([...loadedParents].filter((id) => !removedFolderIds.has(id))),
+      currentFolderId: removedFolderIds.has(state.currentFolderId)
+        ? FILE_EXPLORER_ROOT_ID
+        : state.currentFolderId
+    }
+  })
+}
+
 let personalCatalogGeneration = 0
 
 export function publishPersistedFileItem(item: FileItemRecord): void {
