@@ -9,7 +9,7 @@ export async function loadMediaJobFile(
   const db = await openFileExplorerDB()
   const requestedItem = await db.get('folder-items', itemId)
   const item =
-    requestedItem?.type === 'file'
+    requestedItem?.type === 'file' && getBlobId(requestedItem) === sourceBlobId
       ? requestedItem
       : (await db.getAll('folder-items')).find(
           (candidate) => candidate.type === 'file' && getBlobId(candidate) === sourceBlobId
