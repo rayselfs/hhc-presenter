@@ -241,9 +241,7 @@ for (const count of [10, 100]) {
           })
         )
         .toBe(true)
-      const metrics = await page.evaluate(
-        () => window.saveMetrics
-      )
+      const metrics = await page.evaluate(() => window.saveMetrics)
       // Existing Chromium baselines write 5–6 revisions; retain headroom for checkpoint timing.
       expect(metrics.sourceWrites).toBeGreaterThan(0)
       expect(metrics.sourceWrites).toBeLessThanOrEqual(8)

@@ -6,6 +6,10 @@ import eslintPluginReact from 'eslint-plugin-react'
 import eslintPluginReactHooks from 'eslint-plugin-react-hooks'
 import eslintPluginReactRefresh from 'eslint-plugin-react-refresh'
 
+const nativeImportPattern = new RegExp(
+  `^(?:electron|${builtinModules.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})(?:/|$)|^node:|(?:^|/)(?:main|preload)(?:/|$)|^@(?:main|preload)(?:/|$)`
+).source
+
 export default defineConfig(
   {
     ignores: ['**/node_modules', '**/dist', '**/out', '.agents/**', '.local-runtimes/**']
@@ -49,6 +53,13 @@ export default defineConfig(
     files: ['src/renderer/src/**/*.{ts,tsx}'],
     ignores: ['**/*.test.*', '**/*.spec.*', '**/test/**', '**/__tests__/**', '**/*.d.ts'],
     rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: `ImportExpression[source.value=/${nativeImportPattern}/]`,
+          message: 'Access native capabilities through the renderer adapter and window.api.'
+        }
+      ],
       '@typescript-eslint/no-restricted-imports': [
         'error',
         {
