@@ -1,3 +1,4 @@
+vi.mock('../../lib/native-storage', () => ({ getNativeFilePath: vi.fn(() => '/media/source') }))
 import { EventEmitter } from 'node:events'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -145,9 +146,7 @@ vi.mock('../../video-engine-runtime', () => ({
   resolveVlcRuntime: vi.fn(() => ({ status: 'ready', path: '/vlc' }))
 }))
 
-vi.mock('../../ipc/native-fs', () => ({
-  getNativeFilePath: vi.fn(() => '/media/source')
-}))
+vi.mock('../../ipc/native-fs', () => ({}))
 
 import { ipcMain, BrowserWindow } from 'electron'
 import * as electronVlcPlayer from 'electron-vlc-player'

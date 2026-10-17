@@ -1,3 +1,4 @@
+import { getNativeFilePath } from '../../lib/native-storage'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import path from 'node:path'
 
@@ -77,7 +78,6 @@ import { BrowserWindow } from 'electron'
 import { Readable } from 'stream'
 import type { WindowManager } from '../../windowManager'
 import {
-  getNativeFilePath,
   clearNativeMediaLeases,
   clearStaleNativeMediaLeases,
   clearStaleNativeMediaLeasesOnStartup,

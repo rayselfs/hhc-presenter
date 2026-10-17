@@ -1,3 +1,4 @@
+import { getNativeFilePath } from '../lib/native-storage'
 import { app, ipcMain, net } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { promises as fs } from 'node:fs'
@@ -17,7 +18,6 @@ import type { WindowManager } from '../windowManager'
 import type { HhcAuthService } from './hhc-auth'
 import {
   clearNativeMediaLeases,
-  getNativeFilePath,
   registerNativeMediaLease,
   releaseNativeMediaLease
 } from './native-fs'
