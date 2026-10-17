@@ -2,6 +2,7 @@ import { publishCatalogDeletion } from './file-catalog-events'
 import type { AnyItemRecord, FileItemRecord, FolderRecord } from '@shared/types/folder'
 import { openFileExplorerDB } from './file-explorer-db'
 import { getBlobId } from './blob-identity'
+import { hasNameConflict, validateDisplayName } from './file-naming'
 import { isFolderReadOnlyBySyncLink } from './sync-readonly'
 
 export function assertLocalDestination(parentId: string, folders: FolderRecord[]): void {
@@ -110,6 +111,75 @@ export async function commitLocalFileItem(
       tx.abort()
     } catch {
       /* The transaction may have already aborted. */
+    }
+    await tx.done.catch(() => undefined)
+    throw error
+  }
+}
+
+export async function restoreLocalCatalogEntry(
+  kind: 'folder' | 'file',
+  id: string,
+  name?: string
+): Promise<FolderRecord | FileItemRecord> {
+  const db = await openFileExplorerDB()
+  const tx = db.transaction(['folder-items', 'folder-records', 'catalog-deletions'], 'readwrite')
+  try {
+    const record =
+      kind === 'folder'
+        ? await tx.objectStore('folder-records').get(id)
+        : await tx.objectStore('folder-items').get(id)
+    if (!record || record.personalOwnerId || ('type' in record && record.type !== 'file'))
+      throw new Error('Restore source is unavailable')
+    if (!record.deletedAt) throw new Error('Restore source is no longer in trash')
+    if (name !== undefined && !validateDisplayName(name.trim()))
+      throw new Error('Restore name is invalid')
+    if (await tx.objectStore('catalog-deletions').get(id))
+      throw new Error('Restore source was deleted')
+    let ancestor = record.parentId
+    const seen = new Set<string>()
+    while (ancestor && !seen.has(ancestor)) {
+      seen.add(ancestor)
+      if (await tx.objectStore('catalog-deletions').get(ancestor))
+        throw new Error('Restore source was deleted')
+      ancestor = (await tx.objectStore('folder-records').get(ancestor))?.parentId ?? null
+    }
+    const folders = await tx.objectStore('folder-records').getAll()
+    const originalParent = folders.find(
+      (folder) => folder.id === record.originalParentId && !folder.deletedAt
+    )
+    const parentId = originalParent?.id ?? 'file-root'
+    assertLocalDestination(parentId, folders)
+    const restored = {
+      ...record,
+      ...(name ? { name: name.trim() } : {}),
+      ...(!('type' in record) ? { isFavorited: false } : {}),
+      parentId,
+      deletedAt: undefined,
+      originalParentId: undefined
+    }
+    const siblings =
+      'type' in restored
+        ? (await tx.objectStore('folder-items').index('by-parent').getAll(parentId)).filter(
+            (item) => item.type === 'file'
+          )
+        : folders.filter((folder) => folder.parentId === parentId)
+    if (
+      hasNameConflict(
+        restored.name,
+        siblings.filter((entry) => entry.id !== id && !entry.deletedAt).map((entry) => entry.name)
+      )
+    )
+      throw new Error('Restore name already exists')
+    if ('type' in restored) await tx.objectStore('folder-items').put(restored)
+    else await tx.objectStore('folder-records').put(restored)
+    await tx.done
+    return restored
+  } catch (error) {
+    try {
+      tx.abort()
+    } catch {
+      /* Already completed. */
     }
     await tx.done.catch(() => undefined)
     throw error
