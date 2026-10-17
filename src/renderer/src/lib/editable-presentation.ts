@@ -1027,19 +1027,27 @@ export async function createEditablePresentation(
   return createEditablePresentationItem(document, parentId)
 }
 
+export async function convertPptxBytesToEditableDocument(
+  bytes: ArrayBuffer,
+  source: FileItemRecord
+): Promise<EditablePresentationDocument> {
+  const { parseZip, buildPresentation, materializeAllSlideNodes, RECOMMENDED_ZIP_LIMITS } =
+    await import('@aiden0z/pptx-renderer')
+  const files = await parseZip(bytes, RECOMMENDED_ZIP_LIMITS)
+  const presentation = buildPresentation(files)
+  assertEditablePptxFeatures(files, presentation)
+  materializeAllSlideNodes(presentation)
+  const document = convertPresentationData(source, presentation)
+  assertEditablePptxDocument(document)
+  return document
+}
+
 export async function convertPptxToEditablePresentation(
   item: FileItemRecord
 ): Promise<FileItemRecord> {
   const ownerId = usePersonalSyncStore.getState().activeOwnerId
   const buffer = await readPresentationArrayBuffer(item)
-  const { parseZip, buildPresentation, materializeAllSlideNodes, RECOMMENDED_ZIP_LIMITS } =
-    await import('@aiden0z/pptx-renderer')
-  const files = await parseZip(buffer, RECOMMENDED_ZIP_LIMITS)
-  const presentation = buildPresentation(files)
-  assertEditablePptxFeatures(files, presentation)
-  materializeAllSlideNodes(presentation)
-  const document = convertPresentationData(item, presentation)
-  assertEditablePptxDocument(document)
+  const document = await convertPptxBytesToEditableDocument(buffer, item)
   if (ownerId !== usePersonalSyncStore.getState().activeOwnerId)
     throw new Error('Personal account changed')
   if (await isReadonlyPresentationSource(item)) return createPresentationDraft(item, document)
