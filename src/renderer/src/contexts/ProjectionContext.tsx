@@ -1,6 +1,9 @@
 import { isPresentationMimeType } from '@renderer/lib/presentation-media'
 import { getFileBlobRecord } from '@renderer/lib/file-explorer-db'
-import { useMediaProjectionStore } from '@renderer/stores/media-projection'
+import {
+  useMediaProjectionStore,
+  invalidatePendingMediaProjectionActions
+} from '@renderer/stores/media-projection'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { createProjectionAdapter, type ProjectionAdapter } from '@renderer/lib/projection-adapter'
 import { isElectron } from '@renderer/lib/env'
@@ -59,6 +62,7 @@ interface ProjectionContextValue {
   retryProjection: () => Promise<ProjectionOperationResult>
   closeProjection: () => Promise<void>
   blackoutProjection: (enabled: boolean) => Promise<void>
+  getProjectionIntentRevision: () => number
   getProjectionSnapshot: () => ProjectionSessionSnapshot | null
   project: <C extends ProjectionContentChannel>(
     channel: C,
@@ -525,6 +529,8 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
   const closeProjection = useCallback(async (): Promise<void> => {
     const coordinator = getCoordinator()
     const adapter = getAdapter(adapterRef, browserSessionId)
+    invalidatePendingMediaProjectionActions()
+    coordinator.invalidateIntent()
     if (isElectron()) {
       await window.api.projection.close()
     } else {
@@ -553,6 +559,7 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
 
   const claimProjection = useCallback(
     (owner: ProjectionOwner, options?: { unblank?: boolean }): void => {
+      invalidatePendingMediaProjectionActions()
       setActiveOwner(owner)
       getCoordinator().claim(owner, options?.unblank)
     },
@@ -567,6 +574,11 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
     [getCoordinator]
   )
 
+  const getProjectionIntentRevision = useCallback(
+    (): number => getCoordinator().getIntentRevision(),
+    [getCoordinator]
+  )
+
   const getProjectionSnapshot = useCallback(
     (): ProjectionSessionSnapshot | null => getCoordinator().getSnapshot(),
     [getCoordinator]
@@ -578,6 +590,7 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
       payloads: ProjectionContentMessageTuple[] = []
     ): Promise<ProjectionOperationResult> => {
       const coordinator = getCoordinator()
+      invalidatePendingMediaProjectionActions()
       coordinator.startSession(owner, payloads)
       setActiveOwner(owner)
 
@@ -596,9 +609,14 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
   )
 
   const stopProjection = useCallback(async (): Promise<void> => {
+    invalidatePendingMediaProjectionActions()
+    const coordinator = getCoordinator()
+    coordinator.invalidateIntent()
+    const intentRevision = coordinator.getIntentRevision()
     await window.api?.projectionVlc?.stop?.({ force: true }).catch(() => {})
+    if (coordinator.getIntentRevision() !== intentRevision) return
     await closeProjection()
-  }, [closeProjection])
+  }, [closeProjection, getCoordinator])
 
   const send = useCallback(
     <C extends ProjectionChannel>(channel: C, data: ProjectionPayload<C>): void => {
@@ -690,6 +708,7 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
       retryProjection,
       closeProjection,
       blackoutProjection,
+      getProjectionIntentRevision,
       getProjectionSnapshot,
       project,
       send,
@@ -709,6 +728,7 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
       retryProjection,
       closeProjection,
       blackoutProjection,
+      getProjectionIntentRevision,
       getProjectionSnapshot,
       project,
       send,

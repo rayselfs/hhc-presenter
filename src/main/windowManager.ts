@@ -46,6 +46,7 @@ export class WindowManager {
   private projectionDisplayId = ''
   private lastAutomaticRecoveryAt: number | null = null
   private closingProjectionWindows = new WeakSet<BrowserWindow>()
+  private initializedProjectionWindows = new WeakSet<BrowserWindow>()
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function -- singleton pattern requires private constructor
   private constructor() {}
@@ -189,9 +190,13 @@ export class WindowManager {
       reusableProjectionWindow &&
       !reusableProjectionWindow.isDestroyed()
     ) {
-      const generation = this.nextProjectionGeneration('opening', reason)
-      reusableProjectionWindow.showInactive()
-      return generation
+      if (this.initializedProjectionWindows.has(reusableProjectionWindow)) {
+        const generation = this.nextProjectionGeneration('opening', reason)
+        reusableProjectionWindow.showInactive()
+        return generation
+      }
+      this.projectionWindow = null
+      reusableProjectionWindow.destroy()
     }
 
     const primaryDisplay = screen.getPrimaryDisplay()
@@ -246,14 +251,12 @@ export class WindowManager {
     })
 
     projectionWindow.webContents.on('render-process-gone', (_event, details) => {
-      if (
-        this.projectionWindow !== projectionWindow ||
-        this.projectionGeneration !== windowGeneration
-      ) {
-        return
-      }
+      if (this.projectionWindow !== projectionWindow) return
+      const generation = this.projectionGeneration
       console.error('Projection window renderer crashed:', details.reason)
-      const wasClosing = this.closingProjectionWindows.has(projectionWindow)
+      const wasClosing =
+        this.closingProjectionWindows.has(projectionWindow) ||
+        this.projectionLifecycle.status === 'closed'
       this.projectionWindow = null
       if (!projectionWindow.isDestroyed()) projectionWindow.destroy()
       if (wasClosing) return
@@ -261,7 +264,7 @@ export class WindowManager {
       const now = Date.now()
       if (this.lastAutomaticRecoveryAt !== null && now - this.lastAutomaticRecoveryAt < 30_000) {
         this.publishProjectionLifecycle({
-          generation: windowGeneration,
+          generation,
           status: 'failed',
           reason: 'renderer-crash'
         })
@@ -273,7 +276,7 @@ export class WindowManager {
     })
 
     projectionWindow.once('ready-to-show', () => {
-      if (this.projectionWindow !== projectionWindow) return
+      if (this.projectionWindow !== projectionWindow || !this.isProjectionOpen()) return
       projectionWindow.showInactive()
       if (useWindowsNativeFullscreen) {
         // Lock size after fullscreen; locking at construction can cap Windows bounds too early.
@@ -285,19 +288,20 @@ export class WindowManager {
         projectionWindow.setFocusable(false)
         this.mainWindow?.focus()
       }
+      this.initializedProjectionWindows.add(projectionWindow)
     })
 
     projectionWindow.webContents.on('did-start-loading', () => {
       if (
         !hasFinishedInitialLoad ||
         this.projectionWindow !== projectionWindow ||
-        this.projectionGeneration !== windowGeneration
+        !this.isProjectionOpen()
       ) {
         return
       }
       this.publishProjectionLifecycle(
         {
-          generation: windowGeneration,
+          generation: this.projectionGeneration,
           status: 'opening',
           reason: 'reload'
         },
@@ -307,12 +311,7 @@ export class WindowManager {
     })
 
     projectionWindow.webContents.on('did-finish-load', () => {
-      if (
-        this.projectionWindow !== projectionWindow ||
-        this.projectionGeneration !== windowGeneration
-      ) {
-        return
-      }
+      if (this.projectionWindow !== projectionWindow) return
       hasFinishedInitialLoad = true
     })
 
