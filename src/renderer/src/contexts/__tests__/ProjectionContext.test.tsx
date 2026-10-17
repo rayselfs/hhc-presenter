@@ -1108,6 +1108,20 @@ describe('late native decode recovery', () => {
     await act(async () => {
       store.next()
       result.current.send('file:end', null)
+    })
+    expect(mockAdapter.send).toHaveBeenLastCalledWith(
+      '__system:replay',
+      expect.objectContaining({
+        snapshot: expect.objectContaining({
+          media: expect.objectContaining({
+            show: expect.objectContaining({ playbackMode: 'native' }),
+            state: expect.objectContaining({ playlistEnded: true })
+          })
+        })
+      })
+    )
+    vi.mocked(mockAdapter.send).mockClear()
+    await act(async () => {
       resolve({ status: 'ready' })
       await Promise.resolve()
     })
