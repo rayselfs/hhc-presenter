@@ -31,17 +31,21 @@ command after dependency installation. Packaging and publication already depend 
 that job, so any advisory or audit failure blocks them. No release workflow was run
 while making this change.
 
-A fresh audit of the current lockfile reports **24 affected packages: 10 high and
-14 moderate**. The 2026-08-22 result above is historical, not the current gate state.
-The audit command exits nonzero; this gate is intentionally not bypassed with an
-allowlist, a higher severity threshold, or production-only filtering.
+A fresh full audit of the integrated lockfile reports **10 moderate affected
+packages, with no high or critical findings**. Earlier remediation reduced the
+2026-10-17 baseline of 24 affected packages (10 high and 14 moderate). The
+2026-08-22 zero-advisory result above is historical, not the current gate state.
+The audit exits nonzero; this gate is not bypassed with an allowlist, a higher
+severity threshold, or production-only filtering.
 
-The report includes Axios and Undici network-client advisories, Sharp native image
-library advisories, and development/build tooling paths through Vitest,
-electron-builder and other transitive dependencies. Some npm remediation suggestions
-change major versions or move electron-builder to a lower version; they require
-compatibility review and cannot be applied as a blind `npm audit fix --force`.
+The remaining paths include `global-agent`, `roarr` and `sprintf-js`, propagated
+through Electron download/build tooling and ONNX runtime installation. npm suggests
+major root dependency changes; those are not compatibility evidence. A tested
+`global-agent` override was rejected after a valid HTTPS CONNECT proxy case failed
+certificate hostname validation. Its zero-audit result does not justify merging a
+known transport regression or disabling TLS verification.
 
-Dependency remediation, a clean install and repeated full audit remain required
-before a future release. This wiring change does not claim those findings are
-resolved or that the affected paths are exploitable in Presenter.
+Compatible remediation, a clean install and a repeated full audit remain required
+before a future release. This wiring change does not resolve those findings or
+claim that the affected paths are exploitable in Presenter. No release workflow,
+tag or manual deployment is needed to review or merge this gate.
