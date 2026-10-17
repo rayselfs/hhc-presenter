@@ -1,3 +1,4 @@
+import { clearOneDriveCredentials } from './onedrive-credentials'
 import { app, BrowserWindow, dialog, ipcMain, protocol, session } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import path from 'path'
@@ -155,11 +156,10 @@ function downloadFile(
 let whisperModelDir: string | null = null
 
 async function clearMainProcessUserData(hhcAuthService: HhcAuthService): Promise<void> {
-  await hhcAuthService.clearLocalData()
+  await Promise.all([hhcAuthService.clearLocalData(), clearOneDriveCredentials()])
   const userData = app.getPath('userData')
   for (const entry of [
     'native-files',
-    'onedrive-credentials',
     'local-sync-connections.json',
     'speech-api-key-azure.enc',
     'speech-api-key-gcp.enc'
