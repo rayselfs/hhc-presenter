@@ -1,44 +1,19 @@
-import { getFileBlob, getFileSource, openFileExplorerDB } from './file-explorer-db'
+import { loadMediaJobFile } from './media-job-source'
 import { MediaJobBlockedError, mediaJobQueue } from './media-job-queue'
 import { getPdfPageThumbs, savePdfPageThumbBlobs } from './thumbnail-db'
 import {
   BackgroundRenderingUnavailableError,
   renderPdfPageThumbnails
 } from './thumbnail-worker-client'
-import { getBlobId } from './blob-identity'
 
 const pendingFiles = new Map<string, File>()
-
-async function loadJobFile(sourceBlobId: string, itemId: string): Promise<File | null> {
-  const db = await openFileExplorerDB()
-  const requestedItem = await db.get('folder-items', itemId)
-  const item =
-    requestedItem?.type === 'file'
-      ? requestedItem
-      : (await db.getAll('folder-items')).find(
-          (candidate) => candidate.type === 'file' && getBlobId(candidate) === sourceBlobId
-        )
-  if (!item || item.type !== 'file') return null
-
-  const blob = await getFileBlob(db, sourceBlobId)
-  if (blob) return new File([blob], item.name, { type: item.mimeType })
-
-  const source = await getFileSource(db, sourceBlobId, item.mimeType)
-  if (!source) return null
-  try {
-    const response = await fetch(source.url)
-    if (!response.ok) throw new Error(`Failed to read PDF source: ${response.status}`)
-    return new File([await response.blob()], item.name, { type: item.mimeType })
-  } finally {
-    source.revoke()
-  }
-}
 
 mediaJobQueue.registerExecutor('pdf-pages', async (job, { signal }) => {
   if (!job.sourceBlobId || !job.itemId) throw new Error('PDF page job is missing source identity')
   try {
     const file =
-      pendingFiles.get(job.sourceBlobId) ?? (await loadJobFile(job.sourceBlobId, job.itemId))
+      pendingFiles.get(job.sourceBlobId) ??
+      (await loadMediaJobFile(job.sourceBlobId, job.itemId, 'PDF'))
     if (!file) throw new Error('PDF source is unavailable')
     const cachedThumbs = await getPdfPageThumbs(job.sourceBlobId)
     cachedThumbs.forEach((url) => URL.revokeObjectURL(url))

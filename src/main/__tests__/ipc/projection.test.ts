@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+const { mockUpdateVlcContentRevision } = vi.hoisted(() => ({
+  mockUpdateVlcContentRevision: vi.fn()
+}))
+vi.mock('../../ipc/projection-vlc', () => ({
+  updateVlcContentRevision: mockUpdateVlcContentRevision
+}))
+
 const mockMainWindow = { id: 1 }
 const mockProjectionWindow = { id: 2 }
 const mockUnknownWindow = { id: 3 }
@@ -388,4 +395,82 @@ it('relays playback errors only from the current projection sender', () => {
     'file:playback-error',
     report
   )
+})
+
+it('rebinds native report identity only after validating the operator transport', () => {
+  vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockMainWindow as never)
+  mockWindowManager.getProjectionState.mockReturnValue({
+    exists: true,
+    lifecycle: { generation: 4, status: 'ready', reason: 'created' }
+  } as never)
+  const show = {
+    itemId: 'video',
+    blobId: 'blob',
+    contentRevision: 2,
+    fileName: 'video.mp4',
+    mimeType: 'video/mp4',
+    playlist: [],
+    currentIndex: 0,
+    playbackMode: 'vlc-embedded'
+  }
+  const handler = getOnHandler('projection:send')
+  handler(makeEvent(), 3, 'file:show', show)
+  handler(makeEvent(), 4, 'file:show', { ...show, itemId: 1 })
+  vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockProjectionWindow as never)
+  handler(makeEvent(), 4, 'file:show', show)
+  expect(mockUpdateVlcContentRevision).not.toHaveBeenCalled()
+  vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockMainWindow as never)
+  handler(makeEvent(), 4, 'file:show', show)
+  expect(mockUpdateVlcContentRevision).toHaveBeenCalledExactlyOnceWith(wm, 4, show)
+  expect(mockUpdateVlcContentRevision.mock.invocationCallOrder[0]).toBeLessThan(
+    mockWindowManager.sendToProjection.mock.invocationCallOrder[0]
+  )
+})
+
+it('keeps ended replay content retired when forwarding authoritative native identity', () => {
+  vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockMainWindow as never)
+  mockWindowManager.getProjectionState.mockReturnValue({
+    exists: true,
+    lifecycle: { generation: 4, status: 'ready', reason: 'created' }
+  } as never)
+  const show = {
+    itemId: 'video',
+    blobId: 'blob',
+    contentRevision: 2,
+    fileName: 'video.mp4',
+    mimeType: 'video/mp4',
+    playlist: [],
+    currentIndex: 0,
+    playbackMode: 'vlc-embedded'
+  }
+  const handler = getOnHandler('projection:send')
+  handler(makeEvent(), 4, 'file:end', null)
+  expect(mockUpdateVlcContentRevision).toHaveBeenLastCalledWith(wm, 4, null)
+  const snapshot = {
+    owner: 'media',
+    showDefault: false,
+    isBlackout: false,
+    timer: { tick: null, stopwatch: null, overtimeMessage: null, timezone: null, ringColor: null },
+    bible: { chapter: null, settings: null },
+    media: {
+      show,
+      state: {
+        itemId: 'video',
+        positionSeconds: 0,
+        durationSeconds: 0,
+        isPlaying: false,
+        isEnded: false,
+        playlistEnded: true,
+        volume: 1,
+        pdfPage: 1,
+        pdfScroll: 0,
+        pdfViewMode: 'single',
+        zoom: 1,
+        pan: { x: 0, y: 0 }
+      }
+    }
+  }
+  handler(makeEvent(), 4, '__system:replay', { generation: 4, sessionId: 'session', snapshot })
+  expect(mockUpdateVlcContentRevision).toHaveBeenCalledTimes(2)
+  expect(mockUpdateVlcContentRevision).toHaveBeenLastCalledWith(wm, 4, null)
 })

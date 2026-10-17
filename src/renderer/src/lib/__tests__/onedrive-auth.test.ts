@@ -15,6 +15,21 @@ describe('onedrive-auth', () => {
     await resetSyncDBForTests()
   })
 
+  it('uses the shared build configuration when the client ID is omitted or blank', async () => {
+    for (const clientId of [undefined, '   ']) {
+      const request = await createOneDriveAuthRequest({
+        clientId,
+        redirectUri: 'https://client.example/onedrive-callback.html',
+        state: 'state',
+        codeVerifier: 'verifier'
+      })
+      expect(request.clientId).toBe(__ONEDRIVE_CLIENT_ID__)
+      expect(new URL(request.authorizationUrl).searchParams.get('client_id')).toBe(
+        __ONEDRIVE_CLIENT_ID__
+      )
+    }
+  })
+
   it('creates an authorization URL with PKCE and read-only scopes', async () => {
     const request = await createOneDriveAuthRequest({
       clientId: '11111111-2222-3333-4444-555555555555',

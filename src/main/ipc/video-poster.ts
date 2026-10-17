@@ -10,7 +10,7 @@ import type {
 } from '../../shared/ipc-channels'
 import { resolveFfmpegRuntime } from '../video-engine-runtime'
 import type { WindowManager } from '../windowManager'
-import { getNativeFilePath } from './native-fs'
+import { getNativeFilePath } from '../lib/native-storage'
 import { isMainWindow } from './validate'
 import { runFfmpegProcess } from './ffmpeg-process'
 
