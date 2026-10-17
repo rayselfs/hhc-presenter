@@ -1,3 +1,4 @@
+import type { LanRemoteCommand } from '@shared/lan-remote'
 import { act, render, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import LanRemoteBridge from '@renderer/contexts/LanRemoteBridge'
@@ -6,7 +7,7 @@ import { useSettingsStore, DEFAULT_LAN_REMOTE } from '@renderer/stores/settings'
 const mocks = vi.hoisted(() => ({
   executeLanRemoteCommand: vi.fn(),
   createLanRemoteSnapshot: vi.fn(() => ({ revision: 1 })),
-  onCommand: vi.fn(() => vi.fn()),
+  onCommand: vi.fn<(callback: (command: LanRemoteCommand) => void) => () => void>(() => vi.fn()),
   publishState: vi.fn(),
   publishAck: vi.fn()
 }))
@@ -57,4 +58,30 @@ it('activates command and state bridges only while the LAN server is enabled', a
     expect(mocks.onCommand).toHaveBeenCalledOnce()
     expect(mocks.publishState).toHaveBeenCalledOnce()
   })
+})
+
+it('publishes accepted command state before acknowledging immediate remote readback', async () => {
+  useSettingsStore.setState({ lanRemote: { ...DEFAULT_LAN_REMOTE, enabled: true } })
+  const ack = { requestId: 'duration-75', status: 'accepted' }
+  mocks.executeLanRemoteCommand.mockResolvedValue(ack)
+  render(<LanRemoteBridge />)
+  mocks.publishState.mockClear()
+  let finishPublication!: () => void
+  mocks.publishState.mockImplementationOnce(
+    () =>
+      new Promise<void>((resolve) => {
+        finishPublication = resolve
+      })
+  )
+  await act(async () => {
+    mocks.onCommand.mock.calls[0][0]({
+      requestId: 'duration-75',
+      type: 'timer:command',
+      command: { type: 'setDuration', seconds: 75 }
+    })
+  })
+  expect(mocks.publishState).toHaveBeenCalledOnce()
+  expect(mocks.publishAck).not.toHaveBeenCalled()
+  await act(async () => finishPublication())
+  expect(mocks.publishAck).toHaveBeenCalledWith(ack)
 })

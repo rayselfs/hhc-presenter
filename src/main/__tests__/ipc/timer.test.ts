@@ -30,7 +30,9 @@ vi.mock('../../timerService', () => ({
     setWindowManager: vi.fn(),
     handleCommand: vi.fn(),
     getState: vi.fn(() => ({ status: 'stopped', remainingSeconds: 300 })),
-    initializeState: vi.fn()
+    initializeState: vi.fn(),
+    initializeRuntime: vi.fn(() => ({ status: 'rejected', reason: 'invalid-configuration' })),
+    executeRuntimeCommand: vi.fn(() => ({ status: 'rejected', reason: 'not-initialized' }))
   }
 }))
 
@@ -147,4 +149,31 @@ describe('timer:initialize', () => {
     handler(makeEvent(), validSettings)
     expect(timerService.initializeState).not.toHaveBeenCalled()
   })
+})
+
+describe.each([
+  ['timer:runtime-initialize', 'initializeRuntime', { settings: {} }],
+  ['timer:runtime-command', 'executeRuntimeCommand', { type: 'start' }]
+] as const)('%s', (channel, method, payload) => {
+  it.each([mockUnknownWindow, null])(
+    'rejects an unmanaged sender without reaching the runtime',
+    (sender) => {
+      vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(sender as never)
+      expect(getHandler(channel)(makeEvent(), payload)).toEqual({
+        status: 'rejected',
+        reason: 'unauthorized-sender'
+      })
+      expect(timerService[method]).not.toHaveBeenCalled()
+    }
+  )
+  it.each([mockMainWindow, mockProjectionWindow])(
+    'returns the managed host result for a known sender',
+    (sender) => {
+      vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(sender as never)
+      const expected = vi.mocked(timerService[method]).getMockImplementation()?.(payload)
+      vi.mocked(timerService[method]).mockClear()
+      expect(getHandler(channel)(makeEvent(), payload)).toEqual(expected)
+      expect(timerService[method]).toHaveBeenCalledExactlyOnceWith(payload)
+    }
+  )
 })

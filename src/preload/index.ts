@@ -74,6 +74,10 @@ const timerApi = {
   timerGetState: () => typedInvoke('timer:get-state'),
   timerInitialize: (settings: IpcInvokeMap['timer:initialize']['args'][0]) =>
     typedInvoke('timer:initialize', settings),
+  runtimeInitialize: (configuration: IpcInvokeMap['timer:runtime-initialize']['args'][0]) =>
+    typedInvoke('timer:runtime-initialize', configuration),
+  runtimeCommand: (command: IpcInvokeMap['timer:runtime-command']['args'][0]) =>
+    typedInvoke('timer:runtime-command', command),
   onTimerTick: (callback: (payload: TimerTickPayload) => void) => typedOn('timer-tick', callback)
 }
 

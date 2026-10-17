@@ -1,213 +1,192 @@
 import type { WorkerIncomingMessage, WorkerOutgoingMessage } from '@renderer/workers/timer.worker'
-import type { TimerCommand, TimerMode } from '@shared/types/timer'
+import type {
+  TimerRuntimeCommand,
+  TimerRuntimeConfiguration,
+  TimerRuntimeResult,
+  TimerRuntimeSnapshot
+} from '@shared/types/timer'
 import { isElectron } from './env'
 
-/**
- * TimerAdapter interface - abstraction for timing engine communication
- * Bridges Zustand stores ↔ Web Worker (browser) or Electron IPC (future)
- */
 export interface TimerAdapter {
-  /** Send a command to the timing engine */
-  sendCommand(cmd: WorkerIncomingMessage): void
-
-  /** Keep the Electron main-process timer mode aligned with renderer state */
-  syncMode(mode: TimerMode): void
-
-  /** Register callback for countdown tick events */
-  onTick(callback: (remainingMs: number, progress: number) => void): void
-
-  /** Register callback for finished event */
-  onFinished(callback: () => void): void
-
-  /** Register callback for stopwatch tick events */
-  onStopwatchTick(callback: (elapsedMs: number) => void): void
-
-  /** Clean up worker/listeners */
+  initialize(configuration: TimerRuntimeConfiguration): Promise<TimerRuntimeResult>
+  execute(command: TimerRuntimeCommand): Promise<TimerRuntimeResult>
+  onSnapshot(callback: (snapshot: TimerRuntimeSnapshot) => void): () => void
   dispose(): void
 }
 
-/**
- * Browser implementation - wraps Web Worker
- */
+type RuntimeRequest =
+  | { type: 'initialize'; configuration: TimerRuntimeConfiguration }
+  | { type: 'command'; command: TimerRuntimeCommand }
+interface TimerAdapterSession extends TimerAdapter {
+  acceptSnapshot(snapshot: TimerRuntimeSnapshot): void
+}
+const disposedResult: TimerRuntimeResult = { status: 'rejected', reason: 'disposed' }
+const unavailableResult: TimerRuntimeResult = { status: 'rejected', reason: 'host-unavailable' }
+
+function createTimerSession(
+  request: (message: RuntimeRequest) => Promise<TimerRuntimeResult>,
+  close: () => void
+): TimerAdapterSession {
+  let disposed = false
+  let latest: TimerRuntimeSnapshot | null = null
+  let queue = Promise.resolve()
+  const listeners = new Set<(snapshot: TimerRuntimeSnapshot) => void>()
+  const cancellations = new Set<(result: TimerRuntimeResult) => void>()
+
+  function acceptSnapshot(snapshot: TimerRuntimeSnapshot): void {
+    if (disposed || (latest && snapshot.revision <= latest.revision)) return
+    latest = snapshot
+    for (const listener of [...listeners]) listener(snapshot)
+  }
+  function enqueue(message: RuntimeRequest): Promise<TimerRuntimeResult> {
+    const pending = queue.then(async (): Promise<TimerRuntimeResult> => {
+      if (disposed) return disposedResult
+      let cancel!: (result: TimerRuntimeResult) => void
+      const cancelled = new Promise<TimerRuntimeResult>((resolve) => {
+        cancel = resolve
+      })
+      cancellations.add(cancel)
+      try {
+        const result = await Promise.race([request(message), cancelled])
+        if (disposed) return disposedResult
+        if (result.status === 'accepted') acceptSnapshot(result.snapshot)
+        return result
+      } catch (error) {
+        console.error('[timer] Runtime request failed', error)
+        return unavailableResult
+      } finally {
+        cancellations.delete(cancel)
+      }
+    })
+    queue = pending.then(() => {})
+    return pending
+  }
+  return {
+    initialize: (configuration) => enqueue({ type: 'initialize', configuration }),
+    execute: (command) => enqueue({ type: 'command', command }),
+    acceptSnapshot,
+    onSnapshot: (listener) => {
+      if (disposed) return () => {}
+      listeners.add(listener)
+      if (latest) listener(latest)
+      return () => {
+        listeners.delete(listener)
+      }
+    },
+    dispose: () => {
+      if (disposed) return
+      disposed = true
+      for (const cancel of cancellations) cancel(disposedResult)
+      cancellations.clear()
+      listeners.clear()
+      close()
+    }
+  }
+}
+
 export class BrowserTimerAdapter implements TimerAdapter {
-  private worker: Worker
-  private tickCallback: ((remainingMs: number, progress: number) => void) | null = null
-  private finishedCallback: (() => void) | null = null
-  private stopwatchTickCallback: ((elapsedMs: number) => void) | null = null
+  private readonly worker: Worker
+  private readonly session: TimerAdapterSession
+  private readonly pending = new Map<number, (result: TimerRuntimeResult) => void>()
+  private requestId = 0
+  private unavailable = false
 
   constructor() {
     this.worker = new Worker(new URL('../workers/timer.worker.ts', import.meta.url), {
       type: 'module'
     })
-    this.setupMessageHandler()
-  }
-
-  private setupMessageHandler(): void {
-    this.worker.addEventListener('message', (event: MessageEvent<WorkerOutgoingMessage>) => {
-      const { data } = event
-      switch (data.type) {
-        case 'tick':
-          if (this.tickCallback) {
-            this.tickCallback(data.remainingMs, data.progress)
-          }
-          break
-        case 'finished':
-          if (this.finishedCallback) {
-            this.finishedCallback()
-          }
-          break
-        case 'stopwatchTick':
-          if (this.stopwatchTickCallback) {
-            this.stopwatchTickCallback(data.elapsedMs)
-          }
-          break
+    const message = (event: MessageEvent<WorkerOutgoingMessage>): void => {
+      const data = event.data
+      if (data.type === 'snapshot') this.session.acceptSnapshot(data.snapshot)
+      else if (data.type === 'result') {
+        const resolve = this.pending.get(data.requestId)
+        this.pending.delete(data.requestId)
+        resolve?.(data.result)
       }
-    })
+    }
+    const failed = (): void => {
+      this.unavailable = true
+      for (const resolve of this.pending.values()) resolve(unavailableResult)
+      this.pending.clear()
+      console.error('[timer] Worker unavailable')
+    }
+    this.session = createTimerSession(
+      (request) => {
+        if (this.unavailable) return Promise.resolve(unavailableResult)
+        const requestId = ++this.requestId
+        return new Promise((resolve, reject) => {
+          this.pending.set(requestId, resolve)
+          try {
+            this.worker.postMessage({ ...request, requestId } satisfies WorkerIncomingMessage)
+          } catch (error) {
+            this.pending.delete(requestId)
+            reject(error)
+          }
+        })
+      },
+      () => {
+        this.worker.removeEventListener('message', message)
+        this.worker.removeEventListener('error', failed)
+        this.worker.terminate()
+        for (const resolve of this.pending.values()) resolve(disposedResult)
+        this.pending.clear()
+      }
+    )
+    this.worker.addEventListener('message', message)
+    this.worker.addEventListener('error', failed)
   }
 
-  sendCommand(cmd: WorkerIncomingMessage): void {
-    this.worker.postMessage(cmd)
+  initialize(configuration: TimerRuntimeConfiguration): Promise<TimerRuntimeResult> {
+    return this.session.initialize(configuration)
   }
-
-  syncMode(mode: TimerMode): void {
-    void mode
+  execute(command: TimerRuntimeCommand): Promise<TimerRuntimeResult> {
+    return this.session.execute(command)
   }
-
-  onTick(callback: (remainingMs: number, progress: number) => void): void {
-    this.tickCallback = callback
+  onSnapshot(callback: (snapshot: TimerRuntimeSnapshot) => void): () => void {
+    return this.session.onSnapshot(callback)
   }
-
-  onFinished(callback: () => void): void {
-    this.finishedCallback = callback
-  }
-
-  onStopwatchTick(callback: (elapsedMs: number) => void): void {
-    this.stopwatchTickCallback = callback
-  }
-
   dispose(): void {
-    this.worker.terminate()
-    this.tickCallback = null
-    this.finishedCallback = null
-    this.stopwatchTickCallback = null
+    this.session.dispose()
   }
 }
 
-/**
- * Maps a WorkerIncomingMessage (renderer-worker protocol) to a TimerCommand (IPC protocol).
- * The worker uses ms-based units; IPC uses seconds-based units.
- */
-function toTimerCommand(cmd: WorkerIncomingMessage): TimerCommand {
-  switch (cmd.type) {
-    case 'start':
-      return { type: 'start' }
-    case 'pause':
-      return { type: 'pause' }
-    case 'resume':
-      return { type: 'resume' }
-    case 'reset':
-      return { type: 'reset' }
-    case 'addTime':
-      return { type: 'addTime', seconds: cmd.ms / 1000 }
-    case 'removeTime':
-      return { type: 'removeTime', seconds: cmd.ms / 1000 }
-    case 'startStopwatch':
-      return { type: 'startStopwatch' }
-    case 'pauseStopwatch':
-      return { type: 'pauseStopwatch' }
-    case 'resumeStopwatch':
-      // IPC has no resumeStopwatch — map to startStopwatch (main process handles resume internally)
-      return { type: 'startStopwatch' }
-    case 'resetStopwatch':
-      return { type: 'resetStopwatch' }
-  }
-}
-
-/**
- * Electron implementation - bridges TimerAdapter to window.api.timer IPC
- */
 export class ElectronTimerAdapter implements TimerAdapter {
-  private cleanupTick: (() => void) | null = null
-  private tickCallback: ((remainingMs: number, progress: number) => void) | null = null
-  private finishedCallback: (() => void) | null = null
-  private stopwatchTickCallback: ((elapsedMs: number) => void) | null = null
-  private prevPhase: string | null = null
+  private readonly session: TimerAdapterSession
 
-  sendCommand(cmd: WorkerIncomingMessage): void {
-    if (cmd.type === 'start') {
-      window.api.timer.timerCommand({ type: 'setDuration', seconds: cmd.durationMs / 1000 })
-    }
-    window.api.timer.timerCommand(toTimerCommand(cmd))
-  }
-
-  syncMode(mode: TimerMode): void {
-    window.api.timer.timerCommand({ type: 'setMode', mode })
-  }
-
-  onTick(callback: (remainingMs: number, progress: number) => void): void {
-    this.tickCallback = callback
-    this.ensureTickListener()
-  }
-
-  onFinished(callback: () => void): void {
-    this.finishedCallback = callback
-    this.ensureTickListener()
-  }
-
-  onStopwatchTick(callback: (elapsedMs: number) => void): void {
-    this.stopwatchTickCallback = callback
-    this.ensureTickListener()
-  }
-
-  /**
-   * Sets up the single onTimerTick listener.
-   * Routes tick payload to tick, finished, and stopwatchTick callbacks.
-   * Only registers once — subsequent calls are no-ops.
-   */
-  private ensureTickListener(): void {
-    if (this.cleanupTick) return
-
-    this.cleanupTick = window.api.timer.onTimerTick((payload) => {
-      const remainingMs = payload.remainingSeconds * 1000
-      const { progress, phase, mode } = payload
-
-      // Countdown tick
-      if (this.tickCallback) {
-        this.tickCallback(remainingMs, progress)
+  constructor() {
+    const api = window.api?.timer
+    let cleanup: (() => void) | undefined
+    this.session = createTimerSession(
+      (request) => {
+        if (!api?.runtimeInitialize || !api.runtimeCommand)
+          return Promise.resolve(unavailableResult)
+        return request.type === 'initialize'
+          ? api.runtimeInitialize(request.configuration)
+          : api.runtimeCommand(request.command)
+      },
+      () => {
+        cleanup?.()
       }
-
-      // Finished: fire once when transitioning into overtime
-      if (this.finishedCallback && phase === 'overtime' && this.prevPhase !== 'overtime') {
-        this.finishedCallback()
-      }
-
-      // Stopwatch tick: fire when mode is stopwatch
-      if (this.stopwatchTickCallback && mode === 'stopwatch') {
-        this.stopwatchTickCallback(payload.stopwatchElapsedMs ?? 0)
-      }
-
-      this.prevPhase = phase
+    )
+    cleanup = api?.onTimerTick?.((payload) => {
+      if (payload.runtime) this.session.acceptSnapshot(payload.runtime)
     })
   }
 
+  initialize(configuration: TimerRuntimeConfiguration): Promise<TimerRuntimeResult> {
+    return this.session.initialize(configuration)
+  }
+  execute(command: TimerRuntimeCommand): Promise<TimerRuntimeResult> {
+    return this.session.execute(command)
+  }
+  onSnapshot(callback: (snapshot: TimerRuntimeSnapshot) => void): () => void {
+    return this.session.onSnapshot(callback)
+  }
   dispose(): void {
-    if (this.cleanupTick) {
-      this.cleanupTick()
-      this.cleanupTick = null
-    }
-    this.tickCallback = null
-    this.finishedCallback = null
-    this.stopwatchTickCallback = null
-    this.prevPhase = null
+    this.session.dispose()
   }
 }
 
-/**
- * Factory function - returns appropriate adapter based on environment
- */
 export function createTimerAdapter(): TimerAdapter {
-  if (isElectron()) {
-    return new ElectronTimerAdapter()
-  }
-  return new BrowserTimerAdapter()
+  return isElectron() ? new ElectronTimerAdapter() : new BrowserTimerAdapter()
 }

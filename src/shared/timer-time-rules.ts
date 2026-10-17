@@ -1,5 +1,13 @@
 import type { TimerStatus, TimerPhase } from './types/timer'
 
+export function formatTimerTime(totalSeconds: number): string {
+  const abs = Math.abs(Math.round(totalSeconds))
+  const hours = Math.floor(abs / 3600)
+  const minutes = Math.floor((abs % 3600) / 60)
+  const seconds = abs % 60
+  return `${hours > 0 ? `${hours}:` : ''}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
 export function computePhase(
   status: TimerStatus,
   remainingSeconds: number,

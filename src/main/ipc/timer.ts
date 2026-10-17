@@ -3,6 +3,7 @@ import { ipcMain } from 'electron'
 import { timerService } from '../timerService'
 import type { WindowManager } from '../windowManager'
 import { isKnownWindow, validateTimerSettings } from './validate'
+import type { TimerRuntimeResult } from '@shared/types/timer'
 
 export function registerTimerHandlers(wm: WindowManager): void {
   timerService.setWindowManager(wm)
@@ -22,6 +23,19 @@ export function registerTimerHandlers(wm: WindowManager): void {
   ipcMain.handle('timer:initialize', (event, settings: unknown) => {
     if (!isKnownWindow(wm, event)) return
     if (!validateTimerSettings(settings)) return
-    timerService.initializeState(settings as Parameters<typeof timerService.initializeState>[0])
+    timerService.initializeState(settings)
+  })
+
+  ipcMain.handle(
+    'timer:runtime-initialize',
+    (event, configuration: unknown): TimerRuntimeResult => {
+      if (!isKnownWindow(wm, event)) return { status: 'rejected', reason: 'unauthorized-sender' }
+      return timerService.initializeRuntime(configuration)
+    }
+  )
+
+  ipcMain.handle('timer:runtime-command', (event, command: unknown): TimerRuntimeResult => {
+    if (!isKnownWindow(wm, event)) return { status: 'rejected', reason: 'unauthorized-sender' }
+    return timerService.executeRuntimeCommand(command)
   })
 }

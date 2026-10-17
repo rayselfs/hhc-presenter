@@ -57,6 +57,8 @@ interface TimerAPI {
   timerCommand: Invoke<'timer:command'>
   timerGetState: Invoke<'timer:get-state'>
   timerInitialize: Invoke<'timer:initialize'>
+  runtimeInitialize: Invoke<'timer:runtime-initialize'>
+  runtimeCommand: Invoke<'timer:runtime-command'>
   onTimerTick: (callback: (payload: TimerTickPayload) => void) => () => void
 }
 
