@@ -1,8 +1,13 @@
 import { publishCatalogDeletion } from './file-catalog-events'
-import type { AnyItemRecord, FileItemRecord, FolderRecord } from '@shared/types/folder'
+import {
+  FOLDER_DURATION_MS,
+  type AnyItemRecord,
+  type FileItemRecord,
+  type FolderRecord
+} from '@shared/types/folder'
 import { openFileExplorerDB } from './file-explorer-db'
 import { getBlobId } from './blob-identity'
-import { hasNameConflict, validateDisplayName } from './file-naming'
+import { hasNameConflict, resolveUniqueName, validateDisplayName } from './file-naming'
 import { isFolderReadOnlyBySyncLink } from './sync-readonly'
 
 export function assertLocalDestination(parentId: string, folders: FolderRecord[]): void {
@@ -256,6 +261,63 @@ export async function updateLocalCatalogEntry(
     else await tx.objectStore('folder-records').put(renamed)
     await tx.done
     return renamed
+  } catch (error) {
+    try {
+      tx.abort()
+    } catch {
+      /* Already completed. */
+    }
+    await tx.done.catch(() => undefined)
+    throw error
+  }
+}
+
+export async function createLocalCatalogFolder(
+  name: string,
+  parentId: string,
+  expiresAt: number | null | undefined,
+  isVisible: (folder: FolderRecord) => boolean
+): Promise<FolderRecord> {
+  if (!validateDisplayName(name)) throw new Error('Folder name is invalid')
+  if (expiresAt !== undefined && expiresAt !== null && !Number.isFinite(expiresAt))
+    throw new Error('Folder expiration is invalid')
+  const db = await openFileExplorerDB()
+  const tx = db.transaction(['folder-records', 'catalog-deletions'], 'readwrite')
+  try {
+    const folders = await tx.objectStore('folder-records').getAll()
+    assertLocalDestination(parentId, folders)
+    const byId = Object.fromEntries(folders.map((folder) => [folder.id, folder]))
+    let ancestor: string | null = parentId
+    const seen = new Set<string>()
+    while (ancestor && !seen.has(ancestor)) {
+      seen.add(ancestor)
+      if (await tx.objectStore('catalog-deletions').get(ancestor))
+        throw new Error('Folder destination was deleted')
+      ancestor = byId[ancestor]?.parentId ?? null
+    }
+    const siblings = folders.filter(
+      (folder) => folder.parentId === parentId && !folder.deletedAt && isVisible(folder)
+    )
+    const now = Date.now()
+    const folder: FolderRecord = {
+      id: crypto.randomUUID(),
+      parentId,
+      name: resolveUniqueName(
+        name,
+        siblings.map((sibling) => sibling.name)
+      ),
+      sortIndex: siblings.length,
+      createdAt: now,
+      expiresAt:
+        expiresAt !== undefined
+          ? expiresAt
+          : parentId === 'file-root'
+            ? now + FOLDER_DURATION_MS['1day']
+            : (byId[parentId]?.expiresAt ?? null)
+    }
+    await tx.objectStore('folder-records').add(folder)
+    await tx.done
+    return folder
   } catch (error) {
     try {
       tx.abort()

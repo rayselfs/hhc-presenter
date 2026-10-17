@@ -1,6 +1,7 @@
 import { validateDisplayName } from '@renderer/lib/file-naming'
 import { createPersistenceOperationQueue } from '@renderer/lib/persistence-operation-queue'
 import {
+  createLocalCatalogFolder,
   updateLocalCatalogEntry,
   restoreLocalCatalogEntry
 } from '@renderer/lib/file-catalog-mutations'
@@ -595,7 +596,13 @@ export async function createExplorerFolder(
   if (destination?.personalOwnerId) {
     return (await import('@renderer/lib/personal-file-actions')).createPersonalFolder(name, parent)
   }
-  return store.addFolder(name, parent, expiresAt)
+  let createdId = ''
+  await filePersistenceQueue.commit(async () => {
+    const folder = await createLocalCatalogFolder(name, parent, expiresAt, isPersonalRecordVisible)
+    publishPersistedExplorerEntry(folder)
+    createdId = folder.id
+  })
+  return createdId
 }
 
 function reportPersonalWriteError(error: unknown): void {
