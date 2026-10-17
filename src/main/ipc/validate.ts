@@ -1,25 +1,10 @@
+import { parseTimerCommand } from '@shared/timer-command'
 import { isFilePlaybackError, isFileRenderStatus } from '@shared/projection-messages'
 import { isCameraSignal, isCameraState, isCameraMessageFrom } from '@shared/camera'
 import { BrowserWindow } from 'electron'
 import { MAX_DURATION_SECONDS } from '@shared/constants/timer'
 import type { WindowManager } from '../windowManager'
 import type { ProjectionMessageTuple, ProjectionTransportTuple } from '@shared/projection-messages'
-
-const VALID_TIMER_COMMAND_TYPES = new Set([
-  'start',
-  'pause',
-  'resume',
-  'reset',
-  'setDuration',
-  'addTime',
-  'removeTime',
-  'setMode',
-  'setReminder',
-  'setOvertimeMessage',
-  'startStopwatch',
-  'pauseStopwatch',
-  'resetStopwatch'
-])
 
 const VALID_TIMER_MODES = new Set(['timer', 'clock', 'both', 'stopwatch'])
 
@@ -41,38 +26,7 @@ export function validateTheme(theme: unknown): boolean {
 }
 
 export function validateTimerCommand(cmd: unknown): boolean {
-  if (typeof cmd !== 'object' || cmd === null) return false
-  const obj = cmd as Record<string, unknown>
-  if (typeof obj.type !== 'string' || !VALID_TIMER_COMMAND_TYPES.has(obj.type)) return false
-  switch (obj.type) {
-    case 'setDuration':
-    case 'addTime':
-    case 'removeTime':
-      return (
-        typeof obj.seconds === 'number' &&
-        Number.isFinite(obj.seconds) &&
-        obj.seconds >= 0 &&
-        obj.seconds <= MAX_DURATION_SECONDS
-      )
-    case 'setMode':
-      return typeof obj.mode === 'string' && VALID_TIMER_MODES.has(obj.mode)
-    case 'setReminder':
-      return (
-        typeof obj.enabled === 'boolean' &&
-        typeof obj.durationSeconds === 'number' &&
-        Number.isFinite(obj.durationSeconds) &&
-        obj.durationSeconds >= 0 &&
-        obj.durationSeconds <= MAX_DURATION_SECONDS
-      )
-    case 'setOvertimeMessage':
-      return (
-        typeof obj.enabled === 'boolean' &&
-        typeof obj.message === 'string' &&
-        obj.message.length <= 1000
-      )
-    default:
-      return true
-  }
+  return parseTimerCommand(cmd) !== null
 }
 
 const NULL_PROJECTION_CHANNELS = new Set([
@@ -175,6 +129,8 @@ function validateProjectionPayload(channel: string, data: unknown): boolean {
     case 'file:playback-state':
       return (
         typeof obj.itemId === 'string' &&
+        (obj.blobId === undefined || typeof obj.blobId === 'string') &&
+        (obj.contentRevision === undefined || isValidProjectionGeneration(obj.contentRevision)) &&
         typeof obj.phase === 'string' &&
         ['preparing', 'ready', 'playing', 'paused', 'ended'].includes(obj.phase) &&
         isFiniteNumber(obj.currentTime) &&
@@ -330,7 +286,7 @@ export function validateTimerSettings(settings: unknown): boolean {
   if (typeof obj.mode !== 'string' || !VALID_TIMER_MODES.has(obj.mode)) return false
 
   if (
-    typeof obj.totalDuration !== 'number' ||
+    !isFiniteNumber(obj.totalDuration) ||
     obj.totalDuration < 0 ||
     obj.totalDuration > MAX_DURATION_SECONDS
   )
@@ -339,7 +295,7 @@ export function validateTimerSettings(settings: unknown): boolean {
   if (typeof obj.reminderEnabled !== 'boolean') return false
 
   if (
-    typeof obj.reminderDuration !== 'number' ||
+    !isFiniteNumber(obj.reminderDuration) ||
     obj.reminderDuration < 0 ||
     obj.reminderDuration > MAX_DURATION_SECONDS
   )

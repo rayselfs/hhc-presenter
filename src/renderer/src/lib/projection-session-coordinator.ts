@@ -34,6 +34,12 @@ export type ProjectionCoordinatorSend = <C extends ProjectionChannel>(
   data: ProjectionPayload<C>
 ) => void
 
+export interface ProjectionCoordinatorViewState {
+  snapshot: ProjectionSessionSnapshot | null
+  recovery: ProjectionRecoveryState
+  activeOwner: ProjectionOwner
+}
+
 export interface ProjectionSessionCoordinator {
   startSession(owner: ProjectionOwner, payloads: ProjectionContentMessageTuple[]): void
   claim(owner: ProjectionOwner, unblank?: boolean): void
@@ -41,7 +47,7 @@ export interface ProjectionSessionCoordinator {
   blackout(enabled: boolean): void
   project<C extends ReplayableProjectionChannel>(channel: C, data: ProjectionPayload<C>): void
   sendOneShot<C extends 'file:end'>(channel: C, data: ProjectionPayload<C>): void
-  recordPlayback(generation: number, data: ProjectionPayload<'file:playback-state'>): void
+  recordPlayback(generation: number, data: ProjectionPayload<'file:playback-state'>): boolean
   isCurrentVideo(generation: number, data: ProjectionPayload<'file:playback-error'>): boolean
   promoteVideo(generation: number, data: ProjectionPayload<'file:playback-error'>): boolean
   replay(generation: number): void
@@ -52,6 +58,7 @@ export interface ProjectionSessionCoordinator {
   endSession(): void
   getIntentRevision(): number
   invalidateIntent(): void
+  getViewState(): ProjectionCoordinatorViewState
   getSnapshot(): ProjectionSessionSnapshot | null
   getRecoveryState(): ProjectionRecoveryState
   subscribe(listener: () => void): () => void
@@ -63,6 +70,7 @@ const DEFAULT_MEDIA_REPLAY_STATE = {
   durationSeconds: 0,
   isPlaying: false,
   isEnded: false,
+  playlistEnded: false,
   volume: 1,
   playbackRate: 1,
   pdfPage: 1,
@@ -201,7 +209,7 @@ function reduceReplayableMessage(
       const show = data as ProjectionPayload<'file:show'>
       const replayState =
         snapshot.media.state?.itemId === show.itemId
-          ? snapshot.media.state
+          ? { ...snapshot.media.state, playlistEnded: false }
           : {
               itemId: show.itemId,
               ...DEFAULT_MEDIA_REPLAY_STATE,
@@ -231,11 +239,30 @@ function reduceReplayableMessage(
   }
 }
 
+function endMediaSnapshot(snapshot: ProjectionSessionSnapshot): ProjectionSessionSnapshot {
+  if (!snapshot.media.state) return snapshot
+  return {
+    ...snapshot,
+    media: {
+      ...snapshot.media,
+      state: { ...snapshot.media.state, playlistEnded: true, isPlaying: false }
+    }
+  }
+}
+
 function reducePlaybackState(
   snapshot: ProjectionSessionSnapshot,
   data: ProjectionPayload<'file:playback-state'>
 ): ProjectionSessionSnapshot {
-  if (!snapshot.media.state || snapshot.media.state.itemId !== data.itemId) return snapshot
+  if (
+    !snapshot.media.state ||
+    snapshot.media.state.itemId !== data.itemId ||
+    (snapshot.media.show?.contentRevision !== undefined &&
+      (snapshot.media.show.blobId !== data.blobId ||
+        snapshot.media.show.contentRevision !== data.contentRevision)) ||
+    snapshot.media.state.playlistEnded
+  )
+    return snapshot
   return {
     ...snapshot,
     media: {
@@ -264,8 +291,8 @@ export function createProjectionSessionCoordinator(
     generation: 0,
     failure: null
   }
+  let viewState: ProjectionCoordinatorViewState = { snapshot, recovery, activeOwner: 'timer' }
   let intentRevision = 0
-  let mediaEnded = false
   let contentRevision = 0
   let replayedGeneration = 0
   let pendingFileControls: ProjectionPendingFileControls | null = null
@@ -289,6 +316,7 @@ export function createProjectionSessionCoordinator(
 
   const notify = (): void => {
     if (disposed) return
+    viewState = { snapshot, recovery, activeOwner: snapshot?.owner ?? viewState.activeOwner }
     for (const listener of listeners) listener()
   }
 
@@ -319,13 +347,15 @@ export function createProjectionSessionCoordinator(
   const api: ProjectionSessionCoordinator = {
     startSession(owner, payloads) {
       intentRevision += 1
-      mediaEnded = false
       snapshot = createEmptySnapshot(owner)
       pendingFileControls = null
       for (const [channel, original] of payloads) {
         const data =
           channel === 'file:show' ? { ...original, contentRevision: ++contentRevision } : original
-        if (channel === 'file:end') continue
+        if (channel === 'file:end') {
+          snapshot = endMediaSnapshot(snapshot)
+          continue
+        }
         snapshot = reduceReplayableMessage(
           snapshot,
           channel,
@@ -399,8 +429,8 @@ export function createProjectionSessionCoordinator(
 
     project(channel, data) {
       if (!snapshot) return
+      if (channel === 'file:control' && snapshot.media.state?.playlistEnded) return
       if (channel === 'file:show') {
-        mediaEnded = false
         data = { ...data, contentRevision: ++contentRevision }
       }
       if (channel === 'file:show') {
@@ -441,16 +471,21 @@ export function createProjectionSessionCoordinator(
 
     sendOneShot(channel, data) {
       if (channel === 'file:end') {
-        mediaEnded = true
+        if (snapshot) snapshot = endMediaSnapshot(snapshot)
         pendingFileControls = null
       }
-      if (recovery.status === 'ready') send(channel, data)
+      if (recovery.status === 'ready') {
+        send(channel, data)
+        // The file child may not have subscribed when the playlist ends.
+        sendReplay(recovery.generation)
+      }
+      notify()
     },
 
     recordPlayback(generation, data) {
-      if (generation !== recovery.generation || !snapshot) return
+      if (generation !== recovery.generation || !snapshot) return false
       const next = reducePlaybackState(snapshot, data)
-      if (next === snapshot) return
+      if (next === snapshot) return false
       snapshot = next
       if (pendingFileControls?.itemId === data.itemId) {
         const pending = { ...pendingFileControls }
@@ -483,6 +518,7 @@ export function createProjectionSessionCoordinator(
             : pending
       }
       notify()
+      return true
     },
 
     isCurrentVideo(generation, data) {
@@ -493,7 +529,7 @@ export function createProjectionSessionCoordinator(
         recovery.status === 'ready' &&
         recovery.generation === generation &&
         snapshot?.owner === 'media' &&
-        !mediaEnded &&
+        !snapshot.media.state?.playlistEnded &&
         !snapshot.showDefault &&
         !snapshot.isBlackout &&
         show?.itemId === data.itemId &&
@@ -528,6 +564,7 @@ export function createProjectionSessionCoordinator(
       if (!Number.isSafeInteger(event.generation) || event.generation <= 0) return
       if (event.generation < recovery.generation) return
       if (event.status === 'ready') {
+        if (event.generation === recovery.generation && recovery.status === 'ready') return
         recovery = {
           status: 'opening',
           generation: event.generation,
@@ -625,7 +662,6 @@ export function createProjectionSessionCoordinator(
       intentRevision += 1
       const generation = recovery.generation
       snapshot = null
-      mediaEnded = false
       pendingFileControls = null
       replayedGeneration = 0
       recovery = { status: 'closed', generation: 0, failure: null }
@@ -645,6 +681,10 @@ export function createProjectionSessionCoordinator(
 
     getSnapshot() {
       return snapshot
+    },
+
+    getViewState() {
+      return viewState
     },
 
     getRecoveryState() {

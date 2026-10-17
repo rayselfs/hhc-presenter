@@ -1,3 +1,4 @@
+import { useFileExplorerStore } from '@renderer/stores/file-explorer'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import 'fake-indexeddb/auto'
 import type { HhcAssetApi } from '../hhc-asset-api'
@@ -34,19 +35,6 @@ const mocks = vi.hoisted(() => ({
   electron: false,
   offlinePolicy: 'online-only' as SyncOfflinePolicy,
   api: null as HhcAssetApi | null,
-  state: {
-    folders: {} as Record<string, FolderRecord>,
-    items: {},
-    _foldersArray: [] as FolderRecord[],
-    _itemsArray: [],
-    _childFoldersByParent: {} as Record<string, FolderRecord[]>,
-    _itemsByParent: {},
-    loadedParents: new Set<string>(['file-root']),
-    initialize: vi.fn(async () => undefined),
-    getChildFolders(parentId: string) {
-      return this._childFoldersByParent[parentId] ?? []
-    }
-  },
   handleAccessError: vi.fn()
 }))
 
@@ -62,17 +50,6 @@ vi.mock('../hhc-asset-api', () => ({
 vi.mock('../hhc-line-access', () => ({
   handleHhcLineAccessError: mocks.handleAccessError,
   isHhcLineRootAuthorized: vi.fn(async () => true)
-}))
-
-vi.mock('@renderer/stores/file-explorer', () => ({
-  FILE_EXPLORER_ROOT_ID: 'file-root',
-  removeCleanedEntriesFromStore: vi.fn(),
-  useFileExplorerStore: {
-    getState: () => mocks.state,
-    setState: (update: (state: typeof mocks.state) => Partial<typeof mocks.state>) => {
-      Object.assign(mocks.state, update(mocks.state))
-    }
-  }
 }))
 
 vi.mock('@renderer/stores/settings', () => ({
@@ -133,7 +110,7 @@ beforeEach(async () => {
   mocks.electron = false
   mocks.offlinePolicy = 'online-only'
   mocks.api = api()
-  Object.assign(mocks.state, {
+  Object.assign(useFileExplorerStore.getState(), {
     folders: {},
     items: {},
     _foldersArray: [],
@@ -142,7 +119,7 @@ beforeEach(async () => {
     _itemsByParent: {},
     loadedParents: new Set(['file-root'])
   })
-  mocks.state.initialize.mockClear()
+  vi.spyOn(useFileExplorerStore.getState(), 'initialize').mockResolvedValue(undefined)
   mocks.handleAccessError.mockReset()
   mocks.handleAccessError.mockResolvedValue(undefined)
   resetSyncDownloadQueueForTests()
@@ -649,7 +626,7 @@ describe('HHC LINE collection connection', () => {
         remoteFolderId: 'collection-2'
       }
     }
-    Object.assign(mocks.state, {
+    Object.assign(useFileExplorerStore.getState(), {
       folders: { [currentRoot.id]: currentRoot, [otherAccountRoot.id]: otherAccountRoot },
       _foldersArray: [currentRoot, otherAccountRoot],
       _childFoldersByParent: { 'file-root': [currentRoot, otherAccountRoot] }
@@ -1068,7 +1045,7 @@ describe('HHC LINE collection connection', () => {
       id: root.id,
       syncLink: { offlinePolicy: 'always-offline' }
     })
-    expect(mocks.state.folders[root.id]).toMatchObject({
+    expect(useFileExplorerStore.getState().folders[root.id]).toMatchObject({
       id: root.id,
       syncLink: { offlinePolicy: 'always-offline' }
     })
@@ -1185,7 +1162,7 @@ describe('HHC LINE collection connection', () => {
         status: 'active'
       }
     }
-    Object.assign(mocks.state, {
+    Object.assign(useFileExplorerStore.getState(), {
       folders: { [partialRoot.id]: partialRoot },
       _foldersArray: [partialRoot],
       _childFoldersByParent: { 'file-root': [partialRoot] }

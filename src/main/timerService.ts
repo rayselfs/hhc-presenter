@@ -1,8 +1,8 @@
+import { computePhase, computeProgress, readCountdownAt } from '@shared/timer-time-rules'
 import { performance } from 'perf_hooks'
 import type {
   TimerCommand,
   TimerMode,
-  TimerPhase,
   TimerSettings,
   TimerState,
   StopwatchState,
@@ -25,23 +25,6 @@ function formatStopwatch(elapsedMs: number): string {
   const secs = totalSecs % 60
   const mins = Math.floor(totalSecs / 60)
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(cs).padStart(2, '0')}`
-}
-
-function computePhase(
-  status: TimerState['status'],
-  remainingSeconds: number,
-  reminderEnabled: boolean,
-  reminderDuration: number
-): TimerPhase {
-  if (status === 'stopped') return 'idle'
-  if (remainingSeconds <= 0) return 'overtime'
-  if (reminderEnabled && remainingSeconds <= reminderDuration) return 'warning'
-  return 'main'
-}
-
-function computeProgress(remainingSeconds: number, totalDuration: number): number {
-  if (totalDuration <= 0) return 0
-  return Math.max(0, Math.min(1, remainingSeconds / totalDuration))
 }
 
 type InternalTimerSettings = TimerSettings
@@ -116,15 +99,9 @@ export class TimerService {
     const nowMs = Date.now()
 
     if (this.timer.status === 'running' && this.targetEndTime !== null) {
-      const rawRemaining = (this.targetEndTime - nowPerfMs) / 1000
-      this.timer.remainingSeconds = Math.ceil(rawRemaining)
-
-      if (rawRemaining <= 0) {
-        this.timer.remainingSeconds = 0
-        this.timer.overtimeSeconds = Math.abs(Math.floor(rawRemaining))
-      } else {
-        this.timer.overtimeSeconds = 0
-      }
+      const { remainingSeconds, overtimeSeconds } = readCountdownAt(this.targetEndTime, nowPerfMs)
+      this.timer.remainingSeconds = remainingSeconds
+      this.timer.overtimeSeconds = overtimeSeconds
     }
 
     if (this.stopwatch.status === 'running' && this.stopwatch.startMs !== null) {

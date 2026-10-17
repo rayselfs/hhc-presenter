@@ -70,6 +70,12 @@ describe('timer:command', () => {
     expect(timerService.handleCommand).toHaveBeenCalledWith({ type: 'start' })
   })
 
+  it('passes only parsed command fields to the service', () => {
+    vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockMainWindow as never)
+    getHandler('timer:command')(makeEvent(), { type: 'addTime', seconds: 0.5, extra: 'discard' })
+    expect(timerService.handleCommand).toHaveBeenCalledWith({ type: 'addTime', seconds: 0.5 })
+  })
+
   it('unknown sender does NOT call timerService.handleCommand', () => {
     vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockUnknownWindow as never)
     const handler = getHandler('timer:command')
@@ -125,6 +131,15 @@ describe('timer:initialize', () => {
     handler(makeEvent(), { mode: 'invalid' })
     expect(timerService.initializeState).not.toHaveBeenCalled()
   })
+
+  it.each(['totalDuration', 'reminderDuration'])(
+    'rejects NaN in %s before service initialization',
+    (field) => {
+      vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockMainWindow as never)
+      getHandler('timer:initialize')(makeEvent(), { ...validSettings, [field]: NaN })
+      expect(timerService.initializeState).not.toHaveBeenCalled()
+    }
+  )
 
   it('unknown sender does NOT call timerService.initializeState', () => {
     vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockUnknownWindow as never)
