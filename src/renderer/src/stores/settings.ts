@@ -1,5 +1,7 @@
+import type { TimerRuntimeResult } from '@shared/types/timer'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { executeTimerRuntimeCommand } from '@renderer/lib/timer-runtime-client'
 import { toast } from '@heroui/react/toast'
 import i18n from '@renderer/i18n'
 import { hhcPersistStorage, createKey } from '@renderer/lib/persist-storage'
@@ -274,7 +276,7 @@ export interface SettingsStore {
   setSpeech: (settings: SpeechSettings) => void
   setDefaultSyncOfflinePolicy: (policy: SyncOfflinePolicy) => void
   setTrashRetentionDays: (days: number) => void
-  setReminderMode: (mode: 'subtract' | 'add') => void
+  setReminderMode: (mode: 'subtract' | 'add') => Promise<TimerRuntimeResult>
   setProjectionDisplayId: (displayId: string) => void
   setLanRemote: (settings: LanRemoteSettings) => void
   resetSettings: () => void
@@ -361,7 +363,7 @@ export const useSettingsStore = create<SettingsStore>()(
       },
 
       setReminderMode: (mode: 'subtract' | 'add') => {
-        set({ reminderMode: mode })
+        return executeTimerRuntimeCommand({ type: 'setReminderMode', mode })
       },
 
       setProjectionDisplayId: (displayId: string) => {

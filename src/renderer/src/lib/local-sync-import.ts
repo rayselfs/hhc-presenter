@@ -1,3 +1,4 @@
+import { notifyThumbnailReady } from './thumbnail-events'
 import type { LocalSyncConnectionInfo, LocalSyncRemoteItem } from '@shared/ipc-channels'
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 import {
@@ -13,14 +14,7 @@ import {
   type FileBlobRecord
 } from '@renderer/lib/file-explorer-db'
 import { resolveUniqueName } from '@renderer/lib/file-naming'
-import {
-  resolveMediaCapability,
-  type MediaKind,
-  type MediaPlatform,
-  type MediaSupportMode
-} from '@renderer/lib/media-capabilities'
-import { classifyMediaImport } from '@renderer/lib/media-import-policy'
-import { isIgnoredSystemPath } from '@shared/file-ignore-policy'
+import { resolveMediaCapability, type MediaPlatform } from '@renderer/lib/media-capabilities'
 import { ensureSourceMediaMetadata } from '@renderer/lib/media-metadata'
 import { enqueueVideoPosterJob } from '@renderer/lib/video-poster-jobs'
 import { getBlobId } from '@renderer/lib/blob-identity'
@@ -35,14 +29,6 @@ import { generateThumbnail } from '@renderer/lib/thumbnail-generator'
 import { saveThumbnail, saveThumbnailBlob } from '@renderer/lib/thumbnail-db'
 import type { SyncDownloadCommitGuard } from '@renderer/lib/sync-provider'
 import { applySyncRefreshPlan, buildSyncRefreshPlan, type SyncRefreshPlan } from './sync-refresh'
-
-interface SyncFilePolicy {
-  kind: MediaKind | 'unsupported'
-  mimeType: string
-  support: MediaSupportMode
-  disabled: boolean
-  skip: boolean
-}
 
 interface LocalSyncImportPlanInput {
   connection: LocalSyncConnectionInfo
@@ -83,48 +69,6 @@ function createRootFolderId(connectionId: string): string {
   return `local-sync-folder-${safeIdPart(connectionId)}`
 }
 
-function createSyncedFolderId(connectionId: string, remoteItemId: string): string {
-  return `local-sync-folder-${safeIdPart(connectionId)}-${safeIdPart(remoteItemId)}`
-}
-
-function createSyncedItemId(): string {
-  return crypto.randomUUID()
-}
-
-export function classifySyncRemoteFile(
-  item: Pick<LocalSyncRemoteItem, 'name' | 'mimeType'>,
-  platform: MediaPlatform
-): SyncFilePolicy {
-  const decision = classifyMediaImport({ name: item.name, mimeType: item.mimeType }, platform)
-  if (decision.action === 'skip') {
-    return {
-      kind: 'unsupported',
-      mimeType: decision.mimeType,
-      support: 'unsupported',
-      disabled: true,
-      skip: true
-    }
-  }
-
-  if (decision.action === 'platform-unsupported') {
-    return {
-      kind: decision.kind,
-      mimeType: decision.mimeType,
-      support: decision.support,
-      disabled: true,
-      skip: false
-    }
-  }
-
-  return {
-    kind: decision.kind,
-    mimeType: decision.mimeType,
-    support: decision.support,
-    disabled: false,
-    skip: false
-  }
-}
-
 export function buildLocalSyncImportPlan(input: LocalSyncImportPlanInput): LocalSyncImportPlan {
   const now = Date.now()
   const rootFolderId = createRootFolderId(input.connection.id)
@@ -143,123 +87,45 @@ export function buildLocalSyncImportPlan(input: LocalSyncImportPlanInput): Local
     }
   }
 
-  const folders: FolderRecord[] = [rootFolder]
-  const items: FileItemRecord[] = []
-  const fileImports: LocalSyncFileImport[] = []
-  const syncEntries: LocalSyncImportPlan['syncEntries'] = [
-    {
-      providerConnectionId: input.connection.id,
-      remoteItemId: '.',
-      parentRemoteItemId: null,
-      kind: 'folder',
-      name: input.connection.rootName,
-      folderId: rootFolder.id,
-      status: 'available-offline'
-    }
-  ]
-  const remoteFolderToLocalId = new Map<string | null, string>([[null, rootFolderId]])
-  const folderSortCounts = new Map<string, number>([
-    [FILE_EXPLORER_ROOT_ID, input.existingRootFolderNames.length + 1]
-  ])
-  const itemSortCounts = new Map<string, number>()
-  const ignoredRemoteIds = new Set<string>()
-  let disabledCount = 0
-
-  for (const remoteItem of input.remoteItems) {
-    if (
-      isIgnoredSystemPath(remoteItem.name) ||
-      (remoteItem.parentRemoteItemId && ignoredRemoteIds.has(remoteItem.parentRemoteItemId))
-    ) {
-      ignoredRemoteIds.add(remoteItem.remoteItemId)
-      continue
-    }
-    if (remoteItem.kind !== 'folder') continue
-    const parentId = remoteFolderToLocalId.get(remoteItem.parentRemoteItemId) ?? rootFolderId
-    const localFolderId = createSyncedFolderId(input.connection.id, remoteItem.remoteItemId)
-    const sortIndex = folderSortCounts.get(parentId) ?? 0
-    folderSortCounts.set(parentId, sortIndex + 1)
-    const folder: FolderRecord = {
-      id: localFolderId,
-      name: remoteItem.name,
-      parentId,
-      sortIndex,
-      createdAt: remoteItem.sourceCreatedAt ?? now,
-      expiresAt: null,
-      syncLink: {
+  const plan = buildSyncRefreshPlan({
+    providerConnectionId: input.connection.id,
+    providerType: 'local-fs',
+    rootFolder,
+    rootRemoteFolderId: '.',
+    offlinePolicy: 'always-offline',
+    platform: input.platform,
+    existingFolders: [],
+    existingItems: [],
+    existingEntries: [],
+    remoteItems: input.remoteItems,
+    now
+  })
+  return {
+    rootFolder,
+    folders: [rootFolder, ...plan.folders],
+    items: plan.items,
+    fileImports: plan.fileTransfers,
+    syncEntries: [
+      {
         providerConnectionId: input.connection.id,
-        remoteFolderId: remoteItem.remoteItemId,
-        providerType: 'local-fs',
-        offlinePolicy: 'always-offline'
-      }
-    }
-    folders.push(folder)
-    remoteFolderToLocalId.set(remoteItem.remoteItemId, localFolderId)
-    syncEntries.push({
-      providerConnectionId: input.connection.id,
-      remoteItemId: remoteItem.remoteItemId,
-      parentRemoteItemId: remoteItem.parentRemoteItemId,
-      kind: 'folder',
-      name: remoteItem.name,
-      folderId: localFolderId,
-      status: 'available-offline'
-    })
-  }
-
-  for (const remoteItem of input.remoteItems) {
-    if (ignoredRemoteIds.has(remoteItem.remoteItemId)) continue
-    if (remoteItem.kind !== 'file') continue
-    const parentId = remoteFolderToLocalId.get(remoteItem.parentRemoteItemId) ?? rootFolderId
-    const policy = classifySyncRemoteFile(remoteItem, input.platform)
-    if (policy.skip) continue
-    const itemId = createSyncedItemId()
-    const sortIndex = itemSortCounts.get(parentId) ?? 0
-    itemSortCounts.set(parentId, sortIndex + 1)
-    const item: FileItemRecord = {
-      id: itemId,
-      parentId,
-      type: 'file',
-      sortIndex,
-      createdAt: remoteItem.sourceCreatedAt ?? now,
-      expiresAt: null,
-      name: remoteItem.name,
-      url: policy.disabled ? `unsupported:${itemId}` : `blob:${itemId}`,
-      size: remoteItem.size ?? 0,
-      mimeType: policy.mimeType
-    }
-    items.push(item)
-    if (policy.disabled) {
-      disabledCount++
-      syncEntries.push({
-        providerConnectionId: input.connection.id,
-        remoteItemId: remoteItem.remoteItemId,
-        parentRemoteItemId: remoteItem.parentRemoteItemId,
-        kind: 'file',
-        name: remoteItem.name,
-        itemId,
-        mimeType: policy.mimeType,
-        size: remoteItem.size,
-        etag: remoteItem.etag,
-        status: 'remote-only'
+        remoteItemId: '.',
+        parentRemoteItemId: null,
+        kind: 'folder',
+        name: input.connection.rootName,
+        folderId: rootFolder.id,
+        status: 'available-offline'
+      },
+      ...plan.syncEntries.map((entry) => {
+        if (entry.kind === 'folder') return entry
+        const { contentHash: _contentHash, ...localEntry } = entry
+        // Native copies complete before this initial plan is persisted.
+        return entry.status === 'queued'
+          ? { ...localEntry, blobId: entry.itemId, status: 'available-offline' as const }
+          : localEntry
       })
-      continue
-    }
-    fileImports.push({ itemId, remoteItemId: remoteItem.remoteItemId, mimeType: policy.mimeType })
-    syncEntries.push({
-      providerConnectionId: input.connection.id,
-      remoteItemId: remoteItem.remoteItemId,
-      parentRemoteItemId: remoteItem.parentRemoteItemId,
-      kind: 'file',
-      name: remoteItem.name,
-      itemId,
-      blobId: itemId,
-      mimeType: policy.mimeType,
-      size: remoteItem.size,
-      etag: remoteItem.etag,
-      status: 'available-offline'
-    })
+    ],
+    disabledCount: plan.disabledCount
   }
-
-  return { rootFolder, folders, items, fileImports, syncEntries, disabledCount }
 }
 
 async function saveImportedRecords(
@@ -332,12 +198,7 @@ export async function refreshImportedMediaAssets(
           if (typeof thumbnail === 'string') await saveThumbnail(blobId, thumbnail)
           else await saveThumbnailBlob(blobId, thumbnail)
           if ((await guard?.()) === false) return
-          const dataUrl = typeof thumbnail === 'string' ? thumbnail : URL.createObjectURL(thumbnail)
-          window.dispatchEvent(
-            new CustomEvent('hhc:thumbnail-ready', {
-              detail: { itemId: item.id, dataUrl }
-            })
-          )
+          notifyThumbnailReady(item.id, blobId)
         } finally {
           source.revoke()
         }

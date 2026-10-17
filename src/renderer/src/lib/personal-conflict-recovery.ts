@@ -1,11 +1,8 @@
 import type { PresentationSessionRegistry } from '@renderer/contexts/PresentationSessionRegistryContext'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
 import {
-  copyExplorerFolder,
-  copyExplorerFile,
-  FILE_EXPLORER_ROOT_ID,
-  refreshPersonalCatalog,
-  useFileExplorerStore
+  createLocalRecoveryEntryBackup,
+  refreshPersonalCatalog
 } from '@renderer/stores/file-explorer'
 import { acceptPersonalCloudVersion, getPersonalConflictScope } from './personal-sync-conflicts'
 import {
@@ -82,10 +79,7 @@ export async function resolvePersonalCloudConflict({
     if (backup) {
       for (const id of scope.rootIds) {
         controller.signal.throwIfAborted()
-        const catalog = useFileExplorerStore.getState()
-        if (catalog.folders[id])
-          await copyExplorerFolder(id, FILE_EXPLORER_ROOT_ID, { includeDeleted: true })
-        else if (!(await copyExplorerFile(id, FILE_EXPLORER_ROOT_ID)))
+        if (!(await createLocalRecoveryEntryBackup(ownerId, id, controller.signal)))
           throw new Error(errors.backupFailed)
       }
     }
