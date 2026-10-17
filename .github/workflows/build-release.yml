@@ -28,6 +28,9 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Dependency security audit
+        run: npm audit --audit-level=low
+
       - name: Lint
         run: npm run lint
 

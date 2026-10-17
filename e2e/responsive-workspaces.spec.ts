@@ -80,7 +80,7 @@ async function expectEffectiveHandleTarget(
       viewport.scrollTop += rect.bottom - viewportRect.bottom + inset
     }
     await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(resolve))
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
     )
   })
   const effective = await handle.evaluate((element) => {
@@ -156,7 +156,9 @@ async function setEditorZoom(
     }, zoomPercent)
     await slider.evaluate(
       () =>
-        new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        )
     )
     await expect(slider).toHaveValue(zoomPercent)
     await expect(value).toHaveText(`${zoomPercent}%`)
@@ -536,7 +538,9 @@ test('keeps the editable presentation stage primary at the 900px breakpoint', as
   await textBox.pressSequentially('Supercalifragilisticexpialidocious')
   await textBox.evaluate(
     () =>
-      new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      )
   )
   const textMetrics = await textBox.evaluate((element) => {
     const style = getComputedStyle(element)

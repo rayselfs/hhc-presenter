@@ -1,3 +1,4 @@
+vi.mock('../../lib/native-storage', () => ({ getNativeFilePath: vi.fn(() => '/media/source') }))
 import { EventEmitter } from 'node:events'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -145,9 +146,7 @@ vi.mock('../../video-engine-runtime', () => ({
   resolveVlcRuntime: vi.fn(() => ({ status: 'ready', path: '/vlc' }))
 }))
 
-vi.mock('../../ipc/native-fs', () => ({
-  getNativeFilePath: vi.fn(() => '/media/source')
-}))
+vi.mock('../../ipc/native-fs', () => ({}))
 
 import { ipcMain, BrowserWindow } from 'electron'
 import * as electronVlcPlayer from 'electron-vlc-player'
@@ -198,6 +197,137 @@ beforeEach(() => {
 })
 
 describe('projection-vlc listener cleanup', () => {
+  it('rebinds matching VLC content without restarting and leaves queued reports unchanged', async () => {
+    const { updateVlcContentRevision } = await import('../../ipc/projection-vlc')
+    const sourceFileId = '550e8400-e29b-41d4-a716-446655440000'
+    const derivative = deferred<string>()
+    mockResolveVideoPlaybackPath.mockReturnValueOnce(derivative.promise)
+    const starting = getHandler('projection-vlc:start')(makeEvent(), {
+      itemId: 'same-item',
+      sourceFileId,
+      contentRevision: 1,
+      attemptId: 'same-attempt',
+      container: '#vlc-player'
+    }) as Promise<void>
+    await vi.waitFor(() => expect(mockResolveVideoPlaybackPath).toHaveBeenCalledOnce())
+    const oldReport = mockWindowManager.sendToMain.mock.calls.find(
+      (call) => call[2] === 'file:playback-state'
+    )![3]
+    expect(oldReport).toMatchObject({
+      blobId: sourceFileId,
+      contentRevision: 1,
+      phase: 'preparing'
+    })
+    const show = {
+      itemId: 'same-item',
+      blobId: sourceFileId,
+      contentRevision: 2,
+      fileName: 'same.mp4',
+      mimeType: 'video/mp4',
+      playlist: [],
+      currentIndex: 0,
+      playbackMode: 'vlc-embedded' as const
+    }
+    updateVlcContentRevision(mockWindowManager as unknown as WindowManager, 4, show)
+    const publishPhase = mockResolveVideoPlaybackPath.mock.calls[0][2] as (phase: 'remux') => void
+    publishPhase('remux')
+    expect(mockWindowManager.sendToMain).toHaveBeenLastCalledWith(
+      'projection:message',
+      4,
+      'file:playback-state',
+      expect.objectContaining({ blobId: sourceFileId, contentRevision: 2 })
+    )
+    expect(oldReport).toMatchObject({ contentRevision: 1 })
+    derivative.resolve('/native-files/same.mp4')
+    await starting
+    const player = mockVlcPlayers[0]
+    player.emit('playing')
+    player.emit('paused')
+    const transportCalls = player.play.mock.calls.length + player.pause.mock.calls.length
+    for (const [generation, next] of [
+      [3, { ...show, contentRevision: 3 }],
+      [4, { ...show, contentRevision: 3, blobId: 'other-blob' }],
+      [4, { ...show, contentRevision: 3, itemId: 'other-item' }],
+      [4, { ...show, contentRevision: 3, playbackVariant: 'matroska-remux' as const }],
+      [4, { ...show, contentRevision: 3, playbackMode: 'native' as const }],
+      [4, { ...show, contentRevision: 1 }]
+    ] as const) {
+      updateVlcContentRevision(mockWindowManager as unknown as WindowManager, generation, next)
+      player.emit('paused')
+      expect(mockWindowManager.sendToMain).toHaveBeenLastCalledWith(
+        'projection:message',
+        4,
+        'file:playback-state',
+        expect.objectContaining({ blobId: sourceFileId, contentRevision: 2 })
+      )
+    }
+    expect(mockVlcPlayers).toHaveLength(1)
+    expect(player.setSource).toHaveBeenCalledOnce()
+    expect(player.destroy).not.toHaveBeenCalled()
+    expect(player.play.mock.calls.length + player.pause.mock.calls.length).toBe(transportCalls)
+  })
+
+  it.each(['renewal', 'different-source', 'end'] as const)(
+    'handles authoritative %s before a delayed native start reaches main',
+    async (change) => {
+      const { updateVlcContentRevision } = await import('../../ipc/projection-vlc')
+      const sourceFileId = '550e8400-e29b-41d4-a716-446655440000'
+      const show = {
+        itemId: 'same-item',
+        blobId: sourceFileId,
+        contentRevision: 2,
+        fileName: 'same.mp4',
+        mimeType: 'video/mp4',
+        playlist: [],
+        currentIndex: 0,
+        playbackMode: 'vlc-embedded' as const
+      }
+      updateVlcContentRevision(
+        mockWindowManager as unknown as WindowManager,
+        4,
+        change === 'end'
+          ? null
+          : change === 'different-source'
+            ? { ...show, blobId: 'new-blob' }
+            : show
+      )
+      await getHandler('projection-vlc:start')(makeEvent(), {
+        itemId: 'same-item',
+        sourceFileId,
+        contentRevision: 1,
+        attemptId: 'same-attempt',
+        container: '#vlc-player'
+      })
+      if (change !== 'renewal') {
+        expect(mockVlcPlayers).toHaveLength(0)
+        expect(mockResolveVideoPlaybackPath).not.toHaveBeenCalled()
+      } else {
+        expect(mockVlcPlayers).toHaveLength(1)
+        const reports = mockWindowManager.sendToMain.mock.calls.filter(
+          (call) => call[2] === 'file:playback-state'
+        )
+        expect(reports.length).toBeGreaterThan(0)
+        for (const report of reports)
+          expect(report[3]).toMatchObject({ blobId: sourceFileId, contentRevision: 2 })
+      }
+    }
+  )
+
+  it.each([0, -1, 1.5, NaN, Infinity, '2'])(
+    'rejects invalid VLC content revision %s',
+    async (contentRevision) => {
+      await expect(
+        getHandler('projection-vlc:start')(makeEvent(), {
+          itemId: 'item',
+          sourceFileId: '550e8400-e29b-41d4-a716-446655440000',
+          container: '#vlc-player',
+          contentRevision
+        })
+      ).rejects.toThrow('Invalid VLC start request')
+      expect(mockVlcPlayers).toHaveLength(0)
+    }
+  )
+
   it('allows live frame reads only from the main window and rejects stale completions', async () => {
     const preview = getHandler('projection-vlc:preview')
     vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockProjectionWindow as never)

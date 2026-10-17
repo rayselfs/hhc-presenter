@@ -19,10 +19,8 @@ import { registerVideoPosterHandlers } from './ipc/video-poster'
 import { cleanupStaleVideoRemuxTemps } from './ipc/video-remux'
 import { registerLocalSyncHandlers } from './ipc/local-sync'
 import { registerLanRemoteIpc } from './ipc/lan-remote'
-import {
-  handleOneDriveAuthCallbackUrl,
-  registerOneDriveCredentialHandlers
-} from './ipc/onedrive-credentials'
+import { registerOneDriveCredentialHandlers } from './ipc/onedrive-credentials'
+import { createOneDriveService } from './onedrive-service'
 import { registerOneDriveDownloadHandlers } from './ipc/onedrive-download'
 import { isKnownWindow, validateTheme } from './ipc/validate'
 import { registerUpdateService } from './updateService'
@@ -57,6 +55,8 @@ process.on('unhandledRejection', (reason) => {
 
 const wm = WindowManager.getInstance()
 const hhcAuthService = createHhcAuthService()
+const oneDriveService = createOneDriveService()
+app.on('will-quit', () => oneDriveService.dispose())
 let nativeMediaLeasesCleared = false
 let nativeMediaLeaseCleanupPending = false
 const protocolDispatcher = createHhcPresenterProtocolDispatcher({
@@ -67,7 +67,7 @@ const protocolDispatcher = createHhcPresenterProtocolDispatcher({
     void hhcAuthService.completeProtocolCallback(action).catch(() => undefined)
   },
   onOneDriveAuth: (url) => {
-    handleOneDriveAuthCallbackUrl(url, wm)
+    oneDriveService.handleAuthCallbackUrl(url, wm)
   }
 })
 
@@ -127,7 +127,7 @@ if (gotSingleInstanceLock) {
     registerProjectionHandlers(wm)
     registerTimerHandlers(wm)
     registerBibleApiHandlers(wm)
-    registerAppIpc(wm, hhcAuthService)
+    registerAppIpc(wm, hhcAuthService, oneDriveService)
     registerLocalModelProtocol()
     registerSpeechKeyStorageHandlers(wm)
     registerNativeFsHandlers(wm)
@@ -135,7 +135,7 @@ if (gotSingleInstanceLock) {
     registerVideoPosterHandlers(wm)
     registerLocalSyncHandlers(wm)
     registerLanRemoteIpc(wm)
-    registerOneDriveCredentialHandlers(wm)
+    registerOneDriveCredentialHandlers(wm, oneDriveService)
     registerHhcAuthIpc(wm, hhcAuthService)
     registerHhcAssetHandlers(wm, hhcAuthService)
     registerPersonalCloudHandlers(wm, hhcAuthService)

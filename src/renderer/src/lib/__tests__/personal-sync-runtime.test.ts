@@ -290,3 +290,40 @@ it('verifies existing immutable staging after losing the PUT response', async ()
   expect(api.createUpload).toHaveBeenCalledTimes(1)
   expect(await listPersonalOutbox('alice')).toEqual([])
 })
+
+it('rolls back a reviewed conflict accept when cancellation arrives after staged writes', async () => {
+  api.mutate.mockRejectedValue(new PersonalCloudHttpError(409, 'AST_CONFLICT'))
+  await run()
+  const scope = await getPersonalConflictScope('alice')
+  if (!scope) throw new Error('Missing test conflict')
+  const db = await openFileExplorerDB()
+  const before = {
+    outbox: await listPersonalOutbox('alice'),
+    item: await db.get('folder-items', 'file'),
+    node: await db.get('personal-sync-nodes', 'file'),
+    blob: await db.get('file-blobs', 'snapshot')
+  }
+  const controller = new AbortController()
+  const originalDelete = IDBObjectStore.prototype.delete
+  const stagedDelete = vi.spyOn(IDBObjectStore.prototype, 'delete').mockImplementation(function (
+    this: IDBObjectStore,
+    query: IDBValidKey | IDBKeyRange
+  ): IDBRequest<undefined> {
+    const request = originalDelete.call(this, query)
+    if (this.name === 'personal-sync-outbox')
+      request.addEventListener('success', () => controller.abort(), { once: true })
+    return request
+  })
+  try {
+    await expect(
+      acceptPersonalCloudVersion('alice', 'worker', scope, controller.signal)
+    ).rejects.toThrow()
+    expect(controller.signal.aborted).toBe(true)
+  } finally {
+    stagedDelete.mockRestore()
+  }
+  expect(await listPersonalOutbox('alice')).toEqual(before.outbox)
+  expect(await db.get('folder-items', 'file')).toEqual(before.item)
+  expect(await db.get('personal-sync-nodes', 'file')).toEqual(before.node)
+  expect(await db.get('file-blobs', 'snapshot')).toEqual(before.blob)
+})

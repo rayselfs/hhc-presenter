@@ -114,7 +114,6 @@ export async function generateThumbnail(
     return null
   } catch (error) {
     if (isCanvasSecurityError(error)) return null
-    console.error('Failed to generate thumbnail', error)
-    return null
+    throw error
   }
 }

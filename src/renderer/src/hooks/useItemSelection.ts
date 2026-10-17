@@ -12,8 +12,8 @@ export interface UseItemSelectionReturn {
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>
   lastSelectedId: string | null
   clearSelection: () => void
-  selectAll: () => void
-  handleItemClick: (itemId: string, event: React.MouseEvent) => void
+  selectAll: (orderedIds?: string[]) => void
+  handleItemClick: (itemId: string, event: React.MouseEvent, orderedIds?: string[]) => void
   handleContainerClick: (event: React.MouseEvent) => void
   handleContainerMouseDown: (e: React.MouseEvent) => void
   rubberBandRect: RubberBandRect | null
@@ -21,7 +21,9 @@ export interface UseItemSelectionReturn {
   justRubberBandedRef: React.MutableRefObject<boolean>
 }
 
-export function useItemSelection(allIds: string[]): UseItemSelectionReturn {
+const EMPTY_IDS: string[] = []
+
+export function useItemSelection(allIds: string[] = EMPTY_IDS): UseItemSelectionReturn {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null)
   const [rubberBandRect, setRubberBandRect] = useState<RubberBandRect | null>(null)
@@ -33,21 +35,24 @@ export function useItemSelection(allIds: string[]): UseItemSelectionReturn {
     setLastSelectedId(null)
   }, [])
 
-  const selectAll = useCallback((): void => {
-    setSelectedIds(new Set(allIds))
-  }, [allIds])
+  const selectAll = useCallback(
+    (orderedIds = allIds): void => {
+      setSelectedIds(new Set(orderedIds))
+    },
+    [allIds]
+  )
 
   const handleItemClick = useCallback(
-    (itemId: string, event: React.MouseEvent): void => {
+    (itemId: string, event: React.MouseEvent, orderedIds = allIds): void => {
       event.stopPropagation()
 
       if (event.shiftKey && lastSelectedId) {
-        const lastIndex = allIds.indexOf(lastSelectedId)
-        const currentIndex = allIds.indexOf(itemId)
+        const lastIndex = orderedIds.indexOf(lastSelectedId)
+        const currentIndex = orderedIds.indexOf(itemId)
         if (lastIndex !== -1 && currentIndex !== -1) {
           const start = Math.min(lastIndex, currentIndex)
           const end = Math.max(lastIndex, currentIndex)
-          setSelectedIds(new Set(allIds.slice(start, end + 1)))
+          setSelectedIds(new Set(orderedIds.slice(start, end + 1)))
           return
         }
       }
