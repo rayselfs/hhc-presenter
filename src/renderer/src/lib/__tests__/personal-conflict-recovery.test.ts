@@ -26,9 +26,10 @@ vi.mock('../personal-sync-db', () => ({
 vi.mock('../personal-sync-runtime', () => ({ requestPersonalSync: mocks.request }))
 vi.mock('@renderer/stores/file-explorer', () => ({
   FILE_EXPLORER_ROOT_ID: 'file-root',
+  copyExplorerFile: mocks.copy,
   copyExplorerFolder: vi.fn(),
   refreshPersonalCatalog: mocks.refresh,
-  useFileExplorerStore: { getState: () => ({ folders: {}, copyItem: mocks.copy }) }
+  useFileExplorerStore: { getState: () => ({ folders: {} }) }
 }))
 
 const scope: PersonalConflictScope = {
