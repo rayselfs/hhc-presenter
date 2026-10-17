@@ -1,23 +1,20 @@
-import { _electron as electron, expect, test } from '@playwright/test'
+import { expect, test, type ElectronApplication } from '@playwright/test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { completeOnboarding } from './helpers'
+import { closePackaged, launchPackaged } from './helpers/packaged-app'
 
 test('Electron restores an unavailable account through the retry action', async ({
-  browserName
-}) => {
-  test.skip(browserName !== 'chromium', 'Electron uses Chromium')
-  const executablePath = process.env.HHC_ELECTRON_EXECUTABLE
-  test.skip(!executablePath, 'Set HHC_ELECTRON_EXECUTABLE to run the built desktop app')
+  browserName: _browserName
+}, testInfo) => {
+  const executablePath = process.env.PACKAGED_APP_PATH
+  if (!executablePath) throw new Error('PACKAGED_APP_PATH is required')
   const userDataPath = await mkdtemp(join(tmpdir(), 'hhc-auth-recovery-'))
-  const app = await electron.launch({
-    executablePath,
-    args: [resolve('out/main/index.js'), `--user-data-dir=${userDataPath}`]
-  })
+  let app: ElectronApplication | undefined
   try {
-    const page = await app.firstWindow()
-    await completeOnboarding(page)
+    const launched = await launchPackaged(resolve(executablePath), userDataPath)
+    app = launched.app
+    const page = launched.control
     await app.evaluate(({ ipcMain }) => {
       let attempts = 0
       ipcMain.removeHandler('hhc-auth:get-session')
@@ -38,7 +35,7 @@ test('Electron restores an unavailable account through the retry action', async 
     await expect(
       page.getByText(/Account unavailable|帳號服務無法使用|帐号服务不可用/).last()
     ).toBeVisible()
-    await page.screenshot({ path: '/tmp/hhc-auth-unavailable.png' })
+    await page.screenshot({ path: testInfo.outputPath('auth-unavailable.png') })
     await page.getByRole('menuitem', { name: /Retry connection|重試連線|重试连接/ }).click()
     await expect(page.getByRole('button', { name: /Recovery Test/ })).toBeVisible()
     await page.getByRole('button', { name: /Recovery Test/ }).click()
@@ -47,9 +44,10 @@ test('Electron restores an unavailable account through the retry action', async 
       page.getByRole('button', { name: /Account menu for Guest|訪客|访客/ }).first()
     ).toBeVisible()
   } finally {
-    const exited = new Promise<void>((resolve) => app.process().once('exit', () => resolve()))
-    await app.evaluate(({ app }) => app.exit(0)).catch(() => undefined)
-    await exited
-    await rm(userDataPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+    try {
+      if (app) await closePackaged(app)
+    } finally {
+      await rm(userDataPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
+    }
   }
 })

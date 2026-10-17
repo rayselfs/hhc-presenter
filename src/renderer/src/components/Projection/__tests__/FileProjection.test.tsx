@@ -1,3 +1,4 @@
+import { StrictMode } from 'react'
 import { act, fireEvent, render, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import FileProjection from '../FileProjection'
@@ -413,6 +414,37 @@ describe('FileProjection copied media identity', () => {
     const attemptId = vi.mocked(window.api.projectionVlc.start).mock.calls[0][0].attemptId
     unmount()
     expect(mockProjectionVlcStop).toHaveBeenCalledWith({ itemId: 'video-id', attemptId })
+  })
+
+  it('pairs each VLC attempt cleanup through root StrictMode', async () => {
+    const { unmount } = render(
+      <StrictMode>
+        <FileProjection
+          initialItemId="video-id"
+          initialBlobId="video-blob"
+          initialMimeType="video/x-matroska"
+          initialPlaybackMode="vlc-embedded"
+        />
+      </StrictMode>
+    )
+    await waitFor(() => expect(window.api.projectionVlc.start).toHaveBeenCalledTimes(2))
+    const [first, second] = vi
+      .mocked(window.api.projectionVlc.start)
+      .mock.calls.map(([request]) => request)
+    expect(first.attemptId).not.toBe(second.attemptId)
+    expect(mockProjectionVlcStop).toHaveBeenCalledWith({
+      itemId: first.itemId,
+      attemptId: first.attemptId
+    })
+    expect(mockProjectionVlcStop).not.toHaveBeenCalledWith({
+      itemId: second.itemId,
+      attemptId: second.attemptId
+    })
+    unmount()
+    expect(mockProjectionVlcStop).toHaveBeenCalledWith({
+      itemId: second.itemId,
+      attemptId: second.attemptId
+    })
   })
 
   it('does not restart a mounted VLC surface when terminal replay arrives', async () => {
@@ -1663,5 +1695,72 @@ describe('FileProjection copied media identity', () => {
 
     unmount()
     expect(resizeObserverDisconnect).toHaveBeenCalledOnce()
+  })
+
+  it('installs one PDF document through root StrictMode and disposes it on final unmount', async () => {
+    const { pdf } = mockPdf(1)
+    const { container, unmount } = render(
+      <StrictMode>
+        <FileProjection
+          initialItemId="pdf-id"
+          initialBlobId="pdf-blob"
+          initialMimeType="application/pdf"
+        />
+      </StrictMode>
+    )
+    await waitFor(() => expect(container.querySelector('canvas')).not.toBeNull())
+    expect(pdf.loadingTask.destroy).not.toHaveBeenCalled()
+    expect(pdf.getPage).toHaveBeenCalledTimes(1)
+    unmount()
+    expect(pdf.loadingTask.destroy).toHaveBeenCalledOnce()
+  })
+
+  it('revokes late preview URLs from an old source without revoking the installed previews', async () => {
+    const oldPdf = mockPdf(1).pdf
+    const newPdf = mockPdf(1).pdf
+    mockLoadPdfjsLib.mockResolvedValue({
+      getDocument: vi
+        .fn()
+        .mockReturnValueOnce({ promise: Promise.resolve(oldPdf) })
+        .mockReturnValue({ promise: Promise.resolve(newPdf) })
+    })
+    let finish!: (urls: string[]) => void
+    const latePreviews = new Promise<string[]>((resolve) => {
+      finish = resolve
+    })
+    mockGetPdfPageThumbs.mockReturnValueOnce(latePreviews).mockResolvedValue(['blob:new-preview'])
+    const descriptor = Object.getOwnPropertyDescriptor(URL, 'revokeObjectURL')
+    const revoke = vi.fn()
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revoke })
+    const { container, rerender, unmount } = render(
+      <FileProjection
+        initialItemId="pdf-id"
+        initialBlobId="old-blob"
+        initialMimeType="application/pdf"
+      />
+    )
+    try {
+      await waitFor(() => expect(container.querySelector('canvas')).not.toBeNull())
+      rerender(
+        <FileProjection
+          initialItemId="pdf-id"
+          initialBlobId="new-blob"
+          initialMimeType="application/pdf"
+        />
+      )
+      await waitFor(() => expect(newPdf.getPage).toHaveBeenCalled())
+      await act(async () => {
+        finish(['blob:old-preview'])
+        await latePreviews
+      })
+      expect(revoke).toHaveBeenCalledWith('blob:old-preview')
+      expect(revoke).not.toHaveBeenCalledWith('blob:new-preview')
+      unmount()
+      expect(revoke.mock.calls).toEqual([['blob:old-preview'], ['blob:new-preview']])
+    } finally {
+      unmount()
+      if (descriptor) Object.defineProperty(URL, 'revokeObjectURL', descriptor)
+      else Reflect.deleteProperty(URL, 'revokeObjectURL')
+    }
   })
 })
