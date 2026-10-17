@@ -1,3 +1,5 @@
+import { act, renderHook } from '@testing-library/react'
+import { useSpeechSession } from '@renderer/hooks/useSpeechSession'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { Blob as NodeBlob } from 'node:buffer'
 import { GcpSpeechAdapter } from '../providers/gcp-speech-adapter'
@@ -246,3 +248,42 @@ it('does not revive Web Speech when a pending native start arrives after disposa
   expect(started).not.toHaveBeenCalled()
   expect(limit).not.toHaveBeenCalled()
 })
+
+it.each([
+  ['gcp', 'error'],
+  ['gcp', 'deadline'],
+  ['web', 'error'],
+  ['web', 'deadline']
+] as const)(
+  'keeps the actual %s provider terminal reason after %s cleanup',
+  async (provider, terminal) => {
+    const adapter =
+      provider === 'gcp'
+        ? new GcpSpeechAdapter({ language: 'cmn-Hant-TW', maxSessionMs: 1000 })
+        : new WebSpeechAdapter({ language: 'zh-TW', maxSessionMs: 1000 })
+    const hook = renderHook(() =>
+      useSpeechSession({
+        createAdapter: async () => adapter,
+        requiresOnline: false,
+        maxSessionMs: 60000,
+        onRecognized: vi.fn(),
+        onRawRecognized: vi.fn()
+      })
+    )
+    try {
+      await act(async () => {
+        await hook.result.current.start()
+      })
+      await act(async () => {
+        if (terminal === 'deadline') await vi.advanceTimersByTimeAsync(1000)
+        else if (provider === 'gcp') Recorder.latest.onerror?.(new Event('error'))
+        else Recognition.latest.onerror?.({ error: 'not-allowed' })
+      })
+      expect(hook.result.current.error).toBe(terminal === 'error' ? 'start-failed' : 'max-duration')
+      expect(hook.result.current.isRecognizing).toBe(false)
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      hook.unmount()
+    }
+  }
+)

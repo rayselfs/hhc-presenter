@@ -12,6 +12,39 @@ describe('PPTX render completion', () => {
     read.mockReset()
   })
 
+  it('keeps only the live viewer after root StrictMode recreation', async () => {
+    read.mockResolvedValue(new ArrayBuffer(0))
+    const destroy = vi.fn()
+    open.mockResolvedValue({
+      viewer: { renderSlide: vi.fn().mockResolvedValue(undefined) },
+      slideCount: 1,
+      slideWidth: 100,
+      slideHeight: 50,
+      destroy
+    })
+    const onReady = vi.fn()
+    const { unmount } = render(
+      <PptxSlideSurface
+        source={{ id: 'deck', url: 'blob:deck', mimeType: 'application/pptx' }}
+        slideIndex={0}
+        onReady={onReady}
+      />,
+      { reactStrictMode: true }
+    )
+    await waitFor(() => expect(onReady).toHaveBeenCalledOnce())
+    expect(open).toHaveBeenCalledOnce()
+    const target = open.mock.calls[0][1] as HTMLElement
+    const signal = open.mock.calls[0][2].signal as AbortSignal
+    expect(target.isConnected).toBe(true)
+    expect(target.parentElement?.childElementCount).toBe(1)
+    expect(signal.aborted).toBe(false)
+    expect(destroy).not.toHaveBeenCalled()
+    unmount()
+    expect(signal.aborted).toBe(true)
+    expect(target.isConnected).toBe(false)
+    expect(destroy).toHaveBeenCalledOnce()
+  })
+
   it('reuses a healthy viewer for slide progression and same-slide revisions', async () => {
     read.mockResolvedValue(new ArrayBuffer(0))
     const renderSlide = vi.fn().mockResolvedValue(undefined)

@@ -10,7 +10,7 @@
     "lint": "eslint --cache .",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
-    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web && npm run typecheck:e2e",
     "start": "electron-vite preview",
     "predev": "npm run prepare:video-engine",
     "dev": "node scripts/dev.mjs",
@@ -36,7 +36,8 @@
     "test:e2e": "npm run build && npm run test:e2e:browser",
     "test:e2e:browser": "playwright test --project=chromium",
     "test:e2e:packaged": "playwright test --config playwright.electron.config.ts",
-    "rebuild:vlc": "node scripts/patch-vlc-projection-runtime.mjs && electron-rebuild -f -w electron-vlc-player --build-from-source"
+    "rebuild:vlc": "node scripts/patch-vlc-projection-runtime.mjs && electron-rebuild -f -w electron-vlc-player --build-from-source",
+    "typecheck:e2e": "tsc --noEmit -p tsconfig.e2e.json"
   },
   "dependencies": {
     "@aiden0z/pptx-renderer": "^1.2.4",

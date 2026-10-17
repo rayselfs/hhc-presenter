@@ -20,8 +20,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   useTimerStore.setState({
     ...DEFAULT_SETTINGS,
-    ...DEFAULT_STATE,
-    targetEndTime: null
+    ...DEFAULT_STATE
   })
   vi.mocked(useNavigate).mockReturnValue(mockNavigate)
 })

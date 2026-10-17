@@ -14,7 +14,8 @@ import {
 } from '@renderer/lib/editable-presentation'
 import { isEditablePresentationMimeType } from '@renderer/lib/presentation-media'
 import { readPresentationArrayBuffer } from '@renderer/lib/presentation-source'
-import { openPptxViewer, type PptxViewerHandle } from '@renderer/lib/pptx-renderer-service'
+import type { PptxViewerHandle } from '@renderer/lib/pptx-renderer-service'
+import { createPptxViewerLifetime } from '@renderer/lib/pptx-viewer-lifetime'
 import {
   resolveMediaProjectionAction,
   useMediaProjectionStore
@@ -50,37 +51,34 @@ export default function PresentationGrid({ item }: { item: FileItemRecord }): Re
 
   useEffect(() => {
     if (session && isEditablePresentationMimeType(item.mimeType)) return
-    let cancelled = false
-    let opened: PptxViewerHandle | undefined
-    const controller = new AbortController()
+    const container = viewerHost.current
+    if (!container) return
+    const lifetime = createPptxViewerLifetime(container, 'h-full w-full')
     async function load(): Promise<void> {
       await Promise.resolve()
-      if (cancelled) return
+      if (lifetime.isDisposed()) return
       setError(null)
       setViewer(null)
       try {
         if (isEditablePresentationMimeType(item.mimeType)) {
           const loaded = await loadEditablePresentation(item)
-          if (!cancelled) setStoredDocument(loaded)
+          if (!lifetime.isDisposed()) setStoredDocument(loaded)
           return
         }
-        if (!viewerHost.current) return
         const buffer = await readPresentationArrayBuffer(
           remoteSource ? { ...item, url: remoteSource } : item
         )
-        if (cancelled) return
-        opened = await openPptxViewer(buffer, viewerHost.current, { signal: controller.signal })
-        if (cancelled) opened.destroy()
-        else setViewer(opened)
+        if (lifetime.isDisposed()) return
+        const opened = await lifetime.open(buffer)
+        if (opened && !lifetime.isDisposed()) setViewer(opened)
       } catch (failure) {
-        if (!cancelled) setError(failure instanceof Error ? failure.message : String(failure))
+        if (!lifetime.isDisposed())
+          setError(failure instanceof Error ? failure.message : String(failure))
       }
     }
     void load()
     return () => {
-      cancelled = true
-      controller.abort()
-      opened?.destroy()
+      lifetime.dispose()
     }
   }, [item, remoteSource, session])
 

@@ -7,7 +7,6 @@ import { getPresentationItem } from '@renderer/lib/presentation-drafts'
 import React, {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -41,10 +40,9 @@ import { Button } from '@heroui/react/button'
 import { Spinner } from '@heroui/react/spinner'
 import { toast } from '@heroui/react/toast'
 import { SHORTCUTS } from '@renderer/config/shortcuts'
-import EditableSlideSurface, {
-  type TextEditFinalizer,
-  type EditableTextSelection
-} from '@renderer/components/Common/EditableSlideSurface'
+import EditableSlideSurface from '@renderer/components/Common/EditableSlideSurface'
+import type { EditableTextSelection } from '@renderer/types/presentation-text'
+import PresentationSlideNavigator from '@renderer/components/Control/Presentation/PresentationSlideNavigator'
 import PresentationHomeRibbon from '@renderer/components/Control/Presentation/PresentationHomeRibbon'
 import {
   InspectorPanel,
@@ -68,7 +66,6 @@ import {
   DEFAULT_GRADIENT_BACKGROUND,
   duplicateElementInSlide,
   getSlideBackgroundPrimaryColor,
-  getSlideBackgroundOutline,
   INSERTED_TEXT_CLICK_SIZE,
   INSERTED_TEXT_DRAG_MIN_SIZE,
   INSERTED_TEXT_FONT_SIZE_POINTS,
@@ -101,7 +98,6 @@ import {
 } from '@renderer/lib/presentation-rich-text'
 import type { HhcLineCloudAuth } from '@renderer/lib/cloud-provider'
 import { prepareHhcLinePresentationSource } from '@renderer/lib/hhc-line-connect'
-import { isMac } from '@renderer/lib/env'
 import {
   alignElements,
   distributeElements,
@@ -120,10 +116,14 @@ import {
   supportsLocalFontAccess
 } from '@renderer/lib/local-fonts'
 import { useSettingsStore } from '@renderer/stores/settings'
+import { usePresentationTextTransactions } from '@renderer/hooks/usePresentationTextTransactions'
 import { usePresentationSessionRegistry } from '@renderer/contexts/PresentationSessionRegistryContext'
 import type { PresentationEditorSession } from '@renderer/lib/presentation-editor-session'
 import { ensurePresentationPageDocument } from '@renderer/lib/presentation-page-document'
-import { calculateFitZoomPercent } from '@renderer/lib/presentation-viewport'
+import {
+  PRESENTATION_CANVAS_WIDTH,
+  usePresentationViewport
+} from '@renderer/hooks/usePresentationViewport'
 import {
   createSlideClipboard,
   cutSlides,
@@ -132,7 +132,8 @@ import {
 } from '@renderer/lib/presentation-slide-clipboard'
 import { useKeyboardShortcuts } from '@renderer/hooks/useKeyboardShortcuts'
 import { readPresentationArrayBuffer } from '@renderer/lib/presentation-source'
-import { openPptxViewer, type PptxViewerHandle } from '@renderer/lib/pptx-renderer-service'
+import type { PptxViewerHandle } from '@renderer/lib/pptx-renderer-service'
+import { createPptxViewerLifetime } from '@renderer/lib/pptx-viewer-lifetime'
 import { getPresentationWorkspacePath, isPresentationItem } from '@renderer/lib/presentation-media'
 import {
   usePresentationWorkspaceStore,
@@ -144,14 +145,11 @@ import { isFileItem, type FileItemRecord } from '@shared/types/folder'
 import type { SlideHandle } from '@aiden0z/pptx-renderer'
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'failed'
-type ZoomMode = 'fit' | 'custom'
 
 const FONT_FAMILIES = ['Inter Variable', 'Noto Sans TC Variable', 'Noto Sans SC Variable', 'Arial']
 const FONT_SIZES = [
   8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 54, 60, 66, 72, 80, 88, 96
 ]
-const PRESENTATION_CANVAS_WIDTH = 1024
-const PRESENTATION_VIEWPORT_PADDING = 64
 const NATIVE_CONTROL_CLASS =
   'presentation-native-control h-7 rounded-md border border-separator bg-surface-secondary px-2 text-sm text-foreground outline-none'
 const RANGE_CLASS = 'presentation-range w-full'
@@ -265,53 +263,6 @@ function SlideThumbnail({
   )
 }
 
-const EditableSlideThumbnail = React.memo(
-  function EditableSlideThumbnail({
-    document,
-    slideId
-  }: {
-    document: EditablePresentationDocument
-    slideId: string
-  }): React.JSX.Element {
-    const containerRef = useRef<HTMLDivElement>(null)
-    const [isVisible, setIsVisible] = useState(() => typeof IntersectionObserver === 'undefined')
-
-    useEffect(() => {
-      const container = containerRef.current
-      if (!container || isVisible) return
-      const observer = new IntersectionObserver(
-        (entries) => {
-          if (entries.some((entry) => entry.isIntersecting)) {
-            setIsVisible(true)
-            observer.disconnect()
-          }
-        },
-        { rootMargin: '160px 0px' }
-      )
-      observer.observe(container)
-      return () => observer.disconnect()
-    }, [isVisible])
-
-    return (
-      <div ref={containerRef} className="h-full w-full">
-        {isVisible && (
-          <EditableSlideSurface
-            document={document}
-            slideId={slideId}
-            className="pointer-events-none"
-          />
-        )}
-      </div>
-    )
-  },
-  (previous, next) =>
-    previous.slideId === next.slideId &&
-    previous.document.width === next.document.width &&
-    previous.document.height === next.document.height &&
-    previous.document.assets === next.document.assets &&
-    previous.document.slides[previous.slideId] === next.document.slides[next.slideId]
-)
-
 async function getPresentationSourceItem(itemId: string): Promise<FileItemRecord> {
   const storeItem = useFileExplorerStore.getState().items[itemId]
   if (storeItem && isFileItem(storeItem)) return storeItem
@@ -374,19 +325,15 @@ export function PptxDocumentView({
   const [isConverting, setIsConverting] = useState(false)
 
   useEffect(() => {
-    let cancelled = false
     const container = canvasRef.current
     if (!container) return
-    const target = document.createElement('div')
-    target.className = 'w-full'
-    container.replaceChildren(target)
-    const controller = new AbortController()
+    const lifetime = createPptxViewerLifetime(container, 'w-full')
     viewerRef.current?.destroy()
     viewerRef.current = null
 
     async function open(): Promise<void> {
       await Promise.resolve()
-      if (cancelled) return
+      if (lifetime.isDisposed()) return
       setViewer(null)
       setStatus('loading')
       setError(null)
@@ -397,15 +344,9 @@ export function PptxDocumentView({
           sourceItem,
           readPresentationArrayBuffer
         )
-        if (cancelled) return
-        const handle = await openPptxViewer(buffer, target, {
-          renderMode: 'slide',
-          signal: controller.signal
-        })
-        if (cancelled) {
-          handle.destroy()
-          return
-        }
+        if (lifetime.isDisposed()) return
+        const handle = await lifetime.open(buffer)
+        if (!handle || lifetime.isDisposed()) return
         viewerRef.current = handle
         setViewer(handle)
         setSlideCount(deckItemId, handle.slideCount)
@@ -421,7 +362,7 @@ export function PptxDocumentView({
         ).catch(() => undefined)
         setStatus('ready')
       } catch (loadError) {
-        if (cancelled) return
+        if (lifetime.isDisposed()) return
         setStatus('failed')
         setError(loadError instanceof Error ? loadError.message : String(loadError))
       }
@@ -429,10 +370,7 @@ export function PptxDocumentView({
 
     void open()
     return () => {
-      cancelled = true
-      controller.abort()
-      target.remove()
-      viewerRef.current?.destroy()
+      lifetime.dispose()
       viewerRef.current = null
     }
   }, [deckItemId, deckUrl, hhcAuth, setActiveSlideId, setSlideCount])
@@ -645,20 +583,7 @@ function EditableSessionDocumentView({
       : Math.min(lastActiveSlideIndex, Math.max(0, document.slideOrder.length - 1))
   const activeSlideId = document.slideOrder[activeSlideIndex] ?? null
   const imageInputRef = useRef<HTMLInputElement>(null)
-  const canvasViewportRef = useRef<HTMLDivElement>(null)
-  const canvasRef = useRef<HTMLDivElement>(null)
-  const textDraftStartedAtRef = useRef<number | null>(null)
-  const textCommitTimerRef = useRef<number | null>(null)
-  const textEditorFinalizerRef = useRef<TextEditFinalizer | null>(null)
-  const pendingZoomAnchorRef = useRef<{
-    clientX: number
-    clientY: number
-    logicalX: number
-    logicalY: number
-    nextZoom: number
-  } | null>(null)
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
-  const newEmptyTextRef = useRef<string | null>(null)
   const [selectedElementIds, setSelectedElementIds] = useState<Set<string>>(() => new Set())
   const [copiedElement, setCopiedElement] = useState<EditablePresentationElement | null>(null)
   const [selectedSlideIds, setSelectedSlideIds] = useState<Set<string>>(() => new Set())
@@ -678,19 +603,8 @@ function EditableSessionDocumentView({
   const hasRequestedLocalFontsRef = useRef(false)
   const [draggingSlideIds, setDraggingSlideIds] = useState<string[]>([])
   const [railWidth, setRailWidth] = useState(240)
-  const [zoomMode, setZoomMode] = useState<ZoomMode>('fit')
-  const [customZoomPercent, setZoomPercent] = useState(100)
-  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
-  const zoomPercent =
-    zoomMode === 'fit' && viewportSize.width > 0 && viewportSize.height > 0
-      ? calculateFitZoomPercent(
-          viewportSize.width,
-          viewportSize.height,
-          PRESENTATION_CANVAS_WIDTH,
-          (PRESENTATION_CANVAS_WIDTH * document.height) / document.width,
-          PRESENTATION_VIEWPORT_PADDING
-        )
-      : customZoomPercent
+  const { canvasViewportRef, canvasRef, zoomMode, zoomPercent, setCustomZoom, fitZoom } =
+    usePresentationViewport(document.width, document.height)
   const [isNotesOpen, setIsNotesOpen] = useState(false)
   const [compactOverlay, setCompactOverlay] = useState<'navigator' | 'inspector' | null>(null)
   const formatBackgroundTriggerRef = useRef<HTMLElement>(null)
@@ -699,29 +613,18 @@ function EditableSessionDocumentView({
     horizontal?: number
   }>({})
 
-  const finalizeTextEditor = useCallback(
-    (): boolean => textEditorFinalizerRef.current?.() ?? true,
-    []
-  )
-  const setTextEditorFinalizer = useCallback(
-    (finalize: TextEditFinalizer | null): void => {
-      textEditorFinalizerRef.current = finalize
-      registry.notifyEditorLifecycle?.(deck.itemId)
-    },
-    [deck.itemId, registry]
-  )
-
-  useEffect(
-    () =>
-      registry.registerEditorFinalizer?.(
-        deck.itemId,
-        finalizeTextEditor,
-        () => textEditorFinalizerRef.current?.hasUnsafeWork?.() ?? false,
-        () => textEditorFinalizerRef.current !== null,
-        () => textEditorFinalizerRef.current?.isComposing?.() ?? false
-      ),
-    [deck.itemId, finalizeTextEditor, registry]
-  )
+  const {
+    setTextEditorFinalizer,
+    getTextEditorFinalizer,
+    finalizeTextEditor,
+    commitTextDraft,
+    finalizeDocumentMutation,
+    commitDocument,
+    previewTextElement,
+    beginEmptyTextDraft,
+    isEmptyTextDraft,
+    cancelEmptyTextDraft
+  } = usePresentationTextTransactions(deck.itemId, session, registry)
   const projectionPlaylist = useMediaProjectionStore((state) => state.playlist)
   const projectionIndex = useMediaProjectionStore((state) => state.currentIndex)
   const isPresenting = useMediaProjectionStore((state) => state.isPresenting)
@@ -734,38 +637,6 @@ function EditableSessionDocumentView({
     setCompactOverlay(null)
     queueMicrotask(() => formatBackgroundTriggerRef.current?.focus())
   }
-
-  useEffect(
-    () => () => {
-      if (textCommitTimerRef.current !== null) {
-        window.clearTimeout(textCommitTimerRef.current)
-      }
-    },
-    []
-  )
-
-  useEffect(() => {
-    const viewport = canvasViewportRef.current
-    if (!viewport) return
-    const observer = new ResizeObserver(([entry]) => {
-      if (!entry) return
-      setViewportSize({ width: entry.contentRect.width, height: entry.contentRect.height })
-    })
-    observer.observe(viewport)
-    return () => observer.disconnect()
-  }, [])
-
-  useLayoutEffect(() => {
-    const pending = pendingZoomAnchorRef.current
-    const viewport = canvasViewportRef.current
-    const canvas = canvasRef.current
-    if (!pending || !viewport || !canvas || pending.nextZoom !== zoomPercent) return
-    const rect = canvas.getBoundingClientRect()
-    const scale = zoomPercent / 100
-    viewport.scrollLeft += rect.left + pending.logicalX * scale - pending.clientX
-    viewport.scrollTop += rect.top + pending.logicalY * scale - pending.clientY
-    pendingZoomAnchorRef.current = null
-  }, [zoomPercent])
 
   useEffect(() => {
     setSlideCount(deck.itemId, document.slideOrder.length)
@@ -815,114 +686,9 @@ function EditableSessionDocumentView({
     NonNullable<React.ComponentProps<typeof EditableSlideSurface>['onTextLayoutChange']>
   >((slideId, elementId, size) => session.reflowText(slideId, elementId, size), [session])
 
-  const clearTextCommitTimer = useCallback((resetDeadline = true): void => {
-    if (resetDeadline) textDraftStartedAtRef.current = null
-    if (textCommitTimerRef.current === null) return
-    window.clearTimeout(textCommitTimerRef.current)
-    textCommitTimerRef.current = null
-  }, [])
-
-  const commitTextDraft = (): void => {
-    clearTextCommitTimer()
-    if (newEmptyTextRef.current) return
-    if (session.getSnapshot().draftKind === 'text') session.commitDraft()
-  }
-
-  const finalizeDocumentMutation = (): EditablePresentationDocument | null => {
-    if (!finalizeTextEditor()) return null
-    clearTextCommitTimer()
-    return session.getSnapshot().renderedDocument
-  }
-
-  const commitDocument = (
-    update: (currentDocument: EditablePresentationDocument) => EditablePresentationDocument
-  ): boolean => {
-    const currentDocument = finalizeDocumentMutation()
-    if (!currentDocument) return false
-    session.commit(update(currentDocument))
-    return true
-  }
-
   function commitNotes(): void {
     if (session.getSnapshot().draftKind === 'notes') session.commitDraft()
   }
-
-  const setCustomZoom = (nextZoom: number): void => {
-    setZoomMode('custom')
-    setZoomPercent(Math.max(25, Math.min(200, nextZoom)))
-  }
-
-  useEffect(() => {
-    const viewport = canvasViewportRef.current
-    if (!viewport) return
-    const handleWheel = (event: WheelEvent): void => {
-      if (!(event.ctrlKey || (isMac() && event.metaKey))) return
-      event.preventDefault()
-      if (event.deltaY === 0) return
-      const nextZoom = Math.max(25, Math.min(200, zoomPercent + (event.deltaY < 0 ? 5 : -5)))
-      setZoomMode('custom')
-      if (nextZoom === zoomPercent) return
-      const canvas = canvasRef.current
-      if (!canvas) return
-      const rect = canvas.getBoundingClientRect()
-      const scale = zoomPercent / 100
-      pendingZoomAnchorRef.current = {
-        clientX: event.clientX,
-        clientY: event.clientY,
-        logicalX: (event.clientX - rect.left) / scale,
-        logicalY: (event.clientY - rect.top) / scale,
-        nextZoom
-      }
-      setZoomPercent(nextZoom)
-    }
-    viewport.addEventListener('wheel', handleWheel, { passive: false })
-    return () => viewport.removeEventListener('wheel', handleWheel)
-  }, [zoomPercent])
-
-  const previewTextElement = useCallback(
-    (slideId: string, elementId: string, updates: Partial<EditablePresentationElement>): void => {
-      const preview = session.getSnapshot().renderedDocument
-      if (
-        newEmptyTextRef.current === elementId &&
-        'text' in updates &&
-        updates.text?.replace(/[\u200b\ufeff]/g, '').trim()
-      ) {
-        newEmptyTextRef.current = null
-      }
-      const current = preview.slides[slideId]?.elements[elementId]
-      if (
-        current &&
-        Object.entries(updates).every(
-          ([key, value]) => current[key as keyof typeof current] === value
-        )
-      ) {
-        return
-      }
-      textDraftStartedAtRef.current ??= Date.now()
-      if (session.getSnapshot().draftKind !== 'text') session.beginDraft('text')
-      session.previewDraft(updateElementInSlide(preview, slideId, elementId, updates))
-      clearTextCommitTimer(false)
-      if (newEmptyTextRef.current === elementId) return
-      if (
-        Date.now() - (textDraftStartedAtRef.current ?? Date.now()) >= 4000 &&
-        !textEditorFinalizerRef.current?.isComposing?.()
-      ) {
-        session.commitDraft()
-        textDraftStartedAtRef.current = null
-        return
-      }
-      textCommitTimerRef.current = window.setTimeout(function commitWhenReady() {
-        textCommitTimerRef.current = null
-        if (textEditorFinalizerRef.current?.isComposing?.()) {
-          textCommitTimerRef.current = window.setTimeout(commitWhenReady, 750)
-          return
-        }
-        textDraftStartedAtRef.current = null
-        if (session.getSnapshot().draftKind === 'text') session.commitDraft()
-      }, 750)
-    },
-    [session, clearTextCommitTimer]
-  )
 
   const selectElement = (
     elementId: string | null,
@@ -1050,9 +816,7 @@ function EditableSessionDocumentView({
       fontSize,
       text: ''
     })
-    newEmptyTextRef.current = element.id
-    session.beginDraft('text')
-    session.previewDraft(addElementToSlide(currentDocument, activeSlideId, element))
+    beginEmptyTextDraft(element.id, addElementToSlide(currentDocument, activeSlideId, element))
     setSelectedElementId(element.id)
     setSelectedElementIds(new Set([element.id]))
     setEditingElementId(element.id)
@@ -1417,7 +1181,7 @@ function EditableSessionDocumentView({
         ) => Partial<Extract<EditablePresentationElement, { type: 'text' }>>)
   ): void => {
     if (!activeSlideId || !selectedElementId) return
-    if (textEditorFinalizerRef.current?.flush?.() === false) return
+    if (getTextEditorFinalizer()?.flush?.() === false) return
     commitTextDraft()
     const current = session.getSnapshot().renderedDocument
     const element = current.slides[activeSlideId]?.elements[selectedElementId]
@@ -1466,7 +1230,7 @@ function EditableSessionDocumentView({
       }
     }
     const next = updateElementInSlide(current, activeSlideId, element.id, updates)
-    if (newEmptyTextRef.current === element.id) session.previewDraft(next)
+    if (isEmptyTextDraft(element.id)) session.previewDraft(next)
     else session.commit(next)
   }
 
@@ -1474,7 +1238,7 @@ function EditableSessionDocumentView({
     window.requestAnimationFrame(() => {
       const focused = window.document.activeElement
       if (focused?.closest('[data-ribbon-surface], [data-presentation-text-tool]')) {
-        textEditorFinalizerRef.current?.restoreSelection?.()
+        getTextEditorFinalizer()?.restoreSelection?.()
       }
     })
   }
@@ -1482,7 +1246,7 @@ function EditableSessionDocumentView({
   const getTextCommandRange = (
     element: Extract<EditablePresentationElement, { type: 'text' }>
   ): { start: number; end: number } => {
-    const selection = textEditorFinalizerRef.current?.getSelection?.() ?? textSelection
+    const selection = getTextEditorFinalizer()?.getSelection?.() ?? textSelection
     return selection?.elementId === element.id ? selection : { start: 0, end: element.text.length }
   }
 
@@ -1994,7 +1758,7 @@ function EditableSessionDocumentView({
         id: 'presentation-zoom-fit',
         config: SHORTCUTS.PRESENTATION.ZOOM_FIT,
         description: t('presentationWorkspace.fit', 'Fit'),
-        handler: () => setZoomMode('fit')
+        handler: fitZoom
       },
       {
         id: 'presentation-bold',
@@ -2271,170 +2035,34 @@ function EditableSessionDocumentView({
             }
           }}
           navigator={
-            <NavigatorRail
-              data-slide-sidebar
-              role="listbox"
-              aria-multiselectable="true"
-              className="presentation-slide-rail relative h-full min-h-0 overflow-y-auto border-r border-separator bg-surface/40 px-2 py-3"
+            <PresentationSlideNavigator
+              document={document}
+              activeSlideIndex={activeSlideIndex}
+              projectedSlideIndex={projectedSlideIndex}
+              selectedSlideIds={selectedSlideIds}
+              insertionIndex={insertionIndex}
               onContextMenu={showSlideSidebarMenu}
-            >
-              <div className="space-y-1" role="presentation">
-                {document.slideOrder.map((slideId, index) => {
-                  const isSelected =
-                    selectedSlideIds.size === 0
-                      ? index === activeSlideIndex
-                      : selectedSlideIds.has(slideId)
-                  const slide = document.slides[slideId]
-                  const hasBackdropImage = slide.elementOrder.some((id) => {
-                    const element = slide.elements[id]
-                    return (
-                      (element.type === 'image' || element.type === 'locked') &&
-                      element.x <= 0 &&
-                      element.y <= 0 &&
-                      element.x + element.width >= document.width &&
-                      element.y + element.height >= document.height
-                    )
-                  })
-                  const outline = hasBackdropImage
-                    ? 'mixed'
-                    : getSlideBackgroundOutline(slide.background)
-                  return (
-                    <React.Fragment key={slideId}>
-                      <button
-                        type="button"
-                        data-slide-divider
-                        data-slide-index={index}
-                        className="group flex h-5 w-full items-center px-1"
-                        onClick={() => setInsertionIndex(index)}
-                        onDragOver={(event) => {
-                          event.preventDefault()
-                          setInsertionIndex(index)
-                        }}
-                        onDrop={(event) => {
-                          event.preventDefault()
-                          moveSelectedSlides(index)
-                        }}
-                        aria-label={t('presentationWorkspace.insertBeforeSlide', {
-                          number: index + 1
-                        })}
-                      >
-                        <span
-                          className={`w-full rounded-full ${
-                            insertionIndex === index
-                              ? 'h-[2px] presentation-insertion-line bg-[#f59e0b]'
-                              : 'h-px bg-transparent group-focus-visible:bg-[#f59e0b]/70'
-                          }`}
-                        />
-                      </button>
-                      <button
-                        draggable
-                        data-slide-option
-                        data-slide-index={index}
-                        role="option"
-                        aria-selected={isSelected}
-                        className="flex w-full gap-2 rounded-md px-1 py-2 text-left text-muted transition-colors hover:bg-surface-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500"
-                        onClick={(event) => selectSlide(index, event)}
-                        onDragStart={(event) => {
-                          const ids = selectedSlideIds.has(slideId)
-                            ? getSelectedSlideIds()
-                            : [slideId]
-                          setDraggingSlideIds(ids)
-                          setSelectedSlideIds(new Set(ids))
-                          event.dataTransfer.effectAllowed = 'move'
-                          event.dataTransfer.setData('text/plain', ids.join(','))
-                        }}
-                        onDragEnd={() => {
-                          setDraggingSlideIds([])
-                          setInsertionIndex(null)
-                        }}
-                        onKeyDown={(event) => {
-                          if (
-                            event.altKey &&
-                            (event.key === 'ArrowUp' || event.key === 'ArrowDown')
-                          ) {
-                            event.preventDefault()
-                            const target = event.key === 'ArrowUp' ? index - 1 : index + 2
-                            const ids = selectedSlideIds.has(slideId)
-                              ? getSelectedSlideIds()
-                              : [slideId]
-                            commitDocument((current) => reorderSelectedSlides(current, ids, target))
-                            return
-                          }
-                          if (event.key === 'Enter') {
-                            event.preventDefault()
-                            addSlideAfter(index)
-                          }
-                        }}
-                      >
-                        <span
-                          className={
-                            isSelected
-                              ? 'w-4 pt-1 text-right text-xs tabular-nums text-foreground'
-                              : 'w-4 pt-1 text-right text-xs tabular-nums'
-                          }
-                        >
-                          {index + 1}
-                        </span>
-                        <span
-                          className={`relative flex aspect-video w-full min-w-0 overflow-hidden border bg-black shadow-sm ${`${outline === 'dark' ? 'border-neutral-500' : 'border-white'} ${
-                            isSelected ? 'ring-2 ring-[#f59e0b]' : ''
-                          } ${outline === 'mixed' ? 'outline outline-1 outline-neutral-600' : ''}`}`}
-                        >
-                          <EditableSlideThumbnail document={document} slideId={slideId} />
-                          {index === projectedSlideIndex && (
-                            <span
-                              className="absolute inset-y-0 left-0 w-1 bg-success"
-                              aria-label={t(
-                                'presentationWorkspace.projectedSlide',
-                                'Projected slide'
-                              )}
-                            />
-                          )}
-                          {index === projectedSlideIndex + 1 && projectedSlideIndex >= 0 && (
-                            <span
-                              className="absolute bottom-1 right-1 rounded bg-success/90 px-1 text-[10px] font-semibold text-white"
-                              aria-label={t('presentationWorkspace.nextSlide', 'Next slide')}
-                            >
-                              {t('presentationWorkspace.next', 'Next')}
-                            </span>
-                          )}
-                        </span>
-                      </button>
-                    </React.Fragment>
-                  )
-                })}
-                <button
-                  type="button"
-                  data-slide-divider
-                  data-slide-index={document.slideOrder.length}
-                  className="group flex h-5 w-full items-center px-1"
-                  onClick={() => setInsertionIndex(document.slideOrder.length)}
-                  onDragOver={(event) => {
-                    event.preventDefault()
-                    setInsertionIndex(document.slideOrder.length)
-                  }}
-                  onDrop={(event) => {
-                    event.preventDefault()
-                    moveSelectedSlides(document.slideOrder.length)
-                  }}
-                  aria-label={t('presentationWorkspace.insertAfterLastSlide')}
-                >
-                  <span
-                    className={`w-full rounded-full ${
-                      insertionIndex === document.slideOrder.length
-                        ? 'h-[2px] presentation-insertion-line bg-[#f59e0b]'
-                        : 'h-px bg-transparent group-focus-visible:bg-[#f59e0b]/70'
-                    }`}
-                  />
-                </button>
-              </div>
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 w-1 cursor-col-resize bg-transparent hover:bg-accent/50 focus-visible:bg-accent"
-                onPointerDown={startRailResize}
-                aria-label={t('presentationWorkspace.resizeSlideRail', 'Resize slide rail')}
-              />
-            </NavigatorRail>
+              onSelectSlide={selectSlide}
+              onInsertionIndexChange={setInsertionIndex}
+              onMoveSlides={moveSelectedSlides}
+              onDragSlideStart={(slideId, event) => {
+                const ids = selectedSlideIds.has(slideId) ? getSelectedSlideIds() : [slideId]
+                setDraggingSlideIds(ids)
+                setSelectedSlideIds(new Set(ids))
+                event.dataTransfer.effectAllowed = 'move'
+                event.dataTransfer.setData('text/plain', ids.join(','))
+              }}
+              onDragSlideEnd={() => {
+                setDraggingSlideIds([])
+                setInsertionIndex(null)
+              }}
+              onReorderSlide={(slideId, target) => {
+                const ids = selectedSlideIds.has(slideId) ? getSelectedSlideIds() : [slideId]
+                commitDocument((current) => reorderSelectedSlides(current, ids, target))
+              }}
+              onAddSlideAfter={addSlideAfter}
+              onResizeStart={startRailResize}
+            />
           }
           stage={
             <StageViewport className="presentation-stage relative flex min-h-0 flex-col bg-[#111217]">
@@ -2474,10 +2102,7 @@ function EditableSessionDocumentView({
                       }}
                       onEditingElementChange={(elementId) => {
                         if (elementId === null) {
-                          if (newEmptyTextRef.current) {
-                            newEmptyTextRef.current = null
-                            clearTextCommitTimer()
-                            session.cancelDraft()
+                          if (cancelEmptyTextDraft()) {
                             setSelectedElementId(null)
                             setSelectedElementIds(new Set())
                           }
@@ -2672,7 +2297,7 @@ function EditableSessionDocumentView({
                   <Button
                     size="sm"
                     variant={zoomMode === 'fit' ? 'primary' : 'ghost'}
-                    onPress={() => setZoomMode('fit')}
+                    onPress={fitZoom}
                     aria-pressed={zoomMode === 'fit'}
                   >
                     {t('presentationWorkspace.fit', 'Fit')}
