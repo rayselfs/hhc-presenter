@@ -47,7 +47,7 @@ export interface ProjectionSessionCoordinator {
   blackout(enabled: boolean): void
   project<C extends ReplayableProjectionChannel>(channel: C, data: ProjectionPayload<C>): void
   sendOneShot<C extends 'file:end'>(channel: C, data: ProjectionPayload<C>): void
-  recordPlayback(generation: number, data: ProjectionPayload<'file:playback-state'>): void
+  recordPlayback(generation: number, data: ProjectionPayload<'file:playback-state'>): boolean
   isCurrentVideo(generation: number, data: ProjectionPayload<'file:playback-error'>): boolean
   promoteVideo(generation: number, data: ProjectionPayload<'file:playback-error'>): boolean
   replay(generation: number): void
@@ -480,9 +480,9 @@ export function createProjectionSessionCoordinator(
     },
 
     recordPlayback(generation, data) {
-      if (generation !== recovery.generation || !snapshot) return
+      if (generation !== recovery.generation || !snapshot) return false
       const next = reducePlaybackState(snapshot, data)
-      if (next === snapshot) return
+      if (next === snapshot) return false
       snapshot = next
       if (pendingFileControls?.itemId === data.itemId) {
         const pending = { ...pendingFileControls }
@@ -515,6 +515,7 @@ export function createProjectionSessionCoordinator(
             : pending
       }
       notify()
+      return true
     },
 
     isCurrentVideo(generation, data) {

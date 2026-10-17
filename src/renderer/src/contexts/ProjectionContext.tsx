@@ -276,7 +276,21 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
       useMediaProjectionStore.setState({ projectionRenderStatus: data })
     })
     const unsubscribePlayback = adapter.on('file:playback-state', (data) => {
-      coordinator.recordPlayback(adapter.getGeneration(), data)
+      if (!coordinator.recordPlayback(adapter.getGeneration(), data)) return
+      const state = useMediaProjectionStore.getState()
+      if (state.currentItem()?.id !== data.itemId) return
+      const current = state.typeStates.video
+      state.setTypeState('video', {
+        phase: data.phase,
+        preparationPhase: data.preparationPhase,
+        hasStarted: (current?.hasStarted ?? false) || data.currentTime > 0 || data.isPlaying,
+        isPlaying: data.isPlaying,
+        isEnded: data.isEnded,
+        currentTime: data.currentTime,
+        duration: data.duration,
+        seekable: data.seekable,
+        volume: data.volume
+      })
     })
 
     let active = true
