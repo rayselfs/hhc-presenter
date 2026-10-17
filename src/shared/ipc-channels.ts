@@ -108,6 +108,7 @@ export interface ProjectionVlcInfo {
 
 export interface ProjectionVlcStartRequest {
   itemId: string
+  contentRevision?: number
   attemptId?: string
   sourceFileId: string
   container: string

@@ -1,3 +1,4 @@
+import * as blobIdentity from '../blob-identity'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
@@ -233,6 +234,43 @@ describe('file resource cleanup', () => {
     await expect(db.get('file-blobs', originalBlobId)).resolves.toBeUndefined()
     expect(mockDeleteDerivedAssets).toHaveBeenCalledWith(originalBlobId)
     expect(mockDeletePdfPageThumbs).toHaveBeenCalledWith(originalBlobId)
+  })
+
+  it('counts remaining blob references once for a batch of shared sources', async () => {
+    const db = await openFileExplorerDB()
+    const sourceIds = Array.from({ length: 100 }, () => crypto.randomUUID())
+    const tx = db.transaction(['folder-items', 'file-blobs'], 'readwrite')
+    for (const blobId of sourceIds) {
+      await tx.objectStore('file-blobs').put({ id: blobId, blob: new Blob(['image']), refCount: 2 })
+      for (const prefix of ['remove', 'keep']) {
+        await tx.objectStore('folder-items').put({
+          id: `${prefix}-${blobId}`,
+          parentId: 'file-root',
+          type: 'file',
+          sortIndex: 0,
+          createdAt: 1,
+          expiresAt: null,
+          name: 'image.png',
+          url: `blob:${blobId}`,
+          size: 5,
+          mimeType: 'image/png'
+        })
+      }
+    }
+    await tx.done
+    const getBlobId = vi.spyOn(blobIdentity, 'getBlobId')
+    try {
+      await cleanupFileResources({ itemIds: sourceIds.map((id) => `remove-${id}`) })
+      expect(getBlobId.mock.calls.length).toBeLessThanOrEqual(400)
+      expect(await db.getAll('folder-items')).toHaveLength(100)
+      const remaining = await db.getAll('file-blobs')
+      expect(remaining).toHaveLength(100)
+      expect(remaining.every((blob) => blob.refCount === 1)).toBe(true)
+      expect(mockDeleteDerivedAssets).not.toHaveBeenCalled()
+      expect(mockDeleteThumbnail).toHaveBeenCalledTimes(100)
+    } finally {
+      getBlobId.mockRestore()
+    }
   })
 
   it('serializes concurrent deletes so the final shared reference is fenced', async () => {
