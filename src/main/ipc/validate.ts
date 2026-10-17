@@ -129,6 +129,8 @@ function validateProjectionPayload(channel: string, data: unknown): boolean {
     case 'file:playback-state':
       return (
         typeof obj.itemId === 'string' &&
+        (obj.blobId === undefined || typeof obj.blobId === 'string') &&
+        (obj.contentRevision === undefined || isValidProjectionGeneration(obj.contentRevision)) &&
         typeof obj.phase === 'string' &&
         ['preparing', 'ready', 'playing', 'paused', 'ended'].includes(obj.phase) &&
         isFiniteNumber(obj.currentTime) &&

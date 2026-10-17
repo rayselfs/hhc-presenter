@@ -524,6 +524,30 @@ export default function FileProjection({
       : undefined
 
   const renderedLoadSequence = loadSequenceRef.current
+  const reportMediaPlayback = (
+    element: HTMLMediaElement,
+    next?: { isPlaying?: boolean; isEnded?: boolean }
+  ): void => {
+    if (
+      element !== mediaRef.current ||
+      renderedLoadSequence !== loadSequenceRef.current ||
+      loadedContentRevision !== initialContentRevision ||
+      objectUrl !== objectUrlRef.current ||
+      endedRef.current ||
+      !initialItemId ||
+      !initialBlobId
+    )
+      return
+    sendVideoPlaybackState(
+      element,
+      {
+        itemId: initialItemId,
+        blobId: initialBlobId,
+        contentRevision: loadedContentRevision
+      },
+      next
+    )
+  }
 
   if (isEnded || replayPlaylistEnded) {
     return (
@@ -697,18 +721,22 @@ export default function FileProjection({
             transformOrigin: 'center center'
           }}
           muted
-          onLoadedMetadata={() => {
-            sendVideoPlaybackState()
+          onLoadedMetadata={(event) => {
+            reportMediaPlayback(event.currentTarget)
             applyPendingVideoControl()
           }}
-          onCanPlay={() => {
-            sendVideoPlaybackState()
+          onCanPlay={(event) => {
+            reportMediaPlayback(event.currentTarget)
             applyPendingVideoControl()
           }}
-          onTimeUpdate={() => sendVideoPlaybackState()}
-          onPlay={() => sendVideoPlaybackState({ isPlaying: true, isEnded: false })}
-          onPause={() => sendVideoPlaybackState({ isPlaying: false })}
-          onEnded={() => sendVideoPlaybackState({ isPlaying: false, isEnded: true })}
+          onTimeUpdate={(event) => reportMediaPlayback(event.currentTarget)}
+          onPlay={(event) =>
+            reportMediaPlayback(event.currentTarget, { isPlaying: true, isEnded: false })
+          }
+          onPause={(event) => reportMediaPlayback(event.currentTarget, { isPlaying: false })}
+          onEnded={(event) =>
+            reportMediaPlayback(event.currentTarget, { isPlaying: false, isEnded: true })
+          }
         />
         {playbackError && (
           <p role="alert" className="absolute text-white">
@@ -723,21 +751,26 @@ export default function FileProjection({
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-black overflow-hidden">
         <audio
+          key={`${loadedContentRevision ?? 0}:${renderedLoadSequence}`}
           ref={mediaRef as React.RefObject<HTMLAudioElement>}
           src={objectUrl}
           preload={isSeekable() ? 'metadata' : 'none'}
-          onLoadedMetadata={() => {
-            sendVideoPlaybackState()
+          onLoadedMetadata={(event) => {
+            reportMediaPlayback(event.currentTarget)
             applyPendingVideoControl()
           }}
-          onCanPlay={() => {
-            sendVideoPlaybackState()
+          onCanPlay={(event) => {
+            reportMediaPlayback(event.currentTarget)
             applyPendingVideoControl()
           }}
-          onTimeUpdate={() => sendVideoPlaybackState()}
-          onPlay={() => sendVideoPlaybackState({ isPlaying: true, isEnded: false })}
-          onPause={() => sendVideoPlaybackState({ isPlaying: false })}
-          onEnded={() => sendVideoPlaybackState({ isPlaying: false, isEnded: true })}
+          onTimeUpdate={(event) => reportMediaPlayback(event.currentTarget)}
+          onPlay={(event) =>
+            reportMediaPlayback(event.currentTarget, { isPlaying: true, isEnded: false })
+          }
+          onPause={(event) => reportMediaPlayback(event.currentTarget, { isPlaying: false })}
+          onEnded={(event) =>
+            reportMediaPlayback(event.currentTarget, { isPlaying: false, isEnded: true })
+          }
         />
       </div>
     )
@@ -749,6 +782,7 @@ export default function FileProjection({
         <VlcProjectionSurface
           itemId={initialItemId ?? null}
           blobId={initialBlobId}
+          contentRevision={initialContentRevision}
           durationMs={getDurationMs()}
           replayState={initialReplayState}
           playbackVariant={initialPlaybackVariant}

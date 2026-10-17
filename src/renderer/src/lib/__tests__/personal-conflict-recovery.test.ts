@@ -25,11 +25,8 @@ vi.mock('../personal-sync-db', () => ({
 }))
 vi.mock('../personal-sync-runtime', () => ({ requestPersonalSync: mocks.request }))
 vi.mock('@renderer/stores/file-explorer', () => ({
-  FILE_EXPLORER_ROOT_ID: 'file-root',
-  copyExplorerFile: mocks.copy,
-  copyExplorerFolder: vi.fn(),
-  refreshPersonalCatalog: mocks.refresh,
-  useFileExplorerStore: { getState: () => ({ folders: {} }) }
+  createLocalRecoveryEntryBackup: mocks.copy,
+  refreshPersonalCatalog: mocks.refresh
 }))
 
 const scope: PersonalConflictScope = {
@@ -224,4 +221,19 @@ it('aborts when lease renewal fails during a pending backup', async () => {
   } finally {
     vi.useRealTimers()
   }
+})
+
+it('passes the owner-scoped cancellation signal through the named backup command', async () => {
+  mocks.copy.mockImplementation(async (ownerId: string, id: string, signal: AbortSignal) => {
+    expect(ownerId).toBe('alice')
+    expect(id).toBe('file')
+    usePersonalSyncStore.setState({ activeOwnerId: 'bob' })
+    usePersonalSyncStore.setState({ activeOwnerId: 'alice' })
+    expect(signal.aborted).toBe(true)
+    signal.throwIfAborted()
+  })
+  await resolvePersonalCloudConflict(options)
+  expect(mocks.accept).not.toHaveBeenCalled()
+  expect(sessions.close).not.toHaveBeenCalled()
+  expect(mocks.release).toHaveBeenCalledOnce()
 })
