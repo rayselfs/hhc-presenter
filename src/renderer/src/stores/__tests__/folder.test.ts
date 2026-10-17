@@ -1,3 +1,4 @@
+import { copyBibleFolder } from '@renderer/lib/bible-folder-copy'
 import type { FolderPersistence } from '@shared/types/folder'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
@@ -845,5 +846,77 @@ describe('purgeTrash() — correct items purged via Set lookup', () => {
     expect(useBibleFolderStore.getState().folders[deletedFolderId]).toBeUndefined()
     expect(useBibleFolderStore.getState().items[deletedItemId]).toBeUndefined()
     expect(useBibleFolderStore.getState().items[survivingItemId]).toBeDefined()
+  })
+})
+
+describe('Bible folder copy', () => {
+  it.each(['source', 'child'])('rejects target %s before any write', async (target) => {
+    addFolderRecord({ ...rootFolder, id: 'source', parentId: ROOT_ID })
+    addFolderRecord({ ...rootFolder, id: 'child', parentId: 'source' })
+    await expect(copyBibleFolder(useBibleFolderStore.getState, 'source', target)).rejects.toThrow(
+      'Cannot copy a folder into itself'
+    )
+    expect(mockSaveFolder).not.toHaveBeenCalled()
+    expect(mockSaveItem).not.toHaveBeenCalled()
+  })
+
+  it('loads a full snapshot and preserves nested expiry and unique names', async () => {
+    addFolderRecord({
+      ...rootFolder,
+      id: 'source',
+      name: 'Source',
+      parentId: ROOT_ID,
+      expiresAt: 100
+    })
+    addFolderRecord({
+      ...rootFolder,
+      id: 'child',
+      name: 'Child',
+      parentId: 'source',
+      expiresAt: 200
+    })
+    const verse = { ...makeVerseRecord('verse', 'child'), expiresAt: 300 }
+    mockLoadItemsByParent.mockImplementation(async (id: string) => (id === 'child' ? [verse] : []))
+    const target = await copyBibleFolder(useBibleFolderStore.getState, 'source', ROOT_ID)
+    const state = useBibleFolderStore.getState()
+    expect(state.folders[target]).toMatchObject({ name: 'Source 2', expiresAt: 100 })
+    const [child] = state.getChildFolders(target)
+    expect(child).toMatchObject({ name: 'Child', expiresAt: 200 })
+    const [copied] = state.getItems(child.id)
+    expect(copied).toMatchObject({ text: verse.text, expiresAt: 300 })
+    expect(copied.id).not.toBe(verse.id)
+    expect(mockSaveItem).toHaveBeenCalledWith(copied)
+    expect(state.pendingPersistenceCount).toBe(0)
+  })
+
+  it('does not create folders if a nested source fails to load', async () => {
+    addFolderRecord({ ...rootFolder, id: 'source', parentId: ROOT_ID })
+    addFolderRecord({ ...rootFolder, id: 'child', parentId: 'source' })
+    mockLoadItemsByParent.mockImplementation(async (id: string) => {
+      if (id === 'child') throw new Error('Read failed')
+      return []
+    })
+    await expect(copyBibleFolder(useBibleFolderStore.getState, 'source', ROOT_ID)).rejects.toThrow(
+      'Read failed'
+    )
+    expect(mockSaveFolder).not.toHaveBeenCalled()
+  })
+
+  it('rejects failed persistence and keeps queued operations available for retry', async () => {
+    addFolderRecord({ ...rootFolder, id: 'source', parentId: ROOT_ID })
+    addFolderRecord({ ...rootFolder, id: 'child', name: 'Child', parentId: 'source' })
+    const verse = makeVerseRecord('verse', 'child')
+    mockLoadItemsByParent.mockImplementation(async (id: string) => (id === 'child' ? [verse] : []))
+    mockSaveFolder.mockRejectedValueOnce(new Error('Disk full'))
+    await expect(copyBibleFolder(useBibleFolderStore.getState, 'source', ROOT_ID)).rejects.toThrow(
+      'Disk full'
+    )
+    expect(useBibleFolderStore.getState().pendingPersistenceCount).toBe(3)
+    const copiesBeforeRetry = Object.keys(useBibleFolderStore.getState().folders)
+    await useBibleFolderStore.getState().retryPersistence()
+    expect(useBibleFolderStore.getState().pendingPersistenceCount).toBe(0)
+    expect(mockSaveFolder).toHaveBeenLastCalledWith(expect.objectContaining({ name: 'Child' }))
+    expect(mockSaveItem).toHaveBeenCalledWith(expect.objectContaining({ text: verse.text }))
+    expect(Object.keys(useBibleFolderStore.getState().folders)).toEqual(copiesBeforeRetry)
   })
 })

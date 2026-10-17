@@ -12,6 +12,7 @@ import {
   useFileExplorerStore,
   useTrashExplorerSettings,
   permanentDeleteFolderFromStore,
+  restoreExplorerEntry,
   permanentDeleteFileItemFromStore
 } from '@renderer/stores/file-explorer'
 import { useContextMenu } from '@renderer/contexts/ContextMenuContext'
@@ -60,8 +61,6 @@ export default function TrashPage(): React.JSX.Element {
   const { showMenu } = useContextMenu()
   const foldersArray = useFileExplorerStore((state) => state._foldersArray)
   const itemsArray = useFileExplorerStore((state) => state._itemsArray)
-  const restoreFolder = useFileExplorerStore((state) => state.restoreFolder)
-  const restoreItem = useFileExplorerStore((state) => state.restoreItem)
   const viewMode = useTrashExplorerSettings((state) => state.viewMode)
   const sortField = useTrashExplorerSettings((state) => state.sortField)
   const sortDir = useTrashExplorerSettings((state) => state.sortDir)
@@ -164,32 +163,13 @@ export default function TrashPage(): React.JSX.Element {
     []
   )
 
-  const restoreEntry = useCallback(
-    async (entry: TrashEntry, name?: string): Promise<void> => {
-      const trimmedName = name?.trim()
-      const record = entry.kind === 'folder' ? entry.folder : entry.item
-      if (record.personalOwnerId) {
-        const actions = await import('@renderer/lib/personal-file-actions')
-        await actions.mutatePersonalNode(record.id, {
-          type: 'restore',
-          ...(trimmedName ? { name: trimmedName } : {})
-        })
-        return
-      }
-      if (entry.kind === 'folder') {
-        if (trimmedName && trimmedName !== entry.folder.name) {
-          useFileExplorerStore.getState().updateFolder(entry.folder.id, { name: trimmedName })
-        }
-        restoreFolder(entry.folder.id)
-      } else {
-        if (trimmedName && trimmedName !== entry.item.name) {
-          useFileExplorerStore.getState().updateItem?.(entry.item.id, { name: trimmedName })
-        }
-        restoreItem(entry.item.id)
-      }
-    },
-    [restoreFolder, restoreItem]
-  )
+  const restoreEntry = useCallback(async (entry: TrashEntry, name?: string): Promise<void> => {
+    await restoreExplorerEntry(
+      entry.kind,
+      entry.kind === 'folder' ? entry.folder.id : entry.item.id,
+      name
+    )
+  }, [])
 
   const requestRestoreEntry = useCallback(
     async (entry: TrashEntry): Promise<boolean> => {
@@ -414,7 +394,7 @@ export default function TrashPage(): React.JSX.Element {
 
   useKeyboardShortcuts(
     [
-      { config: SHORTCUTS.EDIT.SELECT_ALL, handler: selectAll, preventDefault: true },
+      { config: SHORTCUTS.EDIT.SELECT_ALL, handler: () => selectAll(), preventDefault: true },
       { config: SHORTCUTS.EDIT.ESCAPE, handler: clearSelection, preventDefault: true },
       {
         config: SHORTCUTS.EDIT.DELETE,

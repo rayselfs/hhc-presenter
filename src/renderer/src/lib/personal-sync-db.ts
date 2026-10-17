@@ -145,7 +145,8 @@ export async function listPersonalOutbox(ownerId: string): Promise<PersonalOutbo
 }
 
 export async function commitPersonalLocalMutation(
-  write: PersonalLocalMutationWrite
+  write: PersonalLocalMutationWrite,
+  signal?: AbortSignal
 ): Promise<void> {
   if (
     !write.ownerId ||
@@ -185,7 +186,16 @@ export async function commitPersonalLocalMutation(
     ],
     'readwrite'
   )
+  const abort = (): void => {
+    try {
+      tx.abort()
+    } catch {
+      /* Already completed. */
+    }
+  }
+  signal?.addEventListener('abort', abort, { once: true })
   try {
+    signal?.throwIfAborted()
     if (write.presentationDraft) {
       const draft = await tx.objectStore('presentation-drafts').get(write.presentationDraft.id)
       assertPresentationDraftPromotion(draft, write.presentationDraft.revision)
@@ -462,6 +472,7 @@ export async function commitPersonalLocalMutation(
     if (write.stagingCleanupId) {
       await tx.objectStore('resource-cleanup-journal').delete(write.stagingCleanupId)
     }
+    signal?.throwIfAborted()
     await tx.done
   } catch (error) {
     try {
@@ -471,6 +482,8 @@ export async function commitPersonalLocalMutation(
     }
     await tx.done.catch(() => undefined)
     throw error
+  } finally {
+    signal?.removeEventListener('abort', abort)
   }
 }
 

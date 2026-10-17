@@ -3,12 +3,14 @@ import { build } from 'esbuild'
 
 type Harness = typeof import('../src/renderer/src/lib/sync-refresh-lifetime') &
   Pick<typeof import('../src/renderer/src/lib/file-explorer-db'), 'openFileExplorerDB'>
-type HarnessWindow = Window & {
-  SyncLifetime: Harness
-  releaseMutation: () => void
-  mutation: Promise<void>
-  guard: () => Promise<boolean>
-  enteredMutation: boolean
+declare global {
+  interface Window {
+    SyncLifetime: Harness
+    releaseMutation: () => void
+    mutation: Promise<void>
+    guard: () => Promise<boolean>
+    enteredMutation: boolean
+  }
 }
 
 test('real Web Locks serialize a connection across tabs and a durable unlink invalidates the old guard', async ({
@@ -40,7 +42,7 @@ test('real Web Locks serialize a connection across tabs and a durable unlink inv
     await tab.addScriptTag({ url: '/__test-sync-lifetime.js' })
   }
   await page.evaluate(async () => {
-    const target = window as HarnessWindow
+    const target = window
     const api = target.SyncLifetime
     const db = await api.openFileExplorerDB()
     const root = {
@@ -71,7 +73,7 @@ test('real Web Locks serialize a connection across tabs and a durable unlink inv
     await acquired
   })
   await other.evaluate(() => {
-    const target = window as HarnessWindow
+    const target = window
     target.enteredMutation = false
     target.mutation = target.SyncLifetime.withSyncConnectionMutation(
       'onedrive:lock-smoke',
@@ -91,10 +93,10 @@ test('real Web Locks serialize a connection across tabs and a durable unlink inv
       )
     )
     .toBe(true)
-  expect(await other.evaluate(() => (window as HarnessWindow).enteredMutation)).toBe(false)
-  expect(await page.evaluate(() => (window as HarnessWindow).guard())).toBe(true)
-  await page.evaluate(() => (window as HarnessWindow).releaseMutation())
-  await other.evaluate(() => (window as HarnessWindow).mutation)
-  expect(await other.evaluate(() => (window as HarnessWindow).enteredMutation)).toBe(true)
-  expect(await page.evaluate(() => (window as HarnessWindow).guard())).toBe(false)
+  expect(await other.evaluate(() => window.enteredMutation)).toBe(false)
+  expect(await page.evaluate(() => window.guard())).toBe(true)
+  await page.evaluate(() => window.releaseMutation())
+  await other.evaluate(() => window.mutation)
+  expect(await other.evaluate(() => window.enteredMutation)).toBe(true)
+  expect(await page.evaluate(() => window.guard())).toBe(false)
 })

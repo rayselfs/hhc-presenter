@@ -1,3 +1,4 @@
+import { useItemSelection } from '@renderer/hooks/useItemSelection'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import FileBrowser from '../FileBrowser'
@@ -100,7 +101,7 @@ async function renderWithItems(items: readonly FileItemRecord[]): Promise<void> 
     })
   })
 
-  render(<FileBrowser />)
+  render(<SelectedFileBrowser />)
   await act(async () => undefined)
 }
 
@@ -395,9 +396,14 @@ describe('FileBrowser presentation open behavior', () => {
       })
     })
 
-    render(<FileBrowser />)
+    render(<SelectedFileBrowser />)
 
     expect(await screen.findByLabelText('Sync error')).toBeInTheDocument()
     expect(screen.queryByText(/401|403|authorization|forbidden/i)).not.toBeInTheDocument()
   })
 })
+
+function SelectedFileBrowser(): React.JSX.Element {
+  const selection = useItemSelection()
+  return <FileBrowser selection={selection} />
+}

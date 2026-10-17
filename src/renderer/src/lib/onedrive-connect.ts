@@ -40,7 +40,6 @@ import {
   saveWebOneDriveCredentials
 } from './onedrive-web-credentials'
 import type { MediaPlatform } from './media-capabilities'
-import { classifyMediaImport } from './media-import-policy'
 import type { RemoteSyncItem } from './sync-provider'
 import { enqueueSyncDownload } from './sync-download-queue'
 import {
@@ -49,8 +48,7 @@ import {
   buildSyncRefreshPlan,
   collectSyncChangePages
 } from './sync-refresh'
-import { refreshImportedMediaAssets } from './local-sync-import'
-import { isIgnoredSystemPath } from '@shared/file-ignore-policy'
+import { refreshImportedMediaAssets } from './sync-media-preparation'
 import { dispatchPlannedSyncDownloads } from './sync-transfer-dispatch'
 
 const ONEDRIVE_WEB_CALLBACK_PATH = '/onedrive-callback.html'
@@ -216,31 +214,6 @@ function createRootFolderId(connectionId: string, remoteFolderId: string): strin
   return `onedrive-folder-${safeIdPart(connectionId)}-${safeIdPart(remoteFolderId)}`
 }
 
-function createSyncedFolderId(connectionId: string, remoteItemId: string): string {
-  return `onedrive-folder-${safeIdPart(connectionId)}-${safeIdPart(remoteItemId)}`
-}
-
-function createSyncedItemId(): string {
-  return crypto.randomUUID()
-}
-
-function classifyRemoteFile(
-  item: RemoteSyncItem,
-  platform: MediaPlatform
-): {
-  mimeType: string
-  disabled: boolean
-  skip: boolean
-} {
-  const decision = classifyMediaImport({ name: item.name, mimeType: item.mimeType }, platform)
-  if (decision.action === 'skip') return { mimeType: decision.mimeType, disabled: true, skip: true }
-  return {
-    mimeType: decision.mimeType,
-    disabled: decision.action === 'platform-unsupported',
-    skip: false
-  }
-}
-
 export function buildOneDriveImportPlan(input: {
   connectionId: string
   displayName: string
@@ -267,126 +240,46 @@ export function buildOneDriveImportPlan(input: {
     }
   }
 
-  const folders: FolderRecord[] = [rootFolder]
-  const items: FileItemRecord[] = []
-  const syncEntries: OneDriveImportPlan['syncEntries'] = [
-    {
-      providerConnectionId: input.connectionId,
-      remoteItemId: input.rootRemoteFolderId,
-      parentRemoteItemId: null,
-      kind: 'folder',
-      name: input.displayName,
-      folderId: rootFolderId,
-      status: 'remote-only'
-    }
-  ]
-  const downloadableItems: OneDriveImportPlan['downloadableItems'] = []
-  const remoteFolderToLocalId = new Map<string | null, string>([
-    [null, rootFolderId],
-    [input.rootRemoteFolderId, rootFolderId]
-  ])
-  const folderSortCounts = new Map<string, number>([
-    [FILE_EXPLORER_ROOT_ID, input.existingRootFolderNames.length + 1]
-  ])
-  const itemSortCounts = new Map<string, number>()
-  const ignoredRemoteIds = new Set<string>()
-  let disabledCount = 0
-
-  for (const remoteItem of input.remoteItems) {
-    if (
-      isIgnoredSystemPath(remoteItem.name) ||
-      (remoteItem.parentRemoteItemId && ignoredRemoteIds.has(remoteItem.parentRemoteItemId))
-    ) {
-      ignoredRemoteIds.add(remoteItem.remoteItemId)
-      continue
-    }
-    if (remoteItem.kind !== 'folder' || remoteItem.deleted) continue
-    if (remoteItem.remoteItemId === input.rootRemoteFolderId) continue
-    const parentId = remoteFolderToLocalId.get(remoteItem.parentRemoteItemId) ?? rootFolderId
-    const folderId = createSyncedFolderId(input.connectionId, remoteItem.remoteItemId)
-    const sortIndex = folderSortCounts.get(parentId) ?? 0
-    folderSortCounts.set(parentId, sortIndex + 1)
-    folders.push({
-      id: folderId,
-      name: remoteItem.name,
-      parentId,
-      sortIndex,
-      createdAt: now,
-      expiresAt: null,
-      syncLink: {
+  const plan = buildSyncRefreshPlan({
+    providerConnectionId: input.connectionId,
+    providerType: 'onedrive',
+    rootFolder,
+    rootRemoteFolderId: input.rootRemoteFolderId,
+    offlinePolicy: input.offlinePolicy,
+    platform: input.platform,
+    existingFolders: [],
+    existingItems: [],
+    existingEntries: [],
+    // Initial imports use the import clock; refresh preserves source timestamps.
+    remoteItems: input.remoteItems.map((item) => ({ ...item, sourceCreatedAt: undefined })),
+    now
+  })
+  const itemById = new Map(plan.items.map((item) => [item.id, item]))
+  const downloadableItems = plan.syncEntries.flatMap((entry) =>
+    entry.itemId && !itemById.get(entry.itemId)?.url.startsWith('unsupported:')
+      ? [{ itemId: entry.itemId, remoteItemId: entry.remoteItemId }]
+      : []
+  )
+  return {
+    folders: [rootFolder, ...plan.folders],
+    items: plan.items,
+    syncEntries: [
+      {
         providerConnectionId: input.connectionId,
-        remoteFolderId: remoteItem.remoteItemId,
-        providerType: 'onedrive',
-        offlinePolicy: input.offlinePolicy
-      }
-    })
-    remoteFolderToLocalId.set(remoteItem.remoteItemId, folderId)
-    syncEntries.push({
-      providerConnectionId: input.connectionId,
-      remoteItemId: remoteItem.remoteItemId,
-      parentRemoteItemId: remoteItem.parentRemoteItemId,
-      kind: 'folder',
-      name: remoteItem.name,
-      folderId,
-      status: 'remote-only'
-    })
-  }
-
-  for (const remoteItem of input.remoteItems) {
-    if (ignoredRemoteIds.has(remoteItem.remoteItemId)) continue
-    if (remoteItem.kind !== 'file' || remoteItem.deleted) continue
-    const parentId = remoteFolderToLocalId.get(remoteItem.parentRemoteItemId) ?? rootFolderId
-    const policy = classifyRemoteFile(remoteItem, input.platform)
-    if (policy.skip) continue
-    const itemId = createSyncedItemId()
-    const sortIndex = itemSortCounts.get(parentId) ?? 0
-    itemSortCounts.set(parentId, sortIndex + 1)
-    items.push({
-      id: itemId,
-      parentId,
-      type: 'file',
-      sortIndex,
-      createdAt: now,
-      expiresAt: null,
-      name: remoteItem.name,
-      url: policy.disabled ? `unsupported:${itemId}` : `blob:${itemId}`,
-      size: remoteItem.size ?? 0,
-      mimeType: policy.mimeType
-    })
-    if (policy.disabled) {
-      disabledCount++
-      syncEntries.push({
-        providerConnectionId: input.connectionId,
-        remoteItemId: remoteItem.remoteItemId,
-        parentRemoteItemId: remoteItem.parentRemoteItemId,
-        kind: 'file',
-        name: remoteItem.name,
-        itemId,
-        mimeType: policy.mimeType,
-        size: remoteItem.size,
-        etag: remoteItem.etag,
-        contentHash: remoteItem.contentHash,
+        remoteItemId: input.rootRemoteFolderId,
+        parentRemoteItemId: null,
+        kind: 'folder',
+        name: input.displayName,
+        folderId: rootFolderId,
         status: 'remote-only'
-      })
-      continue
-    }
-    downloadableItems.push({ itemId, remoteItemId: remoteItem.remoteItemId })
-    syncEntries.push({
-      providerConnectionId: input.connectionId,
-      remoteItemId: remoteItem.remoteItemId,
-      parentRemoteItemId: remoteItem.parentRemoteItemId,
-      kind: 'file',
-      name: remoteItem.name,
-      itemId,
-      mimeType: policy.mimeType,
-      size: remoteItem.size,
-      etag: remoteItem.etag,
-      contentHash: remoteItem.contentHash,
-      status: input.offlinePolicy === 'always-offline' ? 'queued' : 'remote-only'
-    })
+      },
+      ...plan.syncEntries.map((entry) =>
+        entry.kind === 'folder' ? { ...entry, status: 'remote-only' as const } : entry
+      )
+    ],
+    downloadableItems,
+    disabledCount: plan.disabledCount
   }
-
-  return { folders, items, syncEntries, downloadableItems, disabledCount }
 }
 
 async function exchangeWebToken(input: {

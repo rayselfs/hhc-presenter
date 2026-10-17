@@ -1,4 +1,4 @@
-import type { ShortcutConfig } from '@renderer/hooks/useKeyboardShortcuts'
+import type { ShortcutConfig } from '@renderer/lib/shortcut-config'
 
 export const SHORTCUTS = {
   PROJECTION: {

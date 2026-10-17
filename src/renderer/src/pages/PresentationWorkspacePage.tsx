@@ -393,7 +393,7 @@ export function PptxDocumentView({
         )
         if (lifetime.isDisposed()) return
         const handle = await lifetime.open(buffer)
-        if (!handle) return
+        if (!handle || lifetime.isDisposed()) return
         viewerRef.current = handle
         setViewer(handle)
         setSlideCount(deckItemId, handle.slideCount)

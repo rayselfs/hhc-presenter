@@ -69,7 +69,7 @@ export default function PptxSlideSurface({
         )
         if (lifetime.isDisposed()) return
         const handle = await lifetime.open(buffer)
-        if (!handle) return
+        if (!handle || lifetime.isDisposed()) return
         viewerRef.current = handle
         setViewer(handle)
         setStatus('ready')
