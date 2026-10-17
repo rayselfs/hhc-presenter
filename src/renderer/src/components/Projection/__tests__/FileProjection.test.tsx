@@ -416,6 +416,37 @@ describe('FileProjection copied media identity', () => {
     expect(mockProjectionVlcStop).toHaveBeenCalledWith({ itemId: 'video-id', attemptId })
   })
 
+  it('pairs each VLC attempt cleanup through root StrictMode', async () => {
+    const { unmount } = render(
+      <StrictMode>
+        <FileProjection
+          initialItemId="video-id"
+          initialBlobId="video-blob"
+          initialMimeType="video/x-matroska"
+          initialPlaybackMode="vlc-embedded"
+        />
+      </StrictMode>
+    )
+    await waitFor(() => expect(window.api.projectionVlc.start).toHaveBeenCalledTimes(2))
+    const [first, second] = vi
+      .mocked(window.api.projectionVlc.start)
+      .mock.calls.map(([request]) => request)
+    expect(first.attemptId).not.toBe(second.attemptId)
+    expect(mockProjectionVlcStop).toHaveBeenCalledWith({
+      itemId: first.itemId,
+      attemptId: first.attemptId
+    })
+    expect(mockProjectionVlcStop).not.toHaveBeenCalledWith({
+      itemId: second.itemId,
+      attemptId: second.attemptId
+    })
+    unmount()
+    expect(mockProjectionVlcStop).toHaveBeenCalledWith({
+      itemId: second.itemId,
+      attemptId: second.attemptId
+    })
+  })
+
   it('does not restart a mounted VLC surface when terminal replay arrives', async () => {
     const props = {
       initialItemId: 'video-id',
