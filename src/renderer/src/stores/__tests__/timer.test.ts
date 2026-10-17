@@ -18,16 +18,27 @@ import {
   DEFAULT_SETTINGS,
   getDisplayValues
 } from '@renderer/stores/timer'
+import { installTimerRuntimeHarness } from '@renderer/test/timer-runtime-harness'
+import { useSettingsStore } from '@renderer/stores/settings'
 import { MAX_DURATION_SECONDS } from '@shared/constants/timer'
 
 const INITIAL_STATE = {
   ...DEFAULT_SETTINGS,
   ...DEFAULT_STATE,
-  targetEndTime: null
+  hostRevision: -1
 }
 
+let host: ReturnType<typeof installTimerRuntimeHarness>
 beforeEach(() => {
+  vi.useFakeTimers()
+  vi.setSystemTime(1_000_000)
+  useSettingsStore.setState({ reminderMode: 'subtract' })
   useTimerStore.setState(INITIAL_STATE)
+  host = installTimerRuntimeHarness()
+})
+afterEach(() => {
+  host.dispose()
+  vi.useRealTimers()
 })
 
 describe('initial state', () => {
@@ -43,7 +54,7 @@ describe('initial state', () => {
     expect(s.mode).toBe('timer')
     expect(s.reminderEnabled).toBe(false)
     expect(s.reminderDuration).toBe(60)
-    expect(s.targetEndTime).toBeNull()
+    expect(s).not.toHaveProperty('targetEndTime')
   })
 })
 
@@ -91,28 +102,33 @@ describe('start()', () => {
     expect(useTimerStore.getState().phase).toBe('main')
   })
 
-  it('sets targetEndTime based on remainingSeconds', () => {
-    const before = Date.now()
+  it('uses the host deadline without exposing it to the renderer', () => {
     useTimerStore.getState().start()
-    const after = Date.now()
-    const targetEndTime = useTimerStore.getState().targetEndTime
-    expect(targetEndTime).not.toBeNull()
-    expect(targetEndTime!).toBeGreaterThanOrEqual(before + 300 * 1000)
-    expect(targetEndTime!).toBeLessThanOrEqual(after + 300 * 1000)
+    host.advance(1000)
+    expect(useTimerStore.getState().remainingSeconds).toBe(299)
+    expect(useTimerStore.getState()).not.toHaveProperty('targetEndTime')
   })
 
   it('resets overtimeSeconds to 0', () => {
-    useTimerStore.setState({ overtimeSeconds: 15 })
+    host.runtime.executeLegacy({ type: 'start' })
+    host.advance(315000)
+    host.runtime.executeLegacy({ type: 'pause' })
+    host.publish()
+    expect(useTimerStore.getState().overtimeSeconds).toBe(15)
     useTimerStore.getState().start()
-    expect(useTimerStore.getState().overtimeSeconds).toBe(0)
+    expect(useTimerStore.getState()).toMatchObject({
+      overtimeSeconds: 0,
+      remainingSeconds: 300,
+      status: 'running'
+    })
   })
 
   it('is a no-op when already running', () => {
     useTimerStore.getState().start()
-    const targetAfterFirstStart = useTimerStore.getState().targetEndTime
-
+    host.advance(1000)
     useTimerStore.getState().start()
-    expect(useTimerStore.getState().targetEndTime).toBe(targetAfterFirstStart)
+    host.advance(1000)
+    expect(useTimerStore.getState().remainingSeconds).toBe(298)
   })
 })
 
@@ -123,14 +139,16 @@ describe('pause()', () => {
     expect(useTimerStore.getState().status).toBe('paused')
   })
 
-  it('clears targetEndTime', () => {
+  it('prevents host time from advancing a paused countdown', () => {
     useTimerStore.getState().start()
     useTimerStore.getState().pause()
-    expect(useTimerStore.getState().targetEndTime).toBeNull()
+    host.advance(10000)
+    expect(useTimerStore.getState()).toMatchObject({ status: 'paused', remainingSeconds: 300 })
+    expect(useTimerStore.getState()).not.toHaveProperty('targetEndTime')
   })
 
   it('preserves remainingSeconds when paused', () => {
-    useTimerStore.setState({ remainingSeconds: 120 })
+    useTimerStore.getState().setDuration(120)
     useTimerStore.getState().start()
     useTimerStore.getState().pause()
     expect(useTimerStore.getState().remainingSeconds).toBe(120)
@@ -150,18 +168,15 @@ describe('resume()', () => {
     expect(useTimerStore.getState().status).toBe('running')
   })
 
-  it('recalculates targetEndTime from current remainingSeconds', () => {
-    useTimerStore.setState({ remainingSeconds: 90 })
+  it('resumes from the accepted paused time on the host clock', () => {
+    useTimerStore.getState().setDuration(90)
     useTimerStore.getState().start()
     useTimerStore.getState().pause()
-
-    const before = Date.now()
+    host.advance(20000)
     useTimerStore.getState().resume()
-    const after = Date.now()
-
-    const targetEndTime = useTimerStore.getState().targetEndTime
-    expect(targetEndTime!).toBeGreaterThanOrEqual(before + 90 * 1000)
-    expect(targetEndTime!).toBeLessThanOrEqual(after + 90 * 1000)
+    host.advance(1000)
+    expect(useTimerStore.getState().remainingSeconds).toBe(89)
+    expect(useTimerStore.getState()).not.toHaveProperty('targetEndTime')
   })
 
   it('is a no-op when not paused', () => {
@@ -178,7 +193,8 @@ describe('reset()', () => {
   })
 
   it('restores remainingSeconds to totalDuration', () => {
-    useTimerStore.setState({ remainingSeconds: 50, totalDuration: 300 })
+    useTimerStore.getState().start()
+    host.advance(250_000)
     useTimerStore.getState().start()
     useTimerStore.getState().reset()
     expect(useTimerStore.getState().remainingSeconds).toBe(300)
@@ -191,15 +207,20 @@ describe('reset()', () => {
   })
 
   it('resets overtimeSeconds to 0', () => {
-    useTimerStore.setState({ overtimeSeconds: 30 })
+    host.runtime.executeLegacy({ type: 'start' })
+    host.advance(330000)
+    expect(useTimerStore.getState().overtimeSeconds).toBe(30)
     useTimerStore.getState().reset()
     expect(useTimerStore.getState().overtimeSeconds).toBe(0)
   })
 
-  it('clears targetEndTime', () => {
+  it('retires the host run on reset', () => {
     useTimerStore.getState().start()
+    host.advance(5000)
     useTimerStore.getState().reset()
-    expect(useTimerStore.getState().targetEndTime).toBeNull()
+    host.advance(10000)
+    expect(useTimerStore.getState()).toMatchObject({ status: 'stopped', remainingSeconds: 300 })
+    expect(useTimerStore.getState()).not.toHaveProperty('targetEndTime')
   })
 
   it('resets progress to 1', () => {
@@ -250,13 +271,13 @@ describe('setDuration()', () => {
   })
 
   it('auto-disables reminder when new duration <= reminderDuration', () => {
-    useTimerStore.setState({ reminderEnabled: true, reminderDuration: 60 })
+    useTimerStore.getState().setReminder(true, 60)
     useTimerStore.getState().setDuration(50)
     expect(useTimerStore.getState().reminderEnabled).toBe(false)
   })
 
   it('keeps reminder enabled when new duration > reminderDuration', () => {
-    useTimerStore.setState({ reminderEnabled: true, reminderDuration: 60 })
+    useTimerStore.getState().setReminder(true, 60)
     useTimerStore.getState().setDuration(120)
     expect(useTimerStore.getState().reminderEnabled).toBe(true)
   })
@@ -264,14 +285,14 @@ describe('setDuration()', () => {
 
 describe('addTime()', () => {
   it('increases remainingSeconds when running', () => {
-    useTimerStore.setState({ remainingSeconds: 100, totalDuration: 100 })
+    useTimerStore.getState().setDuration(100)
     useTimerStore.getState().start()
     useTimerStore.getState().addTime(30)
     expect(useTimerStore.getState().remainingSeconds).toBe(130)
   })
 
   it('increases remainingSeconds when paused', () => {
-    useTimerStore.setState({ remainingSeconds: 100, totalDuration: 100 })
+    useTimerStore.getState().setDuration(100)
     useTimerStore.getState().start()
     useTimerStore.getState().pause()
     useTimerStore.getState().addTime(30)
@@ -286,10 +307,7 @@ describe('addTime()', () => {
   })
 
   it('does not exceed MAX_DURATION_SECONDS', () => {
-    useTimerStore.setState({
-      remainingSeconds: MAX_DURATION_SECONDS,
-      totalDuration: MAX_DURATION_SECONDS
-    })
+    useTimerStore.getState().setDuration(MAX_DURATION_SECONDS)
     useTimerStore.getState().addTime(1)
     expect(useTimerStore.getState().remainingSeconds).toBe(MAX_DURATION_SECONDS)
   })
@@ -297,14 +315,16 @@ describe('addTime()', () => {
 
 describe('removeTime()', () => {
   it('decreases remainingSeconds when running', () => {
-    useTimerStore.setState({ remainingSeconds: 100, totalDuration: 300 })
+    useTimerStore.getState().start()
+    host.advance(200_000)
     useTimerStore.getState().start()
     useTimerStore.getState().removeTime(30)
     expect(useTimerStore.getState().remainingSeconds).toBe(70)
   })
 
   it('decreases remainingSeconds when paused', () => {
-    useTimerStore.setState({ remainingSeconds: 100, totalDuration: 300 })
+    useTimerStore.getState().start()
+    host.advance(200_000)
     useTimerStore.getState().start()
     useTimerStore.getState().pause()
     useTimerStore.getState().removeTime(30)
@@ -312,7 +332,8 @@ describe('removeTime()', () => {
   })
 
   it('does not go below 0', () => {
-    useTimerStore.setState({ remainingSeconds: 10, totalDuration: 300 })
+    useTimerStore.getState().start()
+    host.advance(290_000)
     useTimerStore.getState().start()
     useTimerStore.getState().removeTime(50)
     expect(useTimerStore.getState().remainingSeconds).toBe(0)
@@ -326,14 +347,14 @@ describe('removeTime()', () => {
   })
 
   it('auto-disables reminder when stopped removeTime causes invalid state', () => {
-    useTimerStore.setState({ reminderEnabled: true, reminderDuration: 60 })
+    useTimerStore.getState().setReminder(true, 60)
     useTimerStore.getState().removeTime(250)
     expect(useTimerStore.getState().totalDuration).toBe(50)
     expect(useTimerStore.getState().reminderEnabled).toBe(false)
   })
 
   it('keeps reminder enabled when stopped removeTime leaves valid state', () => {
-    useTimerStore.setState({ reminderEnabled: true, reminderDuration: 60 })
+    useTimerStore.getState().setReminder(true, 60)
     useTimerStore.getState().removeTime(10)
     expect(useTimerStore.getState().totalDuration).toBe(290)
     expect(useTimerStore.getState().reminderEnabled).toBe(true)
@@ -365,77 +386,44 @@ describe('setMode()', () => {
 
 describe('tick()', () => {
   it('is a no-op when not running', () => {
-    useTimerStore.setState({ remainingSeconds: 100 })
-    useTimerStore.getState().tick(Date.now())
+    useTimerStore.getState().setDuration(100)
+    host.advance(10000)
     expect(useTimerStore.getState().remainingSeconds).toBe(100)
   })
 
-  it('decrements remainingSeconds based on targetEndTime', () => {
-    const now = 1000000
-    useTimerStore.setState({
-      status: 'running',
-      targetEndTime: now + 100000,
-      totalDuration: 300,
-      reminderEnabled: false,
-      reminderDuration: 60
-    })
-    useTimerStore.getState().tick(now + 10000)
+  it('decrements remainingSeconds from the host deadline', () => {
+    useTimerStore.getState().start()
+    host.advance(210000)
     expect(useTimerStore.getState().remainingSeconds).toBe(90)
   })
 
   it('transitions to overtime when remaining reaches 0', () => {
-    const now = 1000000
-    useTimerStore.setState({
-      status: 'running',
-      targetEndTime: now + 2000,
-      totalDuration: 300,
-      reminderEnabled: false,
-      reminderDuration: 60
-    })
-    useTimerStore.getState().tick(now + 5000)
+    useTimerStore.getState().start()
+    host.advance(305000)
     const s = useTimerStore.getState()
     expect(s.status).toBe('stopped')
     expect(s.remainingSeconds).toBe(0)
     expect(s.phase).toBe('overtime')
     expect(s.overtimeSeconds).toBe(0)
-    expect(s.targetEndTime).toBeNull()
+    expect(s).not.toHaveProperty('targetEndTime')
   })
 
   it('updates formattedTime correctly', () => {
-    const now = 1000000
-    useTimerStore.setState({
-      status: 'running',
-      targetEndTime: now + 180000,
-      totalDuration: 300,
-      reminderEnabled: false,
-      reminderDuration: 60
-    })
-    useTimerStore.getState().tick(now)
+    useTimerStore.getState().start()
+    host.advance(120000)
     expect(useTimerStore.getState().formattedTime).toBe('03:00')
   })
 
   it('updates progress correctly', () => {
-    const now = 1000000
-    useTimerStore.setState({
-      status: 'running',
-      targetEndTime: now + 150000,
-      totalDuration: 300,
-      remainingSeconds: 150,
-      reminderEnabled: false,
-      reminderDuration: 60
-    })
-    useTimerStore.getState().tick(now)
+    useTimerStore.getState().start()
+    host.advance(150000)
     expect(useTimerStore.getState().progress).toBeCloseTo(0.5, 1)
   })
 
-  it('is a no-op when targetEndTime is null', () => {
-    useTimerStore.setState({
-      status: 'running',
-      targetEndTime: null,
-      remainingSeconds: 100
-    })
-    useTimerStore.getState().tick(Date.now())
-    expect(useTimerStore.getState().remainingSeconds).toBe(100)
+  it('replaces renderer-written runtime fields with the next authoritative frame', () => {
+    useTimerStore.setState({ status: 'running', remainingSeconds: 100 })
+    host.advance(1000)
+    expect(useTimerStore.getState()).toMatchObject({ status: 'stopped', remainingSeconds: 300 })
   })
 })
 
@@ -447,46 +435,32 @@ describe('phase transitions', () => {
   })
 
   it('main → warning via tick when reminder enabled', () => {
-    const now = 1000000
-    useTimerStore.setState({
-      status: 'running',
-      reminderEnabled: true,
-      reminderDuration: 60,
-      totalDuration: 300,
-      targetEndTime: now + 50000
-    })
-    useTimerStore.getState().tick(now)
+    useTimerStore.getState().setReminder(true, 60)
+    useTimerStore.getState().start()
+    host.advance(250000)
     expect(useTimerStore.getState().phase).toBe('warning')
   })
 
   it('stays in main when reminder disabled even below reminder threshold', () => {
-    const now = 1000000
-    useTimerStore.setState({
-      status: 'running',
-      reminderEnabled: false,
-      reminderDuration: 60,
-      totalDuration: 300,
-      targetEndTime: now + 30000
-    })
-    useTimerStore.getState().tick(now)
+    useTimerStore.getState().start()
+    host.advance(270000)
     expect(useTimerStore.getState().phase).toBe('main')
   })
 
   it('warning → overtime via tick when time runs out', () => {
-    const now = 1000000
-    useTimerStore.setState({
-      status: 'running',
-      reminderEnabled: true,
-      reminderDuration: 60,
-      totalDuration: 300,
-      targetEndTime: now - 5000
-    })
-    useTimerStore.getState().tick(now)
+    useTimerStore.getState().setReminder(true, 60)
+    useTimerStore.getState().start()
+    host.advance(245000)
+    expect(useTimerStore.getState().phase).toBe('warning')
+    host.advance(60000)
     expect(useTimerStore.getState().phase).toBe('overtime')
   })
 
   it('reset from any phase returns to idle', () => {
-    useTimerStore.setState({ phase: 'warning', status: 'running' })
+    useTimerStore.getState().setReminder(true, 60)
+    useTimerStore.getState().start()
+    host.advance(250000)
+    expect(useTimerStore.getState().phase).toBe('warning')
     useTimerStore.getState().reset()
     expect(useTimerStore.getState().phase).toBe('idle')
   })
@@ -550,12 +524,8 @@ describe('setReminder()', () => {
   })
 
   it('recomputes phase to warning if running and within threshold', () => {
-    useTimerStore.setState({
-      status: 'running',
-      remainingSeconds: 45,
-      phase: 'main',
-      totalDuration: 300
-    })
+    useTimerStore.getState().start()
+    host.advance(255000)
     useTimerStore.getState().setReminder(true, 60)
     expect(useTimerStore.getState().phase).toBe('warning')
   })
@@ -566,12 +536,10 @@ describe('setReminder()', () => {
   })
 
   it('clears warning phase when reminder is disabled', () => {
-    useTimerStore.setState({
-      status: 'running',
-      remainingSeconds: 45,
-      phase: 'warning',
-      totalDuration: 300
-    })
+    useTimerStore.getState().setReminder(true, 60)
+    useTimerStore.getState().start()
+    host.advance(255000)
+    expect(useTimerStore.getState().phase).toBe('warning')
     useTimerStore.getState().setReminder(false, 60)
     expect(useTimerStore.getState().phase).toBe('main')
   })
@@ -598,29 +566,14 @@ describe('progress', () => {
   })
 
   it('is 0 when remainingSeconds is 0', () => {
-    const now = 1000000
-    useTimerStore.setState({
-      status: 'running',
-      totalDuration: 300,
-      targetEndTime: now - 1000,
-      reminderEnabled: false,
-      reminderDuration: 60
-    })
-    useTimerStore.getState().tick(now)
+    useTimerStore.getState().start()
+    host.advance(301000)
     expect(useTimerStore.getState().progress).toBe(0)
   })
 
   it('is 0.5 when half remaining', () => {
-    const now = 1000000
-    useTimerStore.setState({
-      status: 'running',
-      totalDuration: 300,
-      remainingSeconds: 150,
-      targetEndTime: now + 150000,
-      reminderEnabled: false,
-      reminderDuration: 60
-    })
-    useTimerStore.getState().tick(now)
+    useTimerStore.getState().start()
+    host.advance(150000)
     expect(useTimerStore.getState().progress).toBeCloseTo(0.5, 2)
   })
 })
@@ -635,6 +588,8 @@ describe('reminder phase logic with 180s duration + 60s reminder', () => {
       reminderDuration: 60,
       formattedTime: '03:00'
     })
+    host.dispose()
+    host = installTimerRuntimeHarness()
   })
 
   it('starts in main phase', () => {
@@ -643,41 +598,20 @@ describe('reminder phase logic with 180s duration + 60s reminder', () => {
   })
 
   it('transitions to warning at exactly reminderDuration seconds', () => {
-    const now = 1000000
-    useTimerStore.setState({
-      status: 'running',
-      targetEndTime: now + 60000,
-      totalDuration: 180,
-      reminderEnabled: true,
-      reminderDuration: 60
-    })
-    useTimerStore.getState().tick(now)
+    useTimerStore.getState().start()
+    host.advance(120000)
     expect(useTimerStore.getState().phase).toBe('warning')
   })
 
   it('stays in main phase above reminderDuration', () => {
-    const now = 1000000
-    useTimerStore.setState({
-      status: 'running',
-      targetEndTime: now + 90000,
-      totalDuration: 180,
-      reminderEnabled: true,
-      reminderDuration: 60
-    })
-    useTimerStore.getState().tick(now)
+    useTimerStore.getState().start()
+    host.advance(90000)
     expect(useTimerStore.getState().phase).toBe('main')
   })
 
   it('transitions to overtime when time runs out', () => {
-    const now = 1000000
-    useTimerStore.setState({
-      status: 'running',
-      targetEndTime: now,
-      totalDuration: 180,
-      reminderEnabled: true,
-      reminderDuration: 60
-    })
-    useTimerStore.getState().tick(now + 1000)
+    useTimerStore.getState().start()
+    host.advance(181000)
     const s = useTimerStore.getState()
     expect(s.phase).toBe('overtime')
     expect(s.status).toBe('stopped')
@@ -842,45 +776,27 @@ describe('getDisplayValues', () => {
 
 describe('getDisplayValues end-to-end via store tick', () => {
   it('full phase transition: main → warning → overtime', () => {
-    useTimerStore.setState({
-      ...INITIAL_STATE,
-      totalDuration: 180,
-      remainingSeconds: 180,
-      reminderEnabled: true,
-      reminderDuration: 60,
-      formattedTime: '03:00'
-    })
-
+    useTimerStore.getState().setDuration(180)
+    useTimerStore.getState().setReminder(true, 60)
     useTimerStore.getState().start()
-
-    const now = Date.now()
-    const targetEndTime = useTimerStore.getState().targetEndTime!
-
-    useTimerStore.setState({ targetEndTime: now + 121000 })
-    useTimerStore.getState().tick(now)
+    host.advance(59000)
     let s = useTimerStore.getState()
     expect(s.phase).toBe('main')
     expect(s.remainingSeconds).toBe(121)
     const dv1 = getDisplayValues(s)
     expect(dv1.mainDisplay).toBe('01:01')
     expect(dv1.subDisplay).toBe('01:00')
-
-    useTimerStore.setState({ targetEndTime: now + 60000 })
-    useTimerStore.getState().tick(now)
+    host.advance(61000)
     s = useTimerStore.getState()
     expect(s.phase).toBe('warning')
     const dv2 = getDisplayValues(s)
     expect(dv2.subDisplay).toBeNull()
-
-    useTimerStore.setState({ targetEndTime: now - 1000 })
-    useTimerStore.getState().tick(now)
+    host.advance(61000)
     s = useTimerStore.getState()
     expect(s.phase).toBe('overtime')
     const dv3 = getDisplayValues(s)
     expect(dv3.mainDisplay).toBe('00:00')
     expect(dv3.overtimeDisplay).not.toBeNull()
-
-    void targetEndTime
   })
 })
 
@@ -1073,12 +989,14 @@ describe('duration persistence', () => {
     expect(parsed.version).toBe(1)
   })
 
-  it('persist hydration restores saved duration', () => {
+  it('a fresh host seeds its duration from hydrated preferences', () => {
     localStorageMock['hhc-timer-config'] = JSON.stringify({
       state: { totalDuration: 180 },
       version: 1
     })
     useTimerStore.persist.rehydrate()
+    host.dispose()
+    host = installTimerRuntimeHarness()
     const s = useTimerStore.getState()
     expect(s.totalDuration).toBe(180)
     expect(s.remainingSeconds).toBe(180)

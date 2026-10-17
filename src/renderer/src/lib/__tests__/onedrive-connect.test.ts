@@ -387,6 +387,75 @@ beforeEach(() => {
 })
 
 describe('buildOneDriveImportPlan', () => {
+  it.each(['online-only', 'on-demand', 'always-offline'] as const)(
+    'preserves initial-import timestamps, folder status and downloadable candidates for %s',
+    (offlinePolicy) => {
+      const clock = vi.spyOn(Date, 'now').mockReturnValue(1234)
+      try {
+        const plan = buildOneDriveImportPlan({
+          connectionId: 'onedrive:contract',
+          displayName: 'Slides',
+          rootRemoteFolderId: 'root/1',
+          offlinePolicy,
+          existingRootFolderNames: ['Slides'],
+          platform: 'web',
+          remoteItems: [
+            {
+              remoteItemId: 'child/1',
+              parentRemoteItemId: 'root/1',
+              kind: 'folder',
+              name: 'Child',
+              sourceCreatedAt: 0
+            },
+            {
+              remoteItemId: 'image',
+              parentRemoteItemId: 'child/1',
+              kind: 'file',
+              name: 'Image.png',
+              mimeType: 'image/png',
+              sourceCreatedAt: 10
+            },
+            {
+              remoteItemId: 'unsupported',
+              parentRemoteItemId: 'missing',
+              kind: 'file',
+              name: 'Legacy.avi',
+              mimeType: 'video/x-msvideo',
+              sourceCreatedAt: 20
+            },
+            { remoteItemId: 'skipped', parentRemoteItemId: 'root/1', kind: 'file', name: 'Art.psd' }
+          ]
+        })
+        expect(plan.folders.map((folder) => [folder.id, folder.createdAt])).toEqual([
+          ['onedrive-folder-onedrive_contract-root_1', 1234],
+          ['onedrive-folder-onedrive_contract-child_1', 1234]
+        ])
+        expect(plan.folders[0].sortIndex).toBe(1)
+        expect(
+          plan.syncEntries.filter((entry) => entry.kind === 'folder').map((entry) => entry.status)
+        ).toEqual(['remote-only', 'remote-only'])
+        expect(plan.items).toHaveLength(2)
+        expect(
+          plan.items.every((item) => item.createdAt === 1234 && UUID_PATTERN.test(item.id))
+        ).toBe(true)
+        expect(plan.items[0].parentId).toBe(plan.folders[1].id)
+        expect(plan.items[1]).toMatchObject({
+          parentId: plan.folders[0].id,
+          url: `unsupported:${plan.items[1].id}`
+        })
+        expect(plan.syncEntries.find((entry) => entry.remoteItemId === 'image')?.status).toBe(
+          offlinePolicy === 'always-offline' ? 'queued' : 'remote-only'
+        )
+        expect(plan.downloadableItems).toEqual([
+          { itemId: plan.items[0].id, remoteItemId: 'image' }
+        ])
+        expect(plan.disabledCount).toBe(1)
+      } finally {
+        clock.mockRestore()
+      }
+    }
+  )
+
   it('mounts the selected OneDrive folder instead of the account root', () => {
     const plan = buildOneDriveImportPlan({
       connectionId: 'onedrive:account-1',

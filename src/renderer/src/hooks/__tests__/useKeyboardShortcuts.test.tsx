@@ -1,12 +1,8 @@
+import { matchesConfig, type ShortcutConfig } from '@renderer/lib/shortcut-config'
 import { renderHook, act, fireEvent, screen } from '@testing-library/react'
 import { beforeEach, vi } from 'vitest'
 import React, { useState } from 'react'
-import {
-  matchesConfig,
-  useKeyboardShortcuts,
-  type ShortcutHandler,
-  type ShortcutConfig
-} from '../useKeyboardShortcuts'
+import { useKeyboardShortcuts, type ShortcutHandler } from '../useKeyboardShortcuts'
 import { ShortcutScopeProvider, ShortcutScope } from '@renderer/contexts/ShortcutScopeContext'
 import { SHORTCUTS } from '@renderer/config/shortcuts'
 

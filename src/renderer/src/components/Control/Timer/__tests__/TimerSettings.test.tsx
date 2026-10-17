@@ -13,7 +13,6 @@ beforeEach(() => {
   useTimerStore.setState({
     ...DEFAULT_SETTINGS,
     ...DEFAULT_STATE,
-    targetEndTime: null,
     totalDuration: 300,
     reminderEnabled: false,
     reminderDuration: 60,

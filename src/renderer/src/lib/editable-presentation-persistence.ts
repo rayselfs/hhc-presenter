@@ -1,3 +1,4 @@
+import { notifyThumbnailReady } from './thumbnail-events'
 import { validatePortablePresentation } from './portable-presentation'
 import {
   persistDraftRevision,
@@ -140,10 +141,8 @@ export async function refreshEditablePresentationThumbnail(
 ): Promise<void> {
   if (await getPresentationDraft(document.id)) return
   const thumbnail = generateEditablePresentationThumbnail(document)
-  await saveThumbnail(document.id, thumbnail)
-  window.dispatchEvent(
-    new CustomEvent('hhc:thumbnail-ready', {
-      detail: { itemId: document.id, dataUrl: thumbnail }
-    })
-  )
+  const item = await (await openFileExplorerDB()).get('folder-items', document.id)
+  const sourceBlobId = item && isFileItem(item) ? getBlobId(item) : document.id
+  await saveThumbnail(sourceBlobId, thumbnail)
+  notifyThumbnailReady(document.id, sourceBlobId)
 }

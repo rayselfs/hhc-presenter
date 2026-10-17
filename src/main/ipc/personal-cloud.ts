@@ -15,7 +15,7 @@ import {
   type PersonalUploadInput
 } from '@shared/personal-cloud'
 import type { WindowManager } from '../windowManager'
-import { getNativeFilePath } from './native-fs'
+import { getNativeFilePath } from '../lib/native-storage'
 import { saveAssetContent } from '../lib/asset-stream-writer'
 import { isMainWindow } from './validate'
 
