@@ -1,12 +1,10 @@
-import { parseTimerCommand } from '@shared/timer-command'
+import { isTimerMode, parseTimerCommand, validateTimerSettings } from '@shared/timer-command'
+export { validateTimerSettings } from '@shared/timer-command'
 import { isFilePlaybackError, isFileRenderStatus } from '@shared/projection-messages'
 import { isCameraSignal, isCameraState, isCameraMessageFrom } from '@shared/camera'
 import { BrowserWindow } from 'electron'
-import { MAX_DURATION_SECONDS } from '@shared/constants/timer'
 import type { WindowManager } from '../windowManager'
 import type { ProjectionMessageTuple, ProjectionTransportTuple } from '@shared/projection-messages'
-
-const VALID_TIMER_MODES = new Set(['timer', 'clock', 'both', 'stopwatch'])
 
 const VALID_THEMES = new Set(['light', 'dark', 'system'])
 
@@ -144,7 +142,7 @@ function validateProjectionPayload(channel: string, data: unknown): boolean {
     case 'timer:tick':
       return (
         typeof obj.mode === 'string' &&
-        VALID_TIMER_MODES.has(obj.mode) &&
+        isTimerMode(obj.mode) &&
         isFiniteNumber(obj.remainingSeconds) &&
         typeof obj.phase === 'string' &&
         typeof obj.mainDisplay === 'string' &&
@@ -277,35 +275,4 @@ export function validateProjectionTransportTuple(
 export function validateProjectionMessageTuple(args: unknown[]): args is ProjectionMessageTuple {
   if (args.length !== 2 || typeof args[0] !== 'string') return false
   return validateProjectionPayload(args[0], args[1])
-}
-
-export function validateTimerSettings(settings: unknown): boolean {
-  if (typeof settings !== 'object' || settings === null) return false
-  const obj = settings as Record<string, unknown>
-
-  if (typeof obj.mode !== 'string' || !VALID_TIMER_MODES.has(obj.mode)) return false
-
-  if (
-    !isFiniteNumber(obj.totalDuration) ||
-    obj.totalDuration < 0 ||
-    obj.totalDuration > MAX_DURATION_SECONDS
-  )
-    return false
-
-  if (typeof obj.reminderEnabled !== 'boolean') return false
-
-  if (
-    !isFiniteNumber(obj.reminderDuration) ||
-    obj.reminderDuration < 0 ||
-    obj.reminderDuration > MAX_DURATION_SECONDS
-  )
-    return false
-
-  if (typeof obj.reminderColor !== 'string') return false
-
-  if (typeof obj.overtimeMessageEnabled !== 'boolean') return false
-
-  if (typeof obj.overtimeMessage !== 'string') return false
-
-  return true
 }

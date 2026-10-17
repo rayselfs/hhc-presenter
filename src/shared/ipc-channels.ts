@@ -20,7 +20,10 @@ import type {
   TimerSettings,
   TimerState,
   StopwatchState,
-  TimerTickPayload
+  TimerTickPayload,
+  TimerRuntimeConfiguration,
+  TimerRuntimeCommand,
+  TimerRuntimeResult
 } from './types/timer'
 import type { BibleVersion, BibleBook } from './types/bible'
 import type { HhcPendingSignIn, HhcSession, PresenterAccountLabel } from './hhc-auth'
@@ -276,6 +279,8 @@ export interface IpcInvokeMap {
   'theme:set': { args: ['light' | 'dark' | 'system']; result: void }
   'timer:command': { args: [TimerCommand]; result: void }
   'timer:initialize': { args: [TimerSettings]; result: void }
+  'timer:runtime-initialize': { args: [TimerRuntimeConfiguration]; result: TimerRuntimeResult }
+  'timer:runtime-command': { args: [TimerRuntimeCommand]; result: TimerRuntimeResult }
   'timer:get-state': { args: []; result: TimerState & { stopwatch: StopwatchState } }
   'bible:get-versions': { args: []; result: BibleVersion[] }
   'bible:get-content': { args: [number]; result: BibleBook[] }
