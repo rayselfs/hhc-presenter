@@ -304,6 +304,28 @@ export async function addFileItemToStore(
       canonicalMimeType
     )
   }
+  return addLocalFileItem(file, parentId, canonicalMimeType, notes)
+}
+
+export function createLocalRecoveryFileBackup(
+  file: File,
+  mimeType: string,
+  signal: AbortSignal
+): Promise<string> {
+  return addLocalFileItem(file, FILE_EXPLORER_ROOT_ID, mimeType, undefined, {
+    expiresAt: null,
+    signal
+  })
+}
+
+async function addLocalFileItem(
+  file: File,
+  parentId: string,
+  canonicalMimeType: string,
+  notes?: string,
+  options: { expiresAt?: null; signal?: AbortSignal } = {}
+): Promise<string> {
+  options.signal?.throwIfAborted()
   const db = await openFileExplorerDB()
   const id = crypto.randomUUID()
   const stagingLock = `local-blob:${id}`
@@ -320,7 +342,9 @@ export async function addFileItemToStore(
     })
     await db.add('resource-cleanup-journal', cleanup)
     await storeFileBlob(db, id, file)
+    options.signal?.throwIfAborted()
     await useFileExplorerStore.getState().flushPersistence()
+    options.signal?.throwIfAborted()
     assertLocalDestination(parentId, Object.values(useFileExplorerStore.getState().folders))
     const now = Date.now()
     const item: FileItemRecord = {
@@ -334,9 +358,15 @@ export async function addFileItemToStore(
       ...(notes !== undefined ? { notes } : {}),
       sortIndex: useFileExplorerStore.getState().getItems(parentId).length,
       createdAt: now,
-      expiresAt: parentId === FILE_EXPLORER_ROOT_ID ? now + FOLDER_DURATION_MS['1day'] : null
+      expiresAt:
+        options.expiresAt === null
+          ? null
+          : parentId === FILE_EXPLORER_ROOT_ID
+            ? now + FOLDER_DURATION_MS['1day']
+            : null
     }
-    await commitLocalFileItem(item, { stagingCleanupId: cleanup.id })
+    await commitLocalFileItem(item, { stagingCleanupId: cleanup.id, signal: options.signal })
+    options.signal?.throwIfAborted()
     publishPersistedFileItem(item)
   }
   try {
