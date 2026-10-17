@@ -987,6 +987,111 @@ describe('editable presentation documents', () => {
     expect(asset).toBeUndefined()
   })
 
+  it('stores one package image asset for 100 slide references without sharing element geometry', async () => {
+    const presentation = {
+      width: 1920,
+      height: 1080,
+      slides: Array.from({ length: 100 }, (_, index) => ({
+        ...mockSlide(index, 0, mockXmlNode()),
+        rels: new Map([['image', { target: '../media/shared.png' }]]),
+        nodes: [
+          {
+            nodeType: 'picture',
+            blipEmbed: 'image',
+            position: { x: index, y: 0 },
+            size: { w: 100, h: 100 },
+            rotation: 0,
+            crop: { left: index / 1000, right: 0, top: 0, bottom: 0 }
+          }
+        ]
+      })),
+      layouts: new Map(),
+      masters: new Map(),
+      layoutToMaster: new Map(),
+      media: new Map([
+        [
+          'ppt/media/shared.png',
+          Uint8Array.from(
+            atob(
+              'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aB9sAAAAASUVORK5CYII='
+            ),
+            (char) => char.charCodeAt(0)
+          )
+        ]
+      ])
+    } as unknown as PresentationData
+    const document = convertPresentationData(makePptxFileItem(), presentation)
+    const images = Object.values(document.slides)
+      .flatMap((slide) => Object.values(slide.elements))
+      .filter((element) => element.type === 'image')
+    expect(images).toHaveLength(100)
+    expect(Object.keys(document.assets)).toHaveLength(1)
+    expect(new Set(images.map((image) => image.assetId)).size).toBe(1)
+    expect(new Set(images.map((image) => image.id)).size).toBe(100)
+    expect(images[99]).toMatchObject({ x: 99, crop: { left: 0.099 } })
+    expect(
+      Object.values(document.assets).reduce((size, asset) => size + asset.dataUrl.length, 0)
+    ).toBe(114)
+    vi.stubGlobal('Blob', NodeBlob)
+    const item = await createEditablePresentation('Shared images', 'file-root')
+    const persisted = { ...document, id: item.id }
+    await persistEditablePresentationRevision({
+      itemId: item.id,
+      sourceBlobId: item.id,
+      revision: 1,
+      document: persisted
+    })
+    clearEditablePresentationCache()
+    const reopened = await loadEditablePresentation(item)
+    expect(reopened.assets).toEqual(document.assets)
+    expect(reopened.slides).toEqual(document.slides)
+    expect(reopened.slideOrder).toHaveLength(100)
+    const another = convertPresentationData(makePptxFileItem(), presentation)
+    expect(Object.keys(another.assets)[0]).not.toBe(Object.keys(document.assets)[0])
+  })
+
+  it('keeps equal basenames in distinct package entries separate and resolves aliases to the same asset', () => {
+    const presentation = {
+      width: 1920,
+      height: 1080,
+      slides: [
+        {
+          ...mockSlide(0, 0, mockXmlNode()),
+          rels: new Map([
+            ['first', { target: '../media/shared.png' }],
+            ['other', { target: '../other/shared.png' }],
+            ['alias', { target: '../media/../media/shared.png' }],
+            ['fallback', { target: '../unknown/shared.png' }]
+          ]),
+          nodes: ['first', 'other', 'alias', 'fallback'].map((blipEmbed) => ({
+            nodeType: 'picture',
+            blipEmbed,
+            position: { x: 0, y: 0 },
+            size: { w: 100, h: 100 },
+            rotation: 0
+          }))
+        }
+      ],
+      layouts: new Map(),
+      masters: new Map(),
+      layoutToMaster: new Map(),
+      media: new Map([
+        ['media/shared.png', new Uint8Array([1])],
+        ['ppt/other/shared.png', new Uint8Array([2])]
+      ])
+    } as unknown as PresentationData
+    const document = convertPresentationData(makePptxFileItem(), presentation)
+    const images = Object.values(document.slides)
+      .flatMap((slide) => Object.values(slide.elements))
+      .filter((element) => element.type === 'image')
+    expect(Object.keys(document.assets)).toHaveLength(2)
+    expect(images[0].assetId).toBe(images[2].assetId)
+    expect(images[0].assetId).toBe(images[3].assetId)
+    expect(images[0].assetId).not.toBe(images[1].assetId)
+    expect(document.assets[images[0].assetId].dataUrl).toBe('data:image/png;base64,AQ==')
+    expect(document.assets[images[1].assetId].dataUrl).toBe('data:image/png;base64,Ag==')
+  })
+
   it('imports the text-placeholder fixture as editable CSS-px text boxes', async () => {
     const fileBytes = await readFile(TEXT_PLACEHOLDER_FIXTURE)
     const buffer = await new Blob([fileBytes]).arrayBuffer()
