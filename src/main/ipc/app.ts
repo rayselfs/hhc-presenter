@@ -1,4 +1,4 @@
-import { clearOneDriveCredentials } from './onedrive-credentials'
+import type { OneDriveService } from '../onedrive-service'
 import { app, BrowserWindow, dialog, ipcMain, protocol, session } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import path from 'path'
@@ -155,8 +155,11 @@ function downloadFile(
 
 let whisperModelDir: string | null = null
 
-async function clearMainProcessUserData(hhcAuthService: HhcAuthService): Promise<void> {
-  await Promise.all([hhcAuthService.clearLocalData(), clearOneDriveCredentials()])
+async function clearMainProcessUserData(
+  hhcAuthService: HhcAuthService,
+  oneDriveService: Pick<OneDriveService, 'clearCredentials'>
+): Promise<void> {
+  await Promise.all([hhcAuthService.clearLocalData(), oneDriveService.clearCredentials()])
   const userData = app.getPath('userData')
   for (const entry of [
     'native-files',
@@ -186,7 +189,11 @@ function detectInstalledModel(destDir: string): WhisperDirInfo {
   return { hasFiles: entries.length > 0 }
 }
 
-export function registerAppIpc(wm: WindowManager, hhcAuthService: HhcAuthService): void {
+export function registerAppIpc(
+  wm: WindowManager,
+  hhcAuthService: HhcAuthService,
+  oneDriveService: Pick<OneDriveService, 'clearCredentials'>
+): void {
   ipcMain.handle('app:confirm-close', (event) => {
     if (!isMainWindow(wm, event)) return { closing: false }
     return { closing: wm.confirmMainWindowClose() }
@@ -205,7 +212,7 @@ export function registerAppIpc(wm: WindowManager, hhcAuthService: HhcAuthService
 
   ipcMain.handle('app:clear-user-data', async (event) => {
     if (!isMainWindow(wm, event)) return
-    await clearMainProcessUserData(hhcAuthService)
+    await clearMainProcessUserData(hhcAuthService, oneDriveService)
   })
 
   ipcMain.handle('app:select-directory', async (event) => {
