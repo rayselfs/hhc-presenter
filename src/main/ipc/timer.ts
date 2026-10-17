@@ -1,15 +1,17 @@
+import { parseTimerCommand } from '@shared/timer-command'
 import { ipcMain } from 'electron'
 import { timerService } from '../timerService'
 import type { WindowManager } from '../windowManager'
-import { isKnownWindow, validateTimerCommand, validateTimerSettings } from './validate'
+import { isKnownWindow, validateTimerSettings } from './validate'
 
 export function registerTimerHandlers(wm: WindowManager): void {
   timerService.setWindowManager(wm)
 
   ipcMain.handle('timer:command', (event, cmd: unknown) => {
     if (!isKnownWindow(wm, event)) return
-    if (!validateTimerCommand(cmd)) return
-    timerService.handleCommand(cmd as Parameters<typeof timerService.handleCommand>[0])
+    const command = parseTimerCommand(cmd)
+    if (!command) return
+    timerService.handleCommand(command)
   })
 
   ipcMain.handle('timer:get-state', (event) => {
