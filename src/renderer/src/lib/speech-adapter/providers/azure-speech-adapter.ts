@@ -14,6 +14,8 @@ import type {
 export class AzureSpeechAdapter implements SpeechAdapter {
   private recognizer: sdk.SpeechRecognizer | null = null
   private isActive = false
+  private disposed = false
+  private cancelStart: (() => void) | null = null
   private listeners: Map<
     SpeechAdapterEventType,
     Set<SpeechAdapterEventListener<SpeechAdapterEventType>>
@@ -47,6 +49,10 @@ export class AzureSpeechAdapter implements SpeechAdapter {
 
   private setupBeforeUnloadHandler(): void {
     this.beforeUnloadHandler = () => {
+      if (this.cancelStart) {
+        this.dispose()
+        return
+      }
       if (this.isActive && this.recognizer) {
         this.recognizer.stopContinuousRecognitionAsync(
           () => {},
@@ -113,7 +119,7 @@ export class AzureSpeechAdapter implements SpeechAdapter {
     }
 
     this.offlineHandler = () => {
-      if (this.isActive) {
+      if (this.isActive || this.cancelStart) {
         this.stop().catch(() => {})
         this.emit('error', {
           error: new Error('Network connection lost'),
@@ -127,7 +133,8 @@ export class AzureSpeechAdapter implements SpeechAdapter {
   }
 
   async start(): Promise<void> {
-    if (this.isActive) {
+    if (this.disposed) throw new Error('Recognition adapter disposed')
+    if (this.isActive || this.cancelStart) {
       throw new Error('Recognition already active')
     }
 
@@ -135,7 +142,10 @@ export class AzureSpeechAdapter implements SpeechAdapter {
       throw new Error('No network connection')
     }
 
+    let recognizer: sdk.SpeechRecognizer | null = null
     try {
+      this.recognizer?.close()
+      this.recognizer = null
       const speechConfig = sdk.SpeechConfig.fromSubscription(
         this.config.subscriptionKey,
         this.config.region
@@ -158,7 +168,9 @@ export class AzureSpeechAdapter implements SpeechAdapter {
       )
 
       const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput()
-      this.recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig)
+      recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig)
+      this.recognizer = recognizer
+      const isCurrent = (): boolean => !this.disposed && this.recognizer === recognizer
 
       const connection = sdk.Connection.fromRecognizer(this.recognizer)
       connection.openConnection()
@@ -169,6 +181,7 @@ export class AzureSpeechAdapter implements SpeechAdapter {
       }
 
       this.recognizer.recognizing = (_s, e) => {
+        if (!isCurrent()) return
         if (e.result.reason === sdk.ResultReason.RecognizingSpeech) {
           this.recordActivity()
           this.emit('recognizing', { text: e.result.text })
@@ -176,6 +189,7 @@ export class AzureSpeechAdapter implements SpeechAdapter {
       }
 
       this.recognizer.recognized = (_s, e) => {
+        if (!isCurrent()) return
         if (e.result.reason === sdk.ResultReason.RecognizedSpeech) {
           const text = e.result.text
           const confidence = this.extractConfidence(e.result)
@@ -199,15 +213,19 @@ export class AzureSpeechAdapter implements SpeechAdapter {
       }
 
       this.recognizer.sessionStarted = () => {
+        if (!isCurrent()) return
         this.emit('sessionStarted', undefined)
       }
 
       this.recognizer.sessionStopped = () => {
+        if (!isCurrent()) return
         this.isActive = false
         this.emit('sessionStopped', undefined)
+        if (this.cancelStart) void this.stop()
       }
 
       this.recognizer.canceled = (_s, e) => {
+        if (!isCurrent()) return
         this.isActive = false
         const reason = sdk.CancellationReason[e.reason]
         this.emit('canceled', { reason })
@@ -215,21 +233,32 @@ export class AzureSpeechAdapter implements SpeechAdapter {
         if (e.reason === sdk.CancellationReason.Error) {
           this.handleCancellationError(e.errorDetails)
         }
+        if (this.cancelStart) void this.stop()
       }
 
-      this.recognizer.startContinuousRecognitionAsync(
-        () => {
-          this.isActive = true
-          this.startWatchdog()
-        },
-        (err) => {
-          this.emit('error', {
-            error: new Error(err),
-            message: `Failed to start recognition: ${err}`
-          })
-        }
-      )
+      await new Promise<void>((resolve, reject) => {
+        this.cancelStart = () =>
+          reject(new DOMException('Recognition start canceled', 'AbortError'))
+        recognizer!.startContinuousRecognitionAsync(
+          () => {
+            if (!isCurrent()) return
+            this.cancelStart = null
+            this.isActive = true
+            this.startWatchdog()
+            resolve()
+          },
+          (err) => {
+            if (!isCurrent()) return
+            this.cancelStart = null
+            reject(new Error(`Failed to start recognition: ${err}`))
+          }
+        )
+      })
     } catch (error) {
+      if (this.disposed || (recognizer && this.recognizer !== recognizer)) throw error
+      this.cancelStart = null
+      this.recognizer = null
+      recognizer?.close()
       this.emit('error', {
         error: error as Error,
         message: `Failed to initialize recognizer: ${(error as Error).message}`
@@ -239,6 +268,16 @@ export class AzureSpeechAdapter implements SpeechAdapter {
   }
 
   async stop(): Promise<void> {
+    if (this.cancelStart) {
+      const recognizer = this.recognizer
+      this.recognizer = null
+      this.cancelStart()
+      this.cancelStart = null
+      this.clearBuffer()
+      this.stopWatchdog()
+      recognizer?.close()
+      return
+    }
     if (!this.recognizer || !this.isActive) {
       return
     }
@@ -282,6 +321,9 @@ export class AzureSpeechAdapter implements SpeechAdapter {
   }
 
   dispose(): void {
+    this.disposed = true
+    this.cancelStart?.()
+    this.cancelStart = null
     this.clearBuffer()
     this.stopWatchdog()
 
