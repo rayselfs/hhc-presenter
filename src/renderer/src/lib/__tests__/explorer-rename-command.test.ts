@@ -1,7 +1,11 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 import { openFileExplorerDB, resetFileExplorerDBForTests } from '../file-explorer-db'
-import { renameExplorerEntry, useFileExplorerStore } from '@renderer/stores/file-explorer'
+import {
+  renameExplorerEntry,
+  updateExplorerFolderProperties,
+  useFileExplorerStore
+} from '@renderer/stores/file-explorer'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
 
 const root: FolderRecord = {
@@ -292,4 +296,120 @@ it('keeps a favorite change made after rename put success without reverting the 
   const renamed = await (await openFileExplorerDB()).get('folder-records', parent.id)
   expect(renamed).toMatchObject({ name: 'Renamed folder', isFavorited: false })
   expect(useFileExplorerStore.getState().folders[parent.id]).toEqual(renamed)
+})
+
+it('commits folder name and expiration together from the latest durable record', async () => {
+  const db = await openFileExplorerDB()
+  await db.put('folder-records', { ...parent, isFavorited: false, expiresAt: 100 })
+  await updateExplorerFolderProperties(parent.id, { name: 'Properties', expiresAt: 200 })
+  const updated = await db.get('folder-records', parent.id)
+  expect(updated).toEqual({ ...parent, isFavorited: false, name: 'Properties', expiresAt: 200 })
+  expect(useFileExplorerStore.getState().folders[parent.id]).toEqual(updated)
+  expect(useFileExplorerStore.getState()._childFoldersByParent[root.id]).toEqual([updated])
+})
+
+it('rolls back both folder properties after put success and permits retry without publication', async () => {
+  const db = await openFileExplorerDB()
+  const original = { ...parent, isFavorited: false, expiresAt: 100 }
+  await db.put('folder-records', original)
+  useFileExplorerStore.setState({ folders: { [root.id]: root, [parent.id]: original } })
+  const publication = vi.fn()
+  const unsubscribe = useFileExplorerStore.subscribe((state) => {
+    if (state.folders[parent.id]?.name === 'Properties') publication()
+  })
+  const originalPut = IDBObjectStore.prototype.put
+  let aborted = 0
+  const put = vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(function (
+    this: IDBObjectStore,
+    value: unknown,
+    key?: IDBValidKey
+  ): IDBRequest<IDBValidKey> {
+    const request = originalPut.call(this, value, key)
+    if (this.name === 'folder-records')
+      request.addEventListener(
+        'success',
+        () => {
+          aborted++
+          this.transaction.abort()
+        },
+        { once: true }
+      )
+    return request
+  })
+  try {
+    await expect(
+      updateExplorerFolderProperties(parent.id, { name: 'Properties', expiresAt: 200 })
+    ).rejects.toMatchObject({ name: 'AbortError' })
+  } finally {
+    put.mockRestore()
+    unsubscribe()
+  }
+  expect(aborted).toBe(1)
+  expect(publication).not.toHaveBeenCalled()
+  expect(await db.get('folder-records', parent.id)).toEqual(original)
+  expect(useFileExplorerStore.getState().folders[parent.id]).toEqual(original)
+  await updateExplorerFolderProperties(parent.id, { name: 'Properties', expiresAt: 200 })
+  expect(await db.get('folder-records', parent.id)).toMatchObject({
+    name: 'Properties',
+    expiresAt: 200
+  })
+})
+
+it('retains favorite expiration lock from durable state even if UI state is stale', async () => {
+  const stale = { ...parent, isFavorited: false, expiresAt: 100 }
+  useFileExplorerStore.setState({
+    folders: { [root.id]: root, [parent.id]: stale },
+    _foldersArray: [root, stale],
+    _childFoldersByParent: { [root.id]: [stale] }
+  })
+  expect(useFileExplorerStore.getState().folders[parent.id].isFavorited).toBe(false)
+  await updateExplorerFolderProperties(parent.id, { name: 'Favorite', expiresAt: 200 })
+  expect(await (await openFileExplorerDB()).get('folder-records', parent.id)).toMatchObject({
+    name: 'Favorite',
+    isFavorited: true,
+    expiresAt: null
+  })
+})
+
+it.each([NaN, Infinity, -Infinity])(
+  'rejects invalid folder expiration %j without changing its name',
+  async (expiresAt) => {
+    await expect(
+      updateExplorerFolderProperties(parent.id, { name: 'Invalid expiration', expiresAt })
+    ).rejects.toThrow('expiration is invalid')
+    expect(await (await openFileExplorerDB()).get('folder-records', parent.id)).toEqual(parent)
+  }
+)
+
+it('keeps personal folder properties as a rename outbox operation without local retention changes', async () => {
+  await seedPersonal()
+  const db = await openFileExplorerDB()
+  const folder = {
+    ...parent,
+    id: 'personal-folder',
+    parentId: parent.id,
+    personalOwnerId: 'alice',
+    expiresAt: null
+  }
+  await db.put('folder-records', folder)
+  await db.put('personal-sync-nodes', {
+    id: folder.id,
+    ownerId: 'alice',
+    remoteId: 'remote-folder',
+    kind: 'folder',
+    localRevision: 2,
+    syncedLocalRevision: 2,
+    remoteRevision: 2
+  })
+  await updateExplorerFolderProperties(folder.id, { name: 'Personal folder', expiresAt: 200 })
+  expect(await db.get('folder-records', folder.id)).toMatchObject({
+    name: 'Personal folder',
+    expiresAt: null
+  })
+  expect(await db.getAll('personal-sync-outbox')).toEqual([
+    expect.objectContaining({
+      ownerId: 'alice',
+      mutation: { type: 'rename', name: 'Personal folder' }
+    })
+  ])
 })

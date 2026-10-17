@@ -14,12 +14,13 @@ import { ShortcutScope } from '@renderer/contexts/ShortcutScopeContext'
 export interface FolderModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: () => void
+  onSubmit: () => void | Promise<void>
   editingFolder: FolderRecord | null
   folderName: string
   onFolderNameChange: (name: string) => void
   folderDuration: FolderDuration
   onFolderDurationChange: (duration: FolderDuration) => void
+  isSubmitting?: boolean
   isRetentionLocked?: boolean
   hideDuration?: boolean
   i18nPrefix?: string
@@ -36,6 +37,7 @@ export function FolderModal({
   onFolderNameChange,
   folderDuration,
   onFolderDurationChange,
+  isSubmitting = false,
   isRetentionLocked,
   hideDuration,
   i18nPrefix
@@ -50,7 +52,14 @@ export function FolderModal({
 
   return (
     <Modal>
-      <Modal.Backdrop isOpen onOpenChange={onClose} isDismissable>
+      <Modal.Backdrop
+        isOpen
+        onOpenChange={() => {
+          if (!isSubmitting) onClose()
+        }}
+        isDismissable={!isSubmitting}
+        isKeyboardDismissDisabled={isSubmitting}
+      >
         <Modal.Container size="sm">
           <Modal.Dialog className="p-3 pl-5 pt-5">
             <Modal.Header>
@@ -60,15 +69,19 @@ export function FolderModal({
                   : tKey('createNewFolder', 'Create New Folder')}
               </Modal.Heading>
             </Modal.Header>
-            <Modal.Body>
+            <Modal.Body aria-busy={isSubmitting}>
               <ShortcutScope name="overlay">
                 <div className="flex flex-col gap-3">
                   <TextField
                     autoFocus
+                    isDisabled={isSubmitting}
                     value={folderName}
                     onChange={onFolderNameChange}
                     className="w-full p-1"
-                    onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && onSubmit()}
+                    onKeyDown={(e) => {
+                      if (!isSubmitting && e.key === 'Enter' && !e.nativeEvent.isComposing)
+                        void onSubmit()
+                    }}
                     onFocus={(e) => (e.target as HTMLInputElement).select()}
                   >
                     <Label>{tKey('folderName', 'Folder Name')}</Label>
@@ -86,7 +99,7 @@ export function FolderModal({
                         aria-label={tKey('retention', 'Retention')}
                         className="w-full"
                         variant="secondary"
-                        isDisabled={isRetentionLocked}
+                        isDisabled={isRetentionLocked || isSubmitting}
                       >
                         <Select.Trigger>
                           <Select.Value />
@@ -116,10 +129,10 @@ export function FolderModal({
               </ShortcutScope>
             </Modal.Body>
             <Modal.Footer>
-              <Button variant="tertiary" onPress={onClose}>
+              <Button variant="tertiary" onPress={onClose} isDisabled={isSubmitting}>
                 {t('common.cancel', 'Cancel')}
               </Button>
-              <Button variant="primary" onPress={onSubmit}>
+              <Button variant="primary" onPress={() => void onSubmit()} isDisabled={isSubmitting}>
                 {t('common.confirm', 'Confirm')}
               </Button>
             </Modal.Footer>
