@@ -68,15 +68,18 @@ vi.mock('microsoft-cognitiveservices-speech-sdk', () => {
 })
 
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk'
-import { BrowserSpeechAdapter } from '../browser-speech-adapter'
+import { parseVerseReference } from '../../verse-parser'
+import { AzureSpeechAdapter } from '../providers/azure-speech-adapter'
+import { createSpeechAdapter } from '..'
+import { DEFAULT_SPEECH } from '@renderer/stores/settings'
 
 function getRecognizerInstance(): Record<string, unknown> {
   const mock = vi.mocked(sdk.SpeechRecognizer)
   return mock.mock.results[mock.mock.results.length - 1].value as Record<string, unknown>
 }
 
-function createAdapter(overrides: Record<string, unknown> = {}): BrowserSpeechAdapter {
-  return new BrowserSpeechAdapter({
+function createAdapter(overrides: Record<string, unknown> = {}): AzureSpeechAdapter {
+  return new AzureSpeechAdapter({
     subscriptionKey: 'test-key',
     region: 'eastus',
     language: 'en-US',
@@ -84,11 +87,11 @@ function createAdapter(overrides: Record<string, unknown> = {}): BrowserSpeechAd
   })
 }
 
-async function startAdapter(adapter: BrowserSpeechAdapter): Promise<void> {
+async function startAdapter(adapter: AzureSpeechAdapter): Promise<void> {
   await adapter.start()
 }
 
-describe('BrowserSpeechAdapter - Cost Protection', () => {
+describe('AzureSpeechAdapter - Cost Protection', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.stubGlobal('navigator', { onLine: true, language: 'en-US' })
@@ -99,6 +102,25 @@ describe('BrowserSpeechAdapter - Cost Protection', () => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
     vi.clearAllMocks()
+  })
+
+  it('selects the tested Azure provider for both factory entry points', async () => {
+    const legacy = await createSpeechAdapter({ subscriptionKey: 'test-key', region: 'eastus' })
+    const selected = await createSpeechAdapter('azure', DEFAULT_SPEECH, { maxSessionMs: 30_000 })
+    try {
+      expect(legacy).toBeInstanceOf(AzureSpeechAdapter)
+      expect(selected).toBeInstanceOf(AzureSpeechAdapter)
+      const stopped = vi.fn()
+      selected.on('maxDurationReached', stopped)
+      await selected.start()
+      await vi.advanceTimersByTimeAsync(29_999)
+      expect(stopped).not.toHaveBeenCalled()
+      await vi.advanceTimersByTimeAsync(1)
+      expect(stopped).toHaveBeenCalledOnce()
+    } finally {
+      await legacy.dispose()
+      await selected.dispose()
+    }
   })
 
   describe('idle timeout', () => {
@@ -334,6 +356,7 @@ describe('BrowserSpeechAdapter - Cost Protection', () => {
       const recognizedCb = instance.recognized as (_s: unknown, e: unknown) => void
 
       recognizedCb(null, makeResult('創世記第一章', 0.85))
+      expect(parseVerseReference).toHaveBeenCalledWith('創世記第一章')
 
       adapter.dispose()
     })
@@ -348,27 +371,25 @@ describe('BrowserSpeechAdapter - Cost Protection', () => {
       const recognizedCb = instance.recognized as (_s: unknown, e: unknown) => void
 
       recognizedCb(null, makeResult('random noise', 0.2))
+      expect(parseVerseReference).not.toHaveBeenCalled()
 
       expect(handler).not.toHaveBeenCalled()
       adapter.dispose()
     })
 
-    it('accepts medium-confidence results (0.4-0.7) with warning', async () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    it('accepts medium-confidence results (0.4-0.7) for verse parsing', async () => {
+      const handler = vi.fn()
       const adapter = createAdapter()
+      adapter.on('rawRecognized', handler)
 
       await startAdapter(adapter)
       const instance = getRecognizerInstance()
       const recognizedCb = instance.recognized as (_s: unknown, e: unknown) => void
 
       recognizedCb(null, makeResult('可能的文字', 0.55))
+      expect(parseVerseReference).toHaveBeenCalledWith('可能的文字')
 
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Medium confidence'),
-        expect.any(Number),
-        expect.any(String)
-      )
-      warnSpy.mockRestore()
+      expect(handler).toHaveBeenCalledWith({ text: '可能的文字', confidence: 0.55 })
       adapter.dispose()
     })
 
@@ -380,6 +401,7 @@ describe('BrowserSpeechAdapter - Cost Protection', () => {
       const recognizedCb = instance.recognized as (_s: unknown, e: unknown) => void
 
       recognizedCb(null, { result: { reason: 3, text: 'no properties' } })
+      expect(parseVerseReference).toHaveBeenCalledWith('no properties')
 
       adapter.dispose()
     })
