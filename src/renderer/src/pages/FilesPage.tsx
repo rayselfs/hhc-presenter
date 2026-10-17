@@ -1,3 +1,4 @@
+import { useItemSelection } from '@renderer/hooks/useItemSelection'
 import PresentationDraftRecovery from '@renderer/components/Control/Presentation/PresentationDraftRecovery'
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -196,7 +197,8 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   const retryPersistence = useFileExplorerStore((state) => state.retryPersistence)
   const { showItemMenu, showFolderMenu, showMultiSelectMenu, showEmptyAreaMenu } =
     useFileContextMenu()
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const selection = useItemSelection()
+  const { selectedIds, setSelectedIds, clearSelection } = selection
   const [clipboard, setClipboard] = useState<ClipboardState | null>(null)
   const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false)
   const [isCreateSubmitting, setIsCreateSubmitting] = useState(false)
@@ -514,7 +516,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
 
       try {
         await unlinkSyncRootFolderFromApp(root)
-        setSelectedIds(new Set())
+        clearSelection()
         toast.success(t('fileExplorer.syncSources.unlinked'))
         return true
       } catch (error) {
@@ -523,7 +525,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
         return false
       }
     },
-    [confirm, t]
+    [confirm, t, clearSelection]
   )
 
   const handleRefreshSyncFolder = useCallback(
@@ -591,10 +593,6 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
     [currentFolderId, addFolder, isCurrentFolderReadOnly]
   )
 
-  const handleSelectionChange = useCallback((nextSelectedIds: Set<string>): void => {
-    setSelectedIds(nextSelectedIds)
-  }, [])
-
   const handleCopy = useCallback((targetIds: Set<string>): void => {
     if (targetIds.size === 0) return
     setClipboard({ itemIds: new Set(targetIds), mode: 'copy' })
@@ -647,14 +645,14 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
             await removeFileItemFromStore(id)
           }
         }
-        setSelectedIds(new Set())
+        clearSelection()
         return true
       } catch (error) {
         toast.danger(error instanceof Error ? error.message : String(error))
         return false
       }
     },
-    [confirm, t, areIdsReadOnly, findSingleSelectedSyncRoot, handleUnlinkSyncRoot]
+    [confirm, t, areIdsReadOnly, findSingleSelectedSyncRoot, handleUnlinkSyncRoot, clearSelection]
   )
 
   const handlePaste = useCallback(async (): Promise<void> => {
@@ -715,8 +713,8 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
     }
 
     if (clipboard.mode === 'cut') setClipboard(null)
-    setSelectedIds(new Set())
-  }, [clipboard, currentFolderId, isCurrentFolderReadOnly, t])
+    clearSelection()
+  }, [clipboard, currentFolderId, isCurrentFolderReadOnly, t, clearSelection])
 
   const openEditModal = useCallback((id: string): void => {
     if (editSubmittingRef.current) return
@@ -811,6 +809,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
     },
     [
       selectedIds,
+      setSelectedIds,
       showMultiSelectMenu,
       showItemMenu,
       handleCopy,
@@ -921,6 +920,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
     },
     [
       selectedIds,
+      setSelectedIds,
       clipboard,
       showMultiSelectMenu,
       showFolderMenu,
@@ -1082,7 +1082,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
           onItemContextMenu={handleItemContextMenu}
           onFolderContextMenu={handleFolderContextMenu}
           onEmptyAreaContextMenu={handleEmptyAreaContextMenu}
-          onSelectionChange={handleSelectionChange}
+          selection={selection}
           onCopy={handleCopy}
           onCut={handleCut}
           onDelete={handleDelete}
