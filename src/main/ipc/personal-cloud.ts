@@ -16,7 +16,7 @@ import {
 } from '@shared/personal-cloud'
 import type { WindowManager } from '../windowManager'
 import { getNativeFilePath } from './native-fs'
-import { saveAssetContent } from './hhc-assets'
+import { saveAssetContent } from '../lib/asset-stream-writer'
 import { isMainWindow } from './validate'
 
 type Auth = Pick<
