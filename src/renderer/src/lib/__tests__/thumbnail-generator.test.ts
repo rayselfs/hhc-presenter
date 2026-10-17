@@ -55,4 +55,32 @@ describe('thumbnail generation', () => {
     await expect(generateThumbnail(file, file.type)).resolves.toBeNull()
     expect(consoleError).not.toHaveBeenCalled()
   })
+  it.each(['Thumbnail Worker failed', 'Background rendering unavailable'])(
+    'propagates %s to the caller',
+    async (message) => {
+      const error = new Error(message)
+      mockRenderCoverThumbnail.mockRejectedValue(error)
+      const file = new File(['source'], 'slides.pdf', { type: 'application/pdf' })
+      await expect(generateThumbnail(file)).rejects.toBe(error)
+    }
+  )
+
+  it('propagates PPTX rendering failures', async () => {
+    const error = new Error('Render failed')
+    mockGeneratePptxFirstSlideThumbnail.mockRejectedValue(error)
+    const file = new File(['source'], 'slides.pptx', {
+      type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    })
+    await expect(generateThumbnail(file)).rejects.toBe(error)
+  })
+
+  it('keeps unsupported content and an absent preview distinct from failed rendering', async () => {
+    await expect(
+      generateThumbnail(new File(['source'], 'audio.mp3', { type: 'audio/mpeg' }))
+    ).resolves.toBeNull()
+    mockRenderCoverThumbnail.mockResolvedValue(null)
+    await expect(
+      generateThumbnail(new File(['source'], 'empty.pdf', { type: 'application/pdf' }))
+    ).resolves.toBeNull()
+  })
 })
