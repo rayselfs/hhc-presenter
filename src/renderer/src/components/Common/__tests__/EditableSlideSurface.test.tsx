@@ -1,3 +1,4 @@
+import { mockAnimationFrame } from '@renderer/test/animation-frame'
 import { act, createEvent, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
 import { useState } from 'react'
@@ -2409,25 +2410,6 @@ function getVerticalPadding(element: HTMLElement): number {
   return (
     Number.parseFloat(element.style.paddingTop) + Number.parseFloat(element.style.paddingBottom)
   )
-}
-
-function mockAnimationFrame(): () => void {
-  let nextFrameId = 0
-  const frames = new Map<number, FrameRequestCallback>()
-  vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
-    const frameId = ++nextFrameId
-    frames.set(frameId, callback)
-    return frameId
-  })
-  vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((frameId) => {
-    frames.delete(frameId)
-  })
-
-  return () => {
-    const pendingFrames = [...frames.values()]
-    frames.clear()
-    pendingFrames.forEach((callback) => callback(0))
-  }
 }
 
 function getSlideSurface(container: HTMLElement): HTMLElement {
