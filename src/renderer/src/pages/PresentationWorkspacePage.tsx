@@ -40,10 +40,8 @@ import { Button } from '@heroui/react/button'
 import { Spinner } from '@heroui/react/spinner'
 import { toast } from '@heroui/react/toast'
 import { SHORTCUTS } from '@renderer/config/shortcuts'
-import EditableSlideSurface, {
-  type TextEditFinalizer,
-  type EditableTextSelection
-} from '@renderer/components/Common/EditableSlideSurface'
+import EditableSlideSurface from '@renderer/components/Common/EditableSlideSurface'
+import type { TextEditFinalizer, EditableTextSelection } from '@renderer/types/presentation-text'
 import PresentationHomeRibbon from '@renderer/components/Control/Presentation/PresentationHomeRibbon'
 import {
   InspectorPanel,
