@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   unlinkSyncRoot: vi.fn(),
   deleteResult: vi.fn(),
+  moveExplorerEntry: vi.fn(),
   copyExplorerFolder: vi.fn(async () => 'copy'),
   createExplorerFolder: vi.fn(async () => 'folder'),
   fileState: {
@@ -65,6 +66,7 @@ vi.mock('react-router-dom', () => ({
 
 vi.mock('@renderer/stores/file-explorer', () => ({
   copyExplorerFile: vi.fn(),
+  moveExplorerEntry: mocks.moveExplorerEntry,
   createExplorerFolder: mocks.createExplorerFolder,
   copyExplorerFolder: mocks.copyExplorerFolder,
   FILE_EXPLORER_ROOT_ID: 'file-root',
@@ -104,17 +106,27 @@ vi.mock('@renderer/components/Control/FileExplorer/FileBrowser', () => ({
   default: ({
     onEmptyAreaContextMenu,
     onCopy,
+    onCut,
     onDelete,
     onSelectionChange
   }: {
     onEmptyAreaContextMenu: (event: React.MouseEvent) => void
     onCopy: (ids: Set<string>) => void
+    onCut: (ids: Set<string>) => void
     onDelete: (ids: Set<string>) => Promise<boolean>
     onSelectionChange: (ids: Set<string>) => void
   }) => (
     <>
       <button onClick={() => onEmptyAreaContextMenu({} as React.MouseEvent)}>
         Open file context menu
+      </button>
+      <button
+        onClick={() => {
+          onSelectionChange(new Set(['A']))
+          onCut(new Set(['A']))
+        }}
+      >
+        Cut folder A
       </button>
       <button
         onClick={async () => {
@@ -328,6 +340,7 @@ describe('FilesPage folder paste', () => {
       A: { id: 'A', parentId: 'file-root', name: 'A', sortIndex: 0, createdAt: 1, expiresAt: 1000 },
       B: { id: 'B', parentId: 'A', name: 'B', sortIndex: 0, createdAt: 1, expiresAt: 2000 }
     }
+    mocks.moveExplorerEntry.mockReset().mockResolvedValue(undefined)
     mocks.createExplorerFolder.mockClear()
     mocks.copyExplorerFolder.mockClear()
     mocks.showEmptyAreaMenu.mockClear()
@@ -358,6 +371,29 @@ describe('FilesPage folder paste', () => {
     expect(mocks.createExplorerFolder).not.toHaveBeenCalled()
     expect(mocks.copyExplorerFolder).toHaveBeenCalledWith('A', 'file-root', { name: 'A' })
   })
+  it('retains a failed cut clipboard and selection, then clears them after awaited move success', async () => {
+    mocks.moveExplorerEntry.mockRejectedValueOnce(new Error('Disk unavailable'))
+    render(<FilesPage />)
+    await userEvent.click(screen.getByRole('button', { name: 'Cut folder A' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Open file context menu' }))
+    await act(async () => {
+      await mocks.showEmptyAreaMenu.mock.calls.at(-1)![0].onPaste()
+    })
+    expect(screen.getByTestId('selected-count')).toHaveTextContent('1')
+    await userEvent.click(screen.getByRole('button', { name: 'Open file context menu' }))
+    await act(async () => {
+      await mocks.showEmptyAreaMenu.mock.calls.at(-1)![0].onPaste()
+    })
+    expect(mocks.moveExplorerEntry).toHaveBeenCalledTimes(2)
+    expect(mocks.moveExplorerEntry).toHaveBeenLastCalledWith('folder', 'A', 'file-root')
+    expect(screen.getByTestId('selected-count')).toHaveTextContent('0')
+    await userEvent.click(screen.getByRole('button', { name: 'Open file context menu' }))
+    await act(async () => {
+      await mocks.showEmptyAreaMenu.mock.calls.at(-1)![0].onPaste()
+    })
+    expect(mocks.moveExplorerEntry).toHaveBeenCalledTimes(2)
+  })
+
   it('keeps the clipboard and selection available after a failed copy', async () => {
     mocks.copyExplorerFolder.mockRejectedValueOnce(new Error('Disk unavailable'))
     render(<FilesPage />)

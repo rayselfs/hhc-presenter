@@ -16,6 +16,7 @@ import {
   copyExplorerFolder,
   copyExplorerFile,
   updateExplorerFolderProperties,
+  moveExplorerEntry,
   deleteFolderFromStore,
   removeFileItemFromStore,
   useFileExplorerStore,
@@ -188,8 +189,6 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   const foldersById = useFileExplorerStore((state) => state.folders)
   const getChildFolders = useFileExplorerStore((state) => state.getChildFolders)
   const addFolder = createExplorerFolder
-  const moveItem = useFileExplorerStore((state) => state.moveItem)
-  const moveFolder = useFileExplorerStore((state) => state.moveFolder)
   const persistenceStatus = useFileExplorerStore((state) => state.persistenceStatus)
   const persistenceError = useFileExplorerStore((state) => state.persistenceError)
   const isFolderStoreInitialized = useFileExplorerStore((state) => state.isInitialized)
@@ -692,7 +691,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
             usedFolderNames.add(uniqueName)
             await copyExplorerFolder(id, currentFolderId, { name: uniqueName })
           } else {
-            moveFolder(id, currentFolderId)
+            await moveExplorerEntry('folder', id, currentFolderId)
           }
         } else if (state.items[id]) {
           const item = state.items[id]
@@ -706,7 +705,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
               useFileExplorerStore.getState().updateItem?.(newId, { name: uniqueName })
             }
           } else {
-            moveItem(id, currentFolderId)
+            await moveExplorerEntry('file', id, currentFolderId)
           }
         }
       }
@@ -717,7 +716,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
 
     if (clipboard.mode === 'cut') setClipboard(null)
     setSelectedIds(new Set())
-  }, [clipboard, currentFolderId, moveFolder, moveItem, isCurrentFolderReadOnly, t])
+  }, [clipboard, currentFolderId, isCurrentFolderReadOnly, t])
 
   const openEditModal = useCallback((id: string): void => {
     if (editSubmittingRef.current) return

@@ -43,6 +43,7 @@ import { searchAllItems } from '@renderer/lib/file-explorer-search'
 import {
   FILE_EXPLORER_ROOT_ID,
   renameExplorerEntry,
+  moveExplorerEntry,
   deleteFolderFromStore,
   removeFileItemFromStore,
   useFileExplorerCustomOrder,
@@ -403,9 +404,7 @@ export function FileBrowser({
   const rawItems = useFileExplorerStore((s) => s._itemsByParent[s.currentFolderId] ?? EMPTY_ARRAY)
   const navigateToFolder = useFileExplorerStore((state) => state.navigateToFolder)
   const toggleFavorite = useFileExplorerStore((state) => state.toggleFavorite)
-  const moveItem = useFileExplorerStore((state) => state.moveItem)
   const openPresentationDocument = usePresentationWorkspaceStore((state) => state.openDocument)
-  const moveFolder = useFileExplorerStore((state) => state.moveFolder)
   const customOrders = useFileExplorerCustomOrder((state) => state.orders)
   const setCustomOrder = useFileExplorerCustomOrder((state) => state.setOrder)
   const { viewMode, sortField, sortDir, setSortFieldAndDir, setSortDir, groupMode, groupSortDir } =
@@ -1143,7 +1142,7 @@ export function FileBrowser({
   const handleDragOver = useCallback((): void => {}, [])
 
   const handleDragEnd = useCallback(
-    (event: DragEndEvent): void => {
+    async (event: DragEndEvent): Promise<void> => {
       if (isCurrentFolderReadOnly) return
       const currentDraggedIds = draggedIds
       setActiveId(null)
@@ -1165,15 +1164,15 @@ export function FileBrowser({
 
       if (overData?.type === 'folder-dropzone') {
         const targetFolderId = overData.folderId
-        for (const id of currentDraggedIds.size > 0
-          ? currentDraggedIds
-          : new Set([String(active.id)])) {
-          if (id === targetFolderId) continue
-          if (folderIds.includes(id)) {
-            moveFolder(id, targetFolderId)
-          } else {
-            moveItem(id, targetFolderId)
+        try {
+          for (const id of currentDraggedIds.size > 0
+            ? currentDraggedIds
+            : new Set([String(active.id)])) {
+            if (id === targetFolderId) continue
+            await moveExplorerEntry(folderIds.includes(id) ? 'folder' : 'file', id, targetFolderId)
           }
+        } catch (error) {
+          toast.danger(error instanceof Error ? error.message : String(error))
         }
         return
       }
@@ -1199,8 +1198,6 @@ export function FileBrowser({
       folderIds,
       sortedItems,
       currentFolderId,
-      moveFolder,
-      moveItem,
       setCustomOrder,
       setSortDir,
       isCurrentFolderReadOnly
