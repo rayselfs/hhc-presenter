@@ -37,7 +37,6 @@ const mocks = vi.hoisted(() => ({
     addFolder: vi.fn(),
     ensureItemsLoaded: vi.fn(async () => undefined),
     moveItem: vi.fn(),
-    copyItem: vi.fn(),
     moveFolder: vi.fn(),
     updateFolder: vi.fn(),
     retryInitialization: vi.fn(),
@@ -62,6 +61,7 @@ vi.mock('react-router-dom', () => ({
 }))
 
 vi.mock('@renderer/stores/file-explorer', () => ({
+  copyExplorerFile: vi.fn(),
   createExplorerFolder: mocks.createExplorerFolder,
   copyExplorerFolder: mocks.copyExplorerFolder,
   FILE_EXPLORER_ROOT_ID: 'file-root',
