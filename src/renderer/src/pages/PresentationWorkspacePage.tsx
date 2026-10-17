@@ -131,7 +131,8 @@ import {
 } from '@renderer/lib/presentation-slide-clipboard'
 import { useKeyboardShortcuts } from '@renderer/hooks/useKeyboardShortcuts'
 import { readPresentationArrayBuffer } from '@renderer/lib/presentation-source'
-import { openPptxViewer, type PptxViewerHandle } from '@renderer/lib/pptx-renderer-service'
+import type { PptxViewerHandle } from '@renderer/lib/pptx-renderer-service'
+import { createPptxViewerLifetime } from '@renderer/lib/pptx-viewer-lifetime'
 import { getPresentationWorkspacePath, isPresentationItem } from '@renderer/lib/presentation-media'
 import {
   usePresentationWorkspaceStore,
@@ -370,19 +371,15 @@ export function PptxDocumentView({
   const [isConverting, setIsConverting] = useState(false)
 
   useEffect(() => {
-    let cancelled = false
     const container = canvasRef.current
     if (!container) return
-    const target = document.createElement('div')
-    target.className = 'w-full'
-    container.replaceChildren(target)
-    const controller = new AbortController()
+    const lifetime = createPptxViewerLifetime(container, 'w-full')
     viewerRef.current?.destroy()
     viewerRef.current = null
 
     async function open(): Promise<void> {
       await Promise.resolve()
-      if (cancelled) return
+      if (lifetime.isDisposed()) return
       setViewer(null)
       setStatus('loading')
       setError(null)
@@ -393,15 +390,9 @@ export function PptxDocumentView({
           sourceItem,
           readPresentationArrayBuffer
         )
-        if (cancelled) return
-        const handle = await openPptxViewer(buffer, target, {
-          renderMode: 'slide',
-          signal: controller.signal
-        })
-        if (cancelled) {
-          handle.destroy()
-          return
-        }
+        if (lifetime.isDisposed()) return
+        const handle = await lifetime.open(buffer)
+        if (!handle || lifetime.isDisposed()) return
         viewerRef.current = handle
         setViewer(handle)
         setSlideCount(deckItemId, handle.slideCount)
@@ -417,7 +408,7 @@ export function PptxDocumentView({
         ).catch(() => undefined)
         setStatus('ready')
       } catch (loadError) {
-        if (cancelled) return
+        if (lifetime.isDisposed()) return
         setStatus('failed')
         setError(loadError instanceof Error ? loadError.message : String(loadError))
       }
@@ -425,10 +416,7 @@ export function PptxDocumentView({
 
     void open()
     return () => {
-      cancelled = true
-      controller.abort()
-      target.remove()
-      viewerRef.current?.destroy()
+      lifetime.dispose()
       viewerRef.current = null
     }
   }, [deckItemId, deckUrl, hhcAuth, setActiveSlideId, setSlideCount])

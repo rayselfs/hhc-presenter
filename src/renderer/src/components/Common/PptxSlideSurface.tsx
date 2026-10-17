@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { FileText } from 'lucide-react'
 import { Spinner } from '@heroui/react/spinner'
-import { openPptxViewer, type PptxViewerHandle } from '@renderer/lib/pptx-renderer-service'
+import type { PptxViewerHandle } from '@renderer/lib/pptx-renderer-service'
+import { createPptxViewerLifetime } from '@renderer/lib/pptx-viewer-lifetime'
 import {
   readPresentationArrayBuffer,
   type PresentationSource
@@ -44,20 +45,16 @@ export default function PptxSlideSurface({
   }
 
   useEffect(() => {
-    let cancelled = false
     const container = containerRef.current
     if (!container) return
-    const target = document.createElement('div')
-    target.className = 'h-full w-full'
-    container.replaceChildren(target)
-    const controller = new AbortController()
+    const lifetime = createPptxViewerLifetime(container, 'h-full w-full')
 
     viewerRef.current?.destroy()
     viewerRef.current = null
 
     async function open(): Promise<void> {
       await Promise.resolve()
-      if (cancelled) return
+      if (lifetime.isDisposed()) return
       setViewer(null)
       setStatus('loading')
       setError(null)
@@ -70,20 +67,14 @@ export default function PptxSlideSurface({
           },
           { verifyNativeFile }
         )
-        if (cancelled) return
-        const handle = await openPptxViewer(buffer, target, {
-          renderMode: 'slide',
-          signal: controller.signal
-        })
-        if (cancelled) {
-          handle.destroy()
-          return
-        }
+        if (lifetime.isDisposed()) return
+        const handle = await lifetime.open(buffer)
+        if (!handle || lifetime.isDisposed()) return
         viewerRef.current = handle
         setViewer(handle)
         setStatus('ready')
       } catch (loadError) {
-        if (cancelled) return
+        if (lifetime.isDisposed()) return
         const nextError = loadError instanceof Error ? loadError : new Error(String(loadError))
         setStatus('failed')
         setError(nextError.message)
@@ -93,10 +84,7 @@ export default function PptxSlideSurface({
 
     void open()
     return () => {
-      cancelled = true
-      controller.abort()
-      target.remove()
-      viewerRef.current?.destroy()
+      lifetime.dispose()
       viewerRef.current = null
     }
   }, [onError, retry, sourceId, sourceMimeType, sourceUrl, verifyNativeFile])
