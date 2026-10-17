@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.web.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "types": ["node", "vite/client"]
+  },
+  "include": [
+    "e2e/**/*.ts",
+    "playwright*.config.ts",
+    "src/renderer/src/env.d.ts",
+    "src/preload/*.d.ts",
+    "src/shared/build-constants.d.ts"
+  ],
+  "exclude": ["node_modules"]
+}
