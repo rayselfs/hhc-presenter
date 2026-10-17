@@ -1,3 +1,4 @@
+import type { PresenterApi } from '../shared/presenter-api'
 import type { PersonalNativeApi } from '../shared/personal-cloud'
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
@@ -73,6 +74,10 @@ const timerApi = {
   timerGetState: () => typedInvoke('timer:get-state'),
   timerInitialize: (settings: IpcInvokeMap['timer:initialize']['args'][0]) =>
     typedInvoke('timer:initialize', settings),
+  runtimeInitialize: (configuration: IpcInvokeMap['timer:runtime-initialize']['args'][0]) =>
+    typedInvoke('timer:runtime-initialize', configuration),
+  runtimeCommand: (command: IpcInvokeMap['timer:runtime-command']['args'][0]) =>
+    typedInvoke('timer:runtime-command', command),
   onTimerTick: (callback: (payload: TimerTickPayload) => void) => typedOn('timer-tick', callback)
 }
 
@@ -270,7 +275,7 @@ const api = {
   hhcAssets: hhcAssetsApi,
   personalCloud: personalCloudApi,
   lanRemote: lanRemoteApi
-}
+} satisfies PresenterApi
 
 try {
   contextBridge.exposeInMainWorld('api', api)

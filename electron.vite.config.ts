@@ -186,7 +186,10 @@ export default defineConfig(({ mode }) => {
                   /\/assets\/(pdf(?:\.|-)|transformers(?:\.web)?-|microsoft\.cognitiveservices\.speech\.sdk-)/.test(
                     url.pathname
                   ) ||
-                  /\/assets\/aiden0z-pptx-renderer/.test(url.pathname),
+                  /\/assets\/aiden0z-pptx-renderer/.test(url.pathname) ||
+                  /^\/assets\/hhc-(?:asset-api|line-access|line-connect)-[^/]+\.js$/.test(
+                    url.pathname
+                  ),
                 handler: 'CacheFirst',
                 options: {
                   cacheName: 'hhc-optional-assets',

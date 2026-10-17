@@ -5,10 +5,16 @@ import { I18nextProvider } from 'react-i18next'
 import i18n from '@renderer/i18n'
 import ModeSelector from '@renderer/components/Control/Timer/ModeSelector'
 import { useTimerStore } from '@renderer/stores/timer'
+import { installTimerRuntimeHarness } from '@renderer/test/timer-runtime-harness'
+
+let host: ReturnType<typeof installTimerRuntimeHarness>
 
 beforeEach(() => {
   useTimerStore.setState({ mode: 'timer' })
+  host = installTimerRuntimeHarness()
 })
+
+afterEach(() => host.dispose())
 
 function renderWithI18n(): RenderResult {
   return render(

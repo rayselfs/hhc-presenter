@@ -48,6 +48,37 @@ let authCallbackWaiter: AuthCallbackWaiter | null = null
 let queuedAuthCallbackUrl: string | null = null
 const refreshesByConnection = new Map<string, Promise<OneDriveAccessTokenResult>>()
 
+let credentialRevision = 0
+let clearedAtRevision = 0
+const changedAtRevision = new Map<string, number>()
+let credentialIO: Promise<void> = Promise.resolve()
+
+function serializeCredentialIO<T>(operation: () => Promise<T>): Promise<T> {
+  const result = credentialIO.then(operation)
+  credentialIO = result.then(
+    () => undefined,
+    () => undefined
+  )
+  return result
+}
+
+function assertCredentialCurrent(connectionId: string, revision: number): void {
+  if (clearedAtRevision > revision || (changedAtRevision.get(connectionId) ?? 0) > revision) {
+    throw new Error('OneDrive credential operation was revoked')
+  }
+}
+
+function invalidateCredential(connectionId: string): void {
+  changedAtRevision.set(connectionId, ++credentialRevision)
+  refreshesByConnection.delete(connectionId)
+}
+
+export function clearOneDriveCredentials(): Promise<void> {
+  clearedAtRevision = ++credentialRevision
+  refreshesByConnection.clear()
+  return serializeCredentialIO(() => fs.rm(getCredentialDir(), { recursive: true, force: true }))
+}
+
 function validateConnectionId(connectionId: unknown): string {
   if (
     typeof connectionId !== 'string' ||
@@ -280,7 +311,11 @@ async function readCredential(connectionId: string): Promise<StoredOneDriveCrede
   }
 }
 
-async function writeCredential(credential: StoredOneDriveCredential): Promise<void> {
+async function writeCredential(
+  credential: StoredOneDriveCredential,
+  revision: number
+): Promise<void> {
+  assertCredentialCurrent(credential.connectionId, revision)
   const dir = getCredentialDir()
   await fs.mkdir(dir, { recursive: true })
   const targetPath = getCredentialPath(credential.connectionId)
@@ -288,7 +323,9 @@ async function writeCredential(credential: StoredOneDriveCredential): Promise<vo
   const encrypted = safeStorage.encryptString(JSON.stringify(credential))
   try {
     await fs.writeFile(temporaryPath, encrypted)
+    assertCredentialCurrent(credential.connectionId, revision)
     await fs.rename(temporaryPath, targetPath)
+    assertCredentialCurrent(credential.connectionId, revision)
   } catch (error) {
     await fs.rm(temporaryPath, { force: true }).catch(() => undefined)
     throw error
@@ -357,24 +394,34 @@ async function fetchConnectedAccount(accessToken: string): Promise<OneDriveConne
 async function completeAuth(
   request: OneDriveAuthCodeExchangeRequest
 ): Promise<OneDriveConnectedAccount> {
+  const revision = credentialRevision
   const token = await exchangeAuthCode(request)
   const account = await fetchConnectedAccount(token.accessToken)
   const connectionId = validateConnectionId(account.id)
-  await writeCredential({
-    connectionId,
-    accessToken: token.accessToken,
-    refreshToken: token.refreshToken,
-    expiresAt: token.expiresAt,
-    scope: token.scope,
-    tokenType: token.tokenType,
-    updatedAt: Date.now()
+  await serializeCredentialIO(async () => {
+    assertCredentialCurrent(connectionId, revision)
+    // A reconnect supersedes refreshes started with the previous credential.
+    invalidateCredential(connectionId)
+    await writeCredential(
+      {
+        connectionId,
+        accessToken: token.accessToken,
+        refreshToken: token.refreshToken,
+        expiresAt: token.expiresAt,
+        scope: token.scope,
+        tokenType: token.tokenType,
+        updatedAt: Date.now()
+      },
+      credentialRevision
+    )
   })
   return account
 }
 
 async function refreshAccessToken(
   credential: StoredOneDriveCredential,
-  clientId: string
+  clientId: string,
+  revision: number
 ): Promise<OneDriveAccessTokenResult> {
   const body = new URLSearchParams()
   body.set('client_id', clientId)
@@ -399,7 +446,8 @@ async function refreshAccessToken(
     tokenType: token.tokenType,
     updatedAt: Date.now()
   }
-  await writeCredential(updatedCredential)
+  await serializeCredentialIO(() => writeCredential(updatedCredential, revision))
+  assertCredentialCurrent(credential.connectionId, revision)
 
   return {
     accessToken: token.accessToken,
@@ -410,18 +458,30 @@ async function refreshAccessToken(
 }
 
 function getFreshAccessToken(
-  credential: StoredOneDriveCredential,
-  clientId: string
+  request: OneDriveAccessTokenRequest
 ): Promise<OneDriveAccessTokenResult> {
-  if (hasFreshAccessToken(credential)) return Promise.resolve(toAccessTokenResult(credential))
-
-  const existing = refreshesByConnection.get(credential.connectionId)
+  const existing = refreshesByConnection.get(request.connectionId)
   if (existing) return existing
-
-  const refresh = refreshAccessToken(credential, clientId).finally(() => {
-    refreshesByConnection.delete(credential.connectionId)
+  const revision = credentialRevision
+  const refresh = serializeCredentialIO(async () => {
+    assertCredentialCurrent(request.connectionId, revision)
+    const credential = await readCredential(request.connectionId)
+    assertCredentialCurrent(request.connectionId, revision)
+    if (!credential) throw new Error('OneDrive credentials not found')
+    return credential
   })
-  refreshesByConnection.set(credential.connectionId, refresh)
+    .then((credential) => {
+      assertCredentialCurrent(request.connectionId, revision)
+      return hasFreshAccessToken(credential)
+        ? toAccessTokenResult(credential)
+        : refreshAccessToken(credential, request.clientId, revision)
+    })
+    .finally(() => {
+      if (refreshesByConnection.get(request.connectionId) === refresh) {
+        refreshesByConnection.delete(request.connectionId)
+      }
+    })
+  refreshesByConnection.set(request.connectionId, refresh)
   return refresh
 }
 
@@ -431,7 +491,13 @@ export function registerOneDriveCredentialHandlers(wm: WindowManager): void {
     async (event, connectionId: unknown): Promise<OneDriveCredentialStatus> => {
       if (!isMainWindow(wm, event)) throw new Error('Unauthorized OneDrive credential access')
       const validConnectionId = validateConnectionId(connectionId)
-      return toStatus(await readCredential(validConnectionId))
+      const revision = credentialRevision
+      return serializeCredentialIO(async () => {
+        assertCredentialCurrent(validConnectionId, revision)
+        const credential = await readCredential(validConnectionId)
+        assertCredentialCurrent(validConnectionId, revision)
+        return toStatus(credential)
+      })
     }
   )
 
@@ -440,9 +506,7 @@ export function registerOneDriveCredentialHandlers(wm: WindowManager): void {
     async (event, input: unknown): Promise<OneDriveAccessTokenResult> => {
       if (!isMainWindow(wm, event)) throw new Error('Unauthorized OneDrive credential access')
       const request = normalizeAccessTokenRequest(input)
-      const credential = await readCredential(request.connectionId)
-      if (!credential) throw new Error('OneDrive credentials not found')
-      return getFreshAccessToken(credential, request.clientId)
+      return getFreshAccessToken(request)
     }
   )
 
@@ -457,7 +521,8 @@ export function registerOneDriveCredentialHandlers(wm: WindowManager): void {
   ipcMain.handle('onedrive:delete-credentials', async (event, connectionId: unknown) => {
     if (!isMainWindow(wm, event)) throw new Error('Unauthorized OneDrive credential access')
     const validConnectionId = validateConnectionId(connectionId)
-    await fs.rm(getCredentialPath(validConnectionId), { force: true })
+    invalidateCredential(validConnectionId)
+    await serializeCredentialIO(() => fs.rm(getCredentialPath(validConnectionId), { force: true }))
   })
 
   ipcMain.handle('onedrive:get-auth-redirect-uri', async (event): Promise<string> => {

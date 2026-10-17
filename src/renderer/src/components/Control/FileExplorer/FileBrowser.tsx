@@ -42,6 +42,8 @@ import { compareByField } from '@renderer/lib/file-explorer-sort'
 import { searchAllItems } from '@renderer/lib/file-explorer-search'
 import {
   FILE_EXPLORER_ROOT_ID,
+  renameExplorerEntry,
+  moveExplorerEntry,
   deleteFolderFromStore,
   removeFileItemFromStore,
   useFileExplorerCustomOrder,
@@ -85,7 +87,7 @@ export interface FileBrowserProps {
   selection: UseItemSelectionReturn
   onCopy?: (selectedIds: Set<string>) => void
   onCut?: (selectedIds: Set<string>) => void
-  onDelete?: (selectedIds: Set<string>) => void | Promise<void>
+  onDelete?: (selectedIds: Set<string>) => boolean | void | Promise<boolean | void>
   onPaste?: () => void
   clipboard?: ClipboardState | null
   onEscape?: () => void
@@ -402,9 +404,7 @@ export function FileBrowser({
   const rawItems = useFileExplorerStore((s) => s._itemsByParent[s.currentFolderId] ?? EMPTY_ARRAY)
   const navigateToFolder = useFileExplorerStore((state) => state.navigateToFolder)
   const toggleFavorite = useFileExplorerStore((state) => state.toggleFavorite)
-  const moveItem = useFileExplorerStore((state) => state.moveItem)
   const openPresentationDocument = usePresentationWorkspaceStore((state) => state.openDocument)
-  const moveFolder = useFileExplorerStore((state) => state.moveFolder)
   const customOrders = useFileExplorerCustomOrder((state) => state.orders)
   const setCustomOrder = useFileExplorerCustomOrder((state) => state.setOrder)
   const { viewMode, sortField, sortDir, setSortFieldAndDir, setSortDir, groupMode, groupSortDir } =
@@ -418,6 +418,7 @@ export function FileBrowser({
   const [draggedIds, setDraggedIds] = useState<Set<string>>(new Set())
   const [selectedSearchId, setSelectedSearchId] = useState<string | null>(null)
   const [renamingItemId, setRenamingItemId] = useState<string | null>(null)
+  const renameSessionRef = React.useRef(0)
   const [syncStates, setSyncStates] = useState<Record<string, SyncItemViewState>>({})
   const [syncEntries, setSyncEntries] = useState<SyncEntryRecord[]>([])
   const [unsupportedMediaIds, setUnsupportedMediaIds] = useState<Set<string>>(new Set())
@@ -739,7 +740,10 @@ export function FileBrowser({
     const item = sortedItems.find((entry) => entry.id === renameItemRequestId)
     if (item && !item.isFolder) {
       setSelectedIds(new Set([renameItemRequestId]))
-      if (!isCurrentFolderReadOnly) setRenamingItemId(renameItemRequestId)
+      if (!isCurrentFolderReadOnly) {
+        renameSessionRef.current++
+        setRenamingItemId(renameItemRequestId)
+      }
     }
     onRenameItemRequestHandled?.()
   }, [
@@ -855,62 +859,73 @@ export function FileBrowser({
   )
 
   const handleRenameSubmit = useCallback(
-    (itemId: string, baseName: string): void => {
+    async (itemId: string, baseName: string): Promise<boolean> => {
+      const renameSession = renameSessionRef.current
       const folder = useFileExplorerStore.getState().folders[itemId]
       if (folder && isPersonalRootFolder(folder)) {
         setRenamingItemId(null)
-        return
+        return true
       }
       if (isCurrentFolderReadOnly) {
         setRenamingItemId(null)
-        return
+        return true
       }
       const item = sortedItems.find((entry) => entry.id === itemId)
       if (!item) {
         setRenamingItemId(null)
-        return
+        return true
       }
 
       const trimmedBase = baseName.trim()
       if (!validateDisplayName(trimmedBase)) {
         toast.danger(t('fileExplorer.invalidName', 'Invalid name'))
-        return
+        return false
       }
 
-      if (item.isFolder) {
-        const folder = folders.find((entry) => entry.id === itemId)
-        if (!folder) {
-          setRenamingItemId(null)
-          return
+      try {
+        if (item.isFolder) {
+          const folder = folders.find((entry) => entry.id === itemId)
+          if (!folder) {
+            setRenamingItemId(null)
+            return true
+          }
+          const siblingNames = folders
+            .filter((entry) => entry.parentId === folder.parentId)
+            .map((entry) => entry.name)
+          if (hasNameConflict(trimmedBase, siblingNames, { excludeName: folder.name })) {
+            toast.danger(
+              t('fileExplorer.folderAlreadyExists', 'A folder with this name already exists')
+            )
+            return false
+          }
+          await renameExplorerEntry('folder', itemId, trimmedBase)
+        } else {
+          const file = fileItems.find((entry) => entry.id === itemId)
+          if (!file) {
+            setRenamingItemId(null)
+            return true
+          }
+          const { extension } = splitFileName(file.name)
+          const nextName = `${trimmedBase}${extension}`
+          const siblingNames = fileItems
+            .filter((entry) => entry.parentId === file.parentId)
+            .map((entry) => entry.name)
+          if (hasNameConflict(nextName, siblingNames, { excludeName: file.name })) {
+            toast.danger(
+              t('fileExplorer.fileAlreadyExists', 'A file with this name already exists')
+            )
+            return false
+          }
+          await renameExplorerEntry('file', itemId, nextName)
         }
-        const siblingNames = folders
-          .filter((entry) => entry.parentId === folder.parentId)
-          .map((entry) => entry.name)
-        if (hasNameConflict(trimmedBase, siblingNames, { excludeName: folder.name })) {
-          toast.danger(
-            t('fileExplorer.folderAlreadyExists', 'A folder with this name already exists')
-          )
-          return
-        }
-        useFileExplorerStore.getState().updateFolder(itemId, { name: trimmedBase })
-      } else {
-        const file = fileItems.find((entry) => entry.id === itemId)
-        if (!file) {
-          setRenamingItemId(null)
-          return
-        }
-        const { extension } = splitFileName(file.name)
-        const nextName = `${trimmedBase}${extension}`
-        const siblingNames = fileItems
-          .filter((entry) => entry.parentId === file.parentId)
-          .map((entry) => entry.name)
-        if (hasNameConflict(nextName, siblingNames, { excludeName: file.name })) {
-          toast.danger(t('fileExplorer.fileAlreadyExists', 'A file with this name already exists'))
-          return
-        }
-        useFileExplorerStore.getState().updateItem?.(itemId, { name: nextName })
+        if (renameSessionRef.current === renameSession) setRenamingItemId(null)
+        return true
+      } catch (error) {
+        toast.danger(
+          error instanceof Error ? error.message : t('fileExplorer.renameFailed', 'Rename failed')
+        )
+        return false
       }
-      setRenamingItemId(null)
     },
     [fileItems, folders, sortedItems, t, isCurrentFolderReadOnly]
   )
@@ -984,6 +999,7 @@ export function FileBrowser({
         cancelPendingRename()
         pendingRenameItemIdRef.current = itemId
         renameClickTimerRef.current = setTimeout(() => {
+          renameSessionRef.current++
           setRenamingItemId(itemId)
           renameClickTimerRef.current = null
           pendingRenameItemIdRef.current = null
@@ -996,31 +1012,35 @@ export function FileBrowser({
   const handleDeleteSelected = useCallback(async (): Promise<void> => {
     if (isCurrentFolderReadOnly) return
     if (selectedIds.size === 0) return
-    if (onDelete) {
-      await onDelete(new Set(selectedIds))
-      clearSelection()
-      return
-    }
-
-    const confirmed = await confirm({
-      title: t('folder.deleteSelectedTitle', {
-        count: selectedIds.size,
-        defaultValue: `Delete ${selectedIds.size} item(s)?`
-      }),
-      description: t('folder.deleteItemDescription', 'This action cannot be undone.'),
-      status: 'danger'
-    })
-
-    if (!confirmed) return
-
-    for (const id of selectedIds) {
-      if (folderIds.includes(id)) {
-        await deleteFolderFromStore(id)
-      } else {
-        await removeFileItemFromStore(id)
+    try {
+      if (onDelete) {
+        if ((await onDelete(new Set(selectedIds))) === false) return
+        clearSelection()
+        return
       }
+
+      const confirmed = await confirm({
+        title: t('folder.deleteSelectedTitle', {
+          count: selectedIds.size,
+          defaultValue: `Delete ${selectedIds.size} item(s)?`
+        }),
+        description: t('folder.deleteItemDescription', 'This action cannot be undone.'),
+        status: 'danger'
+      })
+
+      if (!confirmed) return
+
+      for (const id of selectedIds) {
+        if (folderIds.includes(id)) {
+          await deleteFolderFromStore(id)
+        } else {
+          await removeFileItemFromStore(id)
+        }
+      }
+      clearSelection()
+    } catch (error) {
+      toast.danger(error instanceof Error ? error.message : String(error))
     }
-    clearSelection()
   }, [selectedIds, onDelete, confirm, t, folderIds, clearSelection, isCurrentFolderReadOnly])
 
   const handleCopySelected = useCallback((): void => {
@@ -1124,7 +1144,7 @@ export function FileBrowser({
   const handleDragOver = useCallback((): void => {}, [])
 
   const handleDragEnd = useCallback(
-    (event: DragEndEvent): void => {
+    async (event: DragEndEvent): Promise<void> => {
       if (isCurrentFolderReadOnly) return
       const currentDraggedIds = draggedIds
       setActiveId(null)
@@ -1146,15 +1166,15 @@ export function FileBrowser({
 
       if (overData?.type === 'folder-dropzone') {
         const targetFolderId = overData.folderId
-        for (const id of currentDraggedIds.size > 0
-          ? currentDraggedIds
-          : new Set([String(active.id)])) {
-          if (id === targetFolderId) continue
-          if (folderIds.includes(id)) {
-            moveFolder(id, targetFolderId)
-          } else {
-            moveItem(id, targetFolderId)
+        try {
+          for (const id of currentDraggedIds.size > 0
+            ? currentDraggedIds
+            : new Set([String(active.id)])) {
+            if (id === targetFolderId) continue
+            await moveExplorerEntry(folderIds.includes(id) ? 'folder' : 'file', id, targetFolderId)
           }
+        } catch (error) {
+          toast.danger(error instanceof Error ? error.message : String(error))
         }
         return
       }
@@ -1180,8 +1200,6 @@ export function FileBrowser({
       folderIds,
       sortedItems,
       currentFolderId,
-      moveFolder,
-      moveItem,
       setCustomOrder,
       setSortDir,
       isCurrentFolderReadOnly

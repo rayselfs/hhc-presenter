@@ -15,6 +15,9 @@ import { FolderModal } from '@renderer/components/Control/Folder/FolderModal'
 import {
   createExplorerFolder,
   copyExplorerFolder,
+  copyExplorerFile,
+  updateExplorerFolderProperties,
+  moveExplorerEntry,
   deleteFolderFromStore,
   removeFileItemFromStore,
   useFileExplorerStore,
@@ -187,10 +190,6 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   const foldersById = useFileExplorerStore((state) => state.folders)
   const getChildFolders = useFileExplorerStore((state) => state.getChildFolders)
   const addFolder = createExplorerFolder
-  const moveItem = useFileExplorerStore((state) => state.moveItem)
-  const copyItem = useFileExplorerStore((state) => state.copyItem)
-  const moveFolder = useFileExplorerStore((state) => state.moveFolder)
-  const updateFolder = useFileExplorerStore((state) => state.updateFolder)
   const persistenceStatus = useFileExplorerStore((state) => state.persistenceStatus)
   const persistenceError = useFileExplorerStore((state) => state.persistenceError)
   const isFolderStoreInitialized = useFileExplorerStore((state) => state.isInitialized)
@@ -202,9 +201,13 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   const { selectedIds, setSelectedIds, clearSelection } = selection
   const [clipboard, setClipboard] = useState<ClipboardState | null>(null)
   const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false)
+  const [isCreateSubmitting, setIsCreateSubmitting] = useState(false)
+  const createSubmittingRef = useRef(false)
   const [createFolderName, setCreateFolderName] = useState('')
   const [createFolderDuration, setCreateFolderDuration] = useState<FolderDuration>('1day')
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false)
+  const editSubmittingRef = useRef(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [sharingFolder, setSharingFolder] = useState<FolderRecord | null>(null)
   const [renameItemRequestId, setRenameItemRequestId] = useState<string | null>(null)
@@ -502,22 +505,24 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   )
 
   const handleUnlinkSyncRoot = useCallback(
-    async (root: FolderRecord): Promise<void> => {
+    async (root: FolderRecord): Promise<boolean> => {
       const confirmed = await confirm({
         title: t('fileExplorer.syncSources.unlinkTitle', { name: root.name }),
         description: t('fileExplorer.syncSources.unlinkDescription'),
         confirmLabel: t('fileExplorer.syncSources.unlink'),
         status: 'danger'
       })
-      if (!confirmed) return
+      if (!confirmed) return false
 
       try {
         await unlinkSyncRootFolderFromApp(root)
         clearSelection()
         toast.success(t('fileExplorer.syncSources.unlinked'))
+        return true
       } catch (error) {
         console.warn('[sync] Failed to unlink sync source', error)
         toast.danger(t('fileExplorer.syncSources.unlinkFailed'))
+        return false
       }
     },
     [confirm, t, clearSelection]
@@ -609,14 +614,11 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   }, [clipboard])
 
   const handleDelete = useCallback(
-    async (targetIds: Set<string>): Promise<void> => {
-      if (targetIds.size === 0) return
+    async (targetIds: Set<string>): Promise<boolean> => {
+      if (targetIds.size === 0) return false
       const syncRoot = findSingleSelectedSyncRoot(targetIds)
-      if (syncRoot) {
-        await handleUnlinkSyncRoot(syncRoot)
-        return
-      }
-      if (areIdsReadOnly(targetIds)) return
+      if (syncRoot) return handleUnlinkSyncRoot(syncRoot)
+      if (areIdsReadOnly(targetIds)) return false
       const soundboardUsageCount = await countDeletedSoundboardPadUsages(targetIds)
       const confirmed = await confirm({
         title: t('folder.deleteSelectedTitle', {
@@ -633,16 +635,22 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
             : t('folder.deleteItemDescription', 'This action cannot be undone.'),
         status: 'danger'
       })
-      if (!confirmed) return
-      for (const id of targetIds) {
-        const state = useFileExplorerStore.getState()
-        if (state.folders[id]) {
-          deleteFolderFromStore(id)
-        } else {
-          removeFileItemFromStore(id)
+      if (!confirmed) return false
+      try {
+        for (const id of targetIds) {
+          const state = useFileExplorerStore.getState()
+          if (state.folders[id]) {
+            await deleteFolderFromStore(id)
+          } else {
+            await removeFileItemFromStore(id)
+          }
         }
+        clearSelection()
+        return true
+      } catch (error) {
+        toast.danger(error instanceof Error ? error.message : String(error))
+        return false
       }
-      clearSelection()
     },
     [confirm, t, areIdsReadOnly, findSingleSelectedSyncRoot, handleUnlinkSyncRoot, clearSelection]
   )
@@ -681,7 +689,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
             usedFolderNames.add(uniqueName)
             await copyExplorerFolder(id, currentFolderId, { name: uniqueName })
           } else {
-            moveFolder(id, currentFolderId)
+            await moveExplorerEntry('folder', id, currentFolderId)
           }
         } else if (state.items[id]) {
           const item = state.items[id]
@@ -689,13 +697,13 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
           if (clipboard.mode === 'copy') {
             const uniqueName = resolveUniqueFileName(item.name, [...usedItemNames])
             usedItemNames.add(uniqueName)
-            const newId = await copyItem(id, currentFolderId)
+            const newId = await copyExplorerFile(id, currentFolderId)
             if (!newId) continue
             if (uniqueName !== item.name) {
               useFileExplorerStore.getState().updateItem?.(newId, { name: uniqueName })
             }
           } else {
-            moveItem(id, currentFolderId)
+            await moveExplorerEntry('file', id, currentFolderId)
           }
         }
       }
@@ -706,18 +714,10 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
 
     if (clipboard.mode === 'cut') setClipboard(null)
     clearSelection()
-  }, [
-    clipboard,
-    currentFolderId,
-    copyItem,
-    moveFolder,
-    moveItem,
-    isCurrentFolderReadOnly,
-    t,
-    clearSelection
-  ])
+  }, [clipboard, currentFolderId, isCurrentFolderReadOnly, t, clearSelection])
 
   const openEditModal = useCallback((id: string): void => {
+    if (editSubmittingRef.current) return
     const state = useFileExplorerStore.getState()
     const target = state.folders[id]
     if (!target) return
@@ -730,8 +730,8 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
     setIsEditModalOpen(true)
   }, [])
 
-  const handleEditSubmit = useCallback((): void => {
-    if (!editingId) return
+  const handleEditSubmit = useCallback(async (): Promise<void> => {
+    if (!editingId || editSubmittingRef.current) return
     const name = editModalName.trim()
     if (!validateDisplayName(name)) {
       toast.danger(t('fileExplorer.invalidName', 'Invalid name'))
@@ -750,11 +750,23 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
         )
         return
       }
-      updateFolder(editingId, { name, expiresAt: computeExpiresAt(editModalDuration) })
     }
-    setIsEditModalOpen(false)
-    setEditingId(null)
-  }, [editingId, editModalName, editModalDuration, updateFolder, t])
+    editSubmittingRef.current = true
+    setIsEditSubmitting(true)
+    try {
+      await updateExplorerFolderProperties(editingId, {
+        name,
+        expiresAt: computeExpiresAt(editModalDuration)
+      })
+      setIsEditModalOpen(false)
+      setEditingId(null)
+    } catch (error) {
+      toast.danger(error instanceof Error ? error.message : String(error))
+    } finally {
+      editSubmittingRef.current = false
+      setIsEditSubmitting(false)
+    }
+  }, [editingId, editModalName, editModalDuration, t])
 
   const handleItemContextMenu = useCallback(
     (itemId: string, event: React.MouseEvent): void => {
@@ -943,6 +955,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   }, [getChildFolders, currentFolderId, t, isCurrentFolderReadOnly])
 
   const handleCreateFolderSubmit = useCallback(async (): Promise<void> => {
+    if (createSubmittingRef.current) return
     const name = createFolderName.trim()
     if (isCurrentFolderReadOnly) return
     if (!validateDisplayName(name)) {
@@ -954,6 +967,8 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
       toast.danger(t('fileExplorer.folderAlreadyExists', 'A folder with this name already exists'))
       return
     }
+    createSubmittingRef.current = true
+    setIsCreateSubmitting(true)
     try {
       await addFolder(name, currentFolderId, computeExpiresAt(createFolderDuration))
       setIsCreateFolderModalOpen(false)
@@ -961,6 +976,9 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
       toast.danger(
         error instanceof Error ? error.message : t('fileExplorer.invalidName', 'Invalid name')
       )
+    } finally {
+      createSubmittingRef.current = false
+      setIsCreateSubmitting(false)
     }
   }, [
     createFolderName,
@@ -1092,6 +1110,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
       />
       <FolderModal
         isOpen={isCreateFolderModalOpen}
+        isSubmitting={isCreateSubmitting}
         onClose={() => setIsCreateFolderModalOpen(false)}
         onSubmit={handleCreateFolderSubmit}
         editingFolder={null}
@@ -1114,7 +1133,9 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
       />
       <FolderModal
         isOpen={isEditModalOpen}
+        isSubmitting={isEditSubmitting}
         onClose={() => {
+          if (editSubmittingRef.current) return
           setIsEditModalOpen(false)
           setEditingId(null)
         }}

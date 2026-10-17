@@ -10,7 +10,7 @@ import type {
 } from '../../shared/ipc-channels'
 import { isValidNativeFileId } from '../../shared/native-media'
 import type { WindowManager } from '../windowManager'
-import { getNativeFilePath } from './native-fs'
+import { getNativeFilePath } from '../lib/native-storage'
 import { isMainWindow } from './validate'
 import { isIgnoredSystemPath } from '../../shared/file-ignore-policy'
 import { mutateVideoSource } from './video-remux'
