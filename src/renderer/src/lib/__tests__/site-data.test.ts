@@ -28,6 +28,16 @@ beforeEach(() => {
 })
 
 describe('clearAllSiteData', () => {
+  it('explicitly clears dormant legacy Service and Soundboard settings', async () => {
+    localStorage.setItem('hhc-service-playlist', '{"state":{"cues":[]},"version":0}')
+    localStorage.setItem('hhc-soundboard', '{"state":{"boards":{}},"version":0}')
+
+    await clearAllSiteData()
+
+    expect(localStorage.getItem('hhc-service-playlist')).toBeNull()
+    expect(localStorage.getItem('hhc-soundboard')).toBeNull()
+  })
+
   it('continues when an IndexedDB deletion is blocked by an open connection', async () => {
     resetMocks.resetBibleDB.mockRejectedValueOnce(new Error('Bible database deletion blocked'))
 

@@ -2,8 +2,9 @@
 
 ## Status
 
-Foundation implemented; deferred. The route remains inaccessible until placeholder Bible and media
-cue creation is replaced with real source selection.
+Legacy implementation retired on 2026-10-18. The existing `/service` redirect to Timer remains.
+The scope below is historical; new Service functionality requires a separate implementation.
+See the [retirement execution record](../../reports/2026-10-18-legacy-retirement-execution.md).
 
 ## Goal
 
@@ -26,7 +27,7 @@ Add a live service rundown so operators present from an ordered cue list instead
 - Service state persists between app restarts.
 - Broken/missing cue sources are visible before projection.
 
-## Verification
+## Historical verification
 
 ```bash
 npx vitest run src/renderer/src/stores/__tests__/service-playlist.test.ts

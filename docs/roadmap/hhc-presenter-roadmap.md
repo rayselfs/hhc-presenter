@@ -24,7 +24,7 @@ Media, and PowerPoint-like Presentation work is tracked separately in
 | --- | --- | --- | --- |
 | M1 | Implemented | `milestones/M1-projection-core.md` | Projection window/session lifecycle is reliable, lazy-opened, and fast enough for live use. |
 | M2 | Implemented | `milestones/M2-media-library-sync.md` | Media library and sync status are understandable and recoverable. |
-| M3 | Foundation implemented; deferred | `milestones/M3-service-playlist-cue-workflow.md` | The workspace remains inaccessible until placeholder Bible/media cue creation is replaced. |
+| M3 | Legacy implementation retired | `milestones/M3-service-playlist-cue-workflow.md` | The legacy UI/store/runner are removed; the Timer redirect and shared projection/media services remain. New Service functionality is separate work. |
 | M4 | Implemented | `milestones/M4-slide-ppt-template-system.md` | PPTX is a media item with a PowerPoint-like workspace, page-level document model, and media projection integration. |
 | M5 | Implemented | `milestones/M5-bible-professional-workflow.md` | Existing Bible tools become a live scripture workflow integrated with cues and templates. |
 | M6 | Implemented | `milestones/M6-professional-media-playback.md` | Image, PDF, and video playback are production-grade and reusable across features. |
