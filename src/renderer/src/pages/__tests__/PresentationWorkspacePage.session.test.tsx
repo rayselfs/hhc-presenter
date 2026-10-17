@@ -1,3 +1,4 @@
+import { mockAnimationFrame } from '@renderer/test/animation-frame'
 import i18n from '@renderer/i18n'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -61,25 +62,6 @@ function resizeElement(element: Element, width: number, height: number): void {
       {} as ResizeObserver
     )
   )
-}
-
-function mockAnimationFrame(): () => void {
-  let nextFrameId = 0
-  const frames = new Map<number, FrameRequestCallback>()
-  vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
-    const frameId = ++nextFrameId
-    frames.set(frameId, callback)
-    return frameId
-  })
-  vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((frameId) => {
-    frames.delete(frameId)
-  })
-
-  return () => {
-    const pendingFrames = [...frames.values()]
-    frames.clear()
-    pendingFrames.forEach((callback) => callback(0))
-  }
 }
 
 function mockAutoTextMeasurement(): void {
