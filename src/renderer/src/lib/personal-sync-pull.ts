@@ -10,7 +10,7 @@ import { assertPersonalSyncLease, type PersonalSyncNode } from './personal-sync-
 import { createResourceCleanupRecord } from './resource-cleanup-journal'
 import { getBlobId } from './blob-identity'
 import { isElectron } from './env'
-import { refreshImportedMediaAssets } from './local-sync-import'
+import { refreshImportedMediaAssets } from './sync-media-preparation'
 import { usePersonalSyncStore } from '../stores/personal-sync'
 
 type Download = FileBlobRecord & { mimeType: string; cleanupId?: string }
