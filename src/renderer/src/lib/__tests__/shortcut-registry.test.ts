@@ -6,7 +6,7 @@ import {
   clearRegistry,
   RegistryEntry
 } from '../shortcut-registry'
-import { ShortcutConfig } from '@renderer/hooks/useKeyboardShortcuts'
+import { ShortcutConfig } from '@renderer/lib/shortcut-config'
 
 describe('shortcut-registry', () => {
   beforeEach(() => {

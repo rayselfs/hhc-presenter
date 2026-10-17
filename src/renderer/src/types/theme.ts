@@ -1,5 +1,3 @@
-import { createKey } from '../lib/storage-prefix'
-
 /** User's explicit theme preference stored in localStorage */
 export type ThemePreference = 'light' | 'dark' | 'system'
 
@@ -14,12 +12,4 @@ export interface ThemeContextValue {
   resolved: ResolvedTheme
   /** Change the user's theme preference */
   setPreference: (pref: ThemePreference) => void
-}
-
-/** localStorage key for persisting theme preference — all hhc- prefixed */
-export const THEME_STORAGE_KEY = createKey('theme')
-
-/** Default values used on first launch when no localStorage key exists */
-export const THEME_DEFAULTS = {
-  preference: 'system' as ThemePreference
 }

@@ -1,3 +1,4 @@
+import type { FolderPersistence } from '@shared/types/folder'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { envState, mockImportFile, mockGetUrl, mockDeleteNativeFile, mockNativeFileExists } =
@@ -43,8 +44,8 @@ class FakeFileExplorerDB {
 
 const mockSaveItem = vi.fn()
 
-vi.mock('@renderer/lib/folder-db', () => ({
-  createFolderDB: () => ({
+vi.mock('@renderer/lib/folder-db', () => {
+  const factory = (): FolderPersistence => ({
     loadAllFolders: vi.fn().mockResolvedValue([]),
     loadItemsByParent: vi.fn().mockResolvedValue([]),
     saveFolder: vi.fn().mockResolvedValue(undefined),
@@ -59,7 +60,8 @@ vi.mock('@renderer/lib/folder-db', () => ({
     deleteExpiredItems: vi.fn().mockResolvedValue([]),
     purgeTrashOlderThan: vi.fn().mockResolvedValue({ folderIds: [], itemIds: [] })
   })
-}))
+  return { createBibleFolderDB: factory, createFileExplorerFolderDB: factory }
+})
 
 vi.mock('@renderer/lib/bible-db', () => ({
   openBibleDB: vi.fn()
@@ -254,7 +256,8 @@ describe('copyItem blob sharing', () => {
     const { openFileExplorerDB, resetFileExplorerDBForTests } = await import('../file-explorer-db')
     await resetFileExplorerDBForTests()
     const db = await openFileExplorerDB()
-    const { useFileExplorerStore } = await import('@renderer/stores/file-explorer')
+    const { copyExplorerFile, useFileExplorerStore } =
+      await import('@renderer/stores/file-explorer')
     const source = {
       id: 'file-1',
       parentId: 'file-root',
@@ -286,7 +289,7 @@ describe('copyItem blob sharing', () => {
       _itemsByParent: { 'file-root': [source] },
       isLoading: false
     })
-    const copiedId = await useFileExplorerStore.getState().copyItem('file-1', 'target-folder')
+    const copiedId = await copyExplorerFile('file-1', 'target-folder')
     expect(copiedId).toEqual(expect.any(String))
     expect((await db.get('file-blobs', 'file-1'))?.refCount).toBe(2)
     expect(await db.get('folder-items', copiedId!)).toMatchObject({

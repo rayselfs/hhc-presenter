@@ -1,26 +1,28 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { installTimerRuntimeHarness } from '@renderer/test/timer-runtime-harness'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { useStopwatchStore } from '@renderer/stores/stopwatch'
 import { selectFormattedTime, selectElapsedSeconds } from '@renderer/stores/selectors/stopwatch'
 import type { StopwatchStatus } from '@shared/types/timer'
 
 const INITIAL_STATE = {
   status: 'stopped' as StopwatchStatus,
-  elapsedMs: 0,
-  startTimestamp: null,
-  accumulatedMs: 0
+  elapsedMs: 0
 }
 
+let host: ReturnType<typeof installTimerRuntimeHarness>
 beforeEach(() => {
   useStopwatchStore.setState(INITIAL_STATE)
+  host = installTimerRuntimeHarness()
 })
+afterEach(() => host.dispose())
 
 describe('initial state', () => {
   it('starts stopped with 0ms elapsed', () => {
     const s = useStopwatchStore.getState()
     expect(s.status).toBe('stopped')
     expect(s.elapsedMs).toBe(0)
-    expect(s.startTimestamp).toBeNull()
-    expect(s.accumulatedMs).toBe(0)
+    expect(s).not.toHaveProperty('startTimestamp')
+    expect(s).not.toHaveProperty('accumulatedMs')
     expect(selectFormattedTime(s)).toBe('00:00')
     expect(selectElapsedSeconds(s)).toBe(0)
   })
@@ -46,30 +48,29 @@ describe('start()', () => {
     expect(useStopwatchStore.getState().status).toBe('running')
   })
 
-  it('sets startTimestamp when starting', () => {
-    const before = Date.now()
+  it('uses the host clock without exposing its anchor', () => {
     useStopwatchStore.getState().start()
-    const after = Date.now()
-    const ts = useStopwatchStore.getState().startTimestamp
-    expect(ts).not.toBeNull()
-    expect(ts!).toBeGreaterThanOrEqual(before)
-    expect(ts!).toBeLessThanOrEqual(after)
+    host.advance(1250)
+    expect(useStopwatchStore.getState().elapsedMs).toBe(1250)
+    expect(useStopwatchStore.getState()).not.toHaveProperty('startTimestamp')
   })
 
   it('resets elapsed to 0 on start', () => {
-    useStopwatchStore.setState({ elapsedMs: 5000, accumulatedMs: 5000 })
+    useStopwatchStore.getState().start()
+    host.advance(5000)
+    useStopwatchStore.getState().pause()
     useStopwatchStore.getState().start()
     expect(useStopwatchStore.getState().elapsedMs).toBe(0)
-    expect(useStopwatchStore.getState().accumulatedMs).toBe(0)
+    expect(useStopwatchStore.getState()).not.toHaveProperty('accumulatedMs')
     expect(selectFormattedTime(useStopwatchStore.getState())).toBe('00:00')
   })
 
   it('is a no-op when already running', () => {
     useStopwatchStore.getState().start()
-    const tsFirst = useStopwatchStore.getState().startTimestamp
+    host.advance(1000)
     useStopwatchStore.getState().start()
-    const tsSecond = useStopwatchStore.getState().startTimestamp
-    expect(tsSecond).toBe(tsFirst)
+    host.advance(1000)
+    expect(useStopwatchStore.getState().elapsedMs).toBe(2000)
   })
 
   it('sets isRunning() to true', () => {
@@ -86,17 +87,12 @@ describe('pause()', () => {
   })
 
   it('preserves elapsed time on pause', () => {
-    const startTime = 1000
-    useStopwatchStore.setState({
-      status: 'running',
-      startTimestamp: startTime,
-      accumulatedMs: 0
-    })
-    useStopwatchStore.getState().tick(startTime + 2000)
+    useStopwatchStore.getState().start()
+    host.advance(2000)
     useStopwatchStore.getState().pause()
     const s = useStopwatchStore.getState()
     expect(s.elapsedMs).toBeGreaterThanOrEqual(2000)
-    expect(s.startTimestamp).toBeNull()
+    expect(s).not.toHaveProperty('startTimestamp')
   })
 
   it('is a no-op when already paused', () => {
@@ -128,24 +124,24 @@ describe('resume()', () => {
     expect(useStopwatchStore.getState().status).toBe('running')
   })
 
-  it('sets a new startTimestamp on resume', () => {
+  it('resumes against the host clock without counting paused time', () => {
     useStopwatchStore.getState().start()
+    host.advance(1000)
     useStopwatchStore.getState().pause()
-    const before = Date.now()
+    host.advance(5000)
     useStopwatchStore.getState().resume()
-    const after = Date.now()
-    const ts = useStopwatchStore.getState().startTimestamp
-    expect(ts).not.toBeNull()
-    expect(ts!).toBeGreaterThanOrEqual(before)
-    expect(ts!).toBeLessThanOrEqual(after)
+    host.advance(1000)
+    expect(useStopwatchStore.getState().elapsedMs).toBe(2000)
+    expect(useStopwatchStore.getState()).not.toHaveProperty('startTimestamp')
   })
 
   it('is a no-op when already running', () => {
     useStopwatchStore.getState().start()
-    const ts1 = useStopwatchStore.getState().startTimestamp
+    host.advance(1000)
     useStopwatchStore.getState().resume()
+    host.advance(1000)
     expect(useStopwatchStore.getState().status).toBe('running')
-    expect(useStopwatchStore.getState().startTimestamp).toBe(ts1)
+    expect(useStopwatchStore.getState().elapsedMs).toBe(2000)
   })
 
   it('is a no-op when stopped', () => {
@@ -162,13 +158,14 @@ describe('reset()', () => {
 
   it('stops and clears elapsed when running', () => {
     useStopwatchStore.getState().start()
-    useStopwatchStore.setState({ elapsedMs: 5000, accumulatedMs: 5000 })
+    host.advance(5000)
     useStopwatchStore.getState().reset()
+    host.advance(1000)
     const s = useStopwatchStore.getState()
     expect(s.status).toBe('stopped')
     expect(s.elapsedMs).toBe(0)
-    expect(s.accumulatedMs).toBe(0)
-    expect(s.startTimestamp).toBeNull()
+    expect(s).not.toHaveProperty('accumulatedMs')
+    expect(s).not.toHaveProperty('startTimestamp')
     expect(selectFormattedTime(s)).toBe('00:00')
     expect(selectElapsedSeconds(s)).toBe(0)
   })
@@ -192,65 +189,39 @@ describe('reset()', () => {
 
 describe('tick()', () => {
   it('updates elapsedMs when running', () => {
-    const startTime = 10000
-    useStopwatchStore.setState({
-      status: 'running',
-      startTimestamp: startTime,
-      accumulatedMs: 0
-    })
-    useStopwatchStore.getState().tick(startTime + 3000)
+    useStopwatchStore.getState().start()
+    host.advance(3000)
     expect(useStopwatchStore.getState().elapsedMs).toBe(3000)
   })
 
   it('is a no-op when paused', () => {
-    const startTime = 10000
-    useStopwatchStore.setState({
-      status: 'running',
-      startTimestamp: startTime,
-      accumulatedMs: 0
-    })
-    useStopwatchStore.getState().tick(startTime + 1000)
+    useStopwatchStore.getState().start()
+    host.advance(1000)
     useStopwatchStore.getState().pause()
     const elapsedAfterPause = useStopwatchStore.getState().elapsedMs
-
-    useStopwatchStore.getState().tick(startTime + 5000)
+    host.advance(4000)
     expect(useStopwatchStore.getState().elapsedMs).toBe(elapsedAfterPause)
   })
 
   it('is a no-op when stopped', () => {
-    useStopwatchStore.getState().tick(10000)
+    host.advance(10000)
     expect(useStopwatchStore.getState().elapsedMs).toBe(0)
   })
 
   it('accumulates correctly across pause/resume', () => {
-    const t0 = 10000
-    useStopwatchStore.setState({
-      status: 'running',
-      startTimestamp: t0,
-      accumulatedMs: 0
-    })
-    useStopwatchStore.getState().tick(t0 + 2000)
+    useStopwatchStore.getState().start()
+    host.advance(2000)
     useStopwatchStore.getState().pause()
     expect(useStopwatchStore.getState().elapsedMs).toBeGreaterThanOrEqual(2000)
-
-    const t1 = Date.now()
-    useStopwatchStore.setState({
-      status: 'running',
-      startTimestamp: t1,
-      accumulatedMs: useStopwatchStore.getState().elapsedMs
-    })
-    useStopwatchStore.getState().tick(t1 + 3000)
+    host.advance(4000)
+    useStopwatchStore.getState().resume()
+    host.advance(3000)
     expect(useStopwatchStore.getState().elapsedMs).toBeGreaterThanOrEqual(5000)
   })
 
   it('updates elapsedSeconds correctly', () => {
-    const startTime = 20000
-    useStopwatchStore.setState({
-      status: 'running',
-      startTimestamp: startTime,
-      accumulatedMs: 0
-    })
-    useStopwatchStore.getState().tick(startTime + 4500)
+    useStopwatchStore.getState().start()
+    host.advance(4500)
     expect(selectElapsedSeconds(useStopwatchStore.getState())).toBe(4)
   })
 })
@@ -261,57 +232,36 @@ describe('formattedTime', () => {
   })
 
   it('shows 00:01 at 1000ms', () => {
-    const startTime = 5000
-    useStopwatchStore.setState({
-      status: 'running',
-      startTimestamp: startTime,
-      accumulatedMs: 0
-    })
-    useStopwatchStore.getState().tick(startTime + 1000)
+    useStopwatchStore.getState().start()
+    host.advance(1000)
+
     expect(selectFormattedTime(useStopwatchStore.getState())).toBe('00:01')
   })
 
   it('shows 01:30 at 90500ms', () => {
-    const startTime = 0
-    useStopwatchStore.setState({
-      status: 'running',
-      startTimestamp: startTime,
-      accumulatedMs: 0
-    })
-    useStopwatchStore.getState().tick(90500)
+    useStopwatchStore.getState().start()
+    host.advance(90500)
+
     expect(selectFormattedTime(useStopwatchStore.getState())).toBe('01:30')
   })
 
   it('shows 61:01 at 3661234ms (no hours, just keeps counting minutes)', () => {
-    const startTime = 0
-    useStopwatchStore.setState({
-      status: 'running',
-      startTimestamp: startTime,
-      accumulatedMs: 0
-    })
-    useStopwatchStore.getState().tick(3661234)
+    useStopwatchStore.getState().start()
+    host.advance(3661234)
+
     expect(selectFormattedTime(useStopwatchStore.getState())).toBe('61:01')
   })
 
   it('updates formattedTime on tick', () => {
-    const startTime = 0
-    useStopwatchStore.setState({
-      status: 'running',
-      startTimestamp: startTime,
-      accumulatedMs: 0
-    })
-    useStopwatchStore.getState().tick(500)
+    useStopwatchStore.getState().start()
+    host.advance(500)
+
     expect(selectFormattedTime(useStopwatchStore.getState())).toBe('00:00')
   })
 
   it('preserves formattedTime after pause', () => {
-    const startTime = 0
-    useStopwatchStore.setState({
-      status: 'running',
-      startTimestamp: startTime,
-      accumulatedMs: 0
-    })
-    useStopwatchStore.getState().tick(2500)
+    useStopwatchStore.getState().start()
+    host.advance(2500)
     useStopwatchStore.getState().pause()
     expect(selectFormattedTime(useStopwatchStore.getState())).toBe('00:02')
   })

@@ -130,7 +130,7 @@ export default function FavoritesPage(): React.JSX.Element {
 
   useKeyboardShortcuts(
     [
-      { config: SHORTCUTS.EDIT.SELECT_ALL, handler: selectAll, preventDefault: true },
+      { config: SHORTCUTS.EDIT.SELECT_ALL, handler: () => selectAll(), preventDefault: true },
       { config: SHORTCUTS.EDIT.ESCAPE, handler: clearSelection, preventDefault: true }
     ],
     { enabled: true, sectionKey: 'favorites' }
