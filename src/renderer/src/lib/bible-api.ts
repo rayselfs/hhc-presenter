@@ -3,151 +3,12 @@ import { BIBLE_API } from '@shared/api-paths'
 import { isElectron } from './env'
 import { http } from './http'
 
-export type BibleApiErrorType = 'timeout' | 'network' | 'parse'
-
-export class BibleApiError extends Error {
-  type: BibleApiErrorType
-
-  constructor(type: BibleApiErrorType, message: string) {
-    super(message)
-    this.type = type
-    this.name = 'BibleApiError'
-  }
-}
+import { BibleApiError, parseBibleStream, sortBibleBooks } from '@shared/bible-stream'
+export { BibleApiError, type BibleApiErrorType } from '@shared/bible-stream'
 
 export interface BibleApiAdapter {
   fetchVersions(): Promise<BibleVersion[]>
   fetchContent(versionId: number): Promise<BibleBook[]>
-}
-
-interface SseStartEvent {
-  type: 'start'
-  message?: string
-}
-
-interface SseCompleteEvent {
-  type: 'complete'
-  total_books?: number
-}
-
-interface SseErrorEvent {
-  type: 'error'
-  message: string
-}
-
-interface SseTimeoutEvent {
-  type: 'timeout'
-}
-
-interface SseVersionEvent {
-  version_id: number | string
-  version_code: string
-  version_name: string
-  updated_at?: number
-}
-
-interface SseBookEvent {
-  id: number
-  number: number
-  name: string
-  abbreviation: string
-  chapters: BibleBook['chapters']
-}
-
-type SseEvent =
-  | SseStartEvent
-  | SseCompleteEvent
-  | SseErrorEvent
-  | SseTimeoutEvent
-  | SseVersionEvent
-  | SseBookEvent
-
-function sortBooks(books: BibleBook[]): BibleBook[] {
-  books.sort((a, b) => a.number - b.number)
-  for (const book of books) {
-    if (book.chapters) {
-      book.chapters.sort((a, b) => a.number - b.number)
-      for (const chapter of book.chapters) {
-        if (chapter.verses) {
-          chapter.verses.sort((a, b) => a.number - b.number)
-        }
-      }
-    }
-  }
-  return books
-}
-
-async function parseSSEStream(stream: ReadableStream<Uint8Array>): Promise<BibleBook[]> {
-  const reader = stream.getReader()
-  const decoder = new TextDecoder()
-  const books: BibleBook[] = []
-  let buffer = ''
-  let currentEventData = ''
-  let isStarted = false
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      buffer += decoder.decode(value, { stream: true })
-
-      const lines = buffer.split('\n')
-      // SSE chunks may split mid-line — keep the last partial line in buffer for next read
-      buffer = lines.pop() ?? ''
-
-      for (const line of lines) {
-        const trimmedLine = line.trim()
-
-        if (trimmedLine === '') {
-          if (currentEventData) {
-            try {
-              const event = JSON.parse(currentEventData) as SseEvent
-
-              if ('type' in event) {
-                if (event.type === 'start') {
-                  isStarted = true
-                } else if (event.type === 'complete') {
-                  break
-                } else if (event.type === 'error') {
-                  throw new BibleApiError('network', event.message)
-                } else if (event.type === 'timeout') {
-                  throw new BibleApiError('timeout', 'Server timeout during SSE stream')
-                }
-              } else if (
-                !('version_id' in event) &&
-                'id' in event &&
-                'name' in event &&
-                isStarted
-              ) {
-                const bookEvent = event as SseBookEvent
-                books.push({
-                  number: bookEvent.number,
-                  code: String(bookEvent.id),
-                  name: bookEvent.name,
-                  abbreviation: bookEvent.abbreviation,
-                  chapters: bookEvent.chapters ?? []
-                })
-              }
-            } catch (parseError) {
-              if (parseError instanceof BibleApiError) throw parseError
-              console.warn('[bible-api] Failed to parse SSE event:', parseError, currentEventData)
-            }
-            currentEventData = ''
-          }
-        } else if (line.startsWith('data: ')) {
-          const content = line.slice(6)
-          currentEventData += (currentEventData ? '\n' : '') + content
-        } else if (currentEventData && !line.startsWith(':')) {
-          currentEventData += '\n' + line
-        }
-      }
-    }
-  } finally {
-    reader.releaseLock()
-  }
-
-  return sortBooks(books)
 }
 
 export class ElectronBibleApiAdapter implements BibleApiAdapter {
@@ -157,7 +18,7 @@ export class ElectronBibleApiAdapter implements BibleApiAdapter {
 
   async fetchContent(versionId: number): Promise<BibleBook[]> {
     const books = await window.api.bible.getContent(versionId)
-    return sortBooks(books)
+    return sortBibleBooks(books)
   }
 }
 
@@ -208,7 +69,7 @@ export class BrowserBibleApiAdapter implements BibleApiAdapter {
       if (!response.body) {
         throw new BibleApiError('network', 'Response body is empty')
       }
-      return await parseSSEStream(response.body)
+      return await parseBibleStream(response.body)
     } catch (error) {
       if (error instanceof BibleApiError) throw error
       if (error instanceof DOMException && error.name === 'AbortError') {
