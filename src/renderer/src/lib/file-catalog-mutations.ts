@@ -186,13 +186,19 @@ export async function restoreLocalCatalogEntry(
   }
 }
 
-export async function renameLocalCatalogEntry(
+export async function updateLocalCatalogEntry(
   kind: 'folder' | 'file',
   id: string,
-  name: string
+  updates: { name: string; expiresAt?: number | null }
 ): Promise<FolderRecord | FileItemRecord> {
-  const nextName = name.trim()
+  const nextName = updates.name.trim()
   if (!validateDisplayName(nextName)) throw new Error('Rename name is invalid')
+  if (
+    updates.expiresAt !== undefined &&
+    updates.expiresAt !== null &&
+    !Number.isFinite(updates.expiresAt)
+  )
+    throw new Error('Folder expiration is invalid')
   const db = await openFileExplorerDB()
   const tx = db.transaction(['folder-items', 'folder-records', 'catalog-deletions'], 'readwrite')
   try {
@@ -244,6 +250,8 @@ export async function renameLocalCatalogEntry(
     )
       throw new Error('Rename name already exists')
     const renamed = { ...record, name: nextName }
+    if (!('type' in renamed) && updates.expiresAt !== undefined && !renamed.isFavorited)
+      renamed.expiresAt = updates.expiresAt
     if ('type' in renamed) await tx.objectStore('folder-items').put(renamed)
     else await tx.objectStore('folder-records').put(renamed)
     await tx.done
