@@ -56,7 +56,9 @@ export function reduceProjectionRenderState(
     const { generation, snapshot, pendingFileControls } = action.payload
     const confirmedMediaState = snapshot.media.state
     const mediaReplayState =
-      confirmedMediaState && pendingFileControls?.itemId === confirmedMediaState.itemId
+      confirmedMediaState &&
+      !confirmedMediaState.playlistEnded &&
+      pendingFileControls?.itemId === confirmedMediaState.itemId
         ? {
             ...confirmedMediaState,
             ...(pendingFileControls.seekSeconds !== undefined

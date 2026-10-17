@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import PresentationWorkspacePage, { PptxDocumentView } from '../PresentationWorkspacePage'
 import i18n from '@renderer/i18n'
@@ -25,16 +25,20 @@ const mocks = vi.hoisted(() => ({
   readPresentationArrayBuffer: vi.fn(),
   openPptxViewer: vi.fn(),
   prepareHhcLinePresentationSource: vi.fn(),
+  getAuthGeneration: vi.fn(() => 0),
+  getAccessToken: vi.fn(async () => null),
+  refreshAfterUnauthorized: vi.fn(async () => null),
+  endSession: vi.fn(async () => undefined),
   session: null as { userId: string; displayName: string; roles: string[] } | null
 }))
 
 vi.mock('@renderer/contexts/HhcAuthContext', () => ({
   useHhcAuth: () => ({
     session: mocks.session,
-    getAuthGeneration: vi.fn(() => 0),
-    getAccessToken: vi.fn(async () => null),
-    refreshAfterUnauthorized: vi.fn(async () => null),
-    endSession: vi.fn(async () => undefined)
+    getAuthGeneration: mocks.getAuthGeneration,
+    getAccessToken: mocks.getAccessToken,
+    refreshAfterUnauthorized: mocks.refreshAfterUnauthorized,
+    endSession: mocks.endSession
   })
 }))
 
@@ -95,7 +99,7 @@ function makeFile(overrides: Partial<FileItemRecord> = {}): FileItemRecord {
   }
 }
 
-function renderReadOnlyDeck(sourceItem: FileItemRecord): void {
+function renderReadOnlyDeck(sourceItem: FileItemRecord): ReturnType<typeof render> {
   useFileExplorerStore.setState({
     folders: {},
     items: { [sourceItem.id]: sourceItem },
@@ -111,7 +115,7 @@ function renderReadOnlyDeck(sourceItem: FileItemRecord): void {
   usePresentationWorkspaceStore.getState().openDocument(sourceItem)
   const deck = usePresentationWorkspaceStore.getState().documents[0]
   if (!deck) throw new Error('workspace deck was not opened')
-  render(<PptxDocumentView deck={deck} />)
+  return render(<PptxDocumentView deck={deck} />)
 }
 
 function renderEditableDeck(sourceItem: FileItemRecord): void {
@@ -154,6 +158,7 @@ describe('PresentationWorkspacePage read-only PPTX edit copy', () => {
     mocks.prepareHhcLinePresentationSource.mockReset()
     mocks.prepareHhcLinePresentationSource.mockResolvedValue(null)
     mocks.session = null
+    mocks.openPptxViewer.mockReset()
     mocks.openPptxViewer.mockResolvedValue({
       slideCount: 1,
       slideWidth: 1280,
@@ -169,6 +174,90 @@ describe('PresentationWorkspacePage read-only PPTX edit copy', () => {
       activeItemId: null,
       activeSlideIdByItemId: {}
     })
+  })
+
+  it('isolates a late PPTX open and its destroy from the next document host', async () => {
+    let finishOld!: () => void
+    let oldSignal: AbortSignal | undefined
+    mocks.openPptxViewer
+      .mockImplementationOnce((_buffer, host: HTMLElement, options) => {
+        oldSignal = options.signal
+        return new Promise((resolve) => {
+          finishOld = () =>
+            resolve({
+              slideCount: 1,
+              slideWidth: 1280,
+              slideHeight: 720,
+              destroy: () => host.replaceChildren(),
+              viewer: { renderSlide: vi.fn().mockResolvedValue(undefined) }
+            })
+        })
+      })
+      .mockImplementationOnce(async (_buffer, host: HTMLElement) => {
+        host.textContent = 'Healthy raw document'
+        return {
+          slideCount: 1,
+          slideWidth: 1280,
+          slideHeight: 720,
+          destroy: vi.fn(),
+          viewer: {
+            renderSlide: vi.fn().mockResolvedValue(undefined),
+            renderThumbnailToContainer: vi.fn(() => ({ dispose: vi.fn() }))
+          }
+        }
+      })
+    const view = renderReadOnlyDeck(makeFile())
+    await waitFor(() => expect(mocks.openPptxViewer).toHaveBeenCalledOnce())
+    const next = makeFile({ id: 'deck-2', url: 'blob:deck-2' })
+    useFileExplorerStore.setState((state) => ({ items: { ...state.items, [next.id]: next } }))
+    usePresentationWorkspaceStore.getState().openDocument(next)
+    view.rerender(<PptxDocumentView deck={usePresentationWorkspaceStore.getState().documents[1]} />)
+    await screen.findByText('Healthy raw document')
+    await act(async () => finishOld())
+    expect(screen.getByText('Healthy raw document')).toBeVisible()
+    expect(oldSignal?.aborted).toBe(true)
+  })
+
+  it('ignores a previous PPTX render rejection after the next viewer is ready', async () => {
+    let failOld!: (error: Error) => void
+    const oldRender = vi.fn(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          failOld = reject
+        })
+    )
+    const nextRender = vi.fn().mockResolvedValue(undefined)
+    mocks.openPptxViewer.mockResolvedValueOnce({
+      slideCount: 1,
+      slideWidth: 1280,
+      slideHeight: 720,
+      destroy: vi.fn(),
+      viewer: {
+        renderSlide: oldRender,
+        renderThumbnailToContainer: vi.fn(() => ({ dispose: vi.fn() }))
+      }
+    })
+    mocks.openPptxViewer.mockResolvedValueOnce({
+      slideCount: 2,
+      slideWidth: 1280,
+      slideHeight: 720,
+      destroy: vi.fn(),
+      viewer: {
+        renderSlide: nextRender,
+        renderThumbnailToContainer: vi.fn(() => ({ dispose: vi.fn() }))
+      }
+    })
+    const view = renderReadOnlyDeck(makeFile())
+    await waitFor(() => expect(oldRender).toHaveBeenCalledOnce())
+    const next = makeFile({ id: 'deck-2', url: 'blob:deck-2' })
+    useFileExplorerStore.setState((state) => ({ items: { ...state.items, [next.id]: next } }))
+    usePresentationWorkspaceStore.getState().openDocument(next)
+    view.rerender(<PptxDocumentView deck={usePresentationWorkspaceStore.getState().documents[1]} />)
+    await waitFor(() => expect(nextRender).toHaveBeenCalledWith(0))
+    await act(async () => failOld(new Error('Old render failed')))
+    expect(screen.queryByText('Old render failed')).toBeNull()
+    act(() => usePresentationWorkspaceStore.getState().setActiveSlideId(next.id, 'pptx-slide-1'))
+    await waitFor(() => expect(nextRender).toHaveBeenCalledWith(1))
   })
 
   it('opens the created editable item when Edit a copy succeeds', async () => {

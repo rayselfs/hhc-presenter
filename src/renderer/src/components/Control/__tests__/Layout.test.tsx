@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { StrictMode } from 'react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
@@ -145,6 +145,34 @@ describe('Layout', () => {
   afterEach(() => {
     localStorage.clear()
   })
+
+  it.each(['files', 'bible'] as const)(
+    'can retry a failed %s bootstrap before entering Layout',
+    async (domain) => {
+      await i18n.changeLanguage('en')
+      const store = domain === 'files' ? useFileExplorerStore : useBibleFolderStore
+      const originalRetry = store.getState().retryInitialization
+      const retry = vi.fn(async () => {
+        store.setState({ isInitialized: true, persistenceStatus: 'ready', persistenceError: null })
+      })
+      store.setState({
+        isInitialized: false,
+        persistenceStatus: 'degraded',
+        persistenceError: 'Temporary read failure',
+        retryInitialization: retry
+      })
+      try {
+        renderWithRouter(['/timer'])
+        expect(await screen.findByText('Temporary read failure')).toBeInTheDocument()
+        expect(screen.queryByTestId('timer-page')).not.toBeInTheDocument()
+        fireEvent.click(screen.getByRole('button', { name: /retry/i }))
+        expect(await screen.findByTestId('timer-page')).toBeInTheDocument()
+        expect(retry).toHaveBeenCalledOnce()
+      } finally {
+        store.setState({ retryInitialization: originalRetry })
+      }
+    }
+  )
 
   it('renders a header element', async () => {
     await i18n.changeLanguage('en')
