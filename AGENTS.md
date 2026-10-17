@@ -8,28 +8,28 @@ Electron desktop app for church projection (`hhc-client`). React 19 + TypeScript
 
 ## WHERE TO LOOK
 
-| Task | Location | Notes |
-| ---- | -------- | ----- |
-| Main process / window creation | `src/main/index.ts` + `windowManager.ts` | WindowManager singleton manages both windows |
-| IPC handlers | `src/main/ipc/` | app.ts, bible-api.ts, projection.ts, timer.ts, validate.ts |
-| Timer main-process service | `src/main/timerService.ts` | Broadcasts timer state to projection window |
-| Shared types & constants | `src/shared/` | IPC channels, projection messages, API paths, shared types |
-| Expose API to renderer | `src/preload/index.ts` | contextBridge; update `index.d.ts` for types |
-| UI / React components | `src/renderer/src/components/` | Control/ (domain panels), Common/ (reusable), Projection/ (display) |
-| File Explorer | `src/renderer/src/pages/FilesPage.tsx` + `stores/file-explorer.ts` | File upload, folder CRUD, favorites, trash |
-| Trash / deletion flow | `src/renderer/src/pages/TrashPage.tsx` + `lib/app-init.ts` | Soft-deleted items |
-| Folder store base | `src/renderer/src/stores/folder.ts` | `createFolderStore` factory shared by File Explorer + Bible |
-| Folder IndexedDB ops | `src/renderer/src/lib/folder-db.ts` | All IndexedDB reads/writes |
-| Timer engine | `src/renderer/src/contexts/TimerEngineContext.tsx` | Bridges adapter ↔ Zustand stores |
-| Timer adapter (dual-mode) | `src/renderer/src/lib/timer-adapter.ts` | BrowserTimerAdapter (Worker) vs ElectronTimerAdapter (IPC) |
-| Projection messaging | `src/renderer/src/lib/projection-adapter.ts` | Electron IPC or BroadcastChannel adapter |
-| Environment detection | `src/renderer/src/lib/env.ts` | `isElectron()` / `isWeb()` — renderer only |
-| State (Zustand) | `src/renderer/src/stores/` | timer, stopwatch, settings, bible, folder, update |
-| Persist storage adapter | `src/renderer/src/lib/persist-storage.ts` | Shared `hhcPersistStorage` + `createPersistName()` |
-| Theme system | `src/renderer/src/contexts/ThemeContext.tsx` | Dark/light/system, syncs with Electron nativeTheme |
-| Routing | `src/renderer/src/router.tsx` | HashRouter; `/projection` is outside Layout |
-| Keyboard shortcuts | `src/renderer/src/config/shortcuts.ts` + `lib/shortcut-registry.ts` | Centralized definitions + runtime registry |
-| Path alias config | `electron.vite.config.ts` + `tsconfig.web.json` | Keep `@renderer` alias in sync between both |
+| Task                           | Location                                                            | Notes                                                               |
+| ------------------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Main process / window creation | `src/main/index.ts` + `windowManager.ts`                            | WindowManager singleton manages both windows                        |
+| IPC handlers                   | `src/main/ipc/`                                                     | app.ts, bible-api.ts, projection.ts, timer.ts, validate.ts          |
+| Timer main-process service     | `src/main/timerService.ts`                                          | Broadcasts timer state to projection window                         |
+| Shared types & constants       | `src/shared/`                                                       | IPC channels, projection messages, API paths, shared types          |
+| Expose API to renderer         | `src/preload/index.ts`                                              | contextBridge; update `index.d.ts` for types                        |
+| UI / React components          | `src/renderer/src/components/`                                      | Control/ (domain panels), Common/ (reusable), Projection/ (display) |
+| File Explorer                  | `src/renderer/src/pages/FilesPage.tsx` + `stores/file-explorer.ts`  | File upload, folder CRUD, favorites, trash                          |
+| Trash / deletion flow          | `src/renderer/src/pages/TrashPage.tsx` + `lib/app-init.ts`          | Soft-deleted items                                                  |
+| Folder store base              | `src/renderer/src/stores/folder.ts`                                 | `createFolderStore` factory shared by File Explorer + Bible         |
+| Folder IndexedDB ops           | `src/renderer/src/lib/folder-db.ts`                                 | All IndexedDB reads/writes                                          |
+| Timer engine                   | `src/renderer/src/contexts/TimerEngineContext.tsx`                  | Bridges adapter ↔ Zustand stores                                    |
+| Timer adapter (dual-mode)      | `src/renderer/src/lib/timer-adapter.ts`                             | BrowserTimerAdapter (Worker) vs ElectronTimerAdapter (IPC)          |
+| Projection messaging           | `src/renderer/src/lib/projection-adapter.ts`                        | Electron IPC or BroadcastChannel adapter                            |
+| Environment detection          | `src/renderer/src/lib/env.ts`                                       | `isElectron()` / `isWeb()` — renderer only                          |
+| State (Zustand)                | `src/renderer/src/stores/`                                          | timer, stopwatch, settings, bible, folder, update                   |
+| Persist storage adapter        | `src/renderer/src/lib/persist-storage.ts`                           | Shared `hhcPersistStorage` + `createPersistName()`                  |
+| Theme system                   | `src/renderer/src/contexts/ThemeContext.tsx`                        | Dark/light/system, syncs with Electron nativeTheme                  |
+| Routing                        | `src/renderer/src/router.tsx`                                       | HashRouter; `/projection` is outside Layout                         |
+| Keyboard shortcuts             | `src/renderer/src/config/shortcuts.ts` + `lib/shortcut-registry.ts` | Centralized definitions + runtime registry                          |
+| Path alias config              | `electron.vite.config.ts` + `tsconfig.web.json`                     | Keep `@renderer` alias in sync between both                         |
 
 ## CONVENTIONS
 
@@ -59,6 +59,7 @@ Electron desktop app for church projection (`hhc-client`). React 19 + TypeScript
 ### Zustand Persistence
 
 Use `persist` middleware with shared adapter. Key rules:
+
 - Always `hhcPersistStorage` — never call `localStorage` directly from stores
 - Always `createPersistName('my-store')` — maintains `hhc-` prefix
 - Always `partialize` — only persist config/preference fields, never runtime state
@@ -68,10 +69,10 @@ Use `persist` middleware with shared adapter. Key rules:
 
 Every feature must work in both Electron and browser.
 
-| Adapter | Electron Mode | Browser Mode |
-| ------- | ------------- | ------------ |
-| `projection-adapter` | IPC via preload API | BroadcastChannel(`hhc-projection`) |
-| `timer-adapter` | IPC via `window.api.timer` | Web Worker (`timer.worker.ts`) |
+| Adapter              | Electron Mode              | Browser Mode                       |
+| -------------------- | -------------------------- | ---------------------------------- |
+| `projection-adapter` | IPC via preload API        | BroadcastChannel(`hhc-projection`) |
+| `timer-adapter`      | IPC via `window.api.timer` | Web Worker (`timer.worker.ts`)     |
 
 ### Pitfalls
 
@@ -82,19 +83,19 @@ Every feature must work in both Electron and browser.
 
 ## CI / CD
 
-| Workflow | File | Trigger | Steps |
-| -------- | ---- | ------- | ----- |
-| CI Quality Gates | `ci.yml` | PR → main | lint → typecheck → vitest → build |
-| Azure Static Web Apps | `azure-static-web-apps-*.yml` | PR + tag `v*` | PR preview / production deploy |
-| Build and Release | `build-release.yml` | tag `v*.*.*` | macOS (arm64) + Windows → GitHub Release |
+| Workflow              | File                          | Trigger       | Steps                                                       |
+| --------------------- | ----------------------------- | ------------- | ----------------------------------------------------------- |
+| CI Quality Gates      | `ci.yml`                      | PR → main     | lint → typecheck → vitest → default/web build → Browser E2E |
+| Azure Static Web Apps | `azure-static-web-apps-*.yml` | PR + tag `v*` | PR preview / production deploy                              |
+| Build and Release     | `build-release.yml`           | tag `v*.*.*`  | macOS (arm64) + Windows → GitHub Release                    |
 
 ## ANTI-PATTERNS
 
 - No `as any`, no `@ts-expect-error`. Preload `@ts-ignore` on lines 19/21 is inherited scaffold — do not add more.
 - No manual `localStorage` in Zustand stores — use `persist` with `hhcPersistStorage`.
-- `sandbox: false` in BrowserWindow is a security risk — evaluate enabling.
-- Placeholder update URL in `electron-builder.yml` (`https://example.com/auto-updates`) — replace before release.
-- Generic `appId: com.electron.app` — change before distribution.
+- Keep `sandbox: true` in both BrowserWindow configurations; native access stays behind the preload bridge.
+- Preserve the GitHub publish target in `electron-builder.yml`; packaging/release authorization is separate from PR CI.
+- Preserve the distribution identity `tw.org.alive.presenter` in `electron-builder.yml`.
 
 ## PROJECT-SPECIFIC NOTES
 
