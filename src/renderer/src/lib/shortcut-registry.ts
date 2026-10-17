@@ -1,4 +1,4 @@
-import { ShortcutConfig, getPlatformShortcut } from '@renderer/hooks/useKeyboardShortcuts'
+import { ShortcutConfig, getPlatformShortcut } from '@renderer/lib/shortcut-config'
 
 export interface RegistryEntry {
   id: string

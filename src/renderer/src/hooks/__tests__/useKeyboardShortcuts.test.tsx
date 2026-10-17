@@ -1,14 +1,11 @@
+import { matchesConfig, type ShortcutConfig } from '@renderer/lib/shortcut-config'
 import { renderHook, act, fireEvent, screen } from '@testing-library/react'
 import { beforeEach, vi } from 'vitest'
 import React, { useState } from 'react'
-import {
-  matchesConfig,
-  useKeyboardShortcuts,
-  type ShortcutHandler,
-  type ShortcutConfig
-} from '../useKeyboardShortcuts'
+import { useKeyboardShortcuts, type ShortcutHandler } from '../useKeyboardShortcuts'
 import { ShortcutScopeProvider, ShortcutScope } from '@renderer/contexts/ShortcutScopeContext'
 import { SHORTCUTS } from '@renderer/config/shortcuts'
+import { getRegistered } from '@renderer/lib/shortcut-registry'
 
 let mockIsMac = false
 
@@ -295,4 +292,31 @@ describe('useKeyboardShortcuts', () => {
     })
     expect(handler).toHaveBeenCalledOnce()
   })
+})
+
+it('keeps one real registry entry and listener through StrictMode and unmount/remount', () => {
+  const handler = vi.fn()
+  const shortcut = {
+    id: 'strict-lifetime',
+    config: { code: 'Space' },
+    handler,
+    preventDefault: false,
+    stopPropagation: false
+  }
+  const mount = (): ReturnType<typeof renderHook> =>
+    renderHook(() => useKeyboardShortcuts([shortcut]), { wrapper: React.StrictMode })
+  const first = mount()
+  expect(getRegistered().filter((entry) => entry.id === shortcut.id)).toHaveLength(1)
+  fireEvent.keyDown(document, { code: 'Space' })
+  expect(handler).toHaveBeenCalledOnce()
+  first.unmount()
+  expect(getRegistered().filter((entry) => entry.id === shortcut.id)).toHaveLength(0)
+  fireEvent.keyDown(document, { code: 'Space' })
+  expect(handler).toHaveBeenCalledOnce()
+  const second = mount()
+  fireEvent.keyDown(document, { code: 'Space' })
+  expect(handler).toHaveBeenCalledTimes(2)
+  expect(getRegistered().filter((entry) => entry.id === shortcut.id)).toHaveLength(1)
+  second.unmount()
+  expect(getRegistered().filter((entry) => entry.id === shortcut.id)).toHaveLength(0)
 })

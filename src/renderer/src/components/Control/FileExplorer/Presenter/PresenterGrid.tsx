@@ -9,7 +9,7 @@ import {
   type MediaProjectionActionResult
 } from '@renderer/stores/media-projection'
 import { SHORTCUTS } from '@renderer/config/shortcuts'
-import { matchesConfig } from '@renderer/hooks/useKeyboardShortcuts'
+import { matchesConfig } from '@renderer/lib/shortcut-config'
 import { useThumbnails } from '@renderer/hooks/useThumbnails'
 import GlassDivider from '@renderer/components/Common/GlassDivider'
 import { getMediaType } from '@renderer/lib/presentability'
