@@ -1,9 +1,14 @@
+import { builtinModules } from 'node:module'
 import { defineConfig } from 'eslint/config'
 import tseslint from '@electron-toolkit/eslint-config-ts'
 import eslintConfigPrettier from '@electron-toolkit/eslint-config-prettier'
 import eslintPluginReact from 'eslint-plugin-react'
 import eslintPluginReactHooks from 'eslint-plugin-react-hooks'
 import eslintPluginReactRefresh from 'eslint-plugin-react-refresh'
+
+const nativeImportPattern = new RegExp(
+  `^(?:electron|${builtinModules.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})(?:/|$)|^node:|(?:^|/)(?:main|preload)(?:/|$)|^@(?:main|preload)(?:/|$)`
+).source
 
 export default defineConfig(
   {
@@ -41,6 +46,42 @@ export default defineConfig(
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
+      ]
+    }
+  },
+  {
+    files: ['src/renderer/src/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.*', '**/*.spec.*', '**/test/**', '**/__tests__/**', '**/*.d.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: `ImportExpression[source.value=/${nativeImportPattern}/]`,
+          message: 'Access native capabilities through the renderer adapter and window.api.'
+        }
+      ],
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '/electron',
+                '/electron/*',
+                '/node:*',
+                ...builtinModules.flatMap((name) => [`/${name}`, `/${name}/*`]),
+                '@main/**',
+                '@preload/**',
+                '**/main',
+                '**/main/**',
+                '**/preload',
+                '**/preload/**'
+              ],
+              allowTypeImports: true,
+              message: 'Access native capabilities through the renderer adapter and window.api.'
+            }
+          ]
+        }
       ]
     }
   },

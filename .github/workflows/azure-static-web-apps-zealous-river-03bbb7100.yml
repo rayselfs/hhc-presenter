@@ -92,6 +92,12 @@ jobs:
           VITE_BIBLE_API_V2_PREFIX: ${{ vars.VITE_BIBLE_API_V2_PREFIX }}
         run: npm run build:web
 
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify hosted artifact
+        run: npx playwright test e2e/hosted-artifact.spec.ts --project=chromium --workers=1 --retries=0
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
