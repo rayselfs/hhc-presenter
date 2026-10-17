@@ -1,3 +1,4 @@
+import { createFileExplorerFolderDB } from '@renderer/lib/folder-db'
 import { useCallback } from 'react'
 import { FOLDER_DURATION_MS } from '@shared/types/folder'
 import { assertLocalDestination, commitLocalFileItem } from '@renderer/lib/file-catalog-mutations'
@@ -85,8 +86,74 @@ export const useFileExplorerStore = createFolderStore({
   rootId: FILE_EXPLORER_ROOT_ID,
   rootName: 'Files',
   isVisible: isPersonalRecordVisible,
-  getDB: () => openFileExplorerDB()
+  persistence: createFileExplorerFolderDB()
 })
+
+function sortByIndex<T extends { sortIndex: number }>(items: T[]): T[] {
+  return items.slice().sort((a, b) => a.sortIndex - b.sortIndex)
+}
+
+export function publishPersistedSyncRoot(root: FolderRecord): void {
+  useFileExplorerStore.setState((state) => {
+    const folders = { ...state.folders, [root.id]: root }
+    const siblings = [
+      ...(state._childFoldersByParent[root.parentId!] ?? []).filter(
+        (folder) => folder.id !== root.id
+      ),
+      root
+    ].sort((left, right) => left.sortIndex - right.sortIndex)
+    return {
+      folders,
+      _foldersArray: Object.values(folders),
+      _childFoldersByParent: {
+        ...state._childFoldersByParent,
+        [root.parentId!]: siblings
+      }
+    }
+  })
+}
+
+export function mergePersistedSyncCatalog(folders: FolderRecord[], items: FileItemRecord[]): void {
+  const importedParentIds = new Set<string>(folders.map((folder) => folder.id))
+  importedParentIds.add(FILE_EXPLORER_ROOT_ID)
+  for (const item of items) importedParentIds.add(item.parentId)
+
+  useFileExplorerStore.setState((state) => {
+    const nextFolders = { ...state.folders }
+    const nextItems = { ...state.items }
+    for (const folder of folders) nextFolders[folder.id] = folder
+    for (const item of items) nextItems[item.id] = item
+
+    const childFoldersByParent: typeof state._childFoldersByParent = {}
+    for (const folder of Object.values(nextFolders)) {
+      if (folder.parentId === null) continue
+      const list = childFoldersByParent[folder.parentId] ?? []
+      list.push(folder)
+      childFoldersByParent[folder.parentId] = list
+    }
+    for (const parentId of Object.keys(childFoldersByParent)) {
+      childFoldersByParent[parentId] = sortByIndex(childFoldersByParent[parentId])
+    }
+
+    const loadedParents = new Set([...state.loadedParents, ...importedParentIds])
+    const itemsByParent: typeof state._itemsByParent = {}
+    for (const parentId of loadedParents) {
+      itemsByParent[parentId] = sortByIndex(
+        Object.values(nextItems).filter((item) => item.parentId === parentId)
+      )
+    }
+
+    return {
+      folders: nextFolders,
+      items: nextItems,
+      _foldersArray: Object.values(nextFolders),
+      _itemsArray: Object.values(nextItems),
+      _childFoldersByParent: childFoldersByParent,
+      _itemsByParent: itemsByParent,
+      loadedParents
+    }
+  })
+}
 
 let personalCatalogGeneration = 0
 
@@ -581,8 +648,7 @@ export async function copyExplorerFolder(
   )
   if (!target) throw new Error('Copy destination is unavailable')
   for (const item of items) {
-    if (!(await useFileExplorerStore.getState().copyItem(item.id, target)))
-      throw new Error('File copy failed')
+    if (!(await copyExplorerFile(item.id, target))) throw new Error('File copy failed')
   }
   for (const folder of folders)
     await copyExplorerFolder(folder.id, target, { includeDeleted: options.includeDeleted })
@@ -659,20 +725,60 @@ useFileExplorerStore.setState({
     if (state.folders[id]?.personalOwnerId === state.folders[parentId]?.personalOwnerId)
       personalWrite(id, { type: 'move', parentId })
     else void copyExplorerFolder(id, parentId).catch(reportPersonalWriteError)
-  },
-  copyItem: async (id, parentId) => {
-    if (!isPersonalNode(id) && !isPersonalNode(parentId)) {
-      const state = useFileExplorerStore.getState()
-      const source = state.items[id]
-      if (source && isFolderReadOnlyBySyncLink(source.parentId, state.folders))
-        return copyFileSnapshot(id, parentId)
-      return localFileActions.copyItem(id, parentId)
-    }
-    try {
-      return await copyFileSnapshot(id, parentId)
-    } catch (error) {
-      reportPersonalWriteError(error)
-      return null
-    }
   }
 })
+
+async function copyLocalFileItem(itemId: string, targetFolderId: string): Promise<string | null> {
+  const sourceItem = useFileExplorerStore.getState().items[itemId]
+  if (!sourceItem || sourceItem.type !== 'file') return null
+  if (
+    Boolean(useFileExplorerStore.getState().folders[targetFolderId]?.personalOwnerId) ||
+    isFolderReadOnlyBySyncLink(targetFolderId, useFileExplorerStore.getState().folders)
+  )
+    return null
+
+  const newId = crypto.randomUUID()
+  const targetSiblings = useFileExplorerStore.getState().getItems(targetFolderId)
+  const now = Date.now()
+  const copiedItem: FileItemRecord = {
+    ...sourceItem,
+    id: newId,
+    parentId: targetFolderId,
+    sortIndex: targetSiblings.length,
+    createdAt: now,
+    expiresAt: targetFolderId === FILE_EXPLORER_ROOT_ID ? now + FOLDER_DURATION_MS['1day'] : null,
+    deletedAt: undefined,
+    originalParentId: undefined
+  }
+
+  await useFileExplorerStore.getState().flushPersistence()
+  await commitLocalFileItem({ ...copiedItem, type: 'file' }, { copyFromId: itemId })
+
+  useFileExplorerStore.setState((state) => ({
+    items: { ...state.items, [copiedItem.id]: copiedItem },
+    _itemsArray: [...state._itemsArray, copiedItem],
+    _itemsByParent: {
+      ...state._itemsByParent,
+      [targetFolderId]: [...(state._itemsByParent[targetFolderId] ?? []), copiedItem].sort(
+        (a, b) => a.sortIndex - b.sortIndex
+      )
+    }
+  }))
+  return newId
+}
+
+export async function copyExplorerFile(id: string, parentId: string): Promise<string | null> {
+  if (!isPersonalNode(id) && !isPersonalNode(parentId)) {
+    const state = useFileExplorerStore.getState()
+    const source = state.items[id]
+    if (source && isFolderReadOnlyBySyncLink(source.parentId, state.folders))
+      return copyFileSnapshot(id, parentId)
+    return copyLocalFileItem(id, parentId)
+  }
+  try {
+    return await copyFileSnapshot(id, parentId)
+  } catch (error) {
+    reportPersonalWriteError(error)
+    return null
+  }
+}

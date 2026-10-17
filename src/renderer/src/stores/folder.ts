@@ -1,9 +1,7 @@
 import { create } from 'zustand'
 import type { FolderRecord, AnyItemRecord, FolderStoreConfig } from '@shared/types/folder'
 import { FOLDER_DURATION_MS } from '@shared/types/folder'
-import { createFolderDB } from '@renderer/lib/folder-db'
-import { openBibleDB } from '@renderer/lib/bible-db'
-import { commitLocalFileItem } from '@renderer/lib/file-catalog-mutations'
+import { createBibleFolderDB } from '@renderer/lib/folder-db'
 import { resolveUniqueName } from '@renderer/lib/file-naming'
 import { isFolderReadOnlyBySyncLink } from '@renderer/lib/sync-readonly'
 import { createPersistenceOperationQueue } from '@renderer/lib/persistence-operation-queue'
@@ -41,7 +39,6 @@ export interface FolderStoreState {
   ) => void
   removeItem: (id: string) => void
   moveItem: (itemId: string, targetFolderId: string) => void
-  copyItem: (itemId: string, targetFolderId: string) => Promise<string | null>
   moveFolder: (folderId: string, targetFolderId: string) => void
   reorderItems: (parentId: string, orderedIds: string[]) => void
   reorderFolders: (parentId: string, orderedIds: string[]) => void
@@ -81,7 +78,7 @@ function isItemInReadOnlyFolder(
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function createFolderStore(config: FolderStoreConfig) {
-  const ops = createFolderDB(config.getDB, config.rootId)
+  const ops = config.persistence
   const persistenceQueue = createPersistenceOperationQueue()
   let isInitializing = false
   const itemsLoadPromises = new Map<string, Promise<void>>()
@@ -480,42 +477,6 @@ export function createFolderStore(config: FolderStoreConfig) {
         }
       })
       persistenceQueue.enqueue(() => ops.saveItem(updated))
-    },
-
-    copyItem: async (itemId, targetFolderId) => {
-      const sourceItem = get().items[itemId]
-      if (!sourceItem || sourceItem.type !== 'file') return null
-      if (isFolderReadOnly(targetFolderId, get().folders)) return null
-
-      const newId = crypto.randomUUID()
-      const targetSiblings = get().getItems(targetFolderId)
-      const now = Date.now()
-      const copiedItem: AnyItemRecord = {
-        ...sourceItem,
-        id: newId,
-        parentId: targetFolderId,
-        sortIndex: targetSiblings.length,
-        createdAt: now,
-        expiresAt: targetFolderId === config.rootId ? now + FOLDER_DURATION_MS['1day'] : null,
-        deletedAt: undefined,
-        originalParentId: undefined
-      }
-
-      await persistenceQueue.flush()
-      await commitLocalFileItem({ ...copiedItem, type: 'file' }, { copyFromId: itemId })
-
-      set((state) => ({
-        items: { ...state.items, [copiedItem.id]: copiedItem },
-        _itemsArray: [...state._itemsArray, copiedItem],
-        _itemsByParent: {
-          ...state._itemsByParent,
-          [targetFolderId]: sortByIndex([
-            ...(state._itemsByParent[targetFolderId] ?? []),
-            copiedItem
-          ])
-        }
-      }))
-      return newId
     },
 
     moveFolder: (folderId, targetFolderId) => {
@@ -1069,5 +1030,5 @@ function getDescendantFolderIds(folderId: string, folders: Record<string, Folder
 export const useBibleFolderStore = createFolderStore({
   rootId: 'bible-root',
   rootName: 'Bible Library',
-  getDB: () => openBibleDB()
+  persistence: createBibleFolderDB()
 })
