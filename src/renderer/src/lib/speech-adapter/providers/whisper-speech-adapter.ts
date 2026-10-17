@@ -62,8 +62,8 @@ export class WhisperSpeechAdapter implements SpeechAdapter {
 
     if (this.config.maxSessionMs) {
       this.maxSessionTimer = setTimeout(() => {
-        this.stop().catch(() => {})
         this.emit('maxDurationReached', undefined)
+        this.stop().catch(() => {})
       }, this.config.maxSessionMs)
     }
 
