@@ -217,7 +217,7 @@ describe('handleRemoveTime', () => {
     vi.setSystemTime(50)
     handleRemoveTime(10000)
     expect(posted).toContainEqual({ type: 'finished' })
-    expect(getState().status).toBe('stopped')
+    expect(getState().status).toBe('running')
   })
 })
 
@@ -235,6 +235,31 @@ describe('tick behavior via setInterval', () => {
     handleStart(500)
     vi.advanceTimersByTime(600)
     expect(posted).toContainEqual({ type: 'finished' })
+  })
+
+  it('keeps heartbeat ticks after zero and reports finished once until reset', () => {
+    handleStart(0)
+    vi.advanceTimersByTime(1_000)
+    expect(posted.filter((message) => message.type === 'finished')).toHaveLength(1)
+    expect(posted.filter((message) => message.type === 'tick')).toHaveLength(10)
+    expect(posted.at(-1)).toEqual({ type: 'tick', remainingMs: 0, progress: 0 })
+    handleReset()
+    const count = posted.length
+    vi.advanceTimersByTime(1_000)
+    expect(posted).toHaveLength(count)
+  })
+
+  it('keeps the stopwatch ticking after the countdown heartbeat is reset', () => {
+    handleStart(100)
+    handleStartStopwatch()
+    vi.advanceTimersByTime(1_000)
+    handleReset()
+    const countdownTicks = posted.filter((message) => message.type === 'tick').length
+    vi.advanceTimersByTime(1_000)
+    expect(posted.filter((message) => message.type === 'tick')).toHaveLength(countdownTicks)
+    expect(posted.at(-1)).toEqual({ type: 'stopwatchTick', elapsedMs: 2_000 })
+    handleResetStopwatch()
+    expect(getState().intervalId).toBeNull()
   })
 
   it('tick progress is clamped between 0 and 1', () => {
