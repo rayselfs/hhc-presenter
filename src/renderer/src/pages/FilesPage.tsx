@@ -16,6 +16,7 @@ import {
   copyExplorerFolder,
   copyExplorerFile,
   updateExplorerFolderProperties,
+  moveExplorerEntry,
   deleteFolderFromStore,
   removeFileItemFromStore,
   useFileExplorerStore,
@@ -188,8 +189,6 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   const foldersById = useFileExplorerStore((state) => state.folders)
   const getChildFolders = useFileExplorerStore((state) => state.getChildFolders)
   const addFolder = createExplorerFolder
-  const moveItem = useFileExplorerStore((state) => state.moveItem)
-  const moveFolder = useFileExplorerStore((state) => state.moveFolder)
   const persistenceStatus = useFileExplorerStore((state) => state.persistenceStatus)
   const persistenceError = useFileExplorerStore((state) => state.persistenceError)
   const isFolderStoreInitialized = useFileExplorerStore((state) => state.isInitialized)
@@ -504,22 +503,24 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   )
 
   const handleUnlinkSyncRoot = useCallback(
-    async (root: FolderRecord): Promise<void> => {
+    async (root: FolderRecord): Promise<boolean> => {
       const confirmed = await confirm({
         title: t('fileExplorer.syncSources.unlinkTitle', { name: root.name }),
         description: t('fileExplorer.syncSources.unlinkDescription'),
         confirmLabel: t('fileExplorer.syncSources.unlink'),
         status: 'danger'
       })
-      if (!confirmed) return
+      if (!confirmed) return false
 
       try {
         await unlinkSyncRootFolderFromApp(root)
         setSelectedIds(new Set())
         toast.success(t('fileExplorer.syncSources.unlinked'))
+        return true
       } catch (error) {
         console.warn('[sync] Failed to unlink sync source', error)
         toast.danger(t('fileExplorer.syncSources.unlinkFailed'))
+        return false
       }
     },
     [confirm, t]
@@ -615,14 +616,11 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   }, [clipboard])
 
   const handleDelete = useCallback(
-    async (targetIds: Set<string>): Promise<void> => {
-      if (targetIds.size === 0) return
+    async (targetIds: Set<string>): Promise<boolean> => {
+      if (targetIds.size === 0) return false
       const syncRoot = findSingleSelectedSyncRoot(targetIds)
-      if (syncRoot) {
-        await handleUnlinkSyncRoot(syncRoot)
-        return
-      }
-      if (areIdsReadOnly(targetIds)) return
+      if (syncRoot) return handleUnlinkSyncRoot(syncRoot)
+      if (areIdsReadOnly(targetIds)) return false
       const soundboardUsageCount = await countDeletedSoundboardPadUsages(targetIds)
       const confirmed = await confirm({
         title: t('folder.deleteSelectedTitle', {
@@ -639,16 +637,22 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
             : t('folder.deleteItemDescription', 'This action cannot be undone.'),
         status: 'danger'
       })
-      if (!confirmed) return
-      for (const id of targetIds) {
-        const state = useFileExplorerStore.getState()
-        if (state.folders[id]) {
-          deleteFolderFromStore(id)
-        } else {
-          removeFileItemFromStore(id)
+      if (!confirmed) return false
+      try {
+        for (const id of targetIds) {
+          const state = useFileExplorerStore.getState()
+          if (state.folders[id]) {
+            await deleteFolderFromStore(id)
+          } else {
+            await removeFileItemFromStore(id)
+          }
         }
+        setSelectedIds(new Set())
+        return true
+      } catch (error) {
+        toast.danger(error instanceof Error ? error.message : String(error))
+        return false
       }
-      setSelectedIds(new Set())
     },
     [confirm, t, areIdsReadOnly, findSingleSelectedSyncRoot, handleUnlinkSyncRoot]
   )
@@ -687,7 +691,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
             usedFolderNames.add(uniqueName)
             await copyExplorerFolder(id, currentFolderId, { name: uniqueName })
           } else {
-            moveFolder(id, currentFolderId)
+            await moveExplorerEntry('folder', id, currentFolderId)
           }
         } else if (state.items[id]) {
           const item = state.items[id]
@@ -701,7 +705,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
               useFileExplorerStore.getState().updateItem?.(newId, { name: uniqueName })
             }
           } else {
-            moveItem(id, currentFolderId)
+            await moveExplorerEntry('file', id, currentFolderId)
           }
         }
       }
@@ -712,7 +716,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
 
     if (clipboard.mode === 'cut') setClipboard(null)
     setSelectedIds(new Set())
-  }, [clipboard, currentFolderId, moveFolder, moveItem, isCurrentFolderReadOnly, t])
+  }, [clipboard, currentFolderId, isCurrentFolderReadOnly, t])
 
   const openEditModal = useCallback((id: string): void => {
     if (editSubmittingRef.current) return
