@@ -33,6 +33,7 @@ interface LegacyFolderDB {
 }
 
 interface FlexSearchCacheDB {
+  formatVersion?: number
   chunks: { key: string; data: string }[]
   updatedAt: number
 }
@@ -66,6 +67,7 @@ interface BibleDBSchema extends DBSchema {
   }
 }
 
+const FLEXSEARCH_CACHE_FORMAT_VERSION = 1
 const DB_NAME = 'hhc-bible'
 const DB_VERSION = 3
 
@@ -267,7 +269,11 @@ export async function saveFlexSearchCache(
 ): Promise<void> {
   try {
     const db = await openBibleDB()
-    await db.put('flexsearch', { chunks, updatedAt }, versionId)
+    await db.put(
+      'flexsearch',
+      { chunks, updatedAt, formatVersion: FLEXSEARCH_CACHE_FORMAT_VERSION },
+      versionId
+    )
   } catch (error) {
     console.error('[bible-db] Failed to save flexsearch cache:', error)
   }
@@ -280,7 +286,12 @@ export async function loadFlexSearchCache(
   try {
     const db = await openBibleDB()
     const record = await db.get('flexsearch', versionId)
-    if (!record || record.updatedAt !== updatedAt) return undefined
+    if (
+      !record ||
+      record.updatedAt !== updatedAt ||
+      record.formatVersion !== FLEXSEARCH_CACHE_FORMAT_VERSION
+    )
+      return undefined
     return record.chunks
   } catch (error) {
     console.error('[bible-db] Failed to load flexsearch cache:', error)

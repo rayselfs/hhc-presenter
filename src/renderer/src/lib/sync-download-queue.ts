@@ -49,6 +49,7 @@ export interface EnqueueSyncDownloadInput {
   previousEntry?: SyncEntryRecord
   priority?: SyncDownloadPriority
   canCommit?: SyncDownloadCommitGuard
+  withCommitLock?: (mutation: () => Promise<void>) => Promise<void>
   onDownloaded?: (
     result: SyncDownloadResult,
     canCommit: SyncDownloadCommitGuard
@@ -262,11 +263,12 @@ function pumpSyncDownloadQueue(): void {
 
 async function runSyncDownloadJob(job: SyncDownloadQueueJob): Promise<void> {
   let detached = false
+  const canCommit = async (): Promise<boolean> =>
+    !job.cancelled &&
+    !job.controller.signal.aborted &&
+    (job.canCommit ? await job.canCommit() : true)
+  const commit = job.withCommitLock ?? ((mutation: () => Promise<void>) => mutation())
   try {
-    const canCommit = async (): Promise<boolean> =>
-      !job.cancelled &&
-      !job.controller.signal.aborted &&
-      (job.canCommit ? await job.canCommit() : true)
     if (!(await canCommit())) throw new SyncDownloadCancelledError()
     const alreadyAvailable = await getAlreadyAvailableResult(job)
     if (!(await canCommit())) throw new SyncDownloadCancelledError()
@@ -274,15 +276,18 @@ async function runSyncDownloadJob(job: SyncDownloadQueueJob): Promise<void> {
       job.resolve(alreadyAvailable)
       return
     }
-    await putSyncEntry({
-      ...job.entry,
-      status: 'downloading',
-      errorKind: undefined,
-      retryCount: undefined,
-      nextRetryAt: undefined,
-      lastError: undefined,
-      downloadedBytes: 0,
-      downloadTotalBytes: job.entry.size
+    await commit(async () => {
+      if (!(await canCommit())) throw new SyncDownloadCancelledError()
+      await putSyncEntry({
+        ...job.entry,
+        status: 'downloading',
+        errorKind: undefined,
+        retryCount: undefined,
+        nextRetryAt: undefined,
+        lastError: undefined,
+        downloadedBytes: 0,
+        downloadTotalBytes: job.entry.size
+      })
     })
     const result = await job.provider.downloadContent(job.request, job.controller.signal, canCommit)
     if (!(await canCommit())) throw new SyncDownloadCancelledError()
@@ -294,11 +299,23 @@ async function runSyncDownloadJob(job: SyncDownloadQueueJob): Promise<void> {
       job.resolve(null)
       return
     }
-    const failure = classifySyncDownloadFailure(job.provider, error, job.previousEntry)
-    await putSyncEntry({
-      ...job.entry,
-      ...failure
-    })
+    let committedFailure = false
+    try {
+      await commit(async () => {
+        if (!(await canCommit())) return
+        const failure = classifySyncDownloadFailure(job.provider, error, job.previousEntry)
+        await putSyncEntry({ ...job.entry, ...failure })
+        committedFailure = true
+      })
+    } catch (persistenceError) {
+      console.warn('[sync] Failed to persist download failure', persistenceError)
+      job.resolve(null)
+      return
+    }
+    if (!committedFailure) {
+      job.resolve(null)
+      return
+    }
     console.warn('[sync] Failed to download synced file', {
       providerConnectionId: job.entry.providerConnectionId,
       remoteItemId: job.entry.remoteItemId,

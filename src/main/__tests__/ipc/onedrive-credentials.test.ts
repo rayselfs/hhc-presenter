@@ -64,6 +64,7 @@ vi.mock('fs', () => {
 import { BrowserWindow } from 'electron'
 import type { WindowManager } from '../../windowManager'
 import {
+  clearOneDriveCredentials,
   handleOneDriveAuthCallbackUrl,
   registerOneDriveCredentialHandlers
 } from '../../ipc/onedrive-credentials'
@@ -375,5 +376,243 @@ describe('OneDrive credential IPC', () => {
     handleOneDriveAuthCallbackUrl('hhc-presenter://auth/onedrive?code=code-1&state=state-1', wm)
 
     await expect(waiting).resolves.toBe('hhc-presenter://auth/onedrive?code=code-1&state=state-1')
+  })
+})
+
+describe('OneDrive credential revocation', () => {
+  it('does not restore credentials when a refresh completes after disconnect', async () => {
+    const connectionId = 'onedrive:revocation-race'
+    mockReadFile.mockResolvedValue(
+      Buffer.from(
+        `encrypted:${JSON.stringify({ connectionId, refreshToken: 'old', updatedAt: 1 })}`
+      )
+    )
+    let finish!: (value: Response) => void
+    mockNetFetch.mockReturnValueOnce(
+      new Promise<Response>((resolve) => {
+        finish = resolve
+      })
+    )
+    const refreshing = getHandler('onedrive:get-access-token')(makeEvent(), {
+      connectionId,
+      clientId: '4f4c2f2c-8f2a-4c4b-9d2e-8c3a7d638c02'
+    }) as Promise<unknown>
+    const outcome = refreshing.then(
+      () => 'resolved',
+      () => 'rejected'
+    )
+    await vi.waitFor(() => expect(mockNetFetch).toHaveBeenCalledOnce())
+    await getHandler('onedrive:delete-credentials')(makeEvent(), connectionId)
+    finish(
+      new Response(JSON.stringify({ access_token: 'late', refresh_token: 'late-refresh' }), {
+        status: 200
+      })
+    )
+    expect(await outcome).toBe('rejected')
+    expect(mockRename).not.toHaveBeenCalled()
+    expect(mockWriteFile).not.toHaveBeenCalled()
+  })
+})
+
+describe('OneDrive credential mutation ordering', () => {
+  const clientId = '4f4c2f2c-8f2a-4c4b-9d2e-8c3a7d638c02'
+  const credential = (connectionId: string): Buffer =>
+    Buffer.from(`encrypted:${JSON.stringify({ connectionId, refreshToken: 'old', updatedAt: 1 })}`)
+  const tokenResponse = (): Response =>
+    new Response(JSON.stringify({ access_token: 'late', refresh_token: 'late-refresh' }), {
+      status: 200
+    })
+
+  it('clear-all revokes a pending refresh and removes the credential directory through the queue', async () => {
+    const connectionId = 'onedrive:clear-race'
+    mockReadFile.mockResolvedValue(credential(connectionId))
+    let finish!: (response: Response) => void
+    mockNetFetch.mockReturnValueOnce(
+      new Promise<Response>((resolve) => {
+        finish = resolve
+      })
+    )
+    const refreshing = getHandler('onedrive:get-access-token')(makeEvent(), {
+      connectionId,
+      clientId
+    }) as Promise<unknown>
+    const outcome = refreshing.then(
+      () => 'resolved',
+      () => 'rejected'
+    )
+    await vi.waitFor(() => expect(mockNetFetch).toHaveBeenCalledOnce())
+    await clearOneDriveCredentials()
+    finish(tokenResponse())
+    expect(await outcome).toBe('rejected')
+    expect(mockRename).not.toHaveBeenCalled()
+    expect(mockRm).toHaveBeenCalledWith(path.join('/tmp/hhc-user-data', 'onedrive-credentials'), {
+      recursive: true,
+      force: true
+    })
+  })
+
+  it('waits for an in-flight write, rejects its rename and then deletes', async () => {
+    const connectionId = 'onedrive:write-race'
+    mockReadFile.mockResolvedValue(credential(connectionId))
+    let finishWrite!: () => void
+    mockWriteFile.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishWrite = resolve
+      })
+    )
+    const refreshing = getHandler('onedrive:get-access-token')(makeEvent(), {
+      connectionId,
+      clientId
+    }) as Promise<unknown>
+    const outcome = refreshing.then(
+      () => 'resolved',
+      () => 'rejected'
+    )
+    await vi.waitFor(() => expect(mockWriteFile).toHaveBeenCalledOnce())
+    const deleting = getHandler('onedrive:delete-credentials')(makeEvent(), connectionId)
+    expect(mockRm).not.toHaveBeenCalled()
+    finishWrite()
+    await deleting
+    expect(await outcome).toBe('rejected')
+    expect(mockRename).not.toHaveBeenCalled()
+    expect(mockRm.mock.calls.at(-1)?.[0]).toContain('onedrive%3Awrite-race.enc')
+  })
+
+  it('deletes after an already dispatched rename and rejects the late token result', async () => {
+    const connectionId = 'onedrive:rename-race'
+    mockReadFile.mockResolvedValue(credential(connectionId))
+    let finishRename!: () => void
+    mockRename.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishRename = resolve
+      })
+    )
+    const refreshing = getHandler('onedrive:get-access-token')(makeEvent(), {
+      connectionId,
+      clientId
+    }) as Promise<unknown>
+    const outcome = refreshing.then(
+      () => 'resolved',
+      () => 'rejected'
+    )
+    await vi.waitFor(() => expect(mockRename).toHaveBeenCalledOnce())
+    const deleting = getHandler('onedrive:delete-credentials')(makeEvent(), connectionId)
+    expect(mockRm).not.toHaveBeenCalled()
+    finishRename()
+    await deleting
+    expect(await outcome).toBe('rejected')
+    expect(mockRm.mock.calls.at(-1)?.[0]).toContain('onedrive%3Arename-race.enc')
+  })
+
+  it('does not revoke a different account refresh', async () => {
+    const connectionId = 'onedrive:other-account'
+    mockReadFile.mockResolvedValue(credential(connectionId))
+    let finish!: (response: Response) => void
+    mockNetFetch.mockReturnValueOnce(
+      new Promise<Response>((resolve) => {
+        finish = resolve
+      })
+    )
+    const refreshing = getHandler('onedrive:get-access-token')(makeEvent(), {
+      connectionId,
+      clientId
+    }) as Promise<unknown>
+    await vi.waitFor(() => expect(mockNetFetch).toHaveBeenCalledOnce())
+    await getHandler('onedrive:delete-credentials')(makeEvent(), 'onedrive:unrelated')
+    finish(tokenResponse())
+    await expect(refreshing).resolves.toMatchObject({ accessToken: 'late' })
+    expect(mockRename).toHaveBeenCalledOnce()
+  })
+
+  it('rejects a delayed credential read after disconnect before fetching any token', async () => {
+    const connectionId = 'onedrive:read-race'
+    let finishRead!: (value: Buffer) => void
+    mockReadFile.mockReturnValueOnce(
+      new Promise<Buffer>((resolve) => {
+        finishRead = resolve
+      })
+    )
+    const refreshing = getHandler('onedrive:get-access-token')(makeEvent(), {
+      connectionId,
+      clientId
+    }) as Promise<unknown>
+    const outcome = refreshing.then(
+      () => 'resolved',
+      () => 'rejected'
+    )
+    await vi.waitFor(() => expect(mockReadFile).toHaveBeenCalledOnce())
+    const deleting = getHandler('onedrive:delete-credentials')(makeEvent(), connectionId)
+    finishRead(credential(connectionId))
+    await deleting
+    expect(await outcome).toBe('rejected')
+    expect(mockNetFetch).not.toHaveBeenCalled()
+  })
+
+  it.each([false, true])(
+    'keeps a new login when an older refresh completes (disconnect first: %s)',
+    async (disconnectFirst) => {
+      const connectionId = `onedrive:reconnect-${disconnectFirst}`
+      mockReadFile.mockResolvedValue(credential(connectionId))
+      let finishRefresh!: (response: Response) => void
+      mockNetFetch.mockReturnValueOnce(
+        new Promise<Response>((resolve) => {
+          finishRefresh = resolve
+        })
+      )
+      const refreshing = getHandler('onedrive:get-access-token')(makeEvent(), {
+        connectionId,
+        clientId
+      }) as Promise<unknown>
+      const outcome = refreshing.then(
+        () => 'resolved',
+        () => 'rejected'
+      )
+      await vi.waitFor(() => expect(mockNetFetch).toHaveBeenCalledOnce())
+      if (disconnectFirst)
+        await getHandler('onedrive:delete-credentials')(makeEvent(), connectionId)
+      mockNetFetch
+        .mockResolvedValueOnce(tokenResponse())
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({ id: `reconnect-${disconnectFirst}`, displayName: 'New Login' }),
+            { status: 200 }
+          )
+        )
+      await getHandler('onedrive:complete-auth')(makeEvent(), {
+        clientId,
+        redirectUri: 'hhc-presenter://auth/onedrive',
+        code: 'new-code',
+        codeVerifier: 'new-verifier'
+      })
+      expect(mockRename).toHaveBeenCalledOnce()
+      finishRefresh(tokenResponse())
+      expect(await outcome).toBe('rejected')
+      expect(mockRename).toHaveBeenCalledOnce()
+    }
+  )
+
+  it('does not persist a pending auth exchange after clear-all', async () => {
+    let finish!: (response: Response) => void
+    mockNetFetch
+      .mockReturnValueOnce(
+        new Promise<Response>((resolve) => {
+          finish = resolve
+        })
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'cleared-auth' }), { status: 200 }))
+    const auth = getHandler('onedrive:complete-auth')(makeEvent(), {
+      clientId,
+      redirectUri: 'hhc-presenter://auth/onedrive',
+      code: 'code',
+      codeVerifier: 'verifier'
+    }) as Promise<unknown>
+    const outcome = auth.then(
+      () => 'resolved',
+      () => 'rejected'
+    )
+    await clearOneDriveCredentials()
+    finish(tokenResponse())
+    expect(await outcome).toBe('rejected')
+    expect(mockWriteFile).not.toHaveBeenCalled()
   })
 })
