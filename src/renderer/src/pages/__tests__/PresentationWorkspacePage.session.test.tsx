@@ -1,3 +1,4 @@
+import { makeEditableItem } from '@renderer/test/presentation-fixtures'
 import { mockAnimationFrame } from '@renderer/test/animation-frame'
 import i18n from '@renderer/i18n'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
@@ -22,7 +23,6 @@ import {
   insertBlankEditableSlide,
   removeEditableSlides
 } from '@renderer/lib/editable-presentation'
-import { EDITABLE_PRESENTATION_MIME_TYPE } from '@renderer/lib/presentation-media'
 import { useFileExplorerStore } from '@renderer/stores/file-explorer'
 import { usePresentationWorkspaceStore } from '@renderer/stores/presentation-workspace'
 import { openFileExplorerDB } from '@renderer/lib/file-explorer-db'
@@ -188,21 +188,6 @@ vi.mock('@renderer/lib/local-fonts', async () => {
 vi.mock('@heroui/react/toast', () => ({
   toast: { warning: mocks.toastWarning, danger: mocks.toastDanger }
 }))
-
-function makeEditableItem(id = 'deck-1', name = 'Sunday.lpdeck'): FileItemRecord {
-  return {
-    id,
-    parentId: 'file-root',
-    type: 'file',
-    sortIndex: 0,
-    createdAt: 1,
-    expiresAt: null,
-    name,
-    url: `blob:${id}`,
-    size: 1024,
-    mimeType: EDITABLE_PRESENTATION_MIME_TYPE
-  }
-}
 
 function HeaderWorkspace(): React.JSX.Element {
   return (
