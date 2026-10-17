@@ -1,4 +1,6 @@
-import { render, screen } from '@testing-library/react'
+vi.unmock('@heroui/react/tabs')
+
+import { act, render, screen } from '@testing-library/react'
 import type { RenderResult } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { I18nextProvider } from 'react-i18next'
@@ -8,6 +10,14 @@ import { useTimerStore } from '@renderer/stores/timer'
 import { installTimerRuntimeHarness } from '@renderer/test/timer-runtime-harness'
 
 let host: ReturnType<typeof installTimerRuntimeHarness>
+
+// jsdom does not run CSS animations or provide the Web Animations API.
+beforeAll(() => {
+  Object.defineProperty(Element.prototype, 'getAnimations', { configurable: true, value: () => [] })
+})
+afterAll(() => {
+  Reflect.deleteProperty(Element.prototype, 'getAnimations')
+})
 
 beforeEach(() => {
   useTimerStore.setState({ mode: 'timer' })
@@ -52,4 +62,13 @@ describe('ModeSelector', () => {
     await user.click(screen.getByTestId('mode-stopwatch'))
     expect(screen.getByTestId('mode-stopwatch')).toHaveAttribute('aria-selected', 'true')
   })
+})
+
+it('supports keyboard navigation with the real Tabs control', async () => {
+  const user = userEvent.setup()
+  renderWithI18n()
+  act(() => screen.getByTestId('mode-timer').focus())
+  await user.keyboard('{ArrowRight}')
+  expect(screen.getByTestId('mode-both')).toHaveFocus()
+  expect(useTimerStore.getState().mode).toBe('both')
 })
