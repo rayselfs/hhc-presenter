@@ -122,7 +122,11 @@ describe('buildSyncRefreshPlan', () => {
     async (change) => {
       const db = await openFileExplorerDB()
       await db.put('folder-items', existingItem)
-      await db.put('file-blobs', { id: existingItem.id, blob: new NodeBlob(['cached']) as Blob, refCount: 1 })
+      await db.put('file-blobs', {
+        id: existingItem.id,
+        blob: new NodeBlob(['cached']) as Blob,
+        refCount: 1
+      })
       const cached = { ...existingEntry, contentHash: 'hash-before' }
       await putSyncEntry(cached)
       const plan = buildSyncDeltaRefreshPlan({
@@ -662,7 +666,7 @@ describe('buildSyncRefreshPlan', () => {
     expect(plan.removedItemIds).toEqual([])
   })
 
-  it.each(['manual', 'scheduled'])('removes an explicit %s deletion tombstone', async () => {
+  it('applies a remote-delete tombstone to persisted items and cached bytes', async () => {
     const db = await openFileExplorerDB()
     await db.put('folder-items', existingItem)
     await db.put('file-blobs', { id: existingItem.id, blob: new Blob(['cached']), refCount: 1 })
