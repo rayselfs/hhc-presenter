@@ -253,9 +253,109 @@ function needsOfflinePolicyReconciliation(
   )
 }
 
+interface SyncRecordPlacement {
+  id: string
+  parentId: string
+  sortIndex: number
+  createdAt: number
+}
+
+function mapSyncFolder(
+  input: Pick<BuildSyncRefreshPlanInput, 'providerConnectionId' | 'providerType' | 'offlinePolicy'>,
+  remoteItem: RemoteSyncItem,
+  placement: SyncRecordPlacement
+): { folder: FolderRecord; entry: SyncRefreshPlan['syncEntries'][number] } {
+  const { id: folderId, parentId, sortIndex, createdAt } = placement
+  const folder: FolderRecord = {
+    id: folderId,
+    name: remoteItem.name,
+    parentId,
+    sortIndex,
+    createdAt,
+    expiresAt: null,
+    syncLink: {
+      providerConnectionId: input.providerConnectionId,
+      remoteFolderId: remoteItem.remoteItemId,
+      providerType: input.providerType,
+      offlinePolicy: input.offlinePolicy
+    }
+  }
+  const entry: SyncRefreshPlan['syncEntries'][number] = {
+    providerConnectionId: input.providerConnectionId,
+    remoteItemId: remoteItem.remoteItemId,
+    parentRemoteItemId: remoteItem.parentRemoteItemId,
+    kind: 'folder',
+    name: remoteItem.name,
+    folderId,
+    status: input.offlinePolicy === 'always-offline' ? 'available-offline' : 'remote-only'
+  }
+  return { folder, entry }
+}
+
+function mapSyncFile(
+  input: Pick<
+    BuildSyncRefreshPlanInput,
+    'providerConnectionId' | 'offlinePolicy' | 'existingBlobIds' | 'forceRetry'
+  >,
+  remoteItem: RemoteSyncItem,
+  existing: SyncEntryRecord | undefined,
+  placement: SyncRecordPlacement,
+  policy: ReturnType<typeof classifyRemoteFile>,
+  now: number
+): {
+  item: FileItemRecord
+  entry: SyncRefreshPlan['syncEntries'][number]
+  transfer: SyncFileTransfer | null
+} {
+  const { id: itemId, parentId, sortIndex, createdAt } = placement
+  const heldFailure = shouldHoldFailure(existing, input.forceRetry ?? false, now)
+  const changed = contentChanged(existing, remoteItem, input.existingBlobIds)
+  const shouldTransfer =
+    !policy.disabled && input.offlinePolicy === 'always-offline' && !heldFailure && changed
+  const preserveDownloaded =
+    !changed && existing?.status === 'available-offline' && Boolean(existing.blobId)
+  const status = heldFailure
+    ? (existing?.status ?? 'failed')
+    : nextStatus(policy.disabled, input.offlinePolicy, shouldTransfer, preserveDownloaded)
+  const blobId = status === 'available-offline' ? (existing?.blobId ?? itemId) : undefined
+  const item: FileItemRecord = {
+    id: itemId,
+    parentId,
+    type: 'file',
+    sortIndex,
+    createdAt,
+    expiresAt: null,
+    name: remoteItem.name,
+    url: policy.disabled ? `unsupported:${itemId}` : `blob:${itemId}`,
+    size: remoteItem.size ?? 0,
+    mimeType: policy.mimeType
+  }
+  const entry: SyncRefreshPlan['syncEntries'][number] = {
+    providerConnectionId: input.providerConnectionId,
+    remoteItemId: remoteItem.remoteItemId,
+    parentRemoteItemId: remoteItem.parentRemoteItemId,
+    kind: 'file',
+    name: remoteItem.name,
+    itemId,
+    ...(blobId ? { blobId } : {}),
+    mimeType: policy.mimeType,
+    size: remoteItem.size,
+    etag: remoteItem.etag,
+    contentHash: remoteItem.contentHash,
+    status,
+    ...(heldFailure ? failureFields(existing) : {})
+  }
+  return {
+    item,
+    entry,
+    transfer: shouldTransfer
+      ? { itemId, remoteItemId: remoteItem.remoteItemId, mimeType: policy.mimeType }
+      : null
+  }
+}
+
 export function buildSyncRefreshPlan(input: BuildSyncRefreshPlanInput): SyncRefreshPlan {
   const now = input.now ?? Date.now()
-  const forceRetry = input.forceRetry ?? false
   const existingByRemoteId = new Map(
     input.existingEntries.map((entry) => [entry.remoteItemId, entry])
   )
@@ -292,33 +392,18 @@ export function buildSyncRefreshPlan(input: BuildSyncRefreshPlanInput): SyncRefr
       createFolderId(input.providerType, input.providerConnectionId, remoteItem.remoteItemId)
     const sortIndex = folderSortCounts.get(parentId) ?? 0
     folderSortCounts.set(parentId, sortIndex + 1)
-    folders.push({
+    const mapped = mapSyncFolder(input, remoteItem, {
       id: folderId,
-      name: remoteItem.name,
       parentId,
       sortIndex,
       createdAt:
         remoteItem.sourceCreatedAt ??
         input.existingFolders.find((folder) => folder.id === folderId)?.createdAt ??
-        now,
-      expiresAt: null,
-      syncLink: {
-        providerConnectionId: input.providerConnectionId,
-        remoteFolderId: remoteItem.remoteItemId,
-        providerType: input.providerType,
-        offlinePolicy: input.offlinePolicy
-      }
+        now
     })
+    folders.push(mapped.folder)
     remoteFolderToLocalId.set(remoteItem.remoteItemId, folderId)
-    syncEntries.push({
-      providerConnectionId: input.providerConnectionId,
-      remoteItemId: remoteItem.remoteItemId,
-      parentRemoteItemId: remoteItem.parentRemoteItemId,
-      kind: 'folder',
-      name: remoteItem.name,
-      folderId,
-      status: input.offlinePolicy === 'always-offline' ? 'available-offline' : 'remote-only'
-    })
+    syncEntries.push(mapped.entry)
   }
 
   for (const remoteItem of input.remoteItems) {
@@ -334,54 +419,26 @@ export function buildSyncRefreshPlan(input: BuildSyncRefreshPlanInput): SyncRefr
     if (existing?.itemId && existing.itemId !== itemId) replacedItemIds.push(existing.itemId)
     const sortIndex = itemSortCounts.get(parentId) ?? 0
     itemSortCounts.set(parentId, sortIndex + 1)
-    const heldFailure = shouldHoldFailure(existing, forceRetry, now)
-    const changed = contentChanged(existing, remoteItem, input.existingBlobIds)
-    const shouldTransfer =
-      !policy.disabled && input.offlinePolicy === 'always-offline' && !heldFailure && changed
-    const preserveDownloaded =
-      !changed && existing?.status === 'available-offline' && Boolean(existing.blobId)
-    const status = heldFailure
-      ? (existing?.status ?? 'failed')
-      : nextStatus(policy.disabled, input.offlinePolicy, shouldTransfer, preserveDownloaded)
-    const blobId = status === 'available-offline' ? (existing?.blobId ?? itemId) : undefined
+    const mapped = mapSyncFile(
+      input,
+      remoteItem,
+      existing,
+      {
+        id: itemId,
+        parentId,
+        sortIndex,
+        createdAt:
+          remoteItem.sourceCreatedAt ??
+          input.existingItems.find((item) => item.id === itemId)?.createdAt ??
+          now
+      },
+      policy,
+      now
+    )
+    items.push(mapped.item)
+    syncEntries.push(mapped.entry)
+    if (mapped.transfer) fileTransfers.push(mapped.transfer)
     if (policy.disabled) disabledCount++
-    items.push({
-      id: itemId,
-      parentId,
-      type: 'file',
-      sortIndex,
-      createdAt:
-        remoteItem.sourceCreatedAt ??
-        input.existingItems.find((item) => item.id === itemId)?.createdAt ??
-        now,
-      expiresAt: null,
-      name: remoteItem.name,
-      url: policy.disabled ? `unsupported:${itemId}` : `blob:${itemId}`,
-      size: remoteItem.size ?? 0,
-      mimeType: policy.mimeType
-    })
-    if (shouldTransfer) {
-      fileTransfers.push({
-        itemId,
-        remoteItemId: remoteItem.remoteItemId,
-        mimeType: policy.mimeType
-      })
-    }
-    syncEntries.push({
-      providerConnectionId: input.providerConnectionId,
-      remoteItemId: remoteItem.remoteItemId,
-      parentRemoteItemId: remoteItem.parentRemoteItemId,
-      kind: 'file',
-      name: remoteItem.name,
-      itemId,
-      ...(blobId ? { blobId } : {}),
-      mimeType: policy.mimeType,
-      size: remoteItem.size,
-      etag: remoteItem.etag,
-      contentHash: remoteItem.contentHash,
-      status,
-      ...(heldFailure ? failureFields(existing) : {})
-    })
   }
 
   const removedEntries = input.existingEntries.filter(
@@ -510,30 +567,15 @@ export function buildSyncDeltaRefreshPlan(input: BuildSyncRefreshPlanInput): Syn
     const existingFolder = input.existingFolders.find((folder) => folder.id === folderId)
     const sortIndex = existingFolder?.sortIndex ?? folderSortCounts.get(parentId) ?? 0
     folderSortCounts.set(parentId, Math.max(folderSortCounts.get(parentId) ?? 0, sortIndex + 1))
-    folders.push({
+    const mapped = mapSyncFolder(input, remoteItem, {
       id: folderId,
-      name: remoteItem.name,
       parentId,
       sortIndex,
-      createdAt: remoteItem.sourceCreatedAt ?? existingFolder?.createdAt ?? now,
-      expiresAt: null,
-      syncLink: {
-        providerConnectionId: input.providerConnectionId,
-        remoteFolderId: remoteItem.remoteItemId,
-        providerType: input.providerType,
-        offlinePolicy: input.offlinePolicy
-      }
+      createdAt: remoteItem.sourceCreatedAt ?? existingFolder?.createdAt ?? now
     })
+    folders.push(mapped.folder)
     remoteFolderToLocalId.set(remoteItem.remoteItemId, folderId)
-    syncEntries.push({
-      providerConnectionId: input.providerConnectionId,
-      remoteItemId: remoteItem.remoteItemId,
-      parentRemoteItemId: remoteItem.parentRemoteItemId,
-      kind: 'folder',
-      name: remoteItem.name,
-      folderId,
-      status: input.offlinePolicy === 'always-offline' ? 'available-offline' : 'remote-only'
-    })
+    syncEntries.push(mapped.entry)
   }
 
   for (const remoteItem of input.remoteItems) {
@@ -556,51 +598,23 @@ export function buildSyncDeltaRefreshPlan(input: BuildSyncRefreshPlanInput): Syn
     const existingItem = input.existingItems.find((item) => item.id === itemId)
     const sortIndex = existingItem?.sortIndex ?? itemSortCounts.get(parentId) ?? 0
     itemSortCounts.set(parentId, Math.max(itemSortCounts.get(parentId) ?? 0, sortIndex + 1))
-    const heldFailure = shouldHoldFailure(existing, forceRetry, now)
-    const changed = contentChanged(existing, remoteItem, input.existingBlobIds)
-    const shouldTransfer =
-      !policy.disabled && input.offlinePolicy === 'always-offline' && !heldFailure && changed
-    const preserveDownloaded =
-      !changed && existing?.status === 'available-offline' && Boolean(existing.blobId)
-    const status = heldFailure
-      ? (existing?.status ?? 'failed')
-      : nextStatus(policy.disabled, input.offlinePolicy, shouldTransfer, preserveDownloaded)
-    const blobId = status === 'available-offline' ? (existing?.blobId ?? itemId) : undefined
+    const mapped = mapSyncFile(
+      input,
+      remoteItem,
+      existing,
+      {
+        id: itemId,
+        parentId,
+        sortIndex,
+        createdAt: remoteItem.sourceCreatedAt ?? existingItem?.createdAt ?? now
+      },
+      policy,
+      now
+    )
+    items.push(mapped.item)
+    syncEntries.push(mapped.entry)
+    if (mapped.transfer) fileTransfers.push(mapped.transfer)
     if (policy.disabled) disabledCount++
-    items.push({
-      id: itemId,
-      parentId,
-      type: 'file',
-      sortIndex,
-      createdAt: remoteItem.sourceCreatedAt ?? existingItem?.createdAt ?? now,
-      expiresAt: null,
-      name: remoteItem.name,
-      url: policy.disabled ? `unsupported:${itemId}` : `blob:${itemId}`,
-      size: remoteItem.size ?? 0,
-      mimeType: policy.mimeType
-    })
-    if (shouldTransfer) {
-      fileTransfers.push({
-        itemId,
-        remoteItemId: remoteItem.remoteItemId,
-        mimeType: policy.mimeType
-      })
-    }
-    syncEntries.push({
-      providerConnectionId: input.providerConnectionId,
-      remoteItemId: remoteItem.remoteItemId,
-      parentRemoteItemId: remoteItem.parentRemoteItemId,
-      kind: 'file',
-      name: remoteItem.name,
-      itemId,
-      ...(blobId ? { blobId } : {}),
-      mimeType: policy.mimeType,
-      size: remoteItem.size,
-      etag: remoteItem.etag,
-      contentHash: remoteItem.contentHash,
-      status,
-      ...(heldFailure ? failureFields(existing) : {})
-    })
   }
 
   const removedEntries = [...removedEntryMap.values()]
