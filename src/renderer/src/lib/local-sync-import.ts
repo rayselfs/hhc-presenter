@@ -1,3 +1,4 @@
+import { notifyThumbnailReady } from './thumbnail-events'
 import type { LocalSyncConnectionInfo, LocalSyncRemoteItem } from '@shared/ipc-channels'
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 import { FILE_EXPLORER_ROOT_ID, useFileExplorerStore } from '@renderer/stores/file-explorer'
@@ -374,12 +375,7 @@ export async function refreshImportedMediaAssets(
           if (typeof thumbnail === 'string') await saveThumbnail(blobId, thumbnail)
           else await saveThumbnailBlob(blobId, thumbnail)
           if ((await guard?.()) === false) return
-          const dataUrl = typeof thumbnail === 'string' ? thumbnail : URL.createObjectURL(thumbnail)
-          window.dispatchEvent(
-            new CustomEvent('hhc:thumbnail-ready', {
-              detail: { itemId: item.id, dataUrl }
-            })
-          )
+          notifyThumbnailReady(item.id, blobId)
         } finally {
           source.revoke()
         }
