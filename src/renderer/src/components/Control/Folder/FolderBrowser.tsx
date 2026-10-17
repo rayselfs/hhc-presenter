@@ -1,3 +1,5 @@
+import { toast } from '@heroui/react/toast'
+import { copyBibleFolder } from '@renderer/lib/bible-folder-copy'
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import {
   DndContext,
@@ -144,6 +146,7 @@ export function FolderBrowser({
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const [draggedIds, setDraggedIds] = useState<Set<string>>(new Set())
   const [folderDropTargetId, setFolderDropTargetId] = useState<string | null>(null)
+  const pastePendingRef = useRef(false)
   const lastClickedIdRef = useRef<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -287,54 +290,43 @@ export function FolderBrowser({
   }, [clipboard, selectedItemIds])
 
   const handlePaste = useCallback(async () => {
-    if (!clipboard) return
-    const state = store.getState()
+    if (!clipboard || pastePendingRef.current) return
+    pastePendingRef.current = true
+    try {
+      const state = store.getState()
 
-    if (clipboard.mode === 'cut') {
-      for (const id of clipboard.itemIds) {
-        if (state.folders[id]) {
-          moveFolder(id, currentFolderId)
-        } else {
-          moveItem(id, currentFolderId)
+      if (clipboard.mode === 'cut') {
+        for (const id of clipboard.itemIds) {
+          if (state.folders[id]) {
+            moveFolder(id, currentFolderId)
+          } else {
+            moveItem(id, currentFolderId)
+          }
         }
-      }
-      setClipboard(null)
-    } else {
-      const copyFolderDeep = async (srcFolderId: string, destParentId: string): Promise<void> => {
-        const srcFolder = store.getState().folders[srcFolderId]
-        if (!srcFolder) return
-
-        await store.getState().ensureItemsLoaded(srcFolderId)
-
-        const newFolderId = addFolder(srcFolder.name, destParentId, srcFolder.expiresAt)
-
-        const srcItems = store.getState().getItems(srcFolderId)
-        for (const item of srcItems) {
-          const rest = stripItemMeta(item)
-          addItem({ ...rest, parentId: newFolderId, expiresAt: item.expiresAt })
-        }
-
-        const childFolders = store.getState().getChildFolders(srcFolderId)
-        for (const child of childFolders) {
-          await copyFolderDeep(child.id, newFolderId)
-        }
-      }
-
-      for (const id of clipboard.itemIds) {
-        if (state.folders[id]) {
-          await copyFolderDeep(id, currentFolderId)
-        } else {
-          const item = state.items[id]
-          if (item) {
-            const rest = stripItemMeta(item)
-            addItem({ ...rest, parentId: currentFolderId, expiresAt: null })
+      } else {
+        for (const id of clipboard.itemIds) {
+          if (state.folders[id]) {
+            await copyBibleFolder(store.getState, id, currentFolderId)
+          } else {
+            const item = state.items[id]
+            if (item) {
+              const rest = stripItemMeta(item)
+              addItem({ ...rest, parentId: currentFolderId, expiresAt: null })
+            }
           }
         }
       }
-    }
 
-    setSelectedItemIds(new Set())
-  }, [clipboard, currentFolderId, addItem, addFolder, moveItem, moveFolder, store])
+      await store.getState().flushPersistence()
+      if (clipboard.mode === 'cut')
+        setClipboard((current) => (current === clipboard ? null : current))
+      setSelectedItemIds(new Set())
+    } catch (error) {
+      toast.danger(error instanceof Error ? error.message : String(error))
+    } finally {
+      pastePendingRef.current = false
+    }
+  }, [clipboard, currentFolderId, addItem, moveItem, moveFolder, store])
 
   const handleDeleteSelected = useCallback(
     async (targetIds?: Set<string>) => {

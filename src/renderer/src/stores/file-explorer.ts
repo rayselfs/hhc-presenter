@@ -1,3 +1,4 @@
+import { assertFolderCopyTarget } from '@renderer/lib/folder-copy-target'
 import { useCallback } from 'react'
 import { FOLDER_DURATION_MS } from '@shared/types/folder'
 import { assertLocalDestination, commitLocalFileItem } from '@renderer/lib/file-catalog-mutations'
@@ -558,13 +559,7 @@ export async function copyExplorerFolder(
   const state = useFileExplorerStore.getState()
   const source = state.folders[id]
   if (!source || !isPersonalRecordVisible(source)) throw new Error('Copy source is unavailable')
-  let ancestor: string | null = parentId
-  const seen = new Set<string>()
-  while (ancestor && !seen.has(ancestor)) {
-    if (ancestor === id) throw new Error('Cannot copy a folder into itself')
-    seen.add(ancestor)
-    ancestor = state.folders[ancestor]?.parentId ?? null
-  }
+  assertFolderCopyTarget(id, parentId, state.folders)
   await state.ensureItemsLoaded(id)
   const loaded = useFileExplorerStore.getState()
   const items = loaded._itemsArray.filter(
