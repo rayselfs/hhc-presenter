@@ -619,6 +619,41 @@ describe('OneDrive credential mutation ordering', () => {
 })
 
 describe('OneDrive service lifecycle', () => {
+  it.each(['token', 'profile'])(
+    'rejects late completeAuth after disposal during %s',
+    async (stage) => {
+      let finish!: (response: Response) => void
+      const deferred = new Promise<Response>((resolve) => {
+        finish = resolve
+      })
+      const token = () =>
+        new Response(JSON.stringify({ access_token: 'late', refresh_token: 'late-refresh' }), {
+          status: 200
+        })
+      const profile = () => new Response(JSON.stringify({ id: 'late-account' }), { status: 200 })
+      mockNetFetch
+        .mockReturnValueOnce(stage === 'token' ? deferred : Promise.resolve(token()))
+        .mockReturnValueOnce(stage === 'profile' ? deferred : Promise.resolve(profile()))
+      const pending = service.completeAuth({
+        clientId: '4f4c2f2c-8f2a-4c4b-9d2e-8c3a7d638c02',
+        redirectUri: 'hhc-presenter://auth/onedrive',
+        code: 'late-code',
+        codeVerifier: 'late-verifier'
+      })
+      const outcome = pending.then(
+        () => 'resolved',
+        () => 'rejected'
+      )
+      await vi.waitFor(() => expect(mockNetFetch).toHaveBeenCalledTimes(stage === 'token' ? 1 : 2))
+      service.dispose()
+      finish(stage === 'token' ? token() : profile())
+      expect(await outcome).toBe('rejected')
+      expect(mockWriteFile).not.toHaveBeenCalled()
+      expect(mockRename).not.toHaveBeenCalled()
+      expect(mockRm).not.toHaveBeenCalled()
+    }
+  )
+
   it('revokes a late refresh without overwriting a new instance login', async () => {
     const clientId = '4f4c2f2c-8f2a-4c4b-9d2e-8c3a7d638c02'
     const connectionId = 'onedrive:replacement'
