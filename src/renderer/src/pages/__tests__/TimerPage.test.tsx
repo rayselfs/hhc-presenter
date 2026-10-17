@@ -6,6 +6,7 @@ import { useTimerStore, DEFAULT_SETTINGS, DEFAULT_STATE } from '@renderer/stores
 import { useStopwatchStore } from '@renderer/stores/stopwatch'
 import { useProjection } from '@renderer/contexts/ProjectionContext'
 import TimerPage from '../TimerPage'
+import { installTimerRuntimeHarness } from '@renderer/test/timer-runtime-harness'
 
 const projectionRecoveryMock = {
   recovery: { status: 'closed' as const, generation: 0, failure: null },
@@ -53,14 +54,11 @@ beforeEach(() => {
   useTimerStore.setState({
     ...DEFAULT_SETTINGS,
     ...DEFAULT_STATE,
-    targetEndTime: null,
     presets: []
   })
   useStopwatchStore.setState({
     status: 'stopped',
-    elapsedMs: 0,
-    startTimestamp: null,
-    accumulatedMs: 0
+    elapsedMs: 0
   })
 })
 
@@ -175,8 +173,7 @@ describe('TimerPage — TimeInputPopover gating', () => {
     useTimerStore.setState({
       mode: 'timer',
       status: 'running',
-      totalDuration: 300,
-      targetEndTime: Date.now() + 300000
+      totalDuration: 300
     })
     renderTimerPage()
     expect(screen.queryByRole('button', { name: /set duration/i })).not.toBeInTheDocument()
@@ -338,6 +335,11 @@ describe('TimerPage — projection ownership', () => {
 })
 
 describe('TimerPage — Space projection action', () => {
+  let host: ReturnType<typeof installTimerRuntimeHarness>
+  beforeEach(() => {
+    host = installTimerRuntimeHarness()
+  })
+  afterEach(() => host.dispose())
   function mockProjectionForShortcut(): ReturnType<typeof vi.fn> {
     const startProjection = vi.fn(() => Promise.resolve({ ok: true as const, generation: 1 }))
     vi.mocked(useProjection).mockReturnValue({
@@ -372,7 +374,9 @@ describe('TimerPage — Space projection action', () => {
 
   it('starts projection and resumes timer when Space is pressed from paused', () => {
     const startProjection = mockProjectionForShortcut()
-    useTimerStore.setState({ status: 'paused', remainingSeconds: 30 })
+    useTimerStore.getState().setDuration(30)
+    useTimerStore.getState().start()
+    useTimerStore.getState().pause()
     renderTimerPage()
 
     fireEvent.keyDown(document.body, { code: 'Space' })
@@ -386,11 +390,8 @@ describe('TimerPage — Space projection action', () => {
 
   it('pauses without foregrounding when Space is pressed while running', () => {
     const startProjection = mockProjectionForShortcut()
-    useTimerStore.setState({
-      status: 'running',
-      targetEndTime: Date.now() + 30_000,
-      remainingSeconds: 30
-    })
+    useTimerStore.getState().setDuration(30)
+    useTimerStore.getState().start()
     renderTimerPage()
 
     fireEvent.keyDown(document.body, { code: 'Space' })

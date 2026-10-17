@@ -1,306 +1,271 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { TimerRuntime } from '@shared/timer-runtime'
+import type {
+  TimerRuntimeCommand,
+  TimerRuntimeConfiguration,
+  TimerRuntimeResult,
+  TimerRuntimeSnapshot,
+  TimerTickPayload
+} from '@shared/types/timer'
 import type { WorkerIncomingMessage, WorkerOutgoingMessage } from '@renderer/workers/timer.worker'
+import { DEFAULT_SETTINGS } from '@renderer/stores/timer'
 
-vi.mock('../env', () => ({
-  isElectron: vi.fn()
-}))
-
+vi.mock('../env', () => ({ isElectron: vi.fn() }))
 import { isElectron } from '../env'
-import { BrowserTimerAdapter, ElectronTimerAdapter, createTimerAdapter } from '../timer-adapter'
+import {
+  BrowserTimerAdapter,
+  ElectronTimerAdapter,
+  createTimerAdapter,
+  type TimerAdapter
+} from '../timer-adapter'
 
-let mockPostMessage: ReturnType<typeof vi.fn>
-let mockTerminate: ReturnType<typeof vi.fn>
-let mockAddEventListener: ReturnType<typeof vi.fn>
-let MockWorkerConstructor: ReturnType<typeof vi.fn>
-
+const configuration: TimerRuntimeConfiguration = {
+  settings: { ...DEFAULT_SETTINGS },
+  reminderMode: 'subtract'
+}
+class TransportWorker extends EventTarget {
+  static instance: TransportWorker
+  postMessage = vi.fn<(message: WorkerIncomingMessage) => void>()
+  terminate = vi.fn()
+  constructor() {
+    super()
+    TransportWorker.instance = this
+  }
+  receive(message: WorkerOutgoingMessage): void {
+    this.dispatchEvent(new MessageEvent('message', { data: message }))
+  }
+}
+let adapter: TimerAdapter
+let runtime: TimerRuntime
 beforeEach(() => {
-  mockPostMessage = vi.fn()
-  mockTerminate = vi.fn()
-  mockAddEventListener = vi.fn()
-
-  MockWorkerConstructor = vi.fn(function () {
-    return {
-      postMessage: mockPostMessage,
-      terminate: mockTerminate,
-      addEventListener: mockAddEventListener,
-      onmessage: null
-    }
-  })
-
-  vi.stubGlobal('Worker', MockWorkerConstructor as unknown as typeof Worker)
+  runtime = new TimerRuntime(() => 0)
+  runtime.initialize(configuration)
+  vi.stubGlobal('Worker', TransportWorker)
 })
-
 afterEach(() => {
+  adapter?.dispose()
   vi.unstubAllGlobals()
-  vi.clearAllMocks()
+  vi.restoreAllMocks()
 })
 
-describe('TimerAdapter', () => {
-  describe('createTimerAdapter', () => {
-    it('returns BrowserTimerAdapter when isElectron is false', () => {
-      vi.mocked(isElectron).mockReturnValue(false)
-      const adapter = createTimerAdapter()
-      expect(adapter).toBeInstanceOf(BrowserTimerAdapter)
-    })
-
-    it('returns ElectronTimerAdapter when isElectron is true', () => {
-      vi.mocked(isElectron).mockReturnValue(true)
-      const adapter = createTimerAdapter()
-      expect(adapter).toBeInstanceOf(ElectronTimerAdapter)
-    })
-  })
-
-  describe('BrowserTimerAdapter', () => {
-    let adapter: BrowserTimerAdapter
-
-    beforeEach(() => {
-      vi.mocked(isElectron).mockReturnValue(false)
-      adapter = new BrowserTimerAdapter()
-    })
-
-    it('creates a Worker with correct module URL', () => {
-      expect(MockWorkerConstructor).toHaveBeenCalled()
-    })
-
-    it('sends command via worker.postMessage', () => {
-      const cmd: WorkerIncomingMessage = { type: 'start', durationMs: 5000 }
-      adapter.sendCommand(cmd)
-      expect(mockPostMessage).toHaveBeenCalledWith(cmd)
-    })
-
-    it('calls onTick callback on tick message', () => {
-      const tickCallback = vi.fn()
-      adapter.onTick(tickCallback)
-
-      const tickMessage: WorkerOutgoingMessage = {
-        type: 'tick',
-        remainingMs: 3000,
-        progress: 0.6
-      }
-
-      const messageHandler = mockAddEventListener.mock.calls[0][1] as EventListener
-      messageHandler(new MessageEvent('message', { data: tickMessage }))
-
-      expect(tickCallback).toHaveBeenCalledWith(3000, 0.6)
-    })
-
-    it('calls onFinished callback on finished message', () => {
-      const finishedCallback = vi.fn()
-      adapter.onFinished(finishedCallback)
-
-      const finishedMessage: WorkerOutgoingMessage = { type: 'finished' }
-
-      const messageHandler = mockAddEventListener.mock.calls[0][1] as EventListener
-      messageHandler(new MessageEvent('message', { data: finishedMessage }))
-
-      expect(finishedCallback).toHaveBeenCalled()
-    })
-
-    it('calls onStopwatchTick callback on stopwatchTick message', () => {
-      const stopwatchCallback = vi.fn()
-      adapter.onStopwatchTick(stopwatchCallback)
-
-      const stopwatchMessage: WorkerOutgoingMessage = {
-        type: 'stopwatchTick',
-        elapsedMs: 12500
-      }
-
-      const messageHandler = mockAddEventListener.mock.calls[0][1] as EventListener
-      messageHandler(new MessageEvent('message', { data: stopwatchMessage }))
-
-      expect(stopwatchCallback).toHaveBeenCalledWith(12500)
-    })
-
-    it('terminates worker on dispose', () => {
-      adapter.dispose()
-      expect(mockTerminate).toHaveBeenCalled()
-    })
-
-    it('clears callbacks on dispose', () => {
-      const tickCallback = vi.fn()
-      adapter.onTick(tickCallback)
-      adapter.dispose()
-
-      const tickMessage: WorkerOutgoingMessage = {
-        type: 'tick',
-        remainingMs: 2000,
-        progress: 0.4
-      }
-
-      const messageHandler = mockAddEventListener.mock.calls[0][1] as EventListener
-      messageHandler(new MessageEvent('message', { data: tickMessage }))
-
-      expect(tickCallback).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('ElectronTimerAdapter', () => {
-    let adapter: ElectronTimerAdapter
-    let mockTimerCommand: ReturnType<typeof vi.fn>
-    let mockOnTimerTick: ReturnType<typeof vi.fn>
-    let mockCleanup: ReturnType<typeof vi.fn>
-
-    beforeEach(() => {
-      mockTimerCommand = vi.fn()
-      mockCleanup = vi.fn()
-      mockOnTimerTick = vi.fn().mockReturnValue(mockCleanup)
-
-      vi.stubGlobal('window', {
-        api: {
-          timer: {
-            timerCommand: mockTimerCommand,
-            onTimerTick: mockOnTimerTick,
-            timerGetState: vi.fn(),
-            timerInitialize: vi.fn()
+for (const mode of ['browser', 'electron'] as const) {
+  describe(`${mode} TimerAdapter`, () => {
+    let requests: Array<{
+      message:
+        | { type: 'initialize'; configuration: TimerRuntimeConfiguration }
+        | {
+            type: 'command'
+            command: TimerRuntimeCommand
           }
-        }
-      })
-
-      adapter = new ElectronTimerAdapter()
-    })
-
-    it('sendCommand calls window.api.timer.timerCommand', () => {
-      const cmd: WorkerIncomingMessage = { type: 'start', durationMs: 5000 }
-      adapter.sendCommand(cmd)
-      expect(mockTimerCommand).toHaveBeenCalledWith({ type: 'start' })
-    })
-
-    it('sendCommand maps addTime ms to seconds', () => {
-      const cmd: WorkerIncomingMessage = { type: 'addTime', ms: 30000 }
-      adapter.sendCommand(cmd)
-      expect(mockTimerCommand).toHaveBeenCalledWith({ type: 'addTime', seconds: 30 })
-    })
-
-    it('sendCommand maps removeTime ms to seconds', () => {
-      const cmd: WorkerIncomingMessage = { type: 'removeTime', ms: 10000 }
-      adapter.sendCommand(cmd)
-      expect(mockTimerCommand).toHaveBeenCalledWith({ type: 'removeTime', seconds: 10 })
-    })
-
-    it('syncs stopwatch mode to the main process', () => {
-      adapter.syncMode('stopwatch')
-
-      expect(mockTimerCommand).toHaveBeenCalledWith({ type: 'setMode', mode: 'stopwatch' })
-    })
-
-    it('onTick registers via window.api.timer.onTimerTick', () => {
-      const tickCb = vi.fn()
-      adapter.onTick(tickCb)
-      expect(mockOnTimerTick).toHaveBeenCalledOnce()
-    })
-
-    it('onTick callback receives remainingMs and progress from payload', () => {
-      const tickCb = vi.fn()
-      adapter.onTick(tickCb)
-
-      const payloadHandler = mockOnTimerTick.mock.calls[0][0]
-      payloadHandler({
-        mode: 'timer',
-        remainingSeconds: 90,
-        phase: 'main',
-        mainDisplay: '01:30',
-        subDisplay: null,
-        progress: 0.5,
-        overtimeSeconds: 0,
-        overtimeMessage: null
-      })
-
-      expect(tickCb).toHaveBeenCalledWith(90000, 0.5)
-    })
-
-    it('onFinished fires when phase transitions to overtime', () => {
-      const finishedCb = vi.fn()
-      adapter.onFinished(finishedCb)
-
-      const payloadHandler = mockOnTimerTick.mock.calls[0][0]
-
-      payloadHandler({
-        mode: 'timer',
-        remainingSeconds: 0,
-        phase: 'overtime',
-        mainDisplay: '00:00',
-        subDisplay: null,
-        progress: 1,
-        overtimeSeconds: 1,
-        overtimeMessage: null
-      })
-
-      expect(finishedCb).toHaveBeenCalledOnce()
-    })
-
-    it('onFinished does not fire again on repeated overtime ticks', () => {
-      const finishedCb = vi.fn()
-      adapter.onFinished(finishedCb)
-
-      const payloadHandler = mockOnTimerTick.mock.calls[0][0]
-      const overtimePayload = {
-        mode: 'timer' as const,
-        remainingSeconds: 0,
-        phase: 'overtime' as const,
-        mainDisplay: '00:00',
-        subDisplay: null,
-        progress: 1,
-        overtimeSeconds: 2,
-        overtimeMessage: null
+      resolve: (result: TimerRuntimeResult) => void
+      reject: (error: Error) => void
+    }>
+    let publish: (snapshot: TimerRuntimeSnapshot) => void
+    let cleanup: ReturnType<typeof vi.fn>
+    beforeEach(() => {
+      requests = []
+      cleanup = vi.fn()
+      vi.mocked(isElectron).mockReturnValue(mode === 'electron')
+      if (mode === 'browser') {
+        adapter = createTimerAdapter()
+        TransportWorker.instance.postMessage.mockImplementation((message) => {
+          requests.push({
+            message,
+            resolve: (result) =>
+              TransportWorker.instance.receive({
+                type: 'result',
+                requestId: message.requestId,
+                result
+              }),
+            reject: () => TransportWorker.instance.dispatchEvent(new Event('error'))
+          })
+        })
+        publish = (snapshot) => TransportWorker.instance.receive({ type: 'snapshot', snapshot })
+      } else {
+        let listener: ((payload: TimerTickPayload) => void) | undefined
+        const request = (
+          message: (typeof requests)[number]['message']
+        ): Promise<TimerRuntimeResult> =>
+          new Promise((resolve, reject) => {
+            requests.push({ message, resolve, reject })
+          })
+        vi.stubGlobal('api', {
+          timer: {
+            runtimeInitialize: (config: TimerRuntimeConfiguration) =>
+              request({ type: 'initialize', configuration: config }),
+            runtimeCommand: (command: TimerRuntimeCommand) => request({ type: 'command', command }),
+            onTimerTick: (callback: (payload: TimerTickPayload) => void) => {
+              listener = callback
+              return cleanup
+            }
+          }
+        })
+        adapter = createTimerAdapter()
+        publish = (snapshot) =>
+          listener?.({
+            runtime: snapshot,
+            mode: 'timer',
+            remainingSeconds: snapshot.timer.remainingSeconds,
+            phase: snapshot.timer.phase,
+            mainDisplay: '',
+            subDisplay: null,
+            progress: 1,
+            overtimeSeconds: 0,
+            overtimeMessage: null,
+            reminderColor: null
+          })
       }
-
-      payloadHandler(overtimePayload)
-      payloadHandler({ ...overtimePayload, overtimeSeconds: 3 })
-
-      expect(finishedCb).toHaveBeenCalledOnce()
     })
+    const accepted = (): TimerRuntimeResult => ({ status: 'accepted', snapshot: runtime.tick() })
 
-    it('onStopwatchTick fires when mode is stopwatch', () => {
-      const stopwatchCb = vi.fn()
-      adapter.onStopwatchTick(stopwatchCb)
-
-      const payloadHandler = mockOnTimerTick.mock.calls[0][0]
-      payloadHandler({
-        mode: 'stopwatch',
-        remainingSeconds: 0,
-        phase: 'idle',
-        mainDisplay: '00:00',
-        subDisplay: null,
-        progress: 0,
-        overtimeSeconds: 0,
-        overtimeMessage: null
+    it('chooses the platform adapter', () => {
+      expect(adapter).toBeInstanceOf(
+        mode === 'browser' ? BrowserTimerAdapter : ElectronTimerAdapter
+      )
+    })
+    it('serializes initialization before commands and keeps seconds unchanged', async () => {
+      const initialized = adapter.initialize(configuration)
+      const changed = adapter.execute({ type: 'addTime', seconds: 30 })
+      await Promise.resolve()
+      expect(requests).toHaveLength(1)
+      expect(requests[0].message).toMatchObject({ type: 'initialize', configuration })
+      requests[0].resolve(accepted())
+      await initialized
+      await Promise.resolve()
+      expect(requests).toHaveLength(2)
+      expect(requests[1].message).toMatchObject({
+        type: 'command',
+        command: { type: 'addTime', seconds: 30 }
       })
-
-      expect(stopwatchCb).toHaveBeenCalledWith(0)
+      requests[1].resolve(accepted())
+      await changed
     })
-
-    it('onTimerTick listener is registered only once across multiple registrations', () => {
-      adapter.onTick(vi.fn())
-      adapter.onFinished(vi.fn())
-      adapter.onStopwatchTick(vi.fn())
-      expect(mockOnTimerTick).toHaveBeenCalledOnce()
+    it.each<TimerRuntimeCommand>([
+      { type: 'setMode', mode: 'stopwatch' },
+      { type: 'removeTime', seconds: 10 },
+      { type: 'startStopwatch' },
+      { type: 'pauseStopwatch' },
+      { type: 'resumeStopwatch' }
+    ])('relays the explicit command $type without status-derived commands', async (command) => {
+      const pending = adapter.execute(command)
+      await Promise.resolve()
+      expect(requests[0].message).toMatchObject({ type: 'command', command })
+      requests[0].resolve(accepted())
+      await pending
+      expect(requests).toHaveLength(1)
     })
-
-    it('dispose calls cleanup fn returned by onTimerTick', () => {
-      adapter.onTick(vi.fn())
+    it('publishes accepted state before resolving the command', async () => {
+      const listener = vi.fn()
+      adapter.onSnapshot(listener)
+      const pending = adapter.execute({ type: 'start' })
+      await Promise.resolve()
+      const result = accepted()
+      requests[0].resolve(result)
+      await pending
+      expect(listener).toHaveBeenCalledWith(result.status === 'accepted' ? result.snapshot : null)
+    })
+    it('does not overwrite a newer pushed frame with a late initial response', async () => {
+      const listener = vi.fn()
+      adapter.onSnapshot(listener)
+      const old = accepted()
+      const pending = adapter.initialize(configuration)
+      await Promise.resolve()
+      const current = runtime.tick()
+      publish(current)
+      requests[0].resolve(old)
+      await pending
+      expect(listener).toHaveBeenCalledExactlyOnceWith(current)
+    })
+    it('ignores repeated and older frames and replays only the latest to new listeners', () => {
+      const old = runtime.tick()
+      const current = runtime.tick()
+      const listener = vi.fn()
+      adapter.onSnapshot(listener)
+      publish(current)
+      publish(old)
+      publish(current)
+      expect(listener).toHaveBeenCalledExactlyOnceWith(current)
+      const late = vi.fn()
+      adapter.onSnapshot(late)
+      expect(late).toHaveBeenCalledExactlyOnceWith(current)
+    })
+    it('unsubscribes only the selected listener', () => {
+      const first = vi.fn()
+      const second = vi.fn()
+      const unsubscribe = adapter.onSnapshot(first)
+      adapter.onSnapshot(second)
+      unsubscribe()
+      const frame = runtime.tick()
+      publish(frame)
+      expect(first).not.toHaveBeenCalled()
+      expect(second).toHaveBeenCalledWith(frame)
+    })
+    it('keeps rejected commands from publishing or fabricating state', async () => {
+      const listener = vi.fn()
+      adapter.onSnapshot(listener)
+      const pending = adapter.execute({ type: 'start' })
+      await Promise.resolve()
+      const rejected = { status: 'rejected', reason: 'not-initialized' } as const
+      requests[0].resolve(rejected)
+      await expect(pending).resolves.toEqual(rejected)
+      expect(listener).not.toHaveBeenCalled()
+    })
+    it('settles in-flight and queued commands on disposal and ignores late frames', async () => {
+      const listener = vi.fn()
+      adapter.onSnapshot(listener)
+      const inFlight = adapter.execute({ type: 'start' })
+      const queued = adapter.execute({ type: 'pause' })
+      await Promise.resolve()
       adapter.dispose()
-      expect(mockCleanup).toHaveBeenCalledOnce()
-    })
-
-    it('dispose clears callbacks so no further ticks fire', () => {
-      const tickCb = vi.fn()
-      adapter.onTick(tickCb)
-
-      const payloadHandler = mockOnTimerTick.mock.calls[0][0]
       adapter.dispose()
-
-      payloadHandler({
-        mode: 'timer',
-        remainingSeconds: 60,
-        phase: 'main',
-        mainDisplay: '01:00',
-        subDisplay: null,
-        progress: 0.3,
-        overtimeSeconds: 0,
-        overtimeMessage: null
+      await expect(inFlight).resolves.toEqual({ status: 'rejected', reason: 'disposed' })
+      await expect(queued).resolves.toEqual({ status: 'rejected', reason: 'disposed' })
+      requests[0].resolve(accepted())
+      publish(runtime.tick())
+      expect(requests).toHaveLength(1)
+      expect(listener).not.toHaveBeenCalled()
+      expect(
+        mode === 'browser' ? TransportWorker.instance.terminate : cleanup
+      ).toHaveBeenCalledOnce()
+    })
+    it('does not send requests or register callbacks after disposal', async () => {
+      adapter.dispose()
+      await expect(adapter.execute({ type: 'start' })).resolves.toEqual({
+        status: 'rejected',
+        reason: 'disposed'
       })
-
-      expect(tickCb).not.toHaveBeenCalled()
+      const listener = vi.fn()
+      adapter.onSnapshot(listener)
+      publish(runtime.tick())
+      expect(requests).toHaveLength(0)
+      expect(listener).not.toHaveBeenCalled()
+    })
+    it('reports transport failures without a renderer fallback', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      const listener = vi.fn()
+      adapter.onSnapshot(listener)
+      const pending = adapter.execute({ type: 'start' })
+      await Promise.resolve()
+      requests[0].reject(new Error('transport failed'))
+      await expect(pending).resolves.toEqual({ status: 'rejected', reason: 'host-unavailable' })
+      expect(listener).not.toHaveBeenCalled()
+      if (mode === 'browser') {
+        await expect(adapter.execute({ type: 'pause' })).resolves.toEqual({
+          status: 'rejected',
+          reason: 'host-unavailable'
+        })
+        expect(requests).toHaveLength(1)
+      }
     })
   })
+}
+it('rejects an incomplete Electron API rather than using legacy void commands', async () => {
+  const legacy = vi.fn()
+  vi.stubGlobal('api', { timer: { timerCommand: legacy } })
+  adapter = new ElectronTimerAdapter()
+  await expect(adapter.initialize(configuration)).resolves.toEqual({
+    status: 'rejected',
+    reason: 'host-unavailable'
+  })
+  expect(legacy).not.toHaveBeenCalled()
 })
