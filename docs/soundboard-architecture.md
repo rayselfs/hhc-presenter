@@ -1,5 +1,11 @@
 # Soundboard Architecture
 
+> Historical design: the legacy Soundboard UI/store/Web Audio/MIDI implementation was retired
+> on 2026-10-18. Shared audio classification, File Explorer assets and media playback remain.
+> The sections below describe the removed implementation, including its old pad-delete warning;
+> they are not a current API or a specification for future Ableton work.
+> See the [retirement execution record](reports/2026-10-18-legacy-retirement-execution.md).
+
 ## Goal
 
 Soundboard is a top-level workspace for live audio cue playback. It is designed for

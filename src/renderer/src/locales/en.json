@@ -8,7 +8,6 @@
     "sharedFiles": "Shared with me",
     "timer": "TIMER",
     "bible": "BIBLE",
-    "soundboard": "SOUNDBOARD",
     "files": "FILES",
     "media": "MEDIA",
     "favorites": "FAVORITES",
@@ -366,7 +365,6 @@
     "deleteTitle": "Delete {{name}} ?",
     "deleteFolderDescription": "This action cannot be undone. All items inside will be lost.",
     "deleteItemDescription": "This action cannot be undone.",
-    "deleteSoundboardAssetDescription": "This removes audio assigned to {{count}} soundboard pad(s). This action cannot be undone.",
     "deleteSelectedTitle": "Delete {{count}} item(s)?",
     "persistence": {
       "loading": "Loading local library",

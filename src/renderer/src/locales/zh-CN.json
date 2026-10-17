@@ -8,7 +8,6 @@
     "sharedFiles": "与我分享",
     "timer": "计时器",
     "bible": "圣经",
-    "soundboard": "音效板",
     "files": "文件",
     "media": "多媒体",
     "favorites": "我的收藏",
@@ -366,7 +365,6 @@
     "deleteTitle": "删除 {{name}} ?",
     "deleteFolderDescription": "此操作无法撤销。文件夹中的所有项目将被删除。",
     "deleteItemDescription": "此操作无法撤销。",
-    "deleteSoundboardAssetDescription": "这会移除已指定到 {{count}} 个音效板 pad 的音频。此操作无法撤销。",
     "deleteSelectedTitle": "删除 {{count}} 个项目?",
     "persistence": {
       "loading": "正在加载本地数据库",

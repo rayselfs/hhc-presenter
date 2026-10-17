@@ -8,7 +8,6 @@
     "sharedFiles": "與我分享",
     "timer": "計時器",
     "bible": "聖經",
-    "soundboard": "音效板",
     "files": "文件",
     "media": "多媒體",
     "favorites": "我的最愛",
@@ -366,7 +365,6 @@
     "deleteTitle": "刪除 {{name}} ?",
     "deleteFolderDescription": "此動作無法復原。資料夾中的所有項目將被刪除。",
     "deleteItemDescription": "此動作無法復原。",
-    "deleteSoundboardAssetDescription": "這會移除已指定到 {{count}} 個音效板 pad 的音訊。此動作無法復原。",
     "deleteSelectedTitle": "刪除 {{count}} 個項目?",
     "persistence": {
       "loading": "正在載入本機資料庫",
