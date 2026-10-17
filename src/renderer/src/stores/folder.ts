@@ -77,9 +77,11 @@ function isItemInReadOnlyFolder(
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function createFolderStore(config: FolderStoreConfig) {
+export function createFolderStore(
+  config: FolderStoreConfig,
+  persistenceQueue = createPersistenceOperationQueue()
+) {
   const ops = config.persistence
-  const persistenceQueue = createPersistenceOperationQueue()
   let isInitializing = false
   const itemsLoadPromises = new Map<string, Promise<void>>()
 
