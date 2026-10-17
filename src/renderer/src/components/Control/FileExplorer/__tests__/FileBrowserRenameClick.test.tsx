@@ -4,14 +4,19 @@ import { MemoryRouter, useLocation } from 'react-router-dom'
 import FileBrowser from '../FileBrowser'
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 
+const viewFixtures = vi.hoisted(() => ({
+  thumbnails: {},
+  orders: {},
+  t: (_key: string, fallback?: string | { defaultValue?: string }) =>
+    typeof fallback === 'string' ? fallback : (fallback?.defaultValue ?? _key)
+}))
+
 vi.mock('react-i18next', () => ({
   initReactI18next: {
     type: '3rdParty',
     init: vi.fn()
   },
-  useTranslation: () => ({
-    t: (_key: string, fallback?: string) => fallback ?? _key
-  })
+  useTranslation: () => ({ t: viewFixtures.t })
 }))
 
 vi.mock('@heroui/react/toast', () => ({
@@ -86,7 +91,7 @@ vi.mock('@renderer/hooks/useKeyboardShortcuts', () => ({
 
 vi.mock('@renderer/hooks/useThumbnails', () => ({
   canHaveThumbnail: () => false,
-  useThumbnails: () => ({})
+  useThumbnails: () => viewFixtures.thumbnails
 }))
 
 vi.mock('@renderer/contexts/ConfirmDialogContext', () => ({
@@ -123,6 +128,8 @@ vi.mock('@renderer/stores/media-projection', () => ({
   )
 }))
 
+const renameMocks = vi.hoisted(() => ({ rename: vi.fn() }))
+
 let viewMode = 'medium-icon'
 const updateItem = vi.fn()
 const updateFolder = vi.fn()
@@ -149,32 +156,35 @@ const folderItem: FolderRecord = {
   expiresAt: null
 }
 
+const browserState = {
+  currentFolderId: 'file-root',
+  _childFoldersByParent: { 'file-root': [folderItem] },
+  _itemsByParent: { 'file-root': [fileItem] },
+  navigateToFolder: vi.fn(),
+  toggleFavorite: vi.fn(),
+  moveItem: vi.fn(),
+  moveFolder: vi.fn(),
+  updateItem,
+  updateFolder
+}
+const browserActions = {
+  folders: {},
+  updateItem,
+  updateFolder,
+  getItems: () => browserState._itemsByParent['file-root']
+}
+
 vi.mock('@renderer/stores/file-explorer', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@renderer/stores/file-explorer')>()
-  const store = (selector?: (state: Record<string, unknown>) => unknown): unknown => {
-    const state = {
-      currentFolderId: 'file-root',
-      _childFoldersByParent: { 'file-root': [folderItem] },
-      _itemsByParent: { 'file-root': [fileItem] },
-      navigateToFolder: vi.fn(),
-      toggleFavorite: vi.fn(),
-      moveItem: vi.fn(),
-      moveFolder: vi.fn(),
-      updateItem,
-      updateFolder
-    }
-    return selector ? selector(state) : state
-  }
-  store.getState = () => ({
-    folders: {},
-    updateItem,
-    updateFolder,
-    getItems: () => [fileItem]
-  })
+  const store = (selector?: (state: typeof browserState) => unknown): unknown =>
+    selector ? selector(browserState) : browserState
+  store.getState = () => browserActions
   return {
     ...actual,
+    renameExplorerEntry: renameMocks.rename,
     FILE_EXPLORER_ROOT_ID: 'file-root',
     useCurrentFolderDisplay: () => ({
+      viewMode,
       sortField: 'createdAt',
       sortDir: 'none',
       groupMode: 'none',
@@ -184,7 +194,7 @@ vi.mock('@renderer/stores/file-explorer', async (importOriginal) => {
     deleteFolderFromStore: vi.fn(),
     removeFileItemFromStore: vi.fn(),
     useFileExplorerCustomOrder: (selector: (state: Record<string, unknown>) => unknown) =>
-      selector({ orders: {}, setOrder: vi.fn() }),
+      selector({ orders: viewFixtures.orders, setOrder: vi.fn() }),
     useFileExplorerSearch: (selector: (state: Record<string, unknown>) => unknown) =>
       selector({ searchQuery: '', setSearchQuery: vi.fn() }),
     useFileExplorerSettings: Object.assign(
@@ -233,6 +243,7 @@ function renderFileBrowser(): void {
 describe('FileBrowser slow-click inline rename', () => {
   beforeEach(() => {
     vi.useFakeTimers()
+    renameMocks.rename.mockReset().mockResolvedValue(undefined)
     updateItem.mockClear()
     updateFolder.mockClear()
     mockStartPresentation.mockClear()
@@ -325,4 +336,72 @@ describe('FileBrowser slow-click inline rename', () => {
 
     expect(screen.queryByLabelText('Rename file')).toBeNull()
   })
+})
+
+describe('durable rename editor ownership', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    viewMode = 'medium-icon'
+    renameMocks.rename.mockReset()
+  })
+
+  it.each([false, true])(
+    'keeps a newer rename session when the old request completes (same item: %s)',
+    async (sameItem) => {
+      let finish!: () => void
+      const pending = new Promise<void>((resolve) => {
+        finish = resolve
+      })
+      renameMocks.rename.mockReturnValueOnce(pending)
+      const view = render(
+        <MemoryRouter>
+          <FileBrowser />
+        </MemoryRouter>
+      )
+      const fileName = screen.getByText('slides.pdf')
+      click(fileName, 1000)
+      click(fileName, 2000)
+      flushRenameDelay()
+      fireEvent.change(screen.getByLabelText('Rename file'), { target: { value: 'First draft' } })
+      fireEvent.keyDown(screen.getByLabelText('Rename file'), { key: 'Enter' })
+      expect(renameMocks.rename).toHaveBeenCalledWith('file', fileItem.id, 'First draft.pdf')
+      if (sameItem) {
+        viewMode = 'list'
+        view.rerender(
+          <MemoryRouter>
+            <FileBrowser />
+          </MemoryRouter>
+        )
+        viewMode = 'medium-icon'
+        view.rerender(
+          <MemoryRouter>
+            <FileBrowser />
+          </MemoryRouter>
+        )
+        view.rerender(
+          <MemoryRouter>
+            <FileBrowser renameItemRequestId={fileItem.id} />
+          </MemoryRouter>
+        )
+        view.rerender(
+          <MemoryRouter>
+            <FileBrowser />
+          </MemoryRouter>
+        )
+      } else {
+        const folderName = screen.getByText('Drama Audio')
+        click(folderName, 3000)
+        click(folderName, 4000)
+        flushRenameDelay()
+      }
+      const input = screen.getByLabelText(sameItem ? 'Rename file' : 'Rename folder')
+      fireEvent.change(input, { target: { value: 'Keep this draft' } })
+      await act(async () => {
+        finish()
+        await pending
+      })
+      expect(input).toBeInTheDocument()
+      expect(input).toHaveValue('Keep this draft')
+    }
+  )
 })
