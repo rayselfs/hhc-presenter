@@ -70,7 +70,7 @@ export default function PresentationGrid({ item }: { item: FileItemRecord }): Re
         )
         if (lifetime.isDisposed()) return
         const opened = await lifetime.open(buffer)
-        if (opened) setViewer(opened)
+        if (opened && !lifetime.isDisposed()) setViewer(opened)
       } catch (failure) {
         if (!lifetime.isDisposed())
           setError(failure instanceof Error ? failure.message : String(failure))

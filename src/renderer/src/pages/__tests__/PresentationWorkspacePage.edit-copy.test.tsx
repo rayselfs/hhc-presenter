@@ -176,6 +176,32 @@ describe('PresentationWorkspacePage read-only PPTX edit copy', () => {
     })
   })
 
+  it('does not publish a retired document after helper completion and unmount', async () => {
+    let finish!: (handle: object) => void
+    mocks.openPptxViewer.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve
+      })
+    )
+    const destroy = vi.fn()
+    const view = renderReadOnlyDeck(makeFile())
+    await waitFor(() => expect(mocks.openPptxViewer).toHaveBeenCalledOnce())
+    const before = usePresentationWorkspaceStore.getState().documents[0]
+    await act(async () => {
+      finish({
+        slideCount: 3,
+        slideWidth: 1280,
+        slideHeight: 720,
+        destroy,
+        viewer: { renderSlide: vi.fn().mockResolvedValue(undefined) }
+      })
+      queueMicrotask(() => view.unmount())
+    })
+    expect(destroy).toHaveBeenCalledOnce()
+    expect(usePresentationWorkspaceStore.getState().documents[0]).toBe(before)
+    expect(usePresentationWorkspaceStore.getState().getActiveSlideId('deck-1')).toBeNull()
+  })
+
   it('isolates a late PPTX open and its destroy from the next document host', async () => {
     let finishOld!: () => void
     let oldSignal: AbortSignal | undefined
