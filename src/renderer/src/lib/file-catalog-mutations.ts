@@ -289,14 +289,26 @@ export async function createLocalCatalogFolder(
   name: string,
   parentId: string,
   expiresAt: number | null | undefined,
-  isVisible: (folder: FolderRecord) => boolean
+  isVisible: (folder: FolderRecord) => boolean,
+  signal?: AbortSignal
 ): Promise<FolderRecord> {
+  signal?.throwIfAborted()
   if (!validateDisplayName(name)) throw new Error('Folder name is invalid')
   if (expiresAt !== undefined && expiresAt !== null && !Number.isFinite(expiresAt))
     throw new Error('Folder expiration is invalid')
   const db = await openFileExplorerDB()
+  signal?.throwIfAborted()
   const tx = db.transaction(['folder-records', 'catalog-deletions'], 'readwrite')
+  const abort = (): void => {
+    try {
+      tx.abort()
+    } catch {
+      /* Already completed. */
+    }
+  }
+  signal?.addEventListener('abort', abort, { once: true })
   try {
+    signal?.throwIfAborted()
     const folders = await tx.objectStore('folder-records').getAll()
     assertLocalDestination(parentId, folders)
     const byId = Object.fromEntries(folders.map((folder) => [folder.id, folder]))
@@ -338,7 +350,10 @@ export async function createLocalCatalogFolder(
       /* Already completed. */
     }
     await tx.done.catch(() => undefined)
+    signal?.throwIfAborted()
     throw error
+  } finally {
+    signal?.removeEventListener('abort', abort)
   }
 }
 
