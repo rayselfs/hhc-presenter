@@ -253,6 +253,7 @@ describe('presentation page grid', () => {
       })
       render(<PresenterGrid />)
       await waitFor(() => expect(screen.getAllByTestId(/^grid-slide-/)).toHaveLength(10))
+      await waitFor(() => expect(observed).toHaveLength(10))
       await act(async () => intersect([observed[6]], true))
       expect(await screen.findByText('Actual page 7')).toBeVisible()
       expect(mocks.open).not.toHaveBeenCalled()
