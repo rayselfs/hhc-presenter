@@ -48,12 +48,13 @@ const scope: PersonalConflictScope = {
 }
 const sessions: Pick<
   PresentationSessionRegistry,
-  'finalizeAndFlush' | 'hasPendingEditorWork' | 'get' | 'close'
+  'finalizeAndFlush' | 'hasPendingEditorWork' | 'get' | 'close' | 'subscribe'
 > = {
   finalizeAndFlush: vi.fn(),
   hasPendingEditorWork: vi.fn(),
   get: vi.fn(),
-  close: vi.fn()
+  close: vi.fn(),
+  subscribe: vi.fn()
 }
 const confirm = vi.fn()
 const options = {
@@ -66,7 +67,7 @@ const options = {
 
 beforeEach(() => {
   vi.resetAllMocks()
-  usePersonalSyncStore.setState({ activeOwnerId: 'alice' })
+  usePersonalSyncStore.setState({ activeOwnerId: 'alice', accountStatus: 'authenticated' })
   mocks.scope.mockResolvedValue(scope)
   mocks.acquire.mockResolvedValue(true)
   mocks.release.mockResolvedValue(undefined)
@@ -76,11 +77,13 @@ beforeEach(() => {
   mocks.accept.mockResolvedValue(undefined)
   vi.mocked(sessions.hasPendingEditorWork!).mockReturnValue(false)
   vi.mocked(sessions.get).mockReturnValue(undefined)
+  vi.mocked(sessions.close).mockResolvedValue(true)
+  vi.mocked(sessions.subscribe).mockReturnValue(vi.fn())
   confirm.mockResolvedValue(true)
 })
 afterEach(() => vi.restoreAllMocks())
 
-it('flushes and reviews before backing up, accepts before closing, and always releases the lease', async () => {
+it('flushes and reviews before backing up, closes safely before accepting, and always releases the lease', async () => {
   const order: string[] = []
   vi.mocked(sessions.finalizeAndFlush).mockImplementation(async () => {
     order.push('flush')
@@ -103,7 +106,7 @@ it('flushes and reviews before backing up, accepts before closing, and always re
     return true
   })
   await resolvePersonalCloudConflict(options)
-  expect(order).toEqual(['flush', 'confirm', 'backup', 'accept', 'close'])
+  expect(order).toEqual(['flush', 'confirm', 'backup', 'close', 'accept'])
   expect(mocks.scope).toHaveBeenCalledTimes(2)
   expect(mocks.accept.mock.calls[0][2]).toBe(scope)
   expect(mocks.request).toHaveBeenCalledWith('alice')
@@ -144,5 +147,80 @@ it('retains the separate keep-cloud action without creating a backup', async () 
   await resolvePersonalCloudConflict({ ...options, backup: false })
   expect(mocks.copy).not.toHaveBeenCalled()
   expect(mocks.accept).toHaveBeenCalledOnce()
-  expect(sessions.close).toHaveBeenCalledWith('file', 'discard')
+  expect(sessions.close).toHaveBeenCalledWith('file')
+})
+
+it.each(['wrong-owner', 'unavailable'] as const)(
+  'rejects an invalid initial account: %s',
+  async (reason) => {
+    usePersonalSyncStore.setState(
+      reason === 'wrong-owner' ? { activeOwnerId: 'bob' } : { accountStatus: 'unavailable' }
+    )
+    await resolvePersonalCloudConflict(options)
+    expect(mocks.scope).not.toHaveBeenCalled()
+    expect(mocks.copy).not.toHaveBeenCalled()
+    expect(mocks.accept).not.toHaveBeenCalled()
+  }
+)
+
+it('does not commit after the same account becomes unavailable during confirmation', async () => {
+  confirm.mockImplementation(async () => {
+    usePersonalSyncStore.setState({ accountStatus: 'unavailable' })
+    return true
+  })
+  await resolvePersonalCloudConflict(options)
+  expect(mocks.acquire).not.toHaveBeenCalled()
+  expect(mocks.accept).not.toHaveBeenCalled()
+})
+
+it('retains the reviewed data when a normal editor close is refused', async () => {
+  vi.mocked(sessions.close).mockResolvedValue(false)
+  await expect(resolvePersonalCloudConflict(options)).rejects.toThrow('Changed')
+  expect(mocks.accept).not.toHaveBeenCalled()
+  expect(mocks.refresh).not.toHaveBeenCalled()
+  expect(mocks.release).toHaveBeenCalledOnce()
+})
+
+it('aborts the pending accept transaction when reopened editor work changes', async () => {
+  let changed!: () => void
+  const unsubscribe = vi.fn()
+  vi.mocked(sessions.subscribe).mockImplementation((listener) => {
+    changed = listener
+    return unsubscribe
+  })
+  mocks.accept.mockImplementation(async (_owner, _worker, _scope, signal: AbortSignal) => {
+    vi.mocked(sessions.hasPendingEditorWork!).mockReturnValue(true)
+    changed()
+    expect(signal.aborted).toBe(true)
+    signal.throwIfAborted()
+  })
+  await resolvePersonalCloudConflict(options)
+  expect(sessions.close).toHaveBeenCalledWith('file')
+  expect(mocks.request).not.toHaveBeenCalled()
+  expect(mocks.refresh).not.toHaveBeenCalled()
+  expect(unsubscribe).toHaveBeenCalledOnce()
+  expect(mocks.release).toHaveBeenCalledOnce()
+})
+
+it('aborts when lease renewal fails during a pending backup', async () => {
+  vi.useFakeTimers()
+  let finishBackup!: (id: string) => void
+  mocks.copy.mockReturnValue(
+    new Promise<string>((resolve) => {
+      finishBackup = resolve
+    })
+  )
+  mocks.renew.mockResolvedValue(false)
+  try {
+    const pending = resolvePersonalCloudConflict(options)
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(mocks.renew).toHaveBeenCalledOnce()
+    finishBackup('backup')
+    await pending
+    expect(mocks.accept).not.toHaveBeenCalled()
+    expect(sessions.close).not.toHaveBeenCalled()
+    expect(mocks.release).toHaveBeenCalledOnce()
+  } finally {
+    vi.useRealTimers()
+  }
 })
