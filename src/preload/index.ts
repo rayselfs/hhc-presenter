@@ -1,3 +1,4 @@
+import type { PresenterApi } from '../shared/presenter-api'
 import type { PersonalNativeApi } from '../shared/personal-cloud'
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
@@ -270,7 +271,7 @@ const api = {
   hhcAssets: hhcAssetsApi,
   personalCloud: personalCloudApi,
   lanRemote: lanRemoteApi
-}
+} satisfies PresenterApi
 
 try {
   contextBridge.exposeInMainWorld('api', api)
