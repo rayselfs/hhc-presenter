@@ -1,6 +1,9 @@
 import { validateDisplayName } from '@renderer/lib/file-naming'
 import { createPersistenceOperationQueue } from '@renderer/lib/persistence-operation-queue'
 import {
+  createLocalCatalogFolder,
+  moveLocalCatalogEntry,
+  softDeleteLocalCatalogEntry,
   updateLocalCatalogEntry,
   restoreLocalCatalogEntry
 } from '@renderer/lib/file-catalog-mutations'
@@ -301,6 +304,28 @@ export async function addFileItemToStore(
       canonicalMimeType
     )
   }
+  return addLocalFileItem(file, parentId, canonicalMimeType, notes)
+}
+
+export function createLocalRecoveryFileBackup(
+  file: File,
+  mimeType: string,
+  signal: AbortSignal
+): Promise<string> {
+  return addLocalFileItem(file, FILE_EXPLORER_ROOT_ID, mimeType, undefined, {
+    expiresAt: null,
+    signal
+  })
+}
+
+async function addLocalFileItem(
+  file: File,
+  parentId: string,
+  canonicalMimeType: string,
+  notes?: string,
+  options: { expiresAt?: null; signal?: AbortSignal } = {}
+): Promise<string> {
+  options.signal?.throwIfAborted()
   const db = await openFileExplorerDB()
   const id = crypto.randomUUID()
   const stagingLock = `local-blob:${id}`
@@ -317,7 +342,9 @@ export async function addFileItemToStore(
     })
     await db.add('resource-cleanup-journal', cleanup)
     await storeFileBlob(db, id, file)
+    options.signal?.throwIfAborted()
     await useFileExplorerStore.getState().flushPersistence()
+    options.signal?.throwIfAborted()
     assertLocalDestination(parentId, Object.values(useFileExplorerStore.getState().folders))
     const now = Date.now()
     const item: FileItemRecord = {
@@ -331,9 +358,15 @@ export async function addFileItemToStore(
       ...(notes !== undefined ? { notes } : {}),
       sortIndex: useFileExplorerStore.getState().getItems(parentId).length,
       createdAt: now,
-      expiresAt: parentId === FILE_EXPLORER_ROOT_ID ? now + FOLDER_DURATION_MS['1day'] : null
+      expiresAt:
+        options.expiresAt === null
+          ? null
+          : parentId === FILE_EXPLORER_ROOT_ID
+            ? now + FOLDER_DURATION_MS['1day']
+            : null
     }
-    await commitLocalFileItem(item, { stagingCleanupId: cleanup.id })
+    await commitLocalFileItem(item, { stagingCleanupId: cleanup.id, signal: options.signal })
+    options.signal?.throwIfAborted()
     publishPersistedFileItem(item)
   }
   try {
@@ -349,8 +382,8 @@ export async function addFileItemToStore(
   return id
 }
 
-export function removeFileItemFromStore(id: string): void {
-  useFileExplorerStore.getState().softDeleteItem(id)
+export function removeFileItemFromStore(id: string): Promise<void> {
+  return softDeleteExplorerEntry('file', id)
 }
 
 export function removeCleanedEntriesFromStore(result: CleanupResult): void {
@@ -393,8 +426,8 @@ export async function permanentDeleteFileItemFromStore(id: string): Promise<void
   removeCleanedEntriesFromStore(await cleanupFileResources({ itemIds: [id] }))
 }
 
-export function deleteFolderFromStore(folderId: string): void {
-  useFileExplorerStore.getState().softDeleteFolder(folderId)
+export function deleteFolderFromStore(folderId: string): Promise<void> {
+  return softDeleteExplorerEntry('folder', folderId)
 }
 
 export async function permanentDeleteFolderFromStore(folderId: string): Promise<void> {
@@ -595,7 +628,38 @@ export async function createExplorerFolder(
   if (destination?.personalOwnerId) {
     return (await import('@renderer/lib/personal-file-actions')).createPersonalFolder(name, parent)
   }
-  return store.addFolder(name, parent, expiresAt)
+  let createdId = ''
+  await filePersistenceQueue.commit(async () => {
+    const folder = await createLocalCatalogFolder(name, parent, expiresAt, isPersonalRecordVisible)
+    publishPersistedExplorerEntry(folder)
+    createdId = folder.id
+  })
+  return createdId
+}
+
+function runExplorerLocalAction(ids: string[], action: () => void): void {
+  const state = useFileExplorerStore.getState()
+  for (const id of ids) {
+    let current: string | null = state.items[id]?.parentId ?? id
+    const seen = new Set<string>()
+    while (current && !seen.has(current)) {
+      seen.add(current)
+      const pending = pendingExplorerTrashRoots.has(current)
+        ? pendingExplorerEntryWrites.get(current)
+        : undefined
+      if (pending) {
+        pending.metadata.push(() => runExplorerLocalAction(ids, action))
+        return
+      }
+      current = state.folders[current]?.parentId ?? null
+    }
+    const pending = pendingExplorerEntryWrites.get(id)
+    if (pending) {
+      pending.metadata.push(() => runExplorerLocalAction(ids, action))
+      return
+    }
+  }
+  action()
 }
 
 function reportPersonalWriteError(error: unknown): void {
@@ -605,6 +669,7 @@ function reportPersonalWriteError(error: unknown): void {
   })
 }
 
+const pendingExplorerTrashRoots = new Map<string, number>()
 const pendingExplorerRestores = new Map<string, Promise<void>>()
 const pendingExplorerEntryWrites = new Map<string, { count: number; metadata: Array<() => void> }>()
 
@@ -647,27 +712,81 @@ function publishPersistedExplorerEntry(record: FolderRecord | FileItemRecord): v
     publishPersistedFileItem(record)
     return
   }
-  const parentId = record.parentId!
+  publishPersistedExplorerFolders([record])
+}
+
+function publishPersistedExplorerFolders(records: FolderRecord[]): void {
   useFileExplorerStore.setState((state) => {
-    const folders = { ...state.folders, [record.id]: record }
-    return {
-      folders,
-      _foldersArray: Object.values(folders),
-      _childFoldersByParent: {
-        ...Object.fromEntries(
-          Object.entries(state._childFoldersByParent).map(([id, entries]) => [
-            id,
-            entries.filter((entry) => entry.id !== record.id)
-          ])
-        ),
-        [parentId]: sortByIndex([
-          ...(state._childFoldersByParent[parentId] ?? []).filter(
-            (entry) => entry.id !== record.id
-          ),
-          record
-        ])
-      }
+    const folders = { ...state.folders }
+    for (const record of records) folders[record.id] = record
+    const children: Record<string, FolderRecord[]> = Object.fromEntries(
+      Object.keys(state._childFoldersByParent).map((id) => [id, []])
+    )
+    for (const folder of Object.values(folders)) {
+      if (!folder.parentId) continue
+      const siblings = children[folder.parentId] ?? []
+      siblings.push(folder)
+      children[folder.parentId] = siblings
     }
+    for (const parentId of Object.keys(children))
+      children[parentId] = sortByIndex(children[parentId])
+    return { folders, _foldersArray: Object.values(folders), _childFoldersByParent: children }
+  })
+}
+
+export function softDeleteExplorerEntry(kind: 'folder' | 'file', id: string): Promise<void> {
+  if (kind === 'folder')
+    pendingExplorerTrashRoots.set(id, (pendingExplorerTrashRoots.get(id) ?? 0) + 1)
+  return withExplorerEntryWrite(id, async () => {
+    const db = await openFileExplorerDB()
+    const record =
+      kind === 'folder' ? await db.get('folder-records', id) : await db.get('folder-items', id)
+    if (!record || !isPersonalRecordVisible(record)) throw new Error('Trash source is unavailable')
+    if (record.personalOwnerId) {
+      await mutateExplorerPersonalNode(record.personalOwnerId, id, { type: 'delete' })
+      return
+    }
+    await filePersistenceQueue.commit(async () => {
+      const committed = await softDeleteLocalCatalogEntry(kind, id)
+      if (committed.folders.length > 0) publishPersistedExplorerFolders(committed.folders)
+      for (const item of committed.items) publishPersistedFileItem(item)
+    })
+  }).finally(() => {
+    if (kind !== 'folder') return
+    const count = (pendingExplorerTrashRoots.get(id) ?? 1) - 1
+    if (count === 0) pendingExplorerTrashRoots.delete(id)
+    else pendingExplorerTrashRoots.set(id, count)
+  })
+}
+
+export function moveExplorerEntry(
+  kind: 'folder' | 'file',
+  id: string,
+  parentId: string
+): Promise<void> {
+  return withExplorerEntryWrite(id, async () => {
+    const db = await openFileExplorerDB()
+    const [record, destination] = await Promise.all([
+      kind === 'folder' ? db.get('folder-records', id) : db.get('folder-items', id),
+      db.get('folder-records', parentId)
+    ])
+    if (
+      !record ||
+      !isPersonalRecordVisible(record) ||
+      (destination && !isPersonalRecordVisible(destination))
+    )
+      throw new Error('Move source or destination is unavailable')
+    if (record.personalOwnerId || destination?.personalOwnerId) {
+      if (record.personalOwnerId && record.personalOwnerId === destination?.personalOwnerId)
+        await mutateExplorerPersonalNode(record.personalOwnerId, id, { type: 'move', parentId })
+      else if (kind === 'folder') await copyExplorerFolder(id, parentId)
+      else if (!(await copyFileSnapshot(id, parentId))) throw new Error('File copy failed')
+      return
+    }
+    await filePersistenceQueue.commit(async () => {
+      const moved = await moveLocalCatalogEntry(kind, id, parentId, isPersonalRecordVisible)
+      publishPersistedExplorerEntry(moved)
+    })
   })
 }
 
@@ -823,33 +942,25 @@ function personalWrite(
 useFileExplorerStore.setState({
   purgeTrash: purgeExpiredTrashFromStore,
   toggleFavorite: (id) => {
-    if (!isPersonalNode(id)) {
-      const pending = pendingExplorerEntryWrites.get(id)
-      if (!pending) return localFileActions.toggleFavorite(id)
-      pending.metadata.push(() => localFileActions.toggleFavorite(id))
-      return
-    }
+    if (!isPersonalNode(id))
+      return runExplorerLocalAction([id], () => localFileActions.toggleFavorite(id))
     void import('@renderer/lib/personal-file-actions')
       .then((actions) => actions.togglePersonalFolderFavorite(id))
       .catch(reportPersonalWriteError)
   },
   updateFolder: (id, updates) => {
     if (!isPersonalNode(id)) {
-      const pending = pendingExplorerEntryWrites.get(id)
-      if (!pending) return localFileActions.updateFolder(id, updates)
       const patch = { ...updates }
-      pending.metadata.push(() => localFileActions.updateFolder(id, patch))
-      return
+      return runExplorerLocalAction([id], () => localFileActions.updateFolder(id, patch))
     }
     if (updates.name !== undefined) personalWrite(id, { type: 'rename', name: updates.name })
   },
   updateItem: (id, updates) => {
     if (!isPersonalNode(id)) {
-      const pending = pendingExplorerEntryWrites.get(id)
-      if (!pending) return localFileActions.updateItem?.(id, updates)
       const patch = { ...updates }
-      pending.metadata.push(() => localFileActions.updateItem?.(id, patch))
-      return
+      return runExplorerLocalAction([id, ...(updates.parentId ? [updates.parentId] : [])], () =>
+        localFileActions.updateItem?.(id, patch)
+      )
     }
     if ('name' in updates && updates.name !== undefined)
       personalWrite(id, { type: 'rename', name: updates.name })
@@ -859,29 +970,47 @@ useFileExplorerStore.setState({
         .catch(reportPersonalWriteError)
     }
   },
+  reorderItems: (parentId, orderedIds) => {
+    const ids = [...orderedIds]
+    return runExplorerLocalAction([parentId, ...ids], () =>
+      localFileActions.reorderItems(parentId, ids)
+    )
+  },
+  reorderFolders: (parentId, orderedIds) => {
+    const ids = [...orderedIds]
+    return runExplorerLocalAction([parentId, ...ids], () =>
+      localFileActions.reorderFolders(parentId, ids)
+    )
+  },
   softDeleteFolder: (id) =>
     isPersonalNode(id)
       ? personalWrite(id, { type: 'delete' })
-      : localFileActions.softDeleteFolder(id),
+      : runExplorerLocalAction([id], () => localFileActions.softDeleteFolder(id)),
   softDeleteItem: (id) =>
     isPersonalNode(id)
       ? personalWrite(id, { type: 'delete' })
-      : localFileActions.softDeleteItem(id),
+      : runExplorerLocalAction([id], () => localFileActions.softDeleteItem(id)),
   deleteFolder: (id) =>
-    isPersonalNode(id) ? personalWrite(id, { type: 'delete' }) : localFileActions.deleteFolder(id),
+    isPersonalNode(id)
+      ? personalWrite(id, { type: 'delete' })
+      : runExplorerLocalAction([id], () => localFileActions.deleteFolder(id)),
   removeItem: (id) =>
-    isPersonalNode(id) ? personalWrite(id, { type: 'delete' }) : localFileActions.removeItem(id),
+    isPersonalNode(id)
+      ? personalWrite(id, { type: 'delete' })
+      : runExplorerLocalAction([id], () => localFileActions.removeItem(id)),
   restoreFolder: (id) =>
     isPersonalNode(id)
       ? personalWrite(id, { type: 'restore' })
-      : localFileActions.restoreFolder(id),
+      : runExplorerLocalAction([id], () => localFileActions.restoreFolder(id)),
   restoreItem: (id) =>
-    isPersonalNode(id) ? personalWrite(id, { type: 'restore' }) : localFileActions.restoreItem(id),
+    isPersonalNode(id)
+      ? personalWrite(id, { type: 'restore' })
+      : runExplorerLocalAction([id], () => localFileActions.restoreItem(id)),
   moveItem: (id, parentId) => {
     const source = useFileExplorerStore.getState().items[id]
     const destination = useFileExplorerStore.getState().folders[parentId]
     if (!source?.personalOwnerId && !destination?.personalOwnerId)
-      return localFileActions.moveItem(id, parentId)
+      return runExplorerLocalAction([id, parentId], () => localFileActions.moveItem(id, parentId))
     if (source?.personalOwnerId && source.personalOwnerId === destination?.personalOwnerId)
       personalWrite(id, { type: 'move', parentId })
     else void copyFileSnapshot(id, parentId).catch(reportPersonalWriteError)
@@ -889,7 +1018,7 @@ useFileExplorerStore.setState({
   moveFolder: (id, parentId) => {
     const state = useFileExplorerStore.getState()
     if (!state.folders[id]?.personalOwnerId && !state.folders[parentId]?.personalOwnerId)
-      return localFileActions.moveFolder(id, parentId)
+      return runExplorerLocalAction([id, parentId], () => localFileActions.moveFolder(id, parentId))
     if (state.folders[id]?.personalOwnerId === state.folders[parentId]?.personalOwnerId)
       personalWrite(id, { type: 'move', parentId })
     else void copyExplorerFolder(id, parentId).catch(reportPersonalWriteError)

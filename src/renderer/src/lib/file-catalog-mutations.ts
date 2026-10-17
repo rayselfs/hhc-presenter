@@ -1,8 +1,13 @@
 import { publishCatalogDeletion } from './file-catalog-events'
-import type { AnyItemRecord, FileItemRecord, FolderRecord } from '@shared/types/folder'
+import {
+  FOLDER_DURATION_MS,
+  type AnyItemRecord,
+  type FileItemRecord,
+  type FolderRecord
+} from '@shared/types/folder'
 import { openFileExplorerDB } from './file-explorer-db'
 import { getBlobId } from './blob-identity'
-import { hasNameConflict, validateDisplayName } from './file-naming'
+import { hasNameConflict, resolveUniqueName, validateDisplayName } from './file-naming'
 import { isFolderReadOnlyBySyncLink } from './sync-readonly'
 
 export function assertLocalDestination(parentId: string, folders: FolderRecord[]): void {
@@ -61,8 +66,9 @@ export async function saveCatalogRecords(
 
 export async function commitLocalFileItem(
   item: FileItemRecord,
-  options: { copyFromId?: string; stagingCleanupId?: string } = {}
+  options: { copyFromId?: string; stagingCleanupId?: string; signal?: AbortSignal } = {}
 ): Promise<void> {
+  options.signal?.throwIfAborted()
   const db = await openFileExplorerDB()
   const tx = db.transaction(
     [
@@ -74,7 +80,16 @@ export async function commitLocalFileItem(
     ],
     'readwrite'
   )
+  const abort = (): void => {
+    try {
+      tx.abort()
+    } catch {
+      /* Already completed. */
+    }
+  }
+  options.signal?.addEventListener('abort', abort, { once: true })
   try {
+    options.signal?.throwIfAborted()
     assertLocalDestination(item.parentId, await tx.objectStore('folder-records').getAll())
     if (await tx.objectStore('catalog-deletions').get(item.id))
       throw new Error('File has been deleted')
@@ -113,7 +128,10 @@ export async function commitLocalFileItem(
       /* The transaction may have already aborted. */
     }
     await tx.done.catch(() => undefined)
+    options.signal?.throwIfAborted()
     throw error
+  } finally {
+    options.signal?.removeEventListener('abort', abort)
   }
 }
 
@@ -256,6 +274,231 @@ export async function updateLocalCatalogEntry(
     else await tx.objectStore('folder-records').put(renamed)
     await tx.done
     return renamed
+  } catch (error) {
+    try {
+      tx.abort()
+    } catch {
+      /* Already completed. */
+    }
+    await tx.done.catch(() => undefined)
+    throw error
+  }
+}
+
+export async function createLocalCatalogFolder(
+  name: string,
+  parentId: string,
+  expiresAt: number | null | undefined,
+  isVisible: (folder: FolderRecord) => boolean
+): Promise<FolderRecord> {
+  if (!validateDisplayName(name)) throw new Error('Folder name is invalid')
+  if (expiresAt !== undefined && expiresAt !== null && !Number.isFinite(expiresAt))
+    throw new Error('Folder expiration is invalid')
+  const db = await openFileExplorerDB()
+  const tx = db.transaction(['folder-records', 'catalog-deletions'], 'readwrite')
+  try {
+    const folders = await tx.objectStore('folder-records').getAll()
+    assertLocalDestination(parentId, folders)
+    const byId = Object.fromEntries(folders.map((folder) => [folder.id, folder]))
+    let ancestor: string | null = parentId
+    const seen = new Set<string>()
+    while (ancestor && !seen.has(ancestor)) {
+      seen.add(ancestor)
+      if (await tx.objectStore('catalog-deletions').get(ancestor))
+        throw new Error('Folder destination was deleted')
+      ancestor = byId[ancestor]?.parentId ?? null
+    }
+    const siblings = folders.filter(
+      (folder) => folder.parentId === parentId && !folder.deletedAt && isVisible(folder)
+    )
+    const now = Date.now()
+    const folder: FolderRecord = {
+      id: crypto.randomUUID(),
+      parentId,
+      name: resolveUniqueName(
+        name,
+        siblings.map((sibling) => sibling.name)
+      ),
+      sortIndex: siblings.length,
+      createdAt: now,
+      expiresAt:
+        expiresAt !== undefined
+          ? expiresAt
+          : parentId === 'file-root'
+            ? now + FOLDER_DURATION_MS['1day']
+            : (byId[parentId]?.expiresAt ?? null)
+    }
+    await tx.objectStore('folder-records').add(folder)
+    await tx.done
+    return folder
+  } catch (error) {
+    try {
+      tx.abort()
+    } catch {
+      /* Already completed. */
+    }
+    await tx.done.catch(() => undefined)
+    throw error
+  }
+}
+
+export async function softDeleteLocalCatalogEntry(
+  kind: 'folder' | 'file',
+  id: string
+): Promise<{ folders: FolderRecord[]; items: FileItemRecord[] }> {
+  const db = await openFileExplorerDB()
+  const tx = db.transaction(['folder-items', 'folder-records', 'catalog-deletions'], 'readwrite')
+  try {
+    const record =
+      kind === 'folder'
+        ? await tx.objectStore('folder-records').get(id)
+        : await tx.objectStore('folder-items').get(id)
+    if (
+      !record ||
+      record.personalOwnerId ||
+      record.sharedRecipientId ||
+      !record.parentId ||
+      ('type' in record && record.type !== 'file')
+    )
+      throw new Error('Trash source is unavailable')
+    const folders = await tx.objectStore('folder-records').getAll()
+    const byId = Object.fromEntries(folders.map((folder) => [folder.id, folder]))
+    if (isFolderReadOnlyBySyncLink(kind === 'folder' ? id : record.parentId, byId))
+      throw new Error('Trash source is read-only')
+    let ancestor: string | null = id
+    const seen = new Set<string>()
+    while (ancestor) {
+      if (seen.has(ancestor)) throw new Error('Trash source is unavailable')
+      seen.add(ancestor)
+      if (await tx.objectStore('catalog-deletions').get(ancestor))
+        throw new Error('Trash source was deleted')
+      if (ancestor === id) ancestor = record.parentId
+      else {
+        const folder: FolderRecord | undefined = byId[ancestor]
+        if (!folder || folder.personalOwnerId || folder.sharedRecipientId)
+          throw new Error('Trash source is unavailable')
+        ancestor = folder.parentId
+      }
+    }
+    const deleted = {
+      ...record,
+      deletedAt: record.deletedAt ?? Date.now(),
+      originalParentId: record.originalParentId ?? record.parentId
+    }
+    const updatedFolders: FolderRecord[] = []
+    const updatedItems: FileItemRecord[] = []
+    if ('type' in deleted) {
+      if (deleted.type !== 'file') throw new Error('Trash source is unavailable')
+      updatedItems.push(deleted)
+      await tx.objectStore('folder-items').put(deleted)
+    } else {
+      updatedFolders.push({ ...deleted, isFavorited: false })
+      const children = new Map<string, FolderRecord[]>()
+      for (const folder of folders) {
+        if (!folder.parentId || folder.personalOwnerId || folder.sharedRecipientId) continue
+        const siblings = children.get(folder.parentId) ?? []
+        siblings.push(folder)
+        children.set(folder.parentId, siblings)
+      }
+      const pending = [...(children.get(id) ?? [])]
+      const visited = new Set([id])
+      while (pending.length > 0) {
+        const folder = pending.pop()!
+        if (visited.has(folder.id)) continue
+        visited.add(folder.id)
+        if (folder.isFavorited) updatedFolders.push({ ...folder, isFavorited: false })
+        pending.push(...(children.get(folder.id) ?? []))
+      }
+      for (const folder of updatedFolders) await tx.objectStore('folder-records').put(folder)
+    }
+    await tx.done
+    return { folders: updatedFolders, items: updatedItems }
+  } catch (error) {
+    try {
+      tx.abort()
+    } catch {
+      /* Already completed. */
+    }
+    await tx.done.catch(() => undefined)
+    throw error
+  }
+}
+
+export async function moveLocalCatalogEntry(
+  kind: 'folder' | 'file',
+  id: string,
+  parentId: string,
+  isVisible: (record: FolderRecord | AnyItemRecord) => boolean
+): Promise<FolderRecord | FileItemRecord> {
+  const db = await openFileExplorerDB()
+  const tx = db.transaction(['folder-items', 'folder-records', 'catalog-deletions'], 'readwrite')
+  try {
+    const record =
+      kind === 'folder'
+        ? await tx.objectStore('folder-records').get(id)
+        : await tx.objectStore('folder-items').get(id)
+    if (
+      !record ||
+      !record.parentId ||
+      record.deletedAt ||
+      record.personalOwnerId ||
+      record.sharedRecipientId ||
+      ('type' in record && record.type !== 'file')
+    )
+      throw new Error('Move source is unavailable')
+    const folders = await tx.objectStore('folder-records').getAll()
+    const byId = Object.fromEntries(folders.map((folder) => [folder.id, folder]))
+    if (
+      isFolderReadOnlyBySyncLink(kind === 'folder' ? id : record.parentId, byId) ||
+      isFolderReadOnlyBySyncLink(parentId, byId)
+    )
+      throw new Error('Move source or destination is read-only')
+    for (const start of [record.parentId, parentId]) {
+      let ancestor: string | null = start
+      const seen = new Set<string>()
+      while (ancestor) {
+        if (ancestor === id || seen.has(ancestor))
+          throw new Error('Cannot move a folder into itself or a subfolder')
+        seen.add(ancestor)
+        const folder: FolderRecord | undefined = byId[ancestor]
+        if (
+          !folder ||
+          folder.deletedAt ||
+          folder.personalOwnerId ||
+          folder.sharedRecipientId ||
+          (await tx.objectStore('catalog-deletions').get(ancestor))
+        )
+          throw new Error('Move source or destination is unavailable')
+        ancestor = folder.parentId
+      }
+      if (!seen.has('file-root')) throw new Error('Move source or destination is unavailable')
+    }
+    if (await tx.objectStore('catalog-deletions').get(id))
+      throw new Error('Move source was deleted')
+    if (record.parentId === parentId) {
+      await tx.done
+      return record as FolderRecord | FileItemRecord
+    }
+    const siblings = kind === 'folder' ? folders : await tx.objectStore('folder-items').getAll()
+    const sortIndex = siblings.filter(
+      (entry) => entry.parentId === parentId && !entry.deletedAt && isVisible(entry)
+    ).length
+    if ('type' in record) {
+      if (record.type !== 'file') throw new Error('Move source is unavailable')
+      const moved = {
+        ...record,
+        parentId,
+        sortIndex,
+        expiresAt: parentId === 'file-root' ? Date.now() + FOLDER_DURATION_MS['1day'] : null
+      }
+      await tx.objectStore('folder-items').put(moved)
+      await tx.done
+      return moved
+    }
+    const moved = { ...record, parentId, sortIndex }
+    await tx.objectStore('folder-records').put(moved)
+    await tx.done
+    return moved
   } catch (error) {
     try {
       tx.abort()

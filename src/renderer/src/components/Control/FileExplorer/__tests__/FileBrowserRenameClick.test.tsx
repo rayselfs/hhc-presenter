@@ -1,11 +1,15 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { DragEndEvent } from '@dnd-kit/core'
+import { toast } from '@heroui/react/toast'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import FileBrowser from '../FileBrowser'
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 
 const viewFixtures = vi.hoisted(() => ({
   thumbnails: {},
+  move: vi.fn(),
+  dragEnd: undefined as ((event: DragEndEvent) => Promise<void>) | undefined,
   orders: {},
   t: (_key: string, fallback?: string | { defaultValue?: string }) =>
     typeof fallback === 'string' ? fallback : (fallback?.defaultValue ?? _key)
@@ -38,7 +42,16 @@ vi.mock('@tanstack/react-virtual', () => ({
 
 vi.mock('@dnd-kit/core', async () => {
   return {
-    DndContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    DndContext: ({
+      children,
+      onDragEnd
+    }: {
+      children: React.ReactNode
+      onDragEnd: (event: DragEndEvent) => Promise<void>
+    }) => {
+      viewFixtures.dragEnd = onDragEnd
+      return <>{children}</>
+    },
     DragOverlay: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     MouseSensor: vi.fn(),
     TouchSensor: vi.fn(),
@@ -182,6 +195,7 @@ vi.mock('@renderer/stores/file-explorer', async (importOriginal) => {
   return {
     ...actual,
     renameExplorerEntry: renameMocks.rename,
+    moveExplorerEntry: viewFixtures.move,
     FILE_EXPLORER_ROOT_ID: 'file-root',
     useCurrentFolderDisplay: () => ({
       viewMode,
@@ -404,4 +418,49 @@ describe('durable rename editor ownership', () => {
       expect(input).toHaveValue('Keep this draft')
     }
   )
+})
+
+describe('FileBrowser durable drag move', () => {
+  it('keeps the drag callback pending until the move settles and reports its failure', async () => {
+    vi.useRealTimers()
+    let reject!: (error: Error) => void
+    viewFixtures.move.mockReset().mockReturnValue(
+      new Promise<void>((_resolve, rejectPromise) => {
+        reject = rejectPromise
+      })
+    )
+    vi.mocked(toast.danger).mockClear()
+    renderFileBrowser()
+    let finished = false
+    let pending!: Promise<void>
+    await act(async () => {
+      pending = viewFixtures.dragEnd!({
+        active: {
+          id: fileItem.id,
+          data: { current: { type: 'file' } },
+          rect: { current: { initial: null, translated: null } }
+        },
+        over: {
+          id: 'drop-target',
+          data: { current: { type: 'folder-dropzone', folderId: 'target' } },
+          rect: { top: 0, left: 0, right: 1, bottom: 1, width: 1, height: 1 },
+          disabled: false
+        },
+        activatorEvent: new Event('pointerup'),
+        delta: { x: 1, y: 1 },
+        collisions: null
+      }).then(() => {
+        finished = true
+      })
+      await Promise.resolve()
+    })
+    expect(viewFixtures.move).toHaveBeenCalledWith('file', fileItem.id, 'target')
+    expect(finished).toBe(false)
+    await act(async () => {
+      reject(new Error('Disk unavailable'))
+      await pending
+    })
+    expect(finished).toBe(true)
+    expect(toast.danger).toHaveBeenCalledWith('Disk unavailable')
+  })
 })
