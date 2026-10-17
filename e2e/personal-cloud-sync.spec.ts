@@ -191,7 +191,7 @@ async function verifyConflict(browser: Browser, purged: boolean): Promise<void> 
         request.onerror = () => reject(request.error)
       })
       const items = await new Promise<
-        Array<{ name: string; url: string; personalOwnerId?: string }>
+        Array<{ name: string; url: string; personalOwnerId?: string; expiresAt: number | null }>
       >((resolve) => {
         const request = tx.objectStore('folder-items').getAll()
         request.onsuccess = () => resolve(request.result)
@@ -202,6 +202,7 @@ async function verifyConflict(browser: Browser, purged: boolean): Promise<void> 
         items
           .filter((item) => item.name === 'offline.png' && !item.personalOwnerId)
           .map(async (item) => {
+            if (item.expiresAt !== null) throw new Error('Recovery backup must be permanent')
             const source = sources.find((record) => record.id === item.url.slice(5))
             if (!source?.blob) throw new Error('Missing local backup bytes')
             return Array.from(new Uint8Array(await source.blob.arrayBuffer()))

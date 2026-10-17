@@ -1,4 +1,5 @@
-import { getFileBlob, getFileSource, openFileExplorerDB } from './file-explorer-db'
+import { loadMediaJobFile } from './media-job-source'
+import { notifyThumbnailReady } from './thumbnail-events'
 import { MediaJobBlockedError, mediaJobQueue } from './media-job-queue'
 import { generateThumbnail } from './thumbnail-generator'
 import { saveThumbnail, saveThumbnailBlob } from './thumbnail-db'
@@ -6,43 +7,17 @@ import {
   BackgroundRenderingUnavailableError,
   renderCoverThumbnail
 } from './thumbnail-worker-client'
-import { getBlobId } from './blob-identity'
 
 const pendingFiles = new Map<string, { file: File; mimeType: string }>()
-
-async function loadJobFile(sourceBlobId: string, itemId: string): Promise<File | null> {
-  const db = await openFileExplorerDB()
-  const requestedItem = await db.get('folder-items', itemId)
-  const item =
-    requestedItem?.type === 'file'
-      ? requestedItem
-      : (await db.getAll('folder-items')).find(
-          (candidate) => candidate.type === 'file' && getBlobId(candidate) === sourceBlobId
-        )
-  if (!item || item.type !== 'file') return null
-
-  const blob = await getFileBlob(db, sourceBlobId)
-  if (blob) return new File([blob], item.name, { type: item.mimeType })
-
-  const source = await getFileSource(db, sourceBlobId, item.mimeType)
-  if (!source) return null
-  try {
-    const response = await fetch(source.url)
-    if (!response.ok) throw new Error(`Failed to read thumbnail source: ${response.status}`)
-    return new File([await response.blob()], item.name, { type: item.mimeType })
-  } finally {
-    source.revoke()
-  }
-}
 
 mediaJobQueue.registerExecutor('cover-thumbnail', async (job, { signal }) => {
   if (!job.sourceBlobId || !job.itemId) throw new Error('Cover thumbnail job is missing source')
   try {
     const pending = pendingFiles.get(job.sourceBlobId)
-    const file = pending?.file ?? (await loadJobFile(job.sourceBlobId, job.itemId))
+    const file =
+      pending?.file ?? (await loadMediaJobFile(job.sourceBlobId, job.itemId, 'thumbnail'))
     if (!file) throw new Error('Cover thumbnail source is unavailable')
     const mimeType = pending?.mimeType ?? file.type
-    let dataUrl: string | null = null
     if (mimeType.startsWith('image/') || mimeType === 'application/pdf') {
       let blob: Blob | null
       try {
@@ -55,18 +30,14 @@ mediaJobQueue.registerExecutor('cover-thumbnail', async (job, { signal }) => {
       }
       if (blob) {
         await saveThumbnailBlob(job.sourceBlobId, blob)
-        dataUrl = URL.createObjectURL(blob)
       }
     } else {
       const thumbnail = await generateThumbnail(file, mimeType)
       if (typeof thumbnail === 'string') {
-        dataUrl = thumbnail
         await saveThumbnail(job.sourceBlobId, thumbnail)
       }
     }
-    window.dispatchEvent(
-      new CustomEvent('hhc:thumbnail-ready', { detail: { itemId: job.itemId, dataUrl } })
-    )
+    notifyThumbnailReady(job.itemId, job.sourceBlobId)
   } finally {
     pendingFiles.delete(job.sourceBlobId)
   }

@@ -20,7 +20,7 @@ import {
   mutateVideoSource,
   resolveVideoPlaybackPath
 } from '../../ipc/video-remux'
-import { getNativeFilePath } from '../../ipc/native-fs'
+import { getNativeFilePath } from '../../lib/native-storage'
 
 const sourceId = '123e4567-e89b-42d3-a456-426614174000'
 

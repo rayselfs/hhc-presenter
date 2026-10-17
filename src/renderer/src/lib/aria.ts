@@ -1,6 +1,6 @@
 import { isMac } from './env'
-import { getPlatformShortcut } from '@renderer/hooks/useKeyboardShortcuts'
-import type { ShortcutConfig } from '@renderer/hooks/useKeyboardShortcuts'
+import { getPlatformShortcut } from '@renderer/lib/shortcut-config'
+import type { ShortcutConfig } from '@renderer/lib/shortcut-config'
 
 export function formatAriaShortcut(config: ShortcutConfig): string {
   const resolved = getPlatformShortcut(config)
