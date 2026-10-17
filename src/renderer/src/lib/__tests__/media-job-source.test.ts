@@ -62,3 +62,34 @@ it.each(['success', 'http-error', 'network-error'] as const)(
     expect(revoke).toHaveBeenCalledOnce()
   }
 )
+
+it('does not combine orphaned job bytes with the metadata of a replacement source', async () => {
+  const db = await files.openFileExplorerDB()
+  const original = await db.get('folder-items', 'item')
+  if (!original || original.type !== 'file') throw new Error('Missing fixture')
+  await db.put('file-blobs', { id: 'source', blob: new Blob(['old pdf']), refCount: 1 })
+  await db.put('folder-items', {
+    ...original,
+    name: 'replacement.mp4',
+    mimeType: 'video/mp4',
+    url: 'blob:replacement'
+  })
+  expect(await loadMediaJobFile('source', 'item', 'PDF')).toBeNull()
+})
+
+it('uses a surviving owner of the scheduled blob when the requested item now points elsewhere', async () => {
+  const db = await files.openFileExplorerDB()
+  const original = await db.get('folder-items', 'item')
+  if (!original || original.type !== 'file') throw new Error('Missing fixture')
+  await db.put('file-blobs', { id: 'source', blob: new Blob(['old pdf']), refCount: 1 })
+  await db.put('folder-items', { ...original, id: 'copy', name: 'Retained.pdf' })
+  await db.put('folder-items', {
+    ...original,
+    name: 'replacement.mp4',
+    mimeType: 'video/mp4',
+    url: 'blob:replacement'
+  })
+  const file = await loadMediaJobFile('source', 'item', 'PDF')
+  expect(file).toMatchObject({ name: 'Retained.pdf', type: 'application/pdf' })
+  expect(await file?.text()).toBe('old pdf')
+})
