@@ -1,6 +1,10 @@
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 import type { HhcSession } from '@shared/hhc-auth'
-import { FILE_EXPLORER_ROOT_ID, useFileExplorerStore } from '@renderer/stores/file-explorer'
+import {
+  FILE_EXPLORER_ROOT_ID,
+  useFileExplorerStore,
+  publishPersistedSyncRoot
+} from '@renderer/stores/file-explorer'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { resolveUniqueName } from './file-naming'
 import { createHhcAssetApi } from './hhc-asset-api'
@@ -87,26 +91,6 @@ function collectionEntries(entries: SyncEntryRecord[], collectionId: string): Sy
   return entries.filter(
     (entry) => entry.remoteItemId === collectionId || entry.parentRemoteItemId === collectionId
   )
-}
-
-function publishRootFolder(root: FolderRecord): void {
-  useFileExplorerStore.setState((state) => {
-    const folders = { ...state.folders, [root.id]: root }
-    const siblings = [
-      ...(state._childFoldersByParent[root.parentId!] ?? []).filter(
-        (folder) => folder.id !== root.id
-      ),
-      root
-    ].sort((left, right) => left.sortIndex - right.sortIndex)
-    return {
-      folders,
-      _foldersArray: Object.values(folders),
-      _childFoldersByParent: {
-        ...state._childFoldersByParent,
-        [root.parentId!]: siblings
-      }
-    }
-  })
 }
 
 async function createProvider(
@@ -471,7 +455,7 @@ async function runImport(
     await unlinkSyncRootFolderFromApp(root).catch(() => undefined)
     throw error
   }
-  publishRootFolder(root)
+  publishPersistedSyncRoot(root)
   dispatchPlannedSyncDownloads({
     provider,
     providerConnectionId: connectionId,
@@ -630,7 +614,7 @@ async function runHhcLineFolderRefresh(
       await unlinkSyncRootFolderFromApp(root).catch(() => undefined)
       throw error
     }
-    publishRootFolder(refreshedRoot)
+    publishPersistedSyncRoot(refreshedRoot)
   }
   if (offlinePolicy === 'always-offline') {
     for (const entry of input.existingEntries) {
