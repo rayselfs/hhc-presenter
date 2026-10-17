@@ -200,6 +200,8 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [clipboard, setClipboard] = useState<ClipboardState | null>(null)
   const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false)
+  const [isCreateSubmitting, setIsCreateSubmitting] = useState(false)
+  const createSubmittingRef = useRef(false)
   const [createFolderName, setCreateFolderName] = useState('')
   const [createFolderDuration, setCreateFolderDuration] = useState<FolderDuration>('1day')
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -949,6 +951,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   }, [getChildFolders, currentFolderId, t, isCurrentFolderReadOnly])
 
   const handleCreateFolderSubmit = useCallback(async (): Promise<void> => {
+    if (createSubmittingRef.current) return
     const name = createFolderName.trim()
     if (isCurrentFolderReadOnly) return
     if (!validateDisplayName(name)) {
@@ -960,6 +963,8 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
       toast.danger(t('fileExplorer.folderAlreadyExists', 'A folder with this name already exists'))
       return
     }
+    createSubmittingRef.current = true
+    setIsCreateSubmitting(true)
     try {
       await addFolder(name, currentFolderId, computeExpiresAt(createFolderDuration))
       setIsCreateFolderModalOpen(false)
@@ -967,6 +972,9 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
       toast.danger(
         error instanceof Error ? error.message : t('fileExplorer.invalidName', 'Invalid name')
       )
+    } finally {
+      createSubmittingRef.current = false
+      setIsCreateSubmitting(false)
     }
   }, [
     createFolderName,
@@ -1098,6 +1106,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
       />
       <FolderModal
         isOpen={isCreateFolderModalOpen}
+        isSubmitting={isCreateSubmitting}
         onClose={() => setIsCreateFolderModalOpen(false)}
         onSubmit={handleCreateFolderSubmit}
         editingFolder={null}
