@@ -12,15 +12,15 @@ Electron desktop app for church projection (`hhc-client`). React 19 + TypeScript
 | ---- | -------- | ----- |
 | Main process / window creation | `src/main/index.ts` + `windowManager.ts` | WindowManager singleton manages both windows |
 | IPC handlers | `src/main/ipc/` | app.ts, bible-api.ts, projection.ts, timer.ts, validate.ts |
-| Timer main-process service | `src/main/timerService.ts` | Broadcasts timer state to projection window |
+| Timer runtime authority | `src/shared/timer-runtime.ts` + `src/main/timerService.ts` | Main/Worker hosts share rules; renderer consumes accepted snapshots |
 | Shared types & constants | `src/shared/` | IPC channels, projection messages, API paths, shared types |
-| Expose API to renderer | `src/preload/index.ts` | contextBridge; update `index.d.ts` for types |
+| Expose API to renderer | `src/preload/index.ts` + `src/shared/presenter-api.ts` | contextBridge implementation satisfies PresenterApi; Window.api aliases it |
 | UI / React components | `src/renderer/src/components/` | Control/ (domain panels), Common/ (reusable), Projection/ (display) |
 | File Explorer | `src/renderer/src/pages/FilesPage.tsx` + `stores/file-explorer.ts` | File upload, folder CRUD, favorites, trash |
 | Trash / deletion flow | `src/renderer/src/pages/TrashPage.tsx` + `lib/app-init.ts` | Soft-deleted items |
 | Folder store base | `src/renderer/src/stores/folder.ts` | `createFolderStore` factory shared by File Explorer + Bible |
-| Folder IndexedDB ops | `src/renderer/src/lib/folder-db.ts` | All IndexedDB reads/writes |
-| Timer engine | `src/renderer/src/contexts/TimerEngineContext.tsx` | Bridges adapter ↔ Zustand stores |
+| Folder persistence adapters | `src/renderer/src/lib/folder-db.ts` | Typed Bible/Explorer adapters; retain their distinct deletion policies |
+| Timer engine | `src/renderer/src/contexts/TimerEngineContext.tsx` | Owns adapter lifetime; accepted runtime snapshots update Zustand facades |
 | Timer adapter (dual-mode) | `src/renderer/src/lib/timer-adapter.ts` | BrowserTimerAdapter (Worker) vs ElectronTimerAdapter (IPC) |
 | Projection messaging | `src/renderer/src/lib/projection-adapter.ts` | Electron IPC or BroadcastChannel adapter |
 | Environment detection | `src/renderer/src/lib/env.ts` | `isElectron()` / `isWeb()` — renderer only |
@@ -84,7 +84,7 @@ Every feature must work in both Electron and browser.
 
 | Workflow | File | Trigger | Steps |
 | -------- | ---- | ------- | ----- |
-| CI Quality Gates | `ci.yml` | PR → main | lint → typecheck → vitest → build |
+| CI Quality Gates | `ci.yml` | PR → main | lint → node/web/E2E types → vitest → default/web build → Browser E2E |
 | Azure Static Web Apps | `azure-static-web-apps-*.yml` | PR + tag `v*` | PR preview / production deploy |
 | Build and Release | `build-release.yml` | tag `v*.*.*` | macOS (arm64) + Windows → GitHub Release |
 
@@ -92,9 +92,9 @@ Every feature must work in both Electron and browser.
 
 - No `as any`, no `@ts-expect-error`. Preload `@ts-ignore` on lines 19/21 is inherited scaffold — do not add more.
 - No manual `localStorage` in Zustand stores — use `persist` with `hhcPersistStorage`.
-- `sandbox: false` in BrowserWindow is a security risk — evaluate enabling.
-- Placeholder update URL in `electron-builder.yml` (`https://example.com/auto-updates`) — replace before release.
-- Generic `appId: com.electron.app` — change before distribution.
+- Keep `sandbox: true` in both BrowserWindow configurations; native access stays behind the preload bridge.
+- Preserve the GitHub publish target in `electron-builder.yml`; packaging/release authorization is separate from PR CI.
+- Preserve the distribution identity `tw.org.alive.presenter` in `electron-builder.yml`.
 
 ## PROJECT-SPECIFIC NOTES
 
