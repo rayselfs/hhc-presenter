@@ -375,10 +375,12 @@ export function PptxDocumentView({
 
   useEffect(() => {
     let cancelled = false
-    const target = canvasRef.current
-    if (!target) return
-    const container = target
-    container.innerHTML = ''
+    const container = canvasRef.current
+    if (!container) return
+    const target = document.createElement('div')
+    target.className = 'w-full'
+    container.replaceChildren(target)
+    const controller = new AbortController()
     viewerRef.current?.destroy()
     viewerRef.current = null
 
@@ -396,7 +398,10 @@ export function PptxDocumentView({
           readPresentationArrayBuffer
         )
         if (cancelled) return
-        const handle = await openPptxViewer(buffer, container, { renderMode: 'slide' })
+        const handle = await openPptxViewer(buffer, target, {
+          renderMode: 'slide',
+          signal: controller.signal
+        })
         if (cancelled) {
           handle.destroy()
           return
@@ -425,6 +430,8 @@ export function PptxDocumentView({
     void open()
     return () => {
       cancelled = true
+      controller.abort()
+      target.remove()
       viewerRef.current?.destroy()
       viewerRef.current = null
     }
@@ -433,11 +440,16 @@ export function PptxDocumentView({
   useEffect(() => {
     const current = viewerRef.current
     if (!current || status !== 'ready') return
+    let cancelled = false
     void current.viewer.renderSlide(activeSlide).catch((renderError) => {
+      if (cancelled || viewerRef.current !== current) return
       setStatus('failed')
       setError(renderError instanceof Error ? renderError.message : String(renderError))
     })
-  }, [activeSlide, status])
+    return () => {
+      cancelled = true
+    }
+  }, [activeSlide, status, viewer])
 
   const slideIndexes = useMemo(
     () => Array.from({ length: viewer?.slideCount ?? deck.slideCount ?? 0 }, (_, index) => index),
@@ -3175,6 +3187,7 @@ export default function PresentationWorkspacePage(): React.JSX.Element {
       {activeDocument ? (
         activeDocument.mode === 'editable' ? (
           <EditableDocumentView
+            key={activeDocument.itemId}
             deck={activeDocument}
             isBackgroundPanelOpen={backgroundPanel.isOpen}
             onBackgroundPanelOpenChange={(isOpen) =>
@@ -3184,7 +3197,7 @@ export default function PresentationWorkspacePage(): React.JSX.Element {
             onSlideClipboardChange={setSlideClipboard}
           />
         ) : (
-          <PptxDocumentView deck={activeDocument} />
+          <PptxDocumentView key={activeDocument.itemId} deck={activeDocument} />
         )
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">

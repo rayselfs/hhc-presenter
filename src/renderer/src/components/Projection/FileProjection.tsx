@@ -110,7 +110,9 @@ export default function FileProjection({
   const [pdfState, setPdfState] = useState<PdfState | null>(null)
   const [pdfPreviewUrls, setPdfPreviewUrls] = useState<string[]>([])
   const [pdfContainerWidth, setPdfContainerWidth] = useState(0)
-  const [isEnded, setIsEnded] = useState(false)
+  const replayPlaylistEnded =
+    initialReplayState?.itemId === initialItemId && initialReplayState?.playlistEnded === true
+  const [isEnded, setIsEnded] = useState(replayPlaylistEnded)
   const [displayName, setDisplayName] = useState(fileName ?? '')
   const mediaRef = useRef<HTMLMediaElement | null>(null)
   const pdfContainerRef = useRef<HTMLDivElement | null>(null)
@@ -420,8 +422,26 @@ export default function FileProjection({
     []
   )
 
+  const endPlaylist = useCallback(() => {
+    endedRef.current = true
+    loadSequenceRef.current += 1
+    cancelPendingImageRef.current?.()
+    cancelPendingImageRef.current = null
+    pendingVideoControlRef.current = null
+    sourceRevokeRef.current?.()
+    sourceRevokeRef.current = null
+    disposePdf()
+    setObjectUrl(null)
+    setIsEnded(true)
+  }, [disposePdf])
+
   const loadFile = useCallback(
     async (itemId: string, blobId: string, fileMimeType: string, options: LoadFileOptions = {}) => {
+      const replay = replayStateRef.current?.itemId === itemId ? replayStateRef.current : null
+      if (replay?.playlistEnded) {
+        endPlaylist()
+        return
+      }
       const loadSequence = loadSequenceRef.current + 1
       loadSequenceRef.current = loadSequence
       cancelPendingImageRef.current?.()
@@ -456,7 +476,6 @@ export default function FileProjection({
         })
         if (loadSequenceRef.current !== loadSequence) return
       }
-      const replay = replayStateRef.current?.itemId === itemId ? replayStateRef.current : null
       const videoReplay =
         replay ??
         (liveVideo
@@ -493,7 +512,7 @@ export default function FileProjection({
         setZoom(replay?.zoom ?? 1)
         setPan(replay ? { ...replay.pan } : { x: 0, y: 0 })
       }
-      setIsEnded(replay?.isEnded ?? false)
+      setIsEnded(false)
       setMimeType(fileMimeType)
       if (fileMimeType === 'application/pdf') {
         void loadPdfPreviews(blobId, itemId, loadSequence).catch((error) => {
@@ -569,7 +588,7 @@ export default function FileProjection({
         if (!installed) source.revoke()
       }
     },
-    [disposePdf, initialContentRevision, loadPdf, loadPdfPreviews, reportRenderStatus]
+    [endPlaylist, disposePdf, initialContentRevision, loadPdf, loadPdfPreviews, reportRenderStatus]
   )
 
   useEffect(
@@ -820,21 +839,14 @@ export default function FileProjection({
     adapter.setGeneration(generation)
     adapterSendRef.current = adapter.send.bind(adapter)
 
-    const unsubEnd = adapter.on('file:end', () => {
-      endedRef.current = true
-      cancelPendingImageRef.current?.()
-      cancelPendingImageRef.current = null
-      loadSequenceRef.current += 1
-      disposePdf()
-      setIsEnded(true)
-    })
+    const unsubEnd = adapter.on('file:end', endPlaylist)
 
     return () => {
       unsubEnd()
       adapter.dispose()
       adapterSendRef.current = null
     }
-  }, [generation, projectionSessionId, disposePdf])
+  }, [generation, projectionSessionId, endPlaylist])
 
   useEffect(() => {
     if (initialItemId && initialBlobId && initialMimeType) {
@@ -865,6 +877,7 @@ export default function FileProjection({
     initialMimeType,
     initialPlaybackMode,
     initialContentRevision,
+    replayPlaylistEnded,
     initialSeekable,
     initialDurationMs,
     initialStreamUrl,
@@ -964,7 +977,7 @@ export default function FileProjection({
 
   const renderedLoadSequence = loadSequenceRef.current
 
-  if (isEnded) {
+  if (isEnded || replayPlaylistEnded) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-black">
         <span className="text-white/10 text-4xl font-bold tracking-widest">投影結束</span>
