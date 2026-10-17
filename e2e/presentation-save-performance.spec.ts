@@ -12,6 +12,12 @@ type Metrics = {
   durableAt: number
 }
 
+declare global {
+  interface Window {
+    saveMetrics: Metrics
+  }
+}
+
 test.describe.configure({ mode: 'serial' })
 
 async function installFixture(page: Page, count: number): Promise<void> {
@@ -131,18 +137,20 @@ for (const count of [10, 100]) {
           longTasks: [],
           durableAt: 0
         }
-        ;(window as Window & { saveMetrics?: Metrics }).saveMetrics = metrics
+        window.saveMetrics = metrics
         const stringify = JSON.stringify
-        JSON.stringify = function (...args: Parameters<typeof JSON.stringify>): string {
-          const start = performance.now()
-          const body = stringify.apply(JSON, args)
-          const value = args[0] as Partial<EditablePresentationDocument> | undefined
-          if (value?.slides && value.slideOrder) {
-            metrics.stringifyMs.push(performance.now() - start)
-            metrics.serializedBytes += new Blob([body]).size
+        JSON.stringify = new Proxy(stringify, {
+          apply(target, thisArg, args) {
+            const start = performance.now()
+            const body: string = Reflect.apply(target, thisArg, args)
+            const value = args[0] as Partial<EditablePresentationDocument> | undefined
+            if (value?.slides && value.slideOrder) {
+              metrics.stringifyMs.push(performance.now() - start)
+              metrics.serializedBytes += new Blob([body]).size
+            }
+            return body
           }
-          return body
-        }
+        })
         const put = IDBObjectStore.prototype.put
         IDBObjectStore.prototype.put = function (
           ...args: Parameters<typeof put>
@@ -200,9 +208,7 @@ for (const count of [10, 100]) {
       await page.getByRole('button', { name: 'Redo', exact: true }).click()
       const lastEditAt = await page.evaluate(() => performance.now())
       await page.waitForTimeout(2200)
-      const metrics = await page.evaluate(
-        () => (window as Window & { saveMetrics: Metrics }).saveMetrics
-      )
+      const metrics = await page.evaluate(() => window.saveMetrics)
       await testInfo.attach('metrics', {
         body: JSON.stringify({
           ...metrics,
