@@ -2,11 +2,7 @@ import { PersonalCloudHttpError, type PersonalMutationRequest } from '@shared/pe
 import type { HhcAuthAdapter } from '@shared/hhc-auth'
 import { createPersonalCloudProvider, type PersonalCloudProvider } from './personal-cloud-provider'
 import type { PresentationSessionRegistry } from '@renderer/contexts/PresentationSessionRegistryContext'
-import {
-  addFileItemToStore,
-  publishPersistedFileItem,
-  FILE_EXPLORER_ROOT_ID
-} from '@renderer/stores/file-explorer'
+import { createLocalRecoveryFileBackup } from '@renderer/stores/file-explorer'
 import { getBlobId } from './blob-identity'
 import { openFileExplorerDB, getFileSource, isFileBlobRecordAvailable } from './file-explorer-db'
 import { ensurePersonalLocalSpace } from './personal-file-actions'
@@ -412,20 +408,18 @@ export async function recoverPersonalOperation(
       }
       if (bytes.size !== scope.item.size) throw new Error(i18n.t('personalCloud.backupFailed'))
       assertAccount()
-      const backupId = await addFileItemToStore(
+      const backupId = await createLocalRecoveryFileBackup(
         new File([bytes], scope.item.name, { type: scope.item.mimeType }),
-        FILE_EXPLORER_ROOT_ID,
-        scope.item.mimeType
+        scope.item.mimeType,
+        controller.signal
       )
       const backup = await db.get('folder-items', backupId)
       if (
         backup?.type !== 'file' ||
+        backup.expiresAt !== null ||
         !(await isFileBlobRecordAvailable(await db.get('file-blobs', getBlobId(backup))))
       )
         throw new Error(i18n.t('personalCloud.backupFailed'))
-      const durableBackup = { ...backup, expiresAt: null }
-      await db.put('folder-items', durableBackup)
-      publishPersistedFileItem(durableBackup)
       assertAccount()
       if (!editorIsSaved()) throw new Error(i18n.t('personalCloud.changed'))
       if (sessions.close && !(await sessions.close(operation.nodeId)))
