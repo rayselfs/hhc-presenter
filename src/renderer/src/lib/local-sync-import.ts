@@ -1,21 +1,19 @@
-import { isWeb } from './env'
 import { refreshImportedMediaAssets } from './sync-media-preparation'
 import type { LocalSyncConnectionInfo, LocalSyncRemoteItem } from '@shared/ipc-channels'
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
-import { FILE_EXPLORER_ROOT_ID, useFileExplorerStore } from '@renderer/stores/file-explorer'
+import {
+  FILE_EXPLORER_ROOT_ID,
+  useFileExplorerStore,
+  mergePersistedSyncCatalog
+} from '@renderer/stores/file-explorer'
+import { isWeb } from '@renderer/lib/env'
 import {
   collectAvailableFileBlobIds,
   openFileExplorerDB,
   type FileBlobRecord
 } from '@renderer/lib/file-explorer-db'
 import { resolveUniqueName } from '@renderer/lib/file-naming'
-import {
-  type MediaKind,
-  type MediaPlatform,
-  type MediaSupportMode
-} from '@renderer/lib/media-capabilities'
-import { classifyMediaImport } from '@renderer/lib/media-import-policy'
-import { isIgnoredSystemPath } from '@shared/file-ignore-policy'
+import type { MediaPlatform } from '@renderer/lib/media-capabilities'
 import {
   listSyncEntriesByProviderConnection,
   putProviderConnection,
@@ -23,14 +21,6 @@ import {
   type SyncEntryRecord
 } from '@renderer/lib/sync-db'
 import { applySyncRefreshPlan, buildSyncRefreshPlan, type SyncRefreshPlan } from './sync-refresh'
-
-interface SyncFilePolicy {
-  kind: MediaKind | 'unsupported'
-  mimeType: string
-  support: MediaSupportMode
-  disabled: boolean
-  skip: boolean
-}
 
 interface LocalSyncImportPlanInput {
   connection: LocalSyncConnectionInfo
@@ -63,58 +53,12 @@ export interface LocalSyncImportSummary {
   disabledFileCount: number
 }
 
-function sortByIndex<T extends { sortIndex: number }>(items: T[]): T[] {
-  return items.slice().sort((a, b) => a.sortIndex - b.sortIndex)
-}
-
 function safeIdPart(value: string): string {
   return value.replace(/[^a-z0-9_-]/gi, '_')
 }
 
 function createRootFolderId(connectionId: string): string {
   return `local-sync-folder-${safeIdPart(connectionId)}`
-}
-
-function createSyncedFolderId(connectionId: string, remoteItemId: string): string {
-  return `local-sync-folder-${safeIdPart(connectionId)}-${safeIdPart(remoteItemId)}`
-}
-
-function createSyncedItemId(): string {
-  return crypto.randomUUID()
-}
-
-export function classifySyncRemoteFile(
-  item: Pick<LocalSyncRemoteItem, 'name' | 'mimeType'>,
-  platform: MediaPlatform
-): SyncFilePolicy {
-  const decision = classifyMediaImport({ name: item.name, mimeType: item.mimeType }, platform)
-  if (decision.action === 'skip') {
-    return {
-      kind: 'unsupported',
-      mimeType: decision.mimeType,
-      support: 'unsupported',
-      disabled: true,
-      skip: true
-    }
-  }
-
-  if (decision.action === 'platform-unsupported') {
-    return {
-      kind: decision.kind,
-      mimeType: decision.mimeType,
-      support: decision.support,
-      disabled: true,
-      skip: false
-    }
-  }
-
-  return {
-    kind: decision.kind,
-    mimeType: decision.mimeType,
-    support: decision.support,
-    disabled: false,
-    skip: false
-  }
 }
 
 export function buildLocalSyncImportPlan(input: LocalSyncImportPlanInput): LocalSyncImportPlan {
@@ -135,165 +79,45 @@ export function buildLocalSyncImportPlan(input: LocalSyncImportPlanInput): Local
     }
   }
 
-  const folders: FolderRecord[] = [rootFolder]
-  const items: FileItemRecord[] = []
-  const fileImports: LocalSyncFileImport[] = []
-  const syncEntries: LocalSyncImportPlan['syncEntries'] = [
-    {
-      providerConnectionId: input.connection.id,
-      remoteItemId: '.',
-      parentRemoteItemId: null,
-      kind: 'folder',
-      name: input.connection.rootName,
-      folderId: rootFolder.id,
-      status: 'available-offline'
-    }
-  ]
-  const remoteFolderToLocalId = new Map<string | null, string>([[null, rootFolderId]])
-  const folderSortCounts = new Map<string, number>([
-    [FILE_EXPLORER_ROOT_ID, input.existingRootFolderNames.length + 1]
-  ])
-  const itemSortCounts = new Map<string, number>()
-  const ignoredRemoteIds = new Set<string>()
-  let disabledCount = 0
-
-  for (const remoteItem of input.remoteItems) {
-    if (
-      isIgnoredSystemPath(remoteItem.name) ||
-      (remoteItem.parentRemoteItemId && ignoredRemoteIds.has(remoteItem.parentRemoteItemId))
-    ) {
-      ignoredRemoteIds.add(remoteItem.remoteItemId)
-      continue
-    }
-    if (remoteItem.kind !== 'folder') continue
-    const parentId = remoteFolderToLocalId.get(remoteItem.parentRemoteItemId) ?? rootFolderId
-    const localFolderId = createSyncedFolderId(input.connection.id, remoteItem.remoteItemId)
-    const sortIndex = folderSortCounts.get(parentId) ?? 0
-    folderSortCounts.set(parentId, sortIndex + 1)
-    const folder: FolderRecord = {
-      id: localFolderId,
-      name: remoteItem.name,
-      parentId,
-      sortIndex,
-      createdAt: remoteItem.sourceCreatedAt ?? now,
-      expiresAt: null,
-      syncLink: {
-        providerConnectionId: input.connection.id,
-        remoteFolderId: remoteItem.remoteItemId,
-        providerType: 'local-fs',
-        offlinePolicy: 'always-offline'
-      }
-    }
-    folders.push(folder)
-    remoteFolderToLocalId.set(remoteItem.remoteItemId, localFolderId)
-    syncEntries.push({
-      providerConnectionId: input.connection.id,
-      remoteItemId: remoteItem.remoteItemId,
-      parentRemoteItemId: remoteItem.parentRemoteItemId,
-      kind: 'folder',
-      name: remoteItem.name,
-      folderId: localFolderId,
-      status: 'available-offline'
-    })
-  }
-
-  for (const remoteItem of input.remoteItems) {
-    if (ignoredRemoteIds.has(remoteItem.remoteItemId)) continue
-    if (remoteItem.kind !== 'file') continue
-    const parentId = remoteFolderToLocalId.get(remoteItem.parentRemoteItemId) ?? rootFolderId
-    const policy = classifySyncRemoteFile(remoteItem, input.platform)
-    if (policy.skip) continue
-    const itemId = createSyncedItemId()
-    const sortIndex = itemSortCounts.get(parentId) ?? 0
-    itemSortCounts.set(parentId, sortIndex + 1)
-    const item: FileItemRecord = {
-      id: itemId,
-      parentId,
-      type: 'file',
-      sortIndex,
-      createdAt: remoteItem.sourceCreatedAt ?? now,
-      expiresAt: null,
-      name: remoteItem.name,
-      url: policy.disabled ? `unsupported:${itemId}` : `blob:${itemId}`,
-      size: remoteItem.size ?? 0,
-      mimeType: policy.mimeType
-    }
-    items.push(item)
-    if (policy.disabled) {
-      disabledCount++
-      syncEntries.push({
-        providerConnectionId: input.connection.id,
-        remoteItemId: remoteItem.remoteItemId,
-        parentRemoteItemId: remoteItem.parentRemoteItemId,
-        kind: 'file',
-        name: remoteItem.name,
-        itemId,
-        mimeType: policy.mimeType,
-        size: remoteItem.size,
-        etag: remoteItem.etag,
-        status: 'remote-only'
-      })
-      continue
-    }
-    fileImports.push({ itemId, remoteItemId: remoteItem.remoteItemId, mimeType: policy.mimeType })
-    syncEntries.push({
-      providerConnectionId: input.connection.id,
-      remoteItemId: remoteItem.remoteItemId,
-      parentRemoteItemId: remoteItem.parentRemoteItemId,
-      kind: 'file',
-      name: remoteItem.name,
-      itemId,
-      blobId: itemId,
-      mimeType: policy.mimeType,
-      size: remoteItem.size,
-      etag: remoteItem.etag,
-      status: 'available-offline'
-    })
-  }
-
-  return { rootFolder, folders, items, fileImports, syncEntries, disabledCount }
-}
-
-function mergeImportedRecordsIntoStore(folders: FolderRecord[], items: FileItemRecord[]): void {
-  const importedParentIds = new Set<string>(folders.map((folder) => folder.id))
-  importedParentIds.add(FILE_EXPLORER_ROOT_ID)
-  for (const item of items) importedParentIds.add(item.parentId)
-
-  useFileExplorerStore.setState((state) => {
-    const nextFolders = { ...state.folders }
-    const nextItems = { ...state.items }
-    for (const folder of folders) nextFolders[folder.id] = folder
-    for (const item of items) nextItems[item.id] = item
-
-    const childFoldersByParent: typeof state._childFoldersByParent = {}
-    for (const folder of Object.values(nextFolders)) {
-      if (folder.parentId === null) continue
-      const list = childFoldersByParent[folder.parentId] ?? []
-      list.push(folder)
-      childFoldersByParent[folder.parentId] = list
-    }
-    for (const parentId of Object.keys(childFoldersByParent)) {
-      childFoldersByParent[parentId] = sortByIndex(childFoldersByParent[parentId])
-    }
-
-    const loadedParents = new Set([...state.loadedParents, ...importedParentIds])
-    const itemsByParent: typeof state._itemsByParent = {}
-    for (const parentId of loadedParents) {
-      itemsByParent[parentId] = sortByIndex(
-        Object.values(nextItems).filter((item) => item.parentId === parentId)
-      )
-    }
-
-    return {
-      folders: nextFolders,
-      items: nextItems,
-      _foldersArray: Object.values(nextFolders),
-      _itemsArray: Object.values(nextItems),
-      _childFoldersByParent: childFoldersByParent,
-      _itemsByParent: itemsByParent,
-      loadedParents
-    }
+  const plan = buildSyncRefreshPlan({
+    providerConnectionId: input.connection.id,
+    providerType: 'local-fs',
+    rootFolder,
+    rootRemoteFolderId: '.',
+    offlinePolicy: 'always-offline',
+    platform: input.platform,
+    existingFolders: [],
+    existingItems: [],
+    existingEntries: [],
+    remoteItems: input.remoteItems,
+    now
   })
+  return {
+    rootFolder,
+    folders: [rootFolder, ...plan.folders],
+    items: plan.items,
+    fileImports: plan.fileTransfers,
+    syncEntries: [
+      {
+        providerConnectionId: input.connection.id,
+        remoteItemId: '.',
+        parentRemoteItemId: null,
+        kind: 'folder',
+        name: input.connection.rootName,
+        folderId: rootFolder.id,
+        status: 'available-offline'
+      },
+      ...plan.syncEntries.map((entry) => {
+        if (entry.kind === 'folder') return entry
+        const { contentHash: _contentHash, ...localEntry } = entry
+        // Native copies complete before this initial plan is persisted.
+        return entry.status === 'queued'
+          ? { ...localEntry, blobId: entry.itemId, status: 'available-offline' as const }
+          : localEntry
+      })
+    ],
+    disabledCount: plan.disabledCount
+  }
 }
 
 async function saveImportedRecords(
@@ -376,7 +200,7 @@ export async function importLocalSyncConnection(
     displayName: connection.displayName
   })
   await Promise.all(savedPlan.syncEntries.map((entry) => putSyncEntry(entry)))
-  mergeImportedRecordsIntoStore(savedPlan.folders, savedPlan.items)
+  mergePersistedSyncCatalog(savedPlan.folders, savedPlan.items)
   void refreshImportedMediaAssets(savedPlan.items)
 
   return {

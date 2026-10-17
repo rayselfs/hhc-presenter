@@ -8,6 +8,7 @@ const {
   mockRmSync,
   mockClearData,
   mockClearHhcLocalData,
+  mockClearOneDriveCredentials,
   mockRelaunch,
   mockExit
 } = vi.hoisted(() => ({
@@ -17,6 +18,7 @@ const {
   mockRmSync: vi.fn(),
   mockClearData: vi.fn(),
   mockClearHhcLocalData: vi.fn(),
+  mockClearOneDriveCredentials: vi.fn(),
   mockRelaunch: vi.fn(),
   mockExit: vi.fn()
 }))
@@ -59,6 +61,10 @@ vi.mock('fs', () => ({
   }
 }))
 
+vi.mock('../../ipc/onedrive-credentials', () => ({
+  clearOneDriveCredentials: mockClearOneDriveCredentials
+}))
+
 vi.mock('https', () => ({
   default: {
     request: vi.fn(),
@@ -86,6 +92,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mockClearData.mockResolvedValue(undefined)
   mockClearHhcLocalData.mockResolvedValue(undefined)
+  mockClearOneDriveCredentials.mockResolvedValue(undefined)
   ipcHandlers.clear()
   protocolHandlers.clear()
   registerAppIpc(wm, hhcAuthService)
@@ -115,6 +122,34 @@ describe('model IPC security', () => {
       recursive: true
     })
     expect(mockClearData).toHaveBeenCalledWith()
+  })
+
+  it('awaits OneDrive revocation before clearing session data or relaunching', async () => {
+    vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockMainWindow as never)
+    let finish!: () => void
+    mockClearOneDriveCredentials.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finish = resolve
+      })
+    )
+    const clearing = ipcHandlers.get('app:clear-user-data')!(makeEvent()) as Promise<void>
+    await Promise.resolve()
+    expect(mockClearOneDriveCredentials).toHaveBeenCalledOnce()
+    expect(mockClearData).not.toHaveBeenCalled()
+    expect(mockRelaunch).not.toHaveBeenCalled()
+    finish()
+    await clearing
+    expect(mockClearData).toHaveBeenCalledOnce()
+  })
+
+  it('propagates OneDrive deletion failures without relaunching', async () => {
+    vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockMainWindow as never)
+    mockClearOneDriveCredentials.mockRejectedValueOnce(new Error('OneDrive delete failed'))
+    await expect(ipcHandlers.get('app:clear-user-data')!(makeEvent())).rejects.toThrow(
+      'OneDrive delete failed'
+    )
+    expect(mockClearData).not.toHaveBeenCalled()
+    expect(mockRelaunch).not.toHaveBeenCalled()
   })
 
   it('rejects local credential deletion failure before session clearing or relaunch', async () => {
