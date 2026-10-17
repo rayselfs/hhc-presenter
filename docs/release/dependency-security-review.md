@@ -24,7 +24,7 @@ The previously accepted advisory paths were closed by:
 The lockfile must reproduce with `npm ci`, and `npm audit --audit-level=low` must remain at
 0 vulnerabilities. Any advisory is a failed release gate and requires a new review.
 
-## 2026-10-17 gate wiring and current result
+## 2026-10-17 gate wiring and pre-remediation result
 
 The release quality job now runs the documented `npm audit --audit-level=low`
 command after dependency installation. Packaging and publication already depend on
@@ -49,3 +49,33 @@ Compatible remediation, a clean install and a repeated full audit remain require
 before a future release. This wiring change does not resolve those findings or
 claim that the affected paths are exploitable in Presenter. No release workflow,
 tag or manual deployment is needed to review or merge this gate.
+
+## 2026-10-17 transport-preserving logger remediation
+
+The reviewed logger-only candidate overrides `global-agent`'s `roarr` dependency to
+3.3.0 and retains `global-agent` 3.0.0 and its proxy transport. This removes the
+`sprintf-js` path without accepting the rejected global-agent 4.1.3 transport
+regression. A fresh own `npm ci --prefer-offline` and full `npm audit` report zero
+vulnerabilities across production and development dependencies. npm skipped nine
+dependency install scripts; the root postinstall and VLC rebuild did execute. This
+does not establish real ONNX/Whisper model inference.
+
+The actual installed baseline and candidate both pass HTTP proxy, HTTPS CONNECT
+with a trusted synthetic origin certificate, and HTTP/HTTPS NO_PROXY, through both
+direct bootstrap and the Electron downloader initialization. Each entry runs with
+logging disabled and enabled. Enabled logging also serializes response headers, a
+TLS CA Buffer array and request/socket errors. TLS certificate verification remains
+enabled. The repository's four installed-dependency cases retain the HTTP success,
+reset failure and enabled/disabled JSON logging contract in normal unit CI; those
+cases alone do not cover the separate local HTTPS matrix. No real account, network
+credentials, Linux CUDA download or Windows proxy installation is claimed.
+
+roarr 3 changes serialization and its timestamp source, so the override is exact
+and limited to the actual proxy caller. The independent review checked its default
+export, child and log-level APIs, global state, actual caller arguments and lock
+changes. All added transitive packages belong to the logger graph; this is not a
+package-size optimization. The full audit gate and TLS checks are unchanged.
+
+The candidate's final integrated package and exact-head CI results must be recorded
+before merge. A zero audit is dependency metadata evidence, not a release or
+complete security assessment. No tag, release or manual deployment is required.
