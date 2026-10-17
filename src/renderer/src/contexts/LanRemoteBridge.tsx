@@ -16,9 +16,15 @@ export default function LanRemoteBridge(): null {
   useEffect(() => {
     if (!enabled || !isElectron() || !window.api?.lanRemote) return
     return window.api.lanRemote.onCommand((command) => {
-      void executeLanRemoteCommand(command).then((ack) => window.api.lanRemote.publishAck(ack))
+      void executeLanRemoteCommand(command)
+        .then(async (ack) => {
+          if (ack.status === 'accepted')
+            await window.api.lanRemote.publishState(createLanRemoteSnapshot(isProjectionOpen))
+          await window.api.lanRemote.publishAck(ack)
+        })
+        .catch((error) => console.error('[lan-remote] Command publication failed', error))
     })
-  }, [enabled])
+  }, [enabled, isProjectionOpen])
 
   useEffect(() => {
     if (!enabled || !isElectron() || !window.api?.lanRemote) return

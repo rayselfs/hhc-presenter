@@ -190,3 +190,30 @@ it('retains PDF controls for remounts without accepting another item controls', 
   })
   expect(stale).toBe(paged)
 })
+
+it('does not apply pending play commands over a terminal replay', () => {
+  const media = snapshot('media')
+  media.media.state = {
+    itemId: 'last',
+    positionSeconds: 20,
+    durationSeconds: 100,
+    isPlaying: false,
+    isEnded: false,
+    playlistEnded: true,
+    volume: 1,
+    pdfPage: 1,
+    pdfScroll: 0,
+    pdfViewMode: 'single',
+    zoom: 1,
+    pan: { x: 0, y: 0 }
+  }
+  const next = reduceProjectionRenderState(initialProjectionRenderState, {
+    type: 'replay',
+    payload: {
+      generation: 2,
+      snapshot: media,
+      pendingFileControls: { itemId: 'last', transport: 'play', seekSeconds: 0 }
+    }
+  })
+  expect(next.mediaReplayState).toEqual(media.media.state)
+})

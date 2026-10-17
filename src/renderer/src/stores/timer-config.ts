@@ -1,9 +1,10 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { v7 as uuidv7 } from 'uuid'
-import type { TimerMode, TimerSettings, TimerPreset } from '@shared/types/timer'
+import type { TimerMode, TimerSettings, TimerPreset, TimerRuntimeResult } from '@shared/types/timer'
 import { MAX_DURATION_SECONDS } from '@shared/constants/timer'
 import { createKey } from '@renderer/lib/persist-storage'
+import { executeTimerRuntimeCommand } from '@renderer/lib/timer-runtime-client'
 
 export const DEFAULT_PRESETS: TimerPreset[] = [
   { id: uuidv7(), name: '10:00', durationSeconds: 600, mode: 'timer' },
@@ -31,7 +32,7 @@ export interface TimerConfigState {
   overtimeMessage: string
   presets: TimerPreset[]
 
-  setOvertimeMessage: (enabled: boolean, message: string) => void
+  setOvertimeMessage: (enabled: boolean, message: string) => Promise<TimerRuntimeResult>
   addPreset: (name: string, durationSeconds: number) => void
   removePreset: (id: string) => void
 }
@@ -78,7 +79,7 @@ export const useTimerConfigStore = create<TimerConfigState>()(
       presets: DEFAULT_PRESETS,
 
       setOvertimeMessage: (enabled: boolean, message: string) => {
-        set({ overtimeMessageEnabled: enabled, overtimeMessage: message })
+        return executeTimerRuntimeCommand({ type: 'setOvertimeMessage', enabled, message })
       },
 
       addPreset: (name: string, durationSeconds: number) => {
