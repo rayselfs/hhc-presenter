@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useFileExplorerStore } from '@renderer/stores/file-explorer'
 import type { FolderRecord, FileItemRecord, SyncOfflinePolicy } from '@shared/types/folder'
 import type { SyncEntryRecord } from '../sync-db'
 import { openFileExplorerDB, resetFileExplorerDBForTests } from '../file-explorer-db'
@@ -1162,4 +1163,65 @@ describe('guarded catalog commit', () => {
     expect(await db.getAll('folder-items')).toEqual([])
     expect(await getSyncEntryByRemoteItem('connection-1', 'new-file')).toBeUndefined()
   })
+})
+
+it('does not publish refresh data after a real catalog put-success transaction abort', async () => {
+  const db = await openFileExplorerDB()
+  await db.put('folder-records', rootFolder)
+  const plan = buildSyncRefreshPlan({
+    providerConnectionId: 'connection-1',
+    providerType: 'local-fs',
+    rootFolder,
+    rootRemoteFolderId: '.',
+    offlinePolicy: 'on-demand',
+    platform: 'electron',
+    existingFolders: [rootFolder],
+    existingItems: [],
+    existingEntries: [],
+    remoteItems: [
+      {
+        remoteItemId: 'new-file',
+        parentRemoteItemId: '.',
+        kind: 'file',
+        name: 'new.jpg',
+        mimeType: 'image/jpeg',
+        size: 4
+      }
+    ]
+  })
+  const before = useFileExplorerStore.getState()
+  const publish = vi.fn()
+  const unsubscribe = useFileExplorerStore.subscribe(publish)
+  const originalPut = IDBObjectStore.prototype.put
+  let aborted = 0
+  const put = vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(function (
+    this: IDBObjectStore,
+    value: unknown,
+    key?: IDBValidKey
+  ) {
+    const request = originalPut.call(this, value, key)
+    if (this.name === 'folder-items')
+      request.addEventListener(
+        'success',
+        () => {
+          aborted++
+          this.transaction.abort()
+        },
+        { once: true }
+      )
+    return request
+  })
+  try {
+    await expect(applySyncRefreshPlan(plan, [], rootFolder)).rejects.toMatchObject({
+      name: 'AbortError'
+    })
+  } finally {
+    put.mockRestore()
+    unsubscribe()
+  }
+  expect(aborted).toBe(1)
+  expect(publish).not.toHaveBeenCalled()
+  expect(useFileExplorerStore.getState()).toBe(before)
+  expect(await db.getAll('folder-items')).toEqual([])
+  expect(await getSyncEntryByRemoteItem('connection-1', 'new-file')).toBeUndefined()
 })
