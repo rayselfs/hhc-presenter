@@ -626,11 +626,12 @@ describe('OneDrive service lifecycle', () => {
       const deferred = new Promise<Response>((resolve) => {
         finish = resolve
       })
-      const token = () =>
+      const token = (): Response =>
         new Response(JSON.stringify({ access_token: 'late', refresh_token: 'late-refresh' }), {
           status: 200
         })
-      const profile = () => new Response(JSON.stringify({ id: 'late-account' }), { status: 200 })
+      const profile = (): Response =>
+        new Response(JSON.stringify({ id: 'late-account' }), { status: 200 })
       mockNetFetch
         .mockReturnValueOnce(stage === 'token' ? deferred : Promise.resolve(token()))
         .mockReturnValueOnce(stage === 'profile' ? deferred : Promise.resolve(profile()))
