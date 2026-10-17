@@ -57,8 +57,3 @@ const DESCRIPTORS: MediaTypeDescriptor[] = [
 export function getDescriptor(mimeType: string): MediaTypeDescriptor | null {
   return DESCRIPTORS.find((d) => d.matches(mimeType)) ?? null
 }
-
-export function getDescriptorByType<K extends MediaType>(type: K): MediaTypeDescriptor<K> | null {
-  const found = DESCRIPTORS.find((d) => d.type === type)
-  return (found as MediaTypeDescriptor<K> | undefined) ?? null
-}
