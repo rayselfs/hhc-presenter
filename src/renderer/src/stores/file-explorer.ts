@@ -1,3 +1,4 @@
+import { createFileExplorerFolderDB } from '@renderer/lib/folder-db'
 import { useCallback } from 'react'
 import { FOLDER_DURATION_MS } from '@shared/types/folder'
 import { assertLocalDestination, commitLocalFileItem } from '@renderer/lib/file-catalog-mutations'
@@ -85,7 +86,7 @@ export const useFileExplorerStore = createFolderStore({
   rootId: FILE_EXPLORER_ROOT_ID,
   rootName: 'Files',
   isVisible: isPersonalRecordVisible,
-  getDB: () => openFileExplorerDB()
+  persistence: createFileExplorerFolderDB()
 })
 
 let personalCatalogGeneration = 0
