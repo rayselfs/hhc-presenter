@@ -12,6 +12,7 @@ export interface DispatchPlannedSyncDownloadsInput {
   plan: Pick<SyncRefreshPlan, 'fileTransfers' | 'items'>
   remoteItems: RemoteSyncItem[]
   existingEntries: SyncEntryRecord[]
+  withCommitLock?: (mutation: () => Promise<void>) => Promise<void>
   canCommit?: (transfer: SyncFileTransfer) => boolean | Promise<boolean>
   onFailed?: (error: unknown, transfer: SyncFileTransfer) => void | Promise<void>
   onDownloaded?: (item: FileItemRecord, canCommit: SyncDownloadCommitGuard) => void | Promise<void>
@@ -51,6 +52,7 @@ export function dispatchPlannedSyncDownloads(input: DispatchPlannedSyncDownloads
       },
       previousEntry: existingByRemoteId.get(transfer.remoteItemId),
       priority: 'background',
+      withCommitLock: input.withCommitLock,
       canCommit: input.canCommit ? () => input.canCommit!(transfer) : undefined,
       onFailed: input.onFailed ? (error) => input.onFailed!(error, transfer) : undefined,
       onDownloaded:
