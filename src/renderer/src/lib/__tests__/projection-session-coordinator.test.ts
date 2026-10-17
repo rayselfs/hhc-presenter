@@ -33,6 +33,8 @@ const fileShow: ProjectionPayload<'file:show'> = {
 
 const playback: ProjectionPayload<'file:playback-state'> = {
   itemId: 'video-1',
+  blobId: 'blob-1',
+  contentRevision: 1,
   phase: 'playing',
   currentTime: 24,
   duration: 120,
@@ -53,6 +55,59 @@ describe('ProjectionSessionCoordinator', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('rejects queued reports from previous content of the same item before acknowledging controls', () => {
+    const coordinator = createProjectionSessionCoordinator(send)
+    coordinator.startSession('media', [['file:show', fileShow]])
+    coordinator.beginGeneration({ generation: 3, status: 'opening', reason: 'created' })
+    coordinator.ready(3)
+    const oldShow = coordinator.getSnapshot()!.media.show!
+    const oldReport = {
+      ...playback,
+      blobId: oldShow.blobId,
+      contentRevision: oldShow.contentRevision
+    }
+    coordinator.project('file:show', { ...fileShow, blobId: 'replacement-blob' })
+    coordinator.project('file:control', { action: 'seek', itemId: fileShow.itemId, value: 24 })
+    const before = coordinator.getSnapshot()
+    const changed = vi.fn()
+    const unsubscribe = coordinator.subscribe(changed)
+    expect(coordinator.recordPlayback(3, oldReport)).toBe(false)
+    expect(coordinator.getSnapshot()).toBe(before)
+    const { blobId: _blobId, contentRevision: _revision, ...legacyPlayback } = playback
+    expect(coordinator.recordPlayback(3, legacyPlayback)).toBe(false)
+    const currentShow = coordinator.getSnapshot()!.media.show!
+    const wrongBlob = {
+      ...playback,
+      blobId: oldShow.blobId,
+      contentRevision: currentShow.contentRevision
+    }
+    expect(coordinator.recordPlayback(3, wrongBlob)).toBe(false)
+    expect(coordinator.recordPlayback(3, { ...oldReport, blobId: currentShow.blobId })).toBe(false)
+    expect(coordinator.recordPlayback(3, { ...legacyPlayback, blobId: currentShow.blobId })).toBe(
+      false
+    )
+    expect(changed).not.toHaveBeenCalled()
+    coordinator.replay(3)
+    expect(send).toHaveBeenLastCalledWith(
+      '__system:replay',
+      expect.objectContaining({
+        pendingFileControls: { itemId: fileShow.itemId, seekSeconds: 24 }
+      })
+    )
+    const currentReport = {
+      ...playback,
+      blobId: currentShow.blobId,
+      contentRevision: currentShow.contentRevision
+    }
+    expect(coordinator.recordPlayback(3, currentReport)).toBe(true)
+    expect(coordinator.getSnapshot()!.media.state!.positionSeconds).toBe(24)
+    expect(changed).toHaveBeenCalledOnce()
+    coordinator.replay(3)
+    expect(send.mock.calls.at(-1)?.[1]).not.toHaveProperty('pendingFileControls')
+    unsubscribe()
+    coordinator.dispose()
   })
 
   it('invalidates pending preparation on every explicit intent, not ticks or recovery', () => {
@@ -225,6 +280,7 @@ describe('ProjectionSessionCoordinator', () => {
 
     expect(coordinator.getSnapshot()?.media.state).toEqual({
       itemId: 'video-2',
+      playlistEnded: false,
       positionSeconds: 0,
       durationSeconds: 0,
       isPlaying: false,
@@ -285,15 +341,36 @@ describe('ProjectionSessionCoordinator', () => {
     })
   })
 
-  it('never writes file:end into the replay snapshot', () => {
+  it('replays playlist termination and rejects late playback until an explicit show', () => {
     const coordinator = createProjectionSessionCoordinator(send)
     coordinator.startSession('media', [['file:show', fileShow]])
-    const before = coordinator.getSnapshot()
-
+    coordinator.beginGeneration({ generation: 3, status: 'opening', reason: 'created' })
+    coordinator.recordPlayback(3, playback)
     coordinator.sendOneShot('file:end', null)
+    coordinator.project('file:control', { action: 'play', itemId: fileShow.itemId })
+    coordinator.recordPlayback(3, playback)
 
-    expect(coordinator.getSnapshot()).toEqual(before)
-    expect(send).not.toHaveBeenCalled()
+    expect(coordinator.getSnapshot()?.media.state).toMatchObject({
+      playlistEnded: true,
+      isPlaying: false,
+      isEnded: false
+    })
+    coordinator.ready(3)
+    expect(send).toHaveBeenCalledWith(
+      '__system:replay',
+      expect.objectContaining({
+        snapshot: expect.objectContaining({
+          media: expect.objectContaining({
+            state: expect.objectContaining({ playlistEnded: true })
+          })
+        })
+      })
+    )
+    coordinator.blackout(true)
+    coordinator.blackout(false)
+    expect(coordinator.getSnapshot()?.media.state?.playlistEnded).toBe(true)
+    coordinator.project('file:show', fileShow)
+    expect(coordinator.getSnapshot()?.media.state).toMatchObject({ playlistEnded: false })
   })
 
   it('clears the snapshot on explicit session end', () => {
@@ -481,13 +558,15 @@ describe('ProjectionSessionCoordinator', () => {
     expect(send).not.toHaveBeenCalled()
 
     coordinator.ready(2)
+    coordinator.project('file:show', fileShow)
     send.mockClear()
     coordinator.project('file:control', { action: 'play', itemId: 'video-1' })
     coordinator.sendOneShot('file:end', null)
 
     expect(send.mock.calls).toEqual([
       ['file:control', { action: 'play', itemId: 'video-1' }],
-      ['file:end', null]
+      ['file:end', null],
+      ['__system:replay', { generation: 2, snapshot: coordinator.getSnapshot() }]
     ])
   })
 
@@ -692,4 +771,55 @@ describe('late video promotion', () => {
       expect(coordinator.promoteVideo(1, error)).toBe(false)
     }
   )
+})
+
+it('publishes a stable coordinator view and retains the last owner after close', () => {
+  const coordinator = createProjectionSessionCoordinator(vi.fn())
+  try {
+    const initial = coordinator.getViewState()
+    expect(coordinator.getViewState()).toBe(initial)
+    const observed: ReturnType<typeof coordinator.getViewState>[] = []
+    const unsubscribe = coordinator.subscribe(() => observed.push(coordinator.getViewState()))
+    coordinator.startSession('bible', [['bible:chapter', chapter]])
+    const started = coordinator.getViewState()
+    expect(started).not.toBe(initial)
+    expect(started.snapshot).toBe(coordinator.getSnapshot())
+    expect(started.recovery).toBe(coordinator.getRecoveryState())
+    expect(started.activeOwner).toBe('bible')
+    coordinator.endSession()
+    const closed = coordinator.getViewState()
+    expect(closed).toMatchObject({
+      snapshot: null,
+      activeOwner: 'bible',
+      recovery: { status: 'closed' }
+    })
+    expect(observed).toEqual([started, closed])
+    expect(coordinator.getViewState()).toBe(closed)
+    unsubscribe()
+  } finally {
+    coordinator.dispose()
+  }
+})
+
+it('keeps duplicate ready notifications idempotent and permits explicit same-generation recovery', () => {
+  const send = vi.fn()
+  const coordinator = createProjectionSessionCoordinator(send)
+  try {
+    coordinator.startSession('timer', [['timer:tick', timerTick]])
+    coordinator.beginGeneration({ generation: 1, status: 'opening', reason: 'created' })
+    coordinator.ready(1)
+    const ready = coordinator.getViewState()
+    send.mockClear()
+    coordinator.beginGeneration({ generation: 1, status: 'ready', reason: 'created' })
+    expect(coordinator.getRecoveryState().status).toBe('ready')
+    expect(coordinator.getViewState()).toBe(ready)
+    expect(send).not.toHaveBeenCalled()
+    coordinator.beginGeneration({ generation: 1, status: 'recovering', reason: 'reload' })
+    coordinator.ready(1)
+    expect(coordinator.getViewState().recovery.status).toBe('ready')
+    expect(coordinator.getViewState()).not.toBe(ready)
+    expect(send).toHaveBeenCalledOnce()
+  } finally {
+    coordinator.dispose()
+  }
 })

@@ -1,3 +1,6 @@
+vi.mock('../../lib/native-storage', () => ({
+  getNativeFilePath: (id: string) => `${mocks.root}/${id}`
+}))
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -20,7 +23,6 @@ vi.mock('electron', () => ({
   net: { fetch: mocks.fetch }
 }))
 vi.mock('../../ipc/native-fs', () => ({
-  getNativeFilePath: (id: string) => `${mocks.root}/${id}`,
   clearNativeMediaLeases: vi.fn(),
   registerNativeMediaLease: vi.fn(),
   releaseNativeMediaLease: vi.fn()

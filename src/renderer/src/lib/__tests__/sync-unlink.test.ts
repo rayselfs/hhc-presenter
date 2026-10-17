@@ -43,6 +43,16 @@ const { mockDeleteSyncEntryPreferences, mockDeleteSyncEntryPreferencesByProvider
     mockDeleteSyncEntryPreferencesByProviderConnection: vi.fn()
   }))
 
+vi.mock('../sync-refresh-lifetime', async () => {
+  const actual = await vi.importActual<typeof import('../sync-refresh-lifetime')>(
+    '../sync-refresh-lifetime'
+  )
+  return {
+    ...actual,
+    withSyncConnectionMutation: (_id: string, operation: () => Promise<unknown>) => operation()
+  }
+})
+
 vi.mock('../file-resource-cleanup', () => ({
   cleanupFileResources: mockCleanupFileResources,
   listFileResourceCleanupItemIds: mockListFileResourceCleanupItemIds

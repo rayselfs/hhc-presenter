@@ -6,7 +6,7 @@ import type {
   OneDriveNativeDownloadResult
 } from '@shared/ipc-channels'
 import type { WindowManager } from '../windowManager'
-import { getNativeFilePath } from './native-fs'
+import { getNativeFilePath } from '../lib/native-storage'
 import { isMainWindow } from './validate'
 import { mutateVideoSource } from './video-remux'
 

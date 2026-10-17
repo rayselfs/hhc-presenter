@@ -1,3 +1,4 @@
+import { notifyThumbnailReady } from './thumbnail-events'
 import { isWeb } from './env'
 import { MediaJobBlockedError, mediaJobQueue } from './media-job-queue'
 import type { MediaJobRecord } from './media-work-db'
@@ -201,11 +202,7 @@ mediaJobQueue.registerExecutor('video-poster', async (job) => {
     await assertPosterCommit(job, ownership)
     await saveThumbnail(blobId, result.dataUrl)
     await assertPosterCommit(job, ownership)
-    window.dispatchEvent(
-      new CustomEvent('hhc:thumbnail-ready', {
-        detail: { itemId: job.itemId, dataUrl: result.dataUrl }
-      })
-    )
+    notifyThumbnailReady(job.itemId, blobId)
   } finally {
     guards.delete(blobId)
   }

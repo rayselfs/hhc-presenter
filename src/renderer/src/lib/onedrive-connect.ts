@@ -1,5 +1,11 @@
+import { createSyncRefreshGuard, withSyncConnectionMutation } from './sync-refresh-lifetime'
 import type { FileItemRecord, FolderRecord, SyncOfflinePolicy } from '@shared/types/folder'
-import { FILE_EXPLORER_ROOT_ID, useFileExplorerStore } from '@renderer/stores/file-explorer'
+import {
+  FILE_EXPLORER_ROOT_ID,
+  useFileExplorerStore,
+  mergePersistedSyncCatalog,
+  publishPersistedSyncRoot
+} from '@renderer/stores/file-explorer'
 import { getEffectiveOneDriveClientId, useSettingsStore } from '@renderer/stores/settings'
 import { isElectron } from './env'
 import {
@@ -34,7 +40,6 @@ import {
   saveWebOneDriveCredentials
 } from './onedrive-web-credentials'
 import type { MediaPlatform } from './media-capabilities'
-import { classifyMediaImport } from './media-import-policy'
 import type { RemoteSyncItem } from './sync-provider'
 import { enqueueSyncDownload } from './sync-download-queue'
 import {
@@ -44,32 +49,11 @@ import {
   collectSyncChangePages
 } from './sync-refresh'
 import { refreshImportedMediaAssets } from './local-sync-import'
-import { isIgnoredSystemPath } from '@shared/file-ignore-policy'
 import { dispatchPlannedSyncDownloads } from './sync-transfer-dispatch'
 
 const ONEDRIVE_WEB_CALLBACK_PATH = '/onedrive-callback.html'
 const ONEDRIVE_WEB_CALLBACK_STORAGE_KEY = 'hhc-presenter:onedrive-callback'
 const ONEDRIVE_WEB_CALLBACK_TIMEOUT_MS = 2 * 60_000
-
-function publishOneDriveRootFolder(root: FolderRecord): void {
-  useFileExplorerStore.setState((state) => {
-    const folders = { ...state.folders, [root.id]: root }
-    const siblings = [
-      ...(state._childFoldersByParent[root.parentId!] ?? []).filter(
-        (folder) => folder.id !== root.id
-      ),
-      root
-    ].sort((left, right) => left.sortIndex - right.sortIndex)
-    return {
-      folders,
-      _foldersArray: Object.values(folders),
-      _childFoldersByParent: {
-        ...state._childFoldersByParent,
-        [root.parentId!]: siblings
-      }
-    }
-  })
-}
 
 function rootOwner(
   id: string | undefined,
@@ -230,77 +214,6 @@ function createRootFolderId(connectionId: string, remoteFolderId: string): strin
   return `onedrive-folder-${safeIdPart(connectionId)}-${safeIdPart(remoteFolderId)}`
 }
 
-function createSyncedFolderId(connectionId: string, remoteItemId: string): string {
-  return `onedrive-folder-${safeIdPart(connectionId)}-${safeIdPart(remoteItemId)}`
-}
-
-function createSyncedItemId(): string {
-  return crypto.randomUUID()
-}
-
-function classifyRemoteFile(
-  item: RemoteSyncItem,
-  platform: MediaPlatform
-): {
-  mimeType: string
-  disabled: boolean
-  skip: boolean
-} {
-  const decision = classifyMediaImport({ name: item.name, mimeType: item.mimeType }, platform)
-  if (decision.action === 'skip') return { mimeType: decision.mimeType, disabled: true, skip: true }
-  return {
-    mimeType: decision.mimeType,
-    disabled: decision.action === 'platform-unsupported',
-    skip: false
-  }
-}
-
-function sortByIndex<T extends { sortIndex: number }>(items: T[]): T[] {
-  return items.slice().sort((a, b) => a.sortIndex - b.sortIndex)
-}
-
-function mergeImportedRecordsIntoStore(folders: FolderRecord[], items: FileItemRecord[]): void {
-  const importedParentIds = new Set<string>(folders.map((folder) => folder.id))
-  importedParentIds.add(FILE_EXPLORER_ROOT_ID)
-  for (const item of items) importedParentIds.add(item.parentId)
-
-  useFileExplorerStore.setState((state) => {
-    const nextFolders = { ...state.folders }
-    const nextItems = { ...state.items }
-    for (const folder of folders) nextFolders[folder.id] = folder
-    for (const item of items) nextItems[item.id] = item
-
-    const childFoldersByParent: typeof state._childFoldersByParent = {}
-    for (const folder of Object.values(nextFolders)) {
-      if (folder.parentId === null) continue
-      const list = childFoldersByParent[folder.parentId] ?? []
-      list.push(folder)
-      childFoldersByParent[folder.parentId] = list
-    }
-    for (const parentId of Object.keys(childFoldersByParent)) {
-      childFoldersByParent[parentId] = sortByIndex(childFoldersByParent[parentId])
-    }
-
-    const loadedParents = new Set([...state.loadedParents, ...importedParentIds])
-    const itemsByParent: typeof state._itemsByParent = {}
-    for (const parentId of loadedParents) {
-      itemsByParent[parentId] = sortByIndex(
-        Object.values(nextItems).filter((item) => item.parentId === parentId)
-      )
-    }
-
-    return {
-      folders: nextFolders,
-      items: nextItems,
-      _foldersArray: Object.values(nextFolders),
-      _itemsArray: Object.values(nextItems),
-      _childFoldersByParent: childFoldersByParent,
-      _itemsByParent: itemsByParent,
-      loadedParents
-    }
-  })
-}
-
 export function buildOneDriveImportPlan(input: {
   connectionId: string
   displayName: string
@@ -327,126 +240,46 @@ export function buildOneDriveImportPlan(input: {
     }
   }
 
-  const folders: FolderRecord[] = [rootFolder]
-  const items: FileItemRecord[] = []
-  const syncEntries: OneDriveImportPlan['syncEntries'] = [
-    {
-      providerConnectionId: input.connectionId,
-      remoteItemId: input.rootRemoteFolderId,
-      parentRemoteItemId: null,
-      kind: 'folder',
-      name: input.displayName,
-      folderId: rootFolderId,
-      status: 'remote-only'
-    }
-  ]
-  const downloadableItems: OneDriveImportPlan['downloadableItems'] = []
-  const remoteFolderToLocalId = new Map<string | null, string>([
-    [null, rootFolderId],
-    [input.rootRemoteFolderId, rootFolderId]
-  ])
-  const folderSortCounts = new Map<string, number>([
-    [FILE_EXPLORER_ROOT_ID, input.existingRootFolderNames.length + 1]
-  ])
-  const itemSortCounts = new Map<string, number>()
-  const ignoredRemoteIds = new Set<string>()
-  let disabledCount = 0
-
-  for (const remoteItem of input.remoteItems) {
-    if (
-      isIgnoredSystemPath(remoteItem.name) ||
-      (remoteItem.parentRemoteItemId && ignoredRemoteIds.has(remoteItem.parentRemoteItemId))
-    ) {
-      ignoredRemoteIds.add(remoteItem.remoteItemId)
-      continue
-    }
-    if (remoteItem.kind !== 'folder' || remoteItem.deleted) continue
-    if (remoteItem.remoteItemId === input.rootRemoteFolderId) continue
-    const parentId = remoteFolderToLocalId.get(remoteItem.parentRemoteItemId) ?? rootFolderId
-    const folderId = createSyncedFolderId(input.connectionId, remoteItem.remoteItemId)
-    const sortIndex = folderSortCounts.get(parentId) ?? 0
-    folderSortCounts.set(parentId, sortIndex + 1)
-    folders.push({
-      id: folderId,
-      name: remoteItem.name,
-      parentId,
-      sortIndex,
-      createdAt: now,
-      expiresAt: null,
-      syncLink: {
+  const plan = buildSyncRefreshPlan({
+    providerConnectionId: input.connectionId,
+    providerType: 'onedrive',
+    rootFolder,
+    rootRemoteFolderId: input.rootRemoteFolderId,
+    offlinePolicy: input.offlinePolicy,
+    platform: input.platform,
+    existingFolders: [],
+    existingItems: [],
+    existingEntries: [],
+    // Initial imports use the import clock; refresh preserves source timestamps.
+    remoteItems: input.remoteItems.map((item) => ({ ...item, sourceCreatedAt: undefined })),
+    now
+  })
+  const itemById = new Map(plan.items.map((item) => [item.id, item]))
+  const downloadableItems = plan.syncEntries.flatMap((entry) =>
+    entry.itemId && !itemById.get(entry.itemId)?.url.startsWith('unsupported:')
+      ? [{ itemId: entry.itemId, remoteItemId: entry.remoteItemId }]
+      : []
+  )
+  return {
+    folders: [rootFolder, ...plan.folders],
+    items: plan.items,
+    syncEntries: [
+      {
         providerConnectionId: input.connectionId,
-        remoteFolderId: remoteItem.remoteItemId,
-        providerType: 'onedrive',
-        offlinePolicy: input.offlinePolicy
-      }
-    })
-    remoteFolderToLocalId.set(remoteItem.remoteItemId, folderId)
-    syncEntries.push({
-      providerConnectionId: input.connectionId,
-      remoteItemId: remoteItem.remoteItemId,
-      parentRemoteItemId: remoteItem.parentRemoteItemId,
-      kind: 'folder',
-      name: remoteItem.name,
-      folderId,
-      status: 'remote-only'
-    })
-  }
-
-  for (const remoteItem of input.remoteItems) {
-    if (ignoredRemoteIds.has(remoteItem.remoteItemId)) continue
-    if (remoteItem.kind !== 'file' || remoteItem.deleted) continue
-    const parentId = remoteFolderToLocalId.get(remoteItem.parentRemoteItemId) ?? rootFolderId
-    const policy = classifyRemoteFile(remoteItem, input.platform)
-    if (policy.skip) continue
-    const itemId = createSyncedItemId()
-    const sortIndex = itemSortCounts.get(parentId) ?? 0
-    itemSortCounts.set(parentId, sortIndex + 1)
-    items.push({
-      id: itemId,
-      parentId,
-      type: 'file',
-      sortIndex,
-      createdAt: now,
-      expiresAt: null,
-      name: remoteItem.name,
-      url: policy.disabled ? `unsupported:${itemId}` : `blob:${itemId}`,
-      size: remoteItem.size ?? 0,
-      mimeType: policy.mimeType
-    })
-    if (policy.disabled) {
-      disabledCount++
-      syncEntries.push({
-        providerConnectionId: input.connectionId,
-        remoteItemId: remoteItem.remoteItemId,
-        parentRemoteItemId: remoteItem.parentRemoteItemId,
-        kind: 'file',
-        name: remoteItem.name,
-        itemId,
-        mimeType: policy.mimeType,
-        size: remoteItem.size,
-        etag: remoteItem.etag,
-        contentHash: remoteItem.contentHash,
+        remoteItemId: input.rootRemoteFolderId,
+        parentRemoteItemId: null,
+        kind: 'folder',
+        name: input.displayName,
+        folderId: rootFolderId,
         status: 'remote-only'
-      })
-      continue
-    }
-    downloadableItems.push({ itemId, remoteItemId: remoteItem.remoteItemId })
-    syncEntries.push({
-      providerConnectionId: input.connectionId,
-      remoteItemId: remoteItem.remoteItemId,
-      parentRemoteItemId: remoteItem.parentRemoteItemId,
-      kind: 'file',
-      name: remoteItem.name,
-      itemId,
-      mimeType: policy.mimeType,
-      size: remoteItem.size,
-      etag: remoteItem.etag,
-      contentHash: remoteItem.contentHash,
-      status: input.offlinePolicy === 'always-offline' ? 'queued' : 'remote-only'
-    })
+      },
+      ...plan.syncEntries.map((entry) =>
+        entry.kind === 'folder' ? { ...entry, status: 'remote-only' as const } : entry
+      )
+    ],
+    downloadableItems,
+    disabledCount: plan.disabledCount
   }
-
-  return { folders, items, syncEntries, downloadableItems, disabledCount }
 }
 
 async function exchangeWebToken(input: {
@@ -780,7 +613,7 @@ export async function importOneDriveFolder(
     })
   }
 
-  mergeImportedRecordsIntoStore(plan.folders, plan.items)
+  mergePersistedSyncCatalog(plan.folders, plan.items)
 
   if (defaultSyncOfflinePolicy === 'always-offline') {
     dispatchPlannedSyncDownloads({
@@ -872,6 +705,7 @@ async function runOneDriveFolderRefresh(
   if (!rootFolder || !syncLink || syncLink.providerType !== 'onedrive') {
     throw new Error('OneDrive root folder not found')
   }
+  const canCommit = createSyncRefreshGuard(rootFolder)
   const refreshedRoot =
     syncLink.offlinePolicy === offlinePolicy
       ? rootFolder
@@ -951,19 +785,22 @@ async function runOneDriveFolderRefresh(
     plan.removedItemIds = []
   }
 
-  await applySyncRefreshPlan(plan)
-  if (!scope.protectRemovals && scan.nextCursor) {
-    await putSyncCursor({
-      providerConnectionId: syncLink.providerConnectionId,
-      remoteFolderId: syncLink.remoteFolderId,
-      cursor: scan.nextCursor,
-      updatedAt: Date.now()
-    })
-  }
-  if (refreshedRoot !== rootFolder) {
-    await db.put('folder-records', refreshedRoot)
-    publishOneDriveRootFolder(refreshedRoot)
-  }
+  await withSyncConnectionMutation(syncLink.providerConnectionId, async () => {
+    if (!(await canCommit())) throw new Error('Sync refresh was revoked')
+    await applySyncRefreshPlan(plan, [], rootFolder)
+    if (!scope.protectRemovals && scan.nextCursor) {
+      await putSyncCursor({
+        providerConnectionId: syncLink.providerConnectionId,
+        remoteFolderId: syncLink.remoteFolderId,
+        cursor: scan.nextCursor,
+        updatedAt: Date.now()
+      })
+    }
+    if (refreshedRoot !== rootFolder) {
+      await db.put('folder-records', refreshedRoot)
+      publishPersistedSyncRoot(refreshedRoot)
+    }
+  })
 
   const downloadedCount = 0
   const failedFileCount = 0
@@ -976,15 +813,22 @@ async function runOneDriveFolderRefresh(
     .map((entry) => entry.nextRetryAt)
     .filter((value): value is number => typeof value === 'number')
     .sort((a, b) => a - b)[0]
+  if (!(await canCommit())) throw new Error('Sync refresh was revoked')
   dispatchPlannedSyncDownloads({
     provider,
+    canCommit,
+    withCommitLock: (mutation) =>
+      withSyncConnectionMutation(syncLink.providerConnectionId, mutation),
     providerConnectionId: syncLink.providerConnectionId,
     rootRemoteFolderId: syncLink.remoteFolderId,
     offlinePolicy,
     plan,
     remoteItems: scan.remoteItems,
     existingEntries,
-    onDownloaded: (item) => refreshImportedMediaAssets([item])
+    onDownloaded: (item, guard) =>
+      withSyncConnectionMutation(syncLink.providerConnectionId, () =>
+        refreshImportedMediaAssets([item], guard)
+      )
   })
 
   const changedCount =

@@ -6,6 +6,7 @@ export type PersistenceQueueSnapshot = {
 
 export type PersistenceOperationQueue = {
   enqueue: (operation: () => Promise<void>) => void
+  commit: (operation: () => Promise<void>) => Promise<void>
   retry: () => Promise<void>
   flush: () => Promise<void>
   snapshot: () => PersistenceQueueSnapshot
@@ -13,7 +14,10 @@ export type PersistenceOperationQueue = {
 }
 
 export function createPersistenceOperationQueue(): PersistenceOperationQueue {
-  const operations: Array<() => Promise<void>> = []
+  const operations: Array<{
+    run: () => Promise<void>
+    rejectWhenBlocked?: (cause: unknown) => void
+  }> = []
   const listeners = new Set<(snapshot: PersistenceQueueSnapshot) => void>()
   let status: PersistenceQueueSnapshot['status'] = 'idle'
   let error: string | null = null
@@ -40,10 +44,17 @@ export function createPersistenceOperationQueue(): PersistenceOperationQueue {
     drainPromise = (async () => {
       while (operations.length > 0) {
         try {
-          await operations[0]()
+          await operations[0].run()
         } catch (cause) {
           status = 'failed'
           error = cause instanceof Error ? cause.message : String(cause)
+          for (let index = operations.length - 1; index > 0; index--) {
+            const blocked = operations[index].rejectWhenBlocked
+            if (blocked) {
+              operations.splice(index, 1)
+              blocked(cause)
+            }
+          }
           emit()
           return
         }
@@ -57,22 +68,46 @@ export function createPersistenceOperationQueue(): PersistenceOperationQueue {
       emit()
     })().finally(() => {
       drainPromise = null
+      if (status !== 'failed' && operations.length > 0) void drain()
     })
 
     return drainPromise
   }
 
-  return {
-    enqueue(operation): void {
-      operations.push(operation)
-      emit()
-      void drain()
-    },
-
-    async flush(): Promise<void> {
+  const enqueue = (operation: () => Promise<void>): void => {
+    operations.push({ run: operation })
+    emit()
+    void drain()
+  }
+  const flush = async (): Promise<void> => {
+    do {
       await drain()
-      if (status === 'failed') throw new Error(error ?? 'Unable to save pending changes')
+    } while (status !== 'failed' && operations.length > 0)
+    if (status === 'failed') throw new Error(error ?? 'Unable to save pending changes')
+  }
+
+  return {
+    enqueue,
+    commit(operation): Promise<void> {
+      if (status === 'failed')
+        return Promise.reject(new Error(error ?? 'Unable to save pending changes'))
+      return new Promise<void>((resolve, reject) => {
+        operations.push({
+          rejectWhenBlocked: reject,
+          async run(): Promise<void> {
+            try {
+              await operation()
+              resolve()
+            } catch (cause) {
+              reject(cause)
+            }
+          }
+        })
+        emit()
+        void drain()
+      })
     },
+    flush,
 
     async retry(): Promise<void> {
       if (drainPromise) await drainPromise

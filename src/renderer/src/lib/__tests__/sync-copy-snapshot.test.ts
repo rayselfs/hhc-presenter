@@ -1,7 +1,7 @@
 import { Blob as NodeBlob, File as NodeFile } from 'node:buffer'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { FileItemRecord, FolderRecord, SyncProviderType } from '@shared/types/folder'
-import { useFileExplorerStore } from '../../stores/file-explorer'
+import { copyExplorerFile, useFileExplorerStore } from '../../stores/file-explorer'
 import { getBlobId } from '../blob-identity'
 import { openFileExplorerDB, resetFileExplorerDBForTests } from '../file-explorer-db'
 
@@ -101,7 +101,7 @@ it.each(['local-fs', 'onedrive', 'hhc-line', 'hhc-share'] as const)(
   async (provider) => {
     await seed(provider)
     const db = await openFileExplorerDB()
-    const id = await useFileExplorerStore.getState().copyItem('source', 'file-root')
+    const id = await copyExplorerFile('source', 'file-root')
     const copy = (await db.get('folder-items', id!)) as FileItemRecord
     expect(getBlobId(copy)).not.toBe('source')
     expect(copy).toMatchObject({
@@ -120,7 +120,7 @@ it.each(['local-fs', 'onedrive', 'hhc-line', 'hhc-share'] as const)(
 it('imports independent native bytes rather than retaining the mutable native path', async () => {
   await seed('local-fs', true)
   const db = await openFileExplorerDB()
-  const id = await useFileExplorerStore.getState().copyItem('source', 'file-root')
+  const id = await copyExplorerFile('source', 'file-root')
   const copy = (await db.get('folder-items', id!)) as FileItemRecord
   expect(getBlobId(copy)).not.toBe('source')
   nativeFiles.set('source', new NodeBlob(['B']) as Blob)
@@ -135,10 +135,37 @@ it('imports independent native bytes rather than retaining the mutable native pa
 it('does not publish a copy when reading the source fails', async () => {
   await seed('onedrive')
   fetchSource.mockRejectedValueOnce(new Error('Read failed'))
-  await expect(useFileExplorerStore.getState().copyItem('source', 'file-root')).rejects.toThrow(
-    'Read failed'
-  )
+  await expect(copyExplorerFile('source', 'file-root')).rejects.toThrow('Read failed')
   const db = await openFileExplorerDB()
   expect((await db.getAll('folder-items')).map((item) => item.id)).toEqual(['source'])
   expect((await db.getAll('file-blobs')).map((blob) => blob.id)).toEqual(['source'])
+})
+
+it('keeps personal-copy failure as null and reports it without publishing a copy', async () => {
+  await seed('onedrive')
+  const { usePersonalSyncStore } = await import('../../stores/personal-sync')
+  const state = useFileExplorerStore.getState()
+  useFileExplorerStore.setState({
+    folders: {
+      ...state.folders,
+      personal: {
+        id: 'personal',
+        parentId: 'file-root',
+        name: 'Personal',
+        sortIndex: 0,
+        createdAt: 1,
+        expiresAt: null,
+        personalOwnerId: 'owner'
+      }
+    }
+  })
+  fetchSource.mockRejectedValueOnce(new Error('Read failed'))
+  expect(await copyExplorerFile('source', 'personal')).toBeNull()
+  expect(usePersonalSyncStore.getState()).toMatchObject({
+    syncStatus: 'failed',
+    errorCode: 'Read failed'
+  })
+  const db = await openFileExplorerDB()
+  expect((await db.getAll('folder-items')).map((item) => item.id)).toEqual(['source'])
+  expect(Object.keys(useFileExplorerStore.getState().items)).toEqual(['source'])
 })
