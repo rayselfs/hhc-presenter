@@ -1,7 +1,7 @@
 /**
  * Web Worker timer engine
  * Runs setInterval(100) — not throttled in background tabs
- * Uses targetEndTime for drift-free countdown (absolute endpoint approach)
+ * The renderer runtime owns the final deadline; ticks continue until pause/reset.
  * No window, no document, no React imports
  */
 
@@ -50,6 +50,7 @@ interface TimerWorkerState {
   remainingAtPause: number
   totalDurationMs: number
   status: 'running' | 'paused' | 'stopped'
+  hasFinished: boolean
 
   // Stopwatch
   stopwatchStatus: 'running' | 'paused' | 'stopped'
@@ -63,6 +64,7 @@ const state: TimerWorkerState = {
   remainingAtPause: 0,
   totalDurationMs: 0,
   status: 'stopped',
+  hasFinished: false,
 
   stopwatchStatus: 'stopped',
   stopwatchStartTime: null,
@@ -105,15 +107,16 @@ function tickCountdown(): void {
 
   const remainingMs = state.targetEndTime - Date.now()
 
-  if (remainingMs <= 0) {
-    state.status = 'stopped'
-    state.targetEndTime = null
+  if (remainingMs <= 0 && !state.hasFinished) {
+    state.hasFinished = true
     _postMessage({ type: 'finished' })
-    return
+  } else if (remainingMs > 0) {
+    state.hasFinished = false
   }
 
-  const progress = Math.min(1, Math.max(0, remainingMs / state.totalDurationMs))
-  _postMessage({ type: 'tick', remainingMs, progress })
+  const progress =
+    state.totalDurationMs > 0 ? Math.min(1, Math.max(0, remainingMs / state.totalDurationMs)) : 0
+  _postMessage({ type: 'tick', remainingMs: Math.max(0, remainingMs), progress })
 }
 
 function tickStopwatch(): void {
@@ -128,6 +131,7 @@ function tickStopwatch(): void {
 
 export function handleStart(durationMs: number): void {
   stopInterval()
+  state.hasFinished = false
   state.totalDurationMs = durationMs
   state.targetEndTime = Date.now() + durationMs
   state.remainingAtPause = durationMs
@@ -157,6 +161,7 @@ export function handleReset(): void {
   state.status = 'stopped'
   state.targetEndTime = null
   state.remainingAtPause = 0
+  state.hasFinished = false
   state.totalDurationMs = 0
   if (needsInterval()) {
     startInterval()
@@ -181,15 +186,7 @@ export function handleRemoveTime(ms: number): void {
   } else if (state.status === 'running') {
     if (state.targetEndTime !== null) {
       state.targetEndTime = Math.max(Date.now(), state.targetEndTime - ms)
-      // Check if we're already past the end after removal
-      if (state.targetEndTime - Date.now() <= 0) {
-        state.status = 'stopped'
-        state.targetEndTime = null
-        _postMessage({ type: 'finished' })
-        if (!needsInterval()) {
-          stopInterval()
-        }
-      }
+      tickCountdown()
     }
   } else if (state.status === 'paused') {
     state.remainingAtPause = Math.max(0, state.remainingAtPause - ms)
@@ -243,6 +240,7 @@ export function resetStateForTesting(): void {
   state.intervalId = null
   state.targetEndTime = null
   state.remainingAtPause = 0
+  state.hasFinished = false
   state.totalDurationMs = 0
   state.status = 'stopped'
   state.stopwatchStatus = 'stopped'
