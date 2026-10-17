@@ -1026,6 +1026,8 @@ describe('late native decode recovery', () => {
       result.current.send('file:control', { itemId: 'video-1', action: 'volume', value: 0.2 })
       mockAdapter._trigger('file:playback-state', {
         itemId: 'video-1',
+        blobId: report.blobId,
+        contentRevision: report.contentRevision,
         phase: 'paused',
         currentTime: 70,
         duration: 100,
@@ -1337,3 +1339,138 @@ it.each(['video/mp4', 'audio/mpeg'])(
     expect(useMediaProjectionStore.getState().projectionRenderStatus).toBeNull()
   }
 )
+
+it('subscribes to the recreated coordinator in StrictMode and retains the closed owner', async () => {
+  vi.mocked(isElectron).mockReturnValue(false)
+  const { result, unmount } = renderHook(() => useProjection(), {
+    wrapper: ProjectionProvider,
+    reactStrictMode: true
+  })
+  act(() => result.current.claimProjection('bible'))
+  expect(result.current.activeOwner).toBe('bible')
+  expect(result.current.getProjectionSnapshot()?.owner).toBe('bible')
+  await act(async () => {
+    await result.current.closeProjection()
+  })
+  expect(result.current.activeOwner).toBe('bible')
+  expect(result.current.recovery.status).toBe('closed')
+  expect(result.current.getProjectionSnapshot()).toBeNull()
+  unmount()
+  expect(mockAdapter.dispose).toHaveBeenCalledTimes(2)
+})
+
+it('publishes accepted playback once with capability and monotonic start state', async () => {
+  vi.mocked(isElectron).mockReturnValue(false)
+  const previous = useMediaProjectionStore.getState()
+  const file = {
+    id: 'video-1',
+    parentId: 'root',
+    type: 'file' as const,
+    sortIndex: 0,
+    createdAt: 1,
+    expiresAt: null,
+    name: 'Movie.mkv',
+    url: 'blob:video-1',
+    size: 10,
+    mimeType: 'video/x-matroska'
+  }
+  useMediaProjectionStore.setState({
+    playlist: [file],
+    currentIndex: 0,
+    typeStates: {},
+    isEnded: false
+  })
+  const { result, unmount } = renderProjection()
+  let updates = 0
+  const unsubscribe = useMediaProjectionStore.subscribe((next, before) => {
+    if (next.typeStates.video !== before.typeStates.video) updates++
+  })
+  try {
+    let start!: Promise<unknown>
+    act(() => {
+      start = result.current.startProjection('media', [
+        [
+          'file:show',
+          {
+            itemId: file.id,
+            blobId: file.id,
+            fileName: file.name,
+            mimeType: file.mimeType,
+            playlist: [],
+            currentIndex: 0
+          }
+        ]
+      ])
+      mockAdapter._trigger('__system:ready', { generation: 1 })
+    })
+    await act(async () => {
+      await start
+    })
+    const playing: ProjectionPayload<'file:playback-state'> = {
+      itemId: file.id,
+      blobId: file.id,
+      contentRevision: result.current.getProjectionSnapshot()!.media.show!.contentRevision!,
+      phase: 'playing',
+      currentTime: 0,
+      duration: 120,
+      isPlaying: true,
+      isEnded: false,
+      seekable: false,
+      volume: 0.4
+    }
+    act(() => {
+      mockAdapter._trigger('file:playback-state', playing)
+    })
+    expect(useMediaProjectionStore.getState().typeStates.video).toMatchObject({
+      phase: 'playing',
+      currentTime: 0,
+      duration: 120,
+      isPlaying: true,
+      isEnded: false,
+      seekable: false,
+      volume: 0.4,
+      hasStarted: true
+    })
+    act(() => {
+      mockAdapter._trigger('file:playback-state', {
+        ...playing,
+        phase: 'ready',
+        isPlaying: false
+      })
+    })
+    expect(useMediaProjectionStore.getState().typeStates.video?.hasStarted).toBe(true)
+    expect(updates).toBe(2)
+    act(() => {
+      useMediaProjectionStore.setState({ playlist: [{ ...file, id: 'operator-selection' }] })
+      mockAdapter._trigger('file:playback-state', playing)
+      useMediaProjectionStore.setState({ playlist: [file] })
+    })
+    expect(updates).toBe(2)
+    act(() => {
+      mockAdapter._trigger('file:playback-state', {
+        ...playing,
+        phase: 'ended',
+        currentTime: 120,
+        isPlaying: false,
+        isEnded: true
+      })
+    })
+    expect(updates).toBe(3)
+    expect(result.current.getProjectionSnapshot()?.media.state?.playlistEnded).toBe(false)
+    expect(useMediaProjectionStore.getState().isEnded).toBe(false)
+    act(() => {
+      mockAdapter._trigger('file:playback-state', { ...playing, itemId: 'other' })
+      mockAdapter.setGeneration(2)
+      mockAdapter._trigger('file:playback-state', playing)
+      mockAdapter.setGeneration(1)
+      result.current.send('file:end', null)
+      mockAdapter._trigger('file:playback-state', playing)
+    })
+    expect(updates).toBe(3)
+    expect(result.current.getProjectionSnapshot()?.media.state?.playlistEnded).toBe(true)
+  } finally {
+    unsubscribe()
+    unmount()
+    useMediaProjectionStore.setState(previous)
+  }
+})

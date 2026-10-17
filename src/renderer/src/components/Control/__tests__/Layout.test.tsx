@@ -11,13 +11,9 @@ import { useFileExplorerStore } from '@renderer/stores/file-explorer'
 import { useBibleFolderStore } from '@renderer/stores/folder'
 import { useMediaProjectionStore } from '@renderer/stores/media-projection'
 import { useTimerStore } from '@renderer/stores/timer'
-import type { ProjectionPayload } from '@shared/projection-messages'
 import type { HhcSession } from '@shared/hhc-auth'
 import type { SyncRuntimeOptions } from '@renderer/lib/sync-runtime'
 
-const projectionEvents = vi.hoisted(() => ({
-  playback: null as ((data: ProjectionPayload<'file:playback-state'>) => void) | null
-}))
 const projectionRuntime = vi.hoisted(() => ({
   isProjectionOpen: false,
   recovery: {
@@ -108,12 +104,7 @@ vi.mock('@renderer/contexts/ProjectionContext', async (importOriginal) => {
       getProjectionSnapshot: vi.fn(() => null),
       project: vi.fn(),
       send: vi.fn(),
-      on: vi.fn(
-        (channel: string, handler: (data: ProjectionPayload<'file:playback-state'>) => void) => {
-          if (channel === 'file:playback-state') projectionEvents.playback = handler
-          return vi.fn()
-        }
-      )
+      on: vi.fn(() => vi.fn())
     }))
   }
 })
@@ -132,7 +123,6 @@ describe('Layout', () => {
     localStorage.setItem(ONBOARDED_KEY, 'true')
     useFileExplorerStore.setState({ isInitialized: true, isLoading: false })
     useBibleFolderStore.setState({ isInitialized: true, isLoading: false })
-    projectionEvents.playback = null
     projectionRuntime.isProjectionOpen = false
     projectionRuntime.recovery = { status: 'closed', generation: 0, failure: null }
     authRuntime.session = null
@@ -248,48 +238,6 @@ describe('Layout', () => {
     renderWithRouter(['/'])
     await screen.findByTestId('timer-page', {}, { timeout: 5_000 })
     expect(document.querySelector('hr')).not.toBeInTheDocument()
-  })
-
-  it('keeps the global Media bridge subscribed outside the Media workspace', async () => {
-    projectionRuntime.isProjectionOpen = true
-    projectionRuntime.recovery = { status: 'ready', generation: 1, failure: null }
-    useMediaProjectionStore.setState({
-      playlist: [
-        {
-          id: 'video-1',
-          parentId: 'root',
-          type: 'file',
-          sortIndex: 0,
-          createdAt: 1,
-          expiresAt: null,
-          name: 'clip.mp4',
-          url: 'blob:video-1',
-          size: 10,
-          mimeType: 'video/mp4'
-        }
-      ],
-      currentIndex: 0,
-      isPresenting: false,
-      typeStates: { pdf: { viewMode: 'slide' } }
-    })
-
-    renderWithRouter(['/timer'])
-    await waitFor(() => expect(projectionEvents.playback).not.toBeNull(), { timeout: 5_000 })
-    projectionEvents.playback?.({
-      itemId: 'video-1',
-      phase: 'playing',
-      currentTime: 12,
-      duration: 60,
-      isPlaying: true,
-      isEnded: false
-    })
-
-    expect(useMediaProjectionStore.getState().typeStates.video).toMatchObject({
-      currentTime: 12,
-      duration: 60,
-      isPlaying: true,
-      isEnded: false
-    })
   })
 
   it('keeps one live sync auth facade across StrictMode auth changes', async () => {

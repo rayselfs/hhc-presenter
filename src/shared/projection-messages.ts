@@ -199,6 +199,8 @@ export interface AppMessages {
   /** File playback state reported by projection video element */
   'file:playback-state': {
     itemId: string
+    blobId?: string
+    contentRevision?: number
     phase: FilePlaybackPhase
     preparationPhase?: VideoPreparationPhase
     currentTime: number

@@ -1,6 +1,15 @@
 import { useCallback, useRef, type RefObject } from 'react'
-import type { FileControlPayload, ProjectionMediaReplayState } from '@shared/projection-messages'
+import type {
+  FileControlPayload,
+  ProjectionMediaReplayState,
+  ProjectionPayload
+} from '@shared/projection-messages'
 import type { createProjectionAdapter } from '@renderer/lib/projection-adapter'
+
+type PlaybackIdentity = Pick<
+  ProjectionPayload<'file:playback-state'>,
+  'itemId' | 'blobId' | 'contentRevision'
+>
 
 type PendingVideoControl = {
   itemId: string | null
@@ -16,7 +25,11 @@ interface ProjectionMediaPlayback {
   isControlForCurrentItem(data: FileControlPayload): boolean
   applyPendingVideoControl(): void
   queueVideoControl(data: FileControlPayload, control: Omit<PendingVideoControl, 'itemId'>): void
-  sendVideoPlaybackState(next?: { isPlaying?: boolean; isEnded?: boolean }): void
+  sendVideoPlaybackState(
+    video: HTMLMediaElement,
+    identity: PlaybackIdentity,
+    next?: { isPlaying?: boolean; isEnded?: boolean }
+  ): void
   configurePlayback(options: {
     playbackMode?: 'native' | 'vlc-embedded'
     seekable?: boolean
@@ -137,11 +150,13 @@ export function useProjectionMediaPlayback({
   )
 
   const sendVideoPlaybackState = useCallback(
-    (next?: { isPlaying?: boolean; isEnded?: boolean }): void => {
-      const video = mediaRef.current
-      const itemId = currentItemIdRef.current
+    (
+      video: HTMLMediaElement,
+      identity: PlaybackIdentity,
+      next?: { isPlaying?: boolean; isEnded?: boolean }
+    ): void => {
       const send = adapterSendRef.current
-      if (!video || !itemId || !send) return
+      if (video !== mediaRef.current || !send) return
       const metadataDuration =
         durationMsRef.current !== undefined && durationMsRef.current > 0
           ? durationMsRef.current / 1000
@@ -150,7 +165,7 @@ export function useProjectionMediaPlayback({
         metadataDuration ??
         (Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0)
       send('file:playback-state', {
-        itemId,
+        ...identity,
         phase:
           (next?.isEnded ?? video.ended)
             ? 'ended'
@@ -168,7 +183,7 @@ export function useProjectionMediaPlayback({
         volume: Number.isFinite(video.volume) ? video.volume : 1
       })
     },
-    [currentItemIdRef, adapterSendRef]
+    [adapterSendRef]
   )
 
   const configurePlayback = useCallback(
