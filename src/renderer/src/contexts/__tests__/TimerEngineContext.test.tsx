@@ -1,6 +1,6 @@
-import { act, cleanup, render, renderHook, screen } from '@testing-library/react'
+import { act, cleanup, render, renderHook, screen, type RenderResult } from '@testing-library/react'
 import { StrictMode } from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi, type Mocked } from 'vitest'
 import { TimerRuntime } from '@shared/timer-runtime'
 import type {
   TimerRuntimeCommand,
@@ -12,10 +12,16 @@ import { DEFAULT_SETTINGS, DEFAULT_STATE, useTimerStore } from '@renderer/stores
 import { useStopwatchStore } from '@renderer/stores/stopwatch'
 import { useSettingsStore } from '@renderer/stores/settings'
 import * as timerAdapterModule from '@renderer/lib/timer-adapter'
+import type { TimerAdapter } from '@renderer/lib/timer-adapter'
 
 vi.mock('@renderer/lib/timer-adapter')
 
-function createHost() {
+function createHost(): {
+  runtime: TimerRuntime
+  adapter: Mocked<TimerAdapter>
+  publish: (snapshot?: TimerRuntimeSnapshot) => void
+  unsubscribe: ReturnType<typeof vi.fn>
+} {
   const runtime = new TimerRuntime(() => 0)
   let listener: ((snapshot: TimerRuntimeSnapshot) => void) | undefined
   const publish = (snapshot = runtime.getSnapshot()): void => {
@@ -62,7 +68,7 @@ function TestChild(): React.JSX.Element {
   const adapter = useTimerEngine()
   return <div data-testid="child">{adapter ? 'has-adapter' : 'no-adapter'}</div>
 }
-function mount() {
+function mount(): RenderResult {
   return render(
     <TimerEngineProvider>
       <TestChild />

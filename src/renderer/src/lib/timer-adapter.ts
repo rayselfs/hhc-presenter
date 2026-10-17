@@ -155,7 +155,6 @@ export class ElectronTimerAdapter implements TimerAdapter {
 
   constructor() {
     const api = window.api?.timer
-    let cleanup: (() => void) | undefined
     this.session = createTimerSession(
       (request) => {
         if (!api?.runtimeInitialize || !api.runtimeCommand)
@@ -168,7 +167,7 @@ export class ElectronTimerAdapter implements TimerAdapter {
         cleanup?.()
       }
     )
-    cleanup = api?.onTimerTick?.((payload) => {
+    const cleanup = api?.onTimerTick?.((payload) => {
       if (payload.runtime) this.session.acceptSnapshot(payload.runtime)
     })
   }

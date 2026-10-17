@@ -85,3 +85,44 @@ it('publishes accepted command state before acknowledging immediate remote readb
   await act(async () => finishPublication())
   expect(mocks.publishAck).toHaveBeenCalledWith(ack)
 })
+
+it('does not publish new state for a rejected command', async () => {
+  useSettingsStore.setState({ lanRemote: { ...DEFAULT_LAN_REMOTE, enabled: true } })
+  const ack = { requestId: 'rejected', status: 'rejected', reason: 'not-initialized' }
+  mocks.executeLanRemoteCommand.mockResolvedValue(ack)
+  render(<LanRemoteBridge />)
+  mocks.publishState.mockClear()
+  await act(async () =>
+    mocks.onCommand.mock.calls[0][0]({
+      requestId: 'rejected',
+      type: 'timer:command',
+      command: { type: 'start' }
+    })
+  )
+  expect(mocks.publishState).not.toHaveBeenCalled()
+  expect(mocks.publishAck).toHaveBeenCalledWith(ack)
+})
+
+it('does not falsely acknowledge success when state publication fails', async () => {
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+  try {
+    useSettingsStore.setState({ lanRemote: { ...DEFAULT_LAN_REMOTE, enabled: true } })
+    mocks.executeLanRemoteCommand.mockResolvedValue({
+      requestId: 'publication-failed',
+      status: 'accepted'
+    })
+    render(<LanRemoteBridge />)
+    mocks.publishState.mockRejectedValueOnce(new Error('IPC unavailable'))
+    await act(async () =>
+      mocks.onCommand.mock.calls[0][0]({
+        requestId: 'publication-failed',
+        type: 'timer:command',
+        command: { type: 'start' }
+      })
+    )
+    expect(log).toHaveBeenCalledWith('[lan-remote] Command publication failed', expect.any(Error))
+    expect(mocks.publishAck).not.toHaveBeenCalled()
+  } finally {
+    log.mockRestore()
+  }
+})
