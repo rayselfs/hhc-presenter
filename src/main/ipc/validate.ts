@@ -284,7 +284,7 @@ export function validateTimerSettings(settings: unknown): boolean {
   if (typeof obj.mode !== 'string' || !VALID_TIMER_MODES.has(obj.mode)) return false
 
   if (
-    typeof obj.totalDuration !== 'number' ||
+    !isFiniteNumber(obj.totalDuration) ||
     obj.totalDuration < 0 ||
     obj.totalDuration > MAX_DURATION_SECONDS
   )
@@ -293,7 +293,7 @@ export function validateTimerSettings(settings: unknown): boolean {
   if (typeof obj.reminderEnabled !== 'boolean') return false
 
   if (
-    typeof obj.reminderDuration !== 'number' ||
+    !isFiniteNumber(obj.reminderDuration) ||
     obj.reminderDuration < 0 ||
     obj.reminderDuration > MAX_DURATION_SECONDS
   )

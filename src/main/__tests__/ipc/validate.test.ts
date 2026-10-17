@@ -169,6 +169,26 @@ describe('validateTimerSettings', () => {
   it('returns true for valid settings', () => {
     expect(validateTimerSettings(valid)).toBe(true)
   })
+  it.each([NaN, Infinity, -Infinity])('rejects non-finite durations %s', (value) => {
+    expect(validateTimerSettings({ ...valid, totalDuration: value })).toBe(false)
+    expect(validateTimerSettings({ ...valid, reminderDuration: value })).toBe(false)
+    expect(
+      validateProjectionMessageTuple([
+        'timer:sync',
+        {
+          settings: { ...valid, totalDuration: value },
+          state: { status: 'stopped', remainingSeconds: 0 },
+          stopwatchState: { status: 'stopped', elapsedMs: 0 }
+        }
+      ])
+    ).toBe(false)
+  })
+
+  it.each([0, 0.5])('retains finite duration %s', (value) => {
+    expect(validateTimerSettings({ ...valid, totalDuration: value, reminderDuration: value })).toBe(
+      true
+    )
+  })
 
   it('returns false for null', () => {
     expect(validateTimerSettings(null)).toBe(false)
