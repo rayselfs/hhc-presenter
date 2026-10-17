@@ -2,6 +2,7 @@ import { validateDisplayName } from '@renderer/lib/file-naming'
 import { createPersistenceOperationQueue } from '@renderer/lib/persistence-operation-queue'
 import {
   createLocalCatalogFolder,
+  moveLocalCatalogEntry,
   softDeleteLocalCatalogEntry,
   updateLocalCatalogEntry,
   restoreLocalCatalogEntry
@@ -725,6 +726,37 @@ export function softDeleteExplorerEntry(kind: 'folder' | 'file', id: string): Pr
     const count = (pendingExplorerTrashRoots.get(id) ?? 1) - 1
     if (count === 0) pendingExplorerTrashRoots.delete(id)
     else pendingExplorerTrashRoots.set(id, count)
+  })
+}
+
+export function moveExplorerEntry(
+  kind: 'folder' | 'file',
+  id: string,
+  parentId: string
+): Promise<void> {
+  return withExplorerEntryWrite(id, async () => {
+    const db = await openFileExplorerDB()
+    const [record, destination] = await Promise.all([
+      kind === 'folder' ? db.get('folder-records', id) : db.get('folder-items', id),
+      db.get('folder-records', parentId)
+    ])
+    if (
+      !record ||
+      !isPersonalRecordVisible(record) ||
+      (destination && !isPersonalRecordVisible(destination))
+    )
+      throw new Error('Move source or destination is unavailable')
+    if (record.personalOwnerId || destination?.personalOwnerId) {
+      if (record.personalOwnerId && record.personalOwnerId === destination?.personalOwnerId)
+        await mutateExplorerPersonalNode(record.personalOwnerId, id, { type: 'move', parentId })
+      else if (kind === 'folder') await copyExplorerFolder(id, parentId)
+      else if (!(await copyFileSnapshot(id, parentId))) throw new Error('File copy failed')
+      return
+    }
+    await filePersistenceQueue.commit(async () => {
+      const moved = await moveLocalCatalogEntry(kind, id, parentId, isPersonalRecordVisible)
+      publishPersistedExplorerEntry(moved)
+    })
   })
 }
 

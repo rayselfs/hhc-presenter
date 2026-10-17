@@ -410,3 +410,89 @@ export async function softDeleteLocalCatalogEntry(
     throw error
   }
 }
+
+export async function moveLocalCatalogEntry(
+  kind: 'folder' | 'file',
+  id: string,
+  parentId: string,
+  isVisible: (record: FolderRecord | AnyItemRecord) => boolean
+): Promise<FolderRecord | FileItemRecord> {
+  const db = await openFileExplorerDB()
+  const tx = db.transaction(['folder-items', 'folder-records', 'catalog-deletions'], 'readwrite')
+  try {
+    const record =
+      kind === 'folder'
+        ? await tx.objectStore('folder-records').get(id)
+        : await tx.objectStore('folder-items').get(id)
+    if (
+      !record ||
+      !record.parentId ||
+      record.deletedAt ||
+      record.personalOwnerId ||
+      record.sharedRecipientId ||
+      ('type' in record && record.type !== 'file')
+    )
+      throw new Error('Move source is unavailable')
+    const folders = await tx.objectStore('folder-records').getAll()
+    const byId = Object.fromEntries(folders.map((folder) => [folder.id, folder]))
+    if (
+      isFolderReadOnlyBySyncLink(kind === 'folder' ? id : record.parentId, byId) ||
+      isFolderReadOnlyBySyncLink(parentId, byId)
+    )
+      throw new Error('Move source or destination is read-only')
+    for (const start of [record.parentId, parentId]) {
+      let ancestor: string | null = start
+      const seen = new Set<string>()
+      while (ancestor) {
+        if (ancestor === id || seen.has(ancestor))
+          throw new Error('Cannot move a folder into itself or a subfolder')
+        seen.add(ancestor)
+        const folder: FolderRecord | undefined = byId[ancestor]
+        if (
+          !folder ||
+          folder.deletedAt ||
+          folder.personalOwnerId ||
+          folder.sharedRecipientId ||
+          (await tx.objectStore('catalog-deletions').get(ancestor))
+        )
+          throw new Error('Move source or destination is unavailable')
+        ancestor = folder.parentId
+      }
+      if (!seen.has('file-root')) throw new Error('Move source or destination is unavailable')
+    }
+    if (await tx.objectStore('catalog-deletions').get(id))
+      throw new Error('Move source was deleted')
+    if (record.parentId === parentId) {
+      await tx.done
+      return record as FolderRecord | FileItemRecord
+    }
+    const siblings = kind === 'folder' ? folders : await tx.objectStore('folder-items').getAll()
+    const sortIndex = siblings.filter(
+      (entry) => entry.parentId === parentId && !entry.deletedAt && isVisible(entry)
+    ).length
+    if ('type' in record) {
+      if (record.type !== 'file') throw new Error('Move source is unavailable')
+      const moved = {
+        ...record,
+        parentId,
+        sortIndex,
+        expiresAt: parentId === 'file-root' ? Date.now() + FOLDER_DURATION_MS['1day'] : null
+      }
+      await tx.objectStore('folder-items').put(moved)
+      await tx.done
+      return moved
+    }
+    const moved = { ...record, parentId, sortIndex }
+    await tx.objectStore('folder-records').put(moved)
+    await tx.done
+    return moved
+  } catch (error) {
+    try {
+      tx.abort()
+    } catch {
+      /* Already completed. */
+    }
+    await tx.done.catch(() => undefined)
+    throw error
+  }
+}
