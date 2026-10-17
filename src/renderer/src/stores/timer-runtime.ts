@@ -1,3 +1,5 @@
+import { computePhase, computeProgress, readCountdownAt } from '@shared/timer-time-rules'
+export { computePhase, computeProgress } from '@shared/timer-time-rules'
 import { create } from 'zustand'
 import type { TimerMode, TimerStatus, TimerPhase, TimerState } from '@shared/types/timer'
 import { MAX_DURATION_SECONDS } from '@shared/constants/timer'
@@ -22,23 +24,6 @@ export function formatTime(totalSeconds: number): string {
     return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
   }
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-}
-
-export function computePhase(
-  status: TimerStatus,
-  remainingSeconds: number,
-  reminderEnabled: boolean,
-  reminderDuration: number
-): TimerPhase {
-  if (status === 'stopped') return 'idle'
-  if (remainingSeconds <= 0) return 'overtime'
-  if (reminderEnabled && remainingSeconds <= reminderDuration) return 'warning'
-  return 'main'
-}
-
-export function computeProgress(remainingSeconds: number, totalDuration: number): number {
-  if (totalDuration <= 0) return 0
-  return Math.max(0, Math.min(1, remainingSeconds / totalDuration))
 }
 
 export interface TimerRuntimeState {
@@ -271,7 +256,10 @@ export const useTimerRuntimeStore = create<TimerRuntimeState>()((set, get) => ({
       settings.reminderMode === 'add' && cfg.reminderEnabled
         ? cfg.totalDuration + cfg.reminderDuration
         : cfg.totalDuration
-    const remainingMs = s.targetEndTime - currentMs
+    const { remainingMs, remainingSeconds: displayRemaining } = readCountdownAt(
+      s.targetEndTime,
+      currentMs
+    )
     const rawRemainingSeconds = remainingMs / 1000
 
     if (rawRemainingSeconds <= 0) {
@@ -286,8 +274,6 @@ export const useTimerRuntimeStore = create<TimerRuntimeState>()((set, get) => ({
       })
       return
     }
-
-    const displayRemaining = Math.ceil(rawRemainingSeconds)
 
     set({
       remainingSeconds: displayRemaining,

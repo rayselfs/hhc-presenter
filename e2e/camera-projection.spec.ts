@@ -430,8 +430,9 @@ test('switches capture types and restores each source framing and lock', async (
       const stream = await getUserMedia({ video: true, audio: false })
       const track = stream.getVideoTracks()[0]
       const settings = track.getSettings.bind(track)
-      const displaySurface =
-        typeof options?.video === 'object' ? options.video.displaySurface : 'monitor'
+      const requestedSurface =
+        typeof options?.video === 'object' ? options.video.displaySurface : undefined
+      const displaySurface = typeof requestedSurface === 'string' ? requestedSurface : 'monitor'
       Object.defineProperty(track, 'label', {
         value: displaySurface === 'monitor' ? 'Test display' : 'Test window'
       })

@@ -113,7 +113,7 @@ function FileGrid({ previewCache }: PresenterGridProps): React.JSX.Element {
   const playlist = useMediaProjectionStore((s) => s.playlist)
   const jumpTo = useMediaProjectionStore((s) => s.jumpTo)
   const toggleGrid = useMediaProjectionStore((s) => s.toggleGrid)
-  const fallbackThumbnails = useThumbnails(playlist)
+  const fallbackThumbnails = useThumbnails(previewCache ? [] : playlist)
   const thumbnails = previewCache ?? fallbackThumbnails
   const failureMessageRef = useRef(
     t('presentationWorkspace.saveFailed', 'Unable to save presentation')
