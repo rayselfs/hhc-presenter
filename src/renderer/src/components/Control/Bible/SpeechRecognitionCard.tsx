@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSpeechSession } from '@renderer/hooks/useSpeechSession'
+import { useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@heroui/react/card'
 import { Button } from '@heroui/react/button'
@@ -51,68 +52,14 @@ export default function SpeechRecognitionCard(): React.JSX.Element {
   const bibleContent = useBibleStore((s) => s.content)
 
   const elapsedSeconds = useBibleSpeechStore((s) => s.elapsedSeconds)
-  const incrementElapsedSeconds = useBibleSpeechStore((s) => s.incrementElapsedSeconds)
   const resetElapsedSeconds = useBibleSpeechStore((s) => s.resetElapsedSeconds)
 
-  const [isRecognizing, setIsRecognizing] = useState(false)
   const [recognizedVerses, setRecognizedVerses] = useState<RecognizedVerse[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const [adapter, setAdapter] = useState<SpeechAdapter | null>(null)
-  const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [hasRawLog, setHasRawLog] = useState(false)
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const rawLogRef = useRef<RawRecognizedEntry[]>([])
   const speechMaxSessionSec = useBibleSettingsStore((s) => s.speechMaxSessionSec)
-
-  const handleStopRecognition = useCallback((): void => {
-    if (elapsedTimerRef.current) {
-      clearInterval(elapsedTimerRef.current)
-      elapsedTimerRef.current = null
-    }
-    if (adapter) {
-      adapter.stop().catch(() => {})
-      adapter.dispose()
-      setAdapter(null)
-    }
-    setIsRecognizing(false)
-  }, [adapter])
-
-  useEffect(() => {
-    const handleOnline = (): void => setIsOnline(true)
-    const handleOffline = (): void => {
-      setIsOnline(false)
-      if (isRecognizing) {
-        handleStopRecognition()
-        setError('network-offline')
-      }
-    }
-
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-
-    return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
-  }, [isRecognizing, handleStopRecognition])
-
-  useEffect(() => {
-    return () => {
-      if (adapter) {
-        adapter.dispose()
-      }
-    }
-  }, [adapter])
-
-  useEffect(() => {
-    return () => {
-      if (elapsedTimerRef.current) {
-        clearInterval(elapsedTimerRef.current)
-      }
-    }
-  }, [])
 
   const handleRecognized = useCallback(
     (text: string) => {
@@ -151,16 +98,30 @@ export default function SpeechRecognitionCard(): React.JSX.Element {
     [t, selectedVersionId, bibleContent]
   )
 
-  const handleStartRecognition = async (): Promise<void> => {
-    try {
+  const {
+    isStarting,
+    isRecognizing,
+    isOnline,
+    error,
+    setError,
+    start: handleStartRecognition,
+    stop: handleStopRecognition
+  } = useSpeechSession({
+    requiresOnline: speech.activeProvider !== 'whisper',
+    maxSessionMs: speechMaxSessionSec * 1000,
+    onRecognized: handleRecognized,
+    onRawRecognized: (data) => {
+      rawLogRef.current.push({ ...data, timestamp: Date.now() })
+      setHasRawLog(true)
+    },
+    createAdapter: async (): Promise<SpeechAdapter | null> => {
       const provider = speech.activeProvider
       let newAdapter: SpeechAdapter
 
       if (provider === 'azure') {
         const apiKey = await loadSpeechKey('azure')
         if (!apiKey || !speech.azure.region) {
-          setError('config-required')
-          return
+          return null
         }
         const locale =
           i18n.language === 'zh-TW' ? 'zh-TW' : i18n.language === 'zh-CN' ? 'zh-CN' : 'en-US'
@@ -172,8 +133,7 @@ export default function SpeechRecognitionCard(): React.JSX.Element {
         })
       } else if (provider === 'whisper') {
         if (!speech.whisper.modelDir) {
-          setError('config-required')
-          return
+          return null
         }
         newAdapter = await createSpeechAdapter(provider, speech, {
           maxSessionMs: speechMaxSessionSec * 1000
@@ -184,57 +144,10 @@ export default function SpeechRecognitionCard(): React.JSX.Element {
         })
       }
 
-      newAdapter.on('recognized', (data) => {
-        if (data.text) {
-          handleRecognized(data.text)
-        }
-      })
-
-      newAdapter.on('rawRecognized', (data) => {
-        rawLogRef.current.push({
-          text: data.text,
-          confidence: data.confidence,
-          timestamp: Date.now()
-        })
-        setHasRawLog(true)
-      })
-
-      newAdapter.on('error', () => {
-        setError('start-failed')
-        setIsRecognizing(false)
-      })
-
-      newAdapter.on('sessionStopped', () => {
-        setIsRecognizing(false)
-        if (elapsedTimerRef.current) {
-          clearInterval(elapsedTimerRef.current)
-          elapsedTimerRef.current = null
-        }
-      })
-
-      newAdapter.on('idleTimeout', () => {
-        setError('idle-timeout')
-        setIsRecognizing(false)
-      })
-
-      newAdapter.on('maxDurationReached', () => {
-        setError('max-duration')
-        setIsRecognizing(false)
-      })
-
-      await newAdapter.start()
-
-      elapsedTimerRef.current = setInterval(() => {
-        incrementElapsedSeconds()
-      }, 1000)
-
-      setAdapter(newAdapter)
-      setIsRecognizing(true)
-      setError(null)
-    } catch {
-      setError('start-failed')
+      return newAdapter
     }
-  }
+  })
+  const isRunning = isStarting || isRecognizing
 
   const handleClearAll = (): void => {
     setRecognizedVerses([])
@@ -276,22 +189,22 @@ export default function SpeechRecognitionCard(): React.JSX.Element {
 
   const providerReqs = PROVIDER_REQUIREMENTS[speech.activeProvider]
   const canStart =
-    !isRecognizing && providerReqs.isReady(speech) && (!providerReqs.requiresOnline || isOnline)
+    !isRunning && providerReqs.isReady(speech) && (!providerReqs.requiresOnline || isOnline)
 
   return (
     <Card className="flex flex-col h-full p-0 gap-2">
       <Card.Header className="shrink-0 flex-row! items-center justify-between p-0 pt-2 pl-2 pr-3">
         <div className="flex items-center gap-1">
           <Button
-            variant={isRecognizing ? 'danger' : 'primary'}
-            onPress={isRecognizing ? handleStopRecognition : handleStartRecognition}
-            isDisabled={!canStart && !isRecognizing}
+            variant={isRunning ? 'danger' : 'primary'}
+            onPress={isRunning ? handleStopRecognition : handleStartRecognition}
+            isDisabled={!canStart && !isRunning}
             className="flex items-center gap-1.5"
           >
             <span className="max-lg:hidden">
-              {isRecognizing ? t('bible.speech.stop') : t('bible.speech.start')}
+              {isRunning ? t('bible.speech.stop') : t('bible.speech.start')}
             </span>
-            {isRecognizing ? (
+            {isRunning ? (
               <MicOff size={16} className="lg:hidden" />
             ) : (
               <Mic size={16} className="lg:hidden" />
