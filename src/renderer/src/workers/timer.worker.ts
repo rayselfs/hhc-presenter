@@ -1,3 +1,5 @@
+import { computeProgress, readCountdownAt } from '@shared/timer-time-rules'
+
 /**
  * Web Worker timer engine
  * Runs setInterval(100) — not throttled in background tabs
@@ -105,7 +107,7 @@ function tickCountdown(): void {
   if (state.status !== 'running') return
   if (state.targetEndTime === null) return
 
-  const remainingMs = state.targetEndTime - Date.now()
+  const { remainingMs } = readCountdownAt(state.targetEndTime, Date.now())
 
   if (remainingMs <= 0 && !state.hasFinished) {
     state.hasFinished = true
@@ -114,8 +116,7 @@ function tickCountdown(): void {
     state.hasFinished = false
   }
 
-  const progress =
-    state.totalDurationMs > 0 ? Math.min(1, Math.max(0, remainingMs / state.totalDurationMs)) : 0
+  const progress = computeProgress(remainingMs, state.totalDurationMs)
   _postMessage({ type: 'tick', remainingMs: Math.max(0, remainingMs), progress })
 }
 
