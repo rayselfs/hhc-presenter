@@ -111,6 +111,9 @@
   },
   "overrides": {
     "@electron/rebuild": "4.2.0",
-    "sharp": "0.35.5"
+    "sharp": "0.35.5",
+    "global-agent": {
+      "roarr": "3.3.0"
+    }
   }
 }
