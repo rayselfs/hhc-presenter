@@ -17,14 +17,12 @@ describe('projection actions', () => {
       ...DEFAULT_SETTINGS,
       ...DEFAULT_STATE,
       mode: 'timer',
-      targetEndTime: null,
       presets: []
     })
     useStopwatchStore.setState({
       status: 'stopped',
       elapsedMs: 0,
-      startTimestamp: null,
-      accumulatedMs: 0,
+
       showOnProjection: false
     })
     useSettingsStore.setState({

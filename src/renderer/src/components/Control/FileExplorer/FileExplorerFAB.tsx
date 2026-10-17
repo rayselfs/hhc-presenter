@@ -1,6 +1,6 @@
 import { toast } from '@heroui/react/toast'
 import { Separator } from '@heroui/react/separator'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Plus, FolderPlus, Upload, Folder, Presentation } from 'lucide-react'
 import { Dropdown } from '@renderer/components/Common/MenuPopover'
 import { useTranslation } from 'react-i18next'
@@ -42,6 +42,8 @@ export default function FileExplorerFAB({
   const addFolder = createExplorerFolder
 
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const submittingRef = useRef(false)
   const [folderName, setFolderName] = useState('')
   const [folderDuration, setFolderDuration] = useState<FolderDuration>('1day')
 
@@ -61,9 +63,11 @@ export default function FileExplorerFAB({
   }
 
   async function handleModalSubmit(): Promise<void> {
-    if (isReadOnly) return
+    if (isReadOnly || submittingRef.current) return
     const name = folderName.trim()
     if (!name) return
+    submittingRef.current = true
+    setIsSubmitting(true)
     try {
       await addFolder(name, currentFolderId, computeExpiresAt(folderDuration))
       setIsModalOpen(false)
@@ -71,6 +75,9 @@ export default function FileExplorerFAB({
       toast.danger(
         error instanceof Error ? error.message : t('fileExplorer.invalidName', 'Invalid name')
       )
+    } finally {
+      submittingRef.current = false
+      setIsSubmitting(false)
     }
   }
 
@@ -83,6 +90,7 @@ export default function FileExplorerFAB({
     <>
       <FolderModal
         isOpen={isModalOpen}
+        isSubmitting={isSubmitting}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleModalSubmit}
         editingFolder={null}

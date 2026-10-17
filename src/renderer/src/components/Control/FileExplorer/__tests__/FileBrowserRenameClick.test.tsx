@@ -1,17 +1,27 @@
+import { useItemSelection } from '@renderer/hooks/useItemSelection'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { DragEndEvent } from '@dnd-kit/core'
+import { toast } from '@heroui/react/toast'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import FileBrowser from '../FileBrowser'
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
+
+const viewFixtures = vi.hoisted(() => ({
+  thumbnails: {},
+  move: vi.fn(),
+  dragEnd: undefined as ((event: DragEndEvent) => Promise<void>) | undefined,
+  orders: {},
+  t: (_key: string, fallback?: string | { defaultValue?: string }) =>
+    typeof fallback === 'string' ? fallback : (fallback?.defaultValue ?? _key)
+}))
 
 vi.mock('react-i18next', () => ({
   initReactI18next: {
     type: '3rdParty',
     init: vi.fn()
   },
-  useTranslation: () => ({
-    t: (_key: string, fallback?: string) => fallback ?? _key
-  })
+  useTranslation: () => ({ t: viewFixtures.t })
 }))
 
 vi.mock('@heroui/react/toast', () => ({
@@ -33,7 +43,16 @@ vi.mock('@tanstack/react-virtual', () => ({
 
 vi.mock('@dnd-kit/core', async () => {
   return {
-    DndContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    DndContext: ({
+      children,
+      onDragEnd
+    }: {
+      children: React.ReactNode
+      onDragEnd: (event: DragEndEvent) => Promise<void>
+    }) => {
+      viewFixtures.dragEnd = onDragEnd
+      return <>{children}</>
+    },
     DragOverlay: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     MouseSensor: vi.fn(),
     TouchSensor: vi.fn(),
@@ -86,7 +105,7 @@ vi.mock('@renderer/hooks/useKeyboardShortcuts', () => ({
 
 vi.mock('@renderer/hooks/useThumbnails', () => ({
   canHaveThumbnail: () => false,
-  useThumbnails: () => ({})
+  useThumbnails: () => viewFixtures.thumbnails
 }))
 
 vi.mock('@renderer/contexts/ConfirmDialogContext', () => ({
@@ -123,6 +142,8 @@ vi.mock('@renderer/stores/media-projection', () => ({
   )
 }))
 
+const renameMocks = vi.hoisted(() => ({ rename: vi.fn() }))
+
 let viewMode = 'medium-icon'
 const updateItem = vi.fn()
 const updateFolder = vi.fn()
@@ -149,32 +170,36 @@ const folderItem: FolderRecord = {
   expiresAt: null
 }
 
+const browserState = {
+  currentFolderId: 'file-root',
+  _childFoldersByParent: { 'file-root': [folderItem] },
+  _itemsByParent: { 'file-root': [fileItem] },
+  navigateToFolder: vi.fn(),
+  toggleFavorite: vi.fn(),
+  moveItem: vi.fn(),
+  moveFolder: vi.fn(),
+  updateItem,
+  updateFolder
+}
+const browserActions = {
+  folders: {},
+  updateItem,
+  updateFolder,
+  getItems: () => browserState._itemsByParent['file-root']
+}
+
 vi.mock('@renderer/stores/file-explorer', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@renderer/stores/file-explorer')>()
-  const store = (selector?: (state: Record<string, unknown>) => unknown): unknown => {
-    const state = {
-      currentFolderId: 'file-root',
-      _childFoldersByParent: { 'file-root': [folderItem] },
-      _itemsByParent: { 'file-root': [fileItem] },
-      navigateToFolder: vi.fn(),
-      toggleFavorite: vi.fn(),
-      moveItem: vi.fn(),
-      moveFolder: vi.fn(),
-      updateItem,
-      updateFolder
-    }
-    return selector ? selector(state) : state
-  }
-  store.getState = () => ({
-    folders: {},
-    updateItem,
-    updateFolder,
-    getItems: () => [fileItem]
-  })
+  const store = (selector?: (state: typeof browserState) => unknown): unknown =>
+    selector ? selector(browserState) : browserState
+  store.getState = () => browserActions
   return {
     ...actual,
+    renameExplorerEntry: renameMocks.rename,
+    moveExplorerEntry: viewFixtures.move,
     FILE_EXPLORER_ROOT_ID: 'file-root',
     useCurrentFolderDisplay: () => ({
+      viewMode,
       sortField: 'createdAt',
       sortDir: 'none',
       groupMode: 'none',
@@ -184,7 +209,7 @@ vi.mock('@renderer/stores/file-explorer', async (importOriginal) => {
     deleteFolderFromStore: vi.fn(),
     removeFileItemFromStore: vi.fn(),
     useFileExplorerCustomOrder: (selector: (state: Record<string, unknown>) => unknown) =>
-      selector({ orders: {}, setOrder: vi.fn() }),
+      selector({ orders: viewFixtures.orders, setOrder: vi.fn() }),
     useFileExplorerSearch: (selector: (state: Record<string, unknown>) => unknown) =>
       selector({ searchQuery: '', setSearchQuery: vi.fn() }),
     useFileExplorerSettings: Object.assign(
@@ -224,7 +249,7 @@ function renderFileBrowser(): void {
 
   render(
     <MemoryRouter>
-      <FileBrowser />
+      <SelectedFileBrowser />
       <LocationProbe />
     </MemoryRouter>
   )
@@ -233,11 +258,36 @@ function renderFileBrowser(): void {
 describe('FileBrowser slow-click inline rename', () => {
   beforeEach(() => {
     vi.useFakeTimers()
+    renameMocks.rename.mockReset().mockResolvedValue(undefined)
     updateItem.mockClear()
     updateFolder.mockClear()
     mockStartPresentation.mockClear()
     mockStartPresentationWithReadiness.mockClear()
     viewMode = 'medium-icon'
+  })
+
+  it('shares parent clears, context targets and range selection with the rendered highlights', () => {
+    renderFileBrowser()
+    const file = screen.getByText('slides.pdf').closest('[data-file-item]')!
+    const folder = screen.getByText('Drama Audio').closest('[data-file-item]')!
+    click(file, 1000)
+    expect(file).toHaveClass('bg-surface')
+    expect(screen.getByTestId('selected-ids')).toHaveTextContent('file-1')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear parent selection' }))
+    expect(file).not.toHaveClass('bg-surface')
+    expect(screen.getByTestId('selected-ids')).toBeEmptyDOMElement()
+    fireEvent.click(folder, { shiftKey: true })
+    expect(screen.getByTestId('selected-ids')).toHaveTextContent(/^folder-1$/)
+    fireEvent.click(file, { shiftKey: true })
+    expect(file).toHaveClass('bg-surface')
+    expect(folder).toHaveClass('bg-surface')
+    expect(screen.getByTestId('selected-ids')).toHaveTextContent('folder-1,file-1')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select file from parent' }))
+    expect(file).toHaveClass('bg-surface')
+    expect(folder).not.toHaveClass('bg-surface')
+    expect(screen.getByTestId('selected-ids')).toHaveTextContent(/^file-1$/)
   })
 
   it('only starts rename from the file name region', () => {
@@ -324,5 +374,134 @@ describe('FileBrowser slow-click inline rename', () => {
     flushRenameDelay()
 
     expect(screen.queryByLabelText('Rename file')).toBeNull()
+  })
+})
+
+function SelectedFileBrowser(
+  props: Omit<React.ComponentProps<typeof FileBrowser>, 'selection'> = {}
+): React.JSX.Element {
+  const selection = useItemSelection()
+  return (
+    <>
+      <button onClick={selection.clearSelection}>Clear parent selection</button>
+      <button onClick={() => selection.setSelectedIds(new Set(['file-1']))}>
+        Select file from parent
+      </button>
+      <output data-testid="selected-ids">{[...selection.selectedIds].join(',')}</output>
+      <FileBrowser {...props} selection={selection} />
+    </>
+  )
+}
+
+describe('durable rename editor ownership', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    viewMode = 'medium-icon'
+    renameMocks.rename.mockReset()
+  })
+
+  it.each([false, true])(
+    'keeps a newer rename session when the old request completes (same item: %s)',
+    async (sameItem) => {
+      let finish!: () => void
+      const pending = new Promise<void>((resolve) => {
+        finish = resolve
+      })
+      renameMocks.rename.mockReturnValueOnce(pending)
+      const view = render(
+        <MemoryRouter>
+          <SelectedFileBrowser />
+        </MemoryRouter>
+      )
+      const fileName = screen.getByText('slides.pdf')
+      click(fileName, 1000)
+      click(fileName, 2000)
+      flushRenameDelay()
+      fireEvent.change(screen.getByLabelText('Rename file'), { target: { value: 'First draft' } })
+      fireEvent.keyDown(screen.getByLabelText('Rename file'), { key: 'Enter' })
+      expect(renameMocks.rename).toHaveBeenCalledWith('file', fileItem.id, 'First draft.pdf')
+      if (sameItem) {
+        viewMode = 'list'
+        view.rerender(
+          <MemoryRouter>
+            <SelectedFileBrowser />
+          </MemoryRouter>
+        )
+        viewMode = 'medium-icon'
+        view.rerender(
+          <MemoryRouter>
+            <SelectedFileBrowser />
+          </MemoryRouter>
+        )
+        view.rerender(
+          <MemoryRouter>
+            <SelectedFileBrowser renameItemRequestId={fileItem.id} />
+          </MemoryRouter>
+        )
+        view.rerender(
+          <MemoryRouter>
+            <SelectedFileBrowser />
+          </MemoryRouter>
+        )
+      } else {
+        const folderName = screen.getByText('Drama Audio')
+        click(folderName, 3000)
+        click(folderName, 4000)
+        flushRenameDelay()
+      }
+      const input = screen.getByLabelText(sameItem ? 'Rename file' : 'Rename folder')
+      fireEvent.change(input, { target: { value: 'Keep this draft' } })
+      await act(async () => {
+        finish()
+        await pending
+      })
+      expect(input).toBeInTheDocument()
+      expect(input).toHaveValue('Keep this draft')
+    }
+  )
+})
+
+describe('FileBrowser durable drag move', () => {
+  it('keeps the drag callback pending until the move settles and reports its failure', async () => {
+    vi.useRealTimers()
+    let reject!: (error: Error) => void
+    viewFixtures.move.mockReset().mockReturnValue(
+      new Promise<void>((_resolve, rejectPromise) => {
+        reject = rejectPromise
+      })
+    )
+    vi.mocked(toast.danger).mockClear()
+    renderFileBrowser()
+    let finished = false
+    let pending!: Promise<void>
+    await act(async () => {
+      pending = viewFixtures.dragEnd!({
+        active: {
+          id: fileItem.id,
+          data: { current: { type: 'file' } },
+          rect: { current: { initial: null, translated: null } }
+        },
+        over: {
+          id: 'drop-target',
+          data: { current: { type: 'folder-dropzone', folderId: 'target' } },
+          rect: { top: 0, left: 0, right: 1, bottom: 1, width: 1, height: 1 },
+          disabled: false
+        },
+        activatorEvent: new Event('pointerup'),
+        delta: { x: 1, y: 1 },
+        collisions: null
+      }).then(() => {
+        finished = true
+      })
+      await Promise.resolve()
+    })
+    expect(viewFixtures.move).toHaveBeenCalledWith('file', fileItem.id, 'target')
+    expect(finished).toBe(false)
+    await act(async () => {
+      reject(new Error('Disk unavailable'))
+      await pending
+    })
+    expect(finished).toBe(true)
+    expect(toast.danger).toHaveBeenCalledWith('Disk unavailable')
   })
 })
