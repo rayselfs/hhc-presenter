@@ -19,6 +19,9 @@ const mocks = vi.hoisted(() => ({
     refreshFolder: vi.fn()
   })),
   showEmptyAreaMenu: vi.fn(),
+  confirm: vi.fn(),
+  unlinkSyncRoot: vi.fn(),
+  deleteResult: vi.fn(),
   copyExplorerFolder: vi.fn(async () => 'copy'),
   createExplorerFolder: vi.fn(async () => 'folder'),
   fileState: {
@@ -101,15 +104,25 @@ vi.mock('@renderer/components/Control/FileExplorer/FileBrowser', () => ({
   default: ({
     onEmptyAreaContextMenu,
     onCopy,
+    onDelete,
     onSelectionChange
   }: {
     onEmptyAreaContextMenu: (event: React.MouseEvent) => void
     onCopy: (ids: Set<string>) => void
+    onDelete: (ids: Set<string>) => Promise<boolean>
     onSelectionChange: (ids: Set<string>) => void
   }) => (
     <>
       <button onClick={() => onEmptyAreaContextMenu({} as React.MouseEvent)}>
         Open file context menu
+      </button>
+      <button
+        onClick={async () => {
+          onSelectionChange(new Set(['sync-root']))
+          mocks.deleteResult(await onDelete(new Set(['sync-root'])))
+        }}
+      >
+        Delete sync root
       </button>
       <button
         onClick={() => {
@@ -154,7 +167,7 @@ vi.mock('@renderer/components/Control/Folder/FolderModal', () => ({ FolderModal:
 vi.mock('@renderer/components/Common/FolderPersistenceStatus', () => ({
   FolderPersistenceStatus: () => null
 }))
-vi.mock('@renderer/contexts/ConfirmDialogContext', () => ({ useConfirm: () => vi.fn() }))
+vi.mock('@renderer/contexts/ConfirmDialogContext', () => ({ useConfirm: () => mocks.confirm }))
 vi.mock('@renderer/stores/soundboard', () => ({
   useSoundboardStore: { getState: () => ({ findPadsUsingAsset: () => [] }) }
 }))
@@ -176,6 +189,10 @@ vi.mock('@renderer/lib/presentation-item-actions', () => ({
 }))
 vi.mock('@renderer/stores/presentation-workspace', () => ({
   usePresentationWorkspaceStore: { getState: () => ({ openDocument: vi.fn() }) }
+}))
+
+vi.mock('@renderer/lib/sync-unlink', () => ({
+  unlinkSyncRootFolderFromApp: mocks.unlinkSyncRoot
 }))
 
 import FilesPage from '../FilesPage'
@@ -357,4 +374,46 @@ describe('FilesPage folder paste', () => {
     expect(mocks.copyExplorerFolder).toHaveBeenCalledTimes(2)
     expect(screen.getByTestId('selected-count')).toHaveTextContent('0')
   })
+})
+
+describe('FilesPage sync-root deletion completion', () => {
+  beforeEach(() => {
+    mocks.session = null
+    mocks.fileState.currentFolderId = 'file-root'
+    mocks.fileState.folders = {
+      'sync-root': {
+        id: 'sync-root',
+        name: 'Synced',
+        parentId: 'file-root',
+        sortIndex: 0,
+        createdAt: 1,
+        expiresAt: null,
+        syncLink: {
+          providerType: 'onedrive',
+          providerConnectionId: 'connection',
+          remoteFolderId: 'remote'
+        }
+      }
+    }
+    mocks.confirm.mockReset()
+    mocks.unlinkSyncRoot.mockReset()
+    mocks.deleteResult.mockReset()
+  })
+
+  it.each(['cancel', 'failure', 'success'])(
+    'reports %s without clearing a failed selection',
+    async (outcome) => {
+      mocks.confirm.mockResolvedValue(outcome !== 'cancel')
+      if (outcome === 'failure')
+        mocks.unlinkSyncRoot.mockRejectedValue(new Error('Disk unavailable'))
+      else mocks.unlinkSyncRoot.mockResolvedValue(undefined)
+      render(<FilesPage />)
+      await userEvent.click(screen.getByRole('button', { name: 'Delete sync root' }))
+      await waitFor(() => expect(mocks.deleteResult).toHaveBeenCalledWith(outcome === 'success'))
+      expect(screen.getByTestId('selected-count')).toHaveTextContent(
+        outcome === 'success' ? '0' : '1'
+      )
+      expect(mocks.unlinkSyncRoot).toHaveBeenCalledTimes(outcome === 'cancel' ? 0 : 1)
+    }
+  )
 })

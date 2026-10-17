@@ -504,22 +504,24 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   )
 
   const handleUnlinkSyncRoot = useCallback(
-    async (root: FolderRecord): Promise<void> => {
+    async (root: FolderRecord): Promise<boolean> => {
       const confirmed = await confirm({
         title: t('fileExplorer.syncSources.unlinkTitle', { name: root.name }),
         description: t('fileExplorer.syncSources.unlinkDescription'),
         confirmLabel: t('fileExplorer.syncSources.unlink'),
         status: 'danger'
       })
-      if (!confirmed) return
+      if (!confirmed) return false
 
       try {
         await unlinkSyncRootFolderFromApp(root)
         setSelectedIds(new Set())
         toast.success(t('fileExplorer.syncSources.unlinked'))
+        return true
       } catch (error) {
         console.warn('[sync] Failed to unlink sync source', error)
         toast.danger(t('fileExplorer.syncSources.unlinkFailed'))
+        return false
       }
     },
     [confirm, t]
@@ -615,14 +617,11 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   }, [clipboard])
 
   const handleDelete = useCallback(
-    async (targetIds: Set<string>): Promise<void> => {
-      if (targetIds.size === 0) return
+    async (targetIds: Set<string>): Promise<boolean> => {
+      if (targetIds.size === 0) return false
       const syncRoot = findSingleSelectedSyncRoot(targetIds)
-      if (syncRoot) {
-        await handleUnlinkSyncRoot(syncRoot)
-        return
-      }
-      if (areIdsReadOnly(targetIds)) return
+      if (syncRoot) return handleUnlinkSyncRoot(syncRoot)
+      if (areIdsReadOnly(targetIds)) return false
       const soundboardUsageCount = await countDeletedSoundboardPadUsages(targetIds)
       const confirmed = await confirm({
         title: t('folder.deleteSelectedTitle', {
@@ -639,16 +638,22 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
             : t('folder.deleteItemDescription', 'This action cannot be undone.'),
         status: 'danger'
       })
-      if (!confirmed) return
-      for (const id of targetIds) {
-        const state = useFileExplorerStore.getState()
-        if (state.folders[id]) {
-          deleteFolderFromStore(id)
-        } else {
-          removeFileItemFromStore(id)
+      if (!confirmed) return false
+      try {
+        for (const id of targetIds) {
+          const state = useFileExplorerStore.getState()
+          if (state.folders[id]) {
+            await deleteFolderFromStore(id)
+          } else {
+            await removeFileItemFromStore(id)
+          }
         }
+        setSelectedIds(new Set())
+        return true
+      } catch (error) {
+        toast.danger(error instanceof Error ? error.message : String(error))
+        return false
       }
-      setSelectedIds(new Set())
     },
     [confirm, t, areIdsReadOnly, findSingleSelectedSyncRoot, handleUnlinkSyncRoot]
   )
