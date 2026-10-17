@@ -1,3 +1,4 @@
+import { createFileExplorerFolderDB } from '@renderer/lib/folder-db'
 import { useCallback } from 'react'
 import { FOLDER_DURATION_MS } from '@shared/types/folder'
 import { assertLocalDestination, commitLocalFileItem } from '@renderer/lib/file-catalog-mutations'
@@ -85,8 +86,74 @@ export const useFileExplorerStore = createFolderStore({
   rootId: FILE_EXPLORER_ROOT_ID,
   rootName: 'Files',
   isVisible: isPersonalRecordVisible,
-  getDB: () => openFileExplorerDB()
+  persistence: createFileExplorerFolderDB()
 })
+
+function sortByIndex<T extends { sortIndex: number }>(items: T[]): T[] {
+  return items.slice().sort((a, b) => a.sortIndex - b.sortIndex)
+}
+
+export function publishPersistedSyncRoot(root: FolderRecord): void {
+  useFileExplorerStore.setState((state) => {
+    const folders = { ...state.folders, [root.id]: root }
+    const siblings = [
+      ...(state._childFoldersByParent[root.parentId!] ?? []).filter(
+        (folder) => folder.id !== root.id
+      ),
+      root
+    ].sort((left, right) => left.sortIndex - right.sortIndex)
+    return {
+      folders,
+      _foldersArray: Object.values(folders),
+      _childFoldersByParent: {
+        ...state._childFoldersByParent,
+        [root.parentId!]: siblings
+      }
+    }
+  })
+}
+
+export function mergePersistedSyncCatalog(folders: FolderRecord[], items: FileItemRecord[]): void {
+  const importedParentIds = new Set<string>(folders.map((folder) => folder.id))
+  importedParentIds.add(FILE_EXPLORER_ROOT_ID)
+  for (const item of items) importedParentIds.add(item.parentId)
+
+  useFileExplorerStore.setState((state) => {
+    const nextFolders = { ...state.folders }
+    const nextItems = { ...state.items }
+    for (const folder of folders) nextFolders[folder.id] = folder
+    for (const item of items) nextItems[item.id] = item
+
+    const childFoldersByParent: typeof state._childFoldersByParent = {}
+    for (const folder of Object.values(nextFolders)) {
+      if (folder.parentId === null) continue
+      const list = childFoldersByParent[folder.parentId] ?? []
+      list.push(folder)
+      childFoldersByParent[folder.parentId] = list
+    }
+    for (const parentId of Object.keys(childFoldersByParent)) {
+      childFoldersByParent[parentId] = sortByIndex(childFoldersByParent[parentId])
+    }
+
+    const loadedParents = new Set([...state.loadedParents, ...importedParentIds])
+    const itemsByParent: typeof state._itemsByParent = {}
+    for (const parentId of loadedParents) {
+      itemsByParent[parentId] = sortByIndex(
+        Object.values(nextItems).filter((item) => item.parentId === parentId)
+      )
+    }
+
+    return {
+      folders: nextFolders,
+      items: nextItems,
+      _foldersArray: Object.values(nextFolders),
+      _itemsArray: Object.values(nextItems),
+      _childFoldersByParent: childFoldersByParent,
+      _itemsByParent: itemsByParent,
+      loadedParents
+    }
+  })
+}
 
 let personalCatalogGeneration = 0
 

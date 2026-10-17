@@ -25,8 +25,8 @@ vi.mock('@renderer/lib/file-explorer-db', () => ({
   deleteFileBlob: vi.fn().mockResolvedValue(undefined)
 }))
 
-vi.mock('@renderer/lib/folder-db', () => ({
-  createFolderDB: vi.fn(() => ({
+vi.mock('@renderer/lib/folder-db', () => {
+  const factory = vi.fn(() => ({
     loadAllFolders: vi.fn().mockResolvedValue([]),
     saveFolder: vi.fn().mockResolvedValue(undefined),
     saveFolders: vi.fn().mockResolvedValue(undefined),
@@ -41,7 +41,8 @@ vi.mock('@renderer/lib/folder-db', () => ({
     deleteExpiredItems: vi.fn().mockResolvedValue([]),
     purgeTrashOlderThan: vi.fn().mockResolvedValue({ folderIds: [], itemIds: [] })
   }))
-}))
+  return { createBibleFolderDB: factory, createFileExplorerFolderDB: factory }
+})
 
 vi.mock('@renderer/lib/persist-storage', () => ({
   hhcPersistStorage: {

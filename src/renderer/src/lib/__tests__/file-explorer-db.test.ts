@@ -1,3 +1,4 @@
+import type { FolderPersistence } from '@shared/types/folder'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { envState, mockImportFile, mockGetUrl, mockDeleteNativeFile, mockNativeFileExists } =
@@ -43,8 +44,8 @@ class FakeFileExplorerDB {
 
 const mockSaveItem = vi.fn()
 
-vi.mock('@renderer/lib/folder-db', () => ({
-  createFolderDB: () => ({
+vi.mock('@renderer/lib/folder-db', () => {
+  const factory = (): FolderPersistence => ({
     loadAllFolders: vi.fn().mockResolvedValue([]),
     loadItemsByParent: vi.fn().mockResolvedValue([]),
     saveFolder: vi.fn().mockResolvedValue(undefined),
@@ -59,7 +60,8 @@ vi.mock('@renderer/lib/folder-db', () => ({
     deleteExpiredItems: vi.fn().mockResolvedValue([]),
     purgeTrashOlderThan: vi.fn().mockResolvedValue({ folderIds: [], itemIds: [] })
   })
-}))
+  return { createBibleFolderDB: factory, createFileExplorerFolderDB: factory }
+})
 
 vi.mock('@renderer/lib/bible-db', () => ({
   openBibleDB: vi.fn()
