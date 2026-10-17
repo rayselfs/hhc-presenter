@@ -5,7 +5,8 @@ export default defineConfig({
   testMatch: [
     'electron-packaged.spec.ts',
     'electron-auth-recovery.spec.ts',
-    'electron-ui-follow-up.spec.ts'
+    'electron-ui-follow-up.spec.ts',
+    'electron-legacy-retirement.spec.ts'
   ],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
