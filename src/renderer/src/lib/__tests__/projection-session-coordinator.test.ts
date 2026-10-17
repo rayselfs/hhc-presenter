@@ -510,7 +510,8 @@ describe('ProjectionSessionCoordinator', () => {
 
     expect(send.mock.calls).toEqual([
       ['file:control', { action: 'play', itemId: 'video-1' }],
-      ['file:end', null]
+      ['file:end', null],
+      ['__system:replay', { generation: 2, snapshot: coordinator.getSnapshot() }]
     ])
   })
 
