@@ -31,54 +31,77 @@ const ButtonGroupMock = Object.assign(
   }
 )
 
-// Module-level variables capture Tabs props during parent render so child Tab renders can read them
-let capturedOnSelectionChange: ((key: string) => void) | undefined
-let capturedSelectedKey: string | undefined
+type TabsMockProps = {
+  children: React.ReactNode
+  selectedKey?: string
+  defaultSelectedKey?: string
+  onSelectionChange?: (key: string) => void
+}
 
-const TabsMock = Object.assign(
-  ({
+const TabsMockContext = React.createContext<{
+  selectedKey?: string
+  select: (key: string) => void
+}>({ select: () => {} })
+
+function TabsRootMock({
+  children,
+  selectedKey,
+  defaultSelectedKey,
+  onSelectionChange
+}: TabsMockProps): React.JSX.Element {
+  const [uncontrolledKey, setUncontrolledKey] = React.useState(defaultSelectedKey)
+  return (
+    <TabsMockContext.Provider
+      value={{
+        selectedKey: selectedKey ?? uncontrolledKey,
+        select: (key) => {
+          if (selectedKey === undefined) setUncontrolledKey(key)
+          onSelectionChange?.(key)
+        }
+      }}
+    >
+      <div role="tablist">{children}</div>
+    </TabsMockContext.Provider>
+  )
+}
+
+const TabsMock = Object.assign(TabsRootMock, {
+  Root: TabsRootMock,
+  ListContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  List: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Tab: ({
     children,
-    selectedKey,
-    onSelectionChange
+    id,
+    'data-testid': dataTestId,
+    ...rest
   }: {
     children: React.ReactNode
-    selectedKey?: string
-    onSelectionChange?: (key: string) => void
+    id?: string
+    'data-testid'?: string
+    [key: string]: unknown
   }) => {
-    capturedOnSelectionChange = onSelectionChange
-    capturedSelectedKey = selectedKey
-    return <div role="tablist">{children}</div>
-  },
-  {
-    Root: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    ListContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    List: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    Tab: ({
-      children,
-      id,
-      'data-testid': dataTestId,
-      ...rest
-    }: {
-      children: React.ReactNode
-      id?: string
-      'data-testid'?: string
-      [key: string]: unknown
-    }) => (
+    const tabs = React.useContext(TabsMockContext)
+    return (
       <button
         role="tab"
-        aria-selected={capturedSelectedKey === id}
+        aria-selected={tabs.selectedKey === id}
         data-testid={dataTestId}
-        onClick={() => id && capturedOnSelectionChange?.(id)}
+        onClick={() => id && tabs.select(id)}
         {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}
       >
         {children}
       </button>
-    ),
-    Indicator: () => null,
-    Panel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    Separator: () => null
-  }
-)
+    )
+  },
+  Indicator: () => null,
+  Panel: ({ children, id }: { children: React.ReactNode; id?: string }) => {
+    const tabs = React.useContext(TabsMockContext)
+    return id === undefined || tabs.selectedKey === id ? (
+      <div role="tabpanel">{children}</div>
+    ) : null
+  },
+  Separator: () => null
+})
 
 const ModalMock = Object.assign(
   ({ children }: { children: React.ReactNode }) => <div>{children}</div>,

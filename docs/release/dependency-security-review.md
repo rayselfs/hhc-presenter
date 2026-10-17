@@ -31,28 +31,28 @@ command after dependency installation. Packaging and publication already depend 
 that job, so any advisory or audit failure blocks them. No release workflow was run
 while making this change.
 
-A fresh full audit of the integrated lockfile reports **10 moderate affected
+At the gate-wiring checkpoint, a full audit reported **10 moderate affected
 packages, with no high or critical findings**. Earlier remediation reduced the
 2026-10-17 baseline of 24 affected packages (10 high and 14 moderate). The
 2026-08-22 zero-advisory result above is historical, not the current gate state.
-The audit exits nonzero; this gate is not bypassed with an allowlist, a higher
+That audit exited nonzero; the gate is not bypassed with an allowlist, a higher
 severity threshold, or production-only filtering.
 
-The remaining paths include `global-agent`, `roarr` and `sprintf-js`, propagated
+Those remaining paths included `global-agent`, `roarr` and `sprintf-js`, propagated
 through Electron download/build tooling and ONNX runtime installation. npm suggests
 major root dependency changes; those are not compatibility evidence. A tested
 `global-agent` override was rejected after a valid HTTPS CONNECT proxy case failed
 certificate hostname validation. Its zero-audit result does not justify merging a
 known transport regression or disabling TLS verification.
 
-Compatible remediation, a clean install and a repeated full audit remain required
-before a future release. This wiring change does not resolve those findings or
-claim that the affected paths are exploitable in Presenter. No release workflow,
-tag or manual deployment is needed to review or merge this gate.
+At that checkpoint, compatible remediation, a clean install and a repeated full
+audit remained required. Gate wiring alone did not resolve the findings or prove
+that the affected paths were exploitable in Presenter. No release workflow, tag
+or manual deployment was used to test the gate.
 
 ## 2026-10-17 transport-preserving logger remediation
 
-The reviewed logger-only candidate overrides `global-agent`'s `roarr` dependency to
+The reviewed logger-only change overrides `global-agent`'s `roarr` dependency to
 3.3.0 and retains `global-agent` 3.0.0 and its proxy transport. This removes the
 `sprintf-js` path without accepting the rejected global-agent 4.1.3 transport
 regression. A fresh own `npm ci --prefer-offline` and full `npm audit` report zero
@@ -64,8 +64,9 @@ The actual installed baseline and candidate both pass HTTP proxy, HTTPS CONNECT
 with a trusted synthetic origin certificate, and HTTP/HTTPS NO_PROXY, through both
 direct bootstrap and the Electron downloader initialization. Each entry runs with
 logging disabled and enabled. Enabled logging also serializes response headers, a
-TLS CA Buffer array and request/socket errors. TLS certificate verification remains
-enabled. The repository's four installed-dependency cases retain the HTTP success,
+TLS CA Buffer array and request/socket errors. Both graphs also reject a trusted
+certificate requested with a deliberately wrong hostname, including enabled
+TLS-error logging. TLS certificate verification remains enabled. The repository's four installed-dependency cases retain the HTTP success,
 reset failure and enabled/disabled JSON logging contract in normal unit CI; those
 cases alone do not cover the separate local HTTPS matrix. No real account, network
 credentials, Linux CUDA download or Windows proxy installation is claimed.
@@ -76,6 +77,7 @@ export, child and log-level APIs, global state, actual caller arguments and lock
 changes. All added transitive packages belong to the logger graph; this is not a
 package-size optimization. The full audit gate and TLS checks are unchanged.
 
-The candidate's final integrated package and exact-head CI results must be recorded
-before merge. A zero audit is dependency metadata evidence, not a release or
-complete security assessment. No tag, release or manual deployment is required.
+Package/smoke evidence belongs to the exact artifact reported in the PR. Its
+checks record exact-head CI and are required before merge. A zero audit is
+dependency metadata evidence, not a release or complete security assessment.
+No tag, release or manual deployment is required.

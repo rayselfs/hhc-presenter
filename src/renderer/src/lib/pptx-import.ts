@@ -1,7 +1,9 @@
-import { assertEditablePptxDocument, assertEditablePptxFeatures } from './editable-pptx-policy'
 import { isFileItem, type FileItemRecord } from '@shared/types/folder'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
-import { convertPresentationData, createEditablePresentationItem } from './editable-presentation'
+import {
+  convertPptxBytesToEditableDocument,
+  createEditablePresentationItem
+} from './editable-presentation'
 import { openFileExplorerDB } from './file-explorer-db'
 import { resolveUniqueFileName } from './file-naming'
 import { PPTX_MIME_TYPE } from './presentation-media'
@@ -11,12 +13,6 @@ let pendingCatalogCreation: Promise<unknown> = Promise.resolve()
 
 export async function importEditablePptx(file: File, parentId: string): Promise<FileItemRecord> {
   const ownerId = usePersonalSyncStore.getState().activeOwnerId
-  const { parseZip, buildPresentation, materializeAllSlideNodes, RECOMMENDED_ZIP_LIMITS } =
-    await import('@aiden0z/pptx-renderer')
-  const files = await parseZip(await file.arrayBuffer(), RECOMMENDED_ZIP_LIMITS)
-  const presentation = buildPresentation(files)
-  assertEditablePptxFeatures(files, presentation)
-  materializeAllSlideNodes(presentation)
   const source: FileItemRecord = {
     id: crypto.randomUUID(),
     parentId,
@@ -29,8 +25,7 @@ export async function importEditablePptx(file: File, parentId: string): Promise<
     size: file.size,
     mimeType: PPTX_MIME_TYPE
   }
-  const document = convertPresentationData(source, presentation)
-  assertEditablePptxDocument(document)
+  const document = await convertPptxBytesToEditableDocument(await file.arrayBuffer(), source)
   // Name resolution and persistence must stay together when upload workers finish concurrently.
   const creation = pendingCatalogCreation.then(async () => {
     const db = await openFileExplorerDB()

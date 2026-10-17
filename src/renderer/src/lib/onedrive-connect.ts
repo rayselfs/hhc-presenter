@@ -48,7 +48,7 @@ import {
   buildSyncRefreshPlan,
   collectSyncChangePages
 } from './sync-refresh'
-import { refreshImportedMediaAssets } from './local-sync-import'
+import { refreshImportedMediaAssets } from './sync-media-preparation'
 import { dispatchPlannedSyncDownloads } from './sync-transfer-dispatch'
 
 const ONEDRIVE_WEB_CALLBACK_PATH = '/onedrive-callback.html'

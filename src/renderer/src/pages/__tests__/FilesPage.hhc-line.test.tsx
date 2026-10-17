@@ -108,13 +108,13 @@ vi.mock('@renderer/components/Control/FileExplorer/FileBrowser', () => ({
     onCopy,
     onCut,
     onDelete,
-    onSelectionChange
+    selection
   }: {
     onEmptyAreaContextMenu: (event: React.MouseEvent) => void
     onCopy: (ids: Set<string>) => void
     onCut: (ids: Set<string>) => void
     onDelete: (ids: Set<string>) => Promise<boolean>
-    onSelectionChange: (ids: Set<string>) => void
+    selection: { setSelectedIds: (ids: Set<string>) => void }
   }) => (
     <>
       <button onClick={() => onEmptyAreaContextMenu({} as React.MouseEvent)}>
@@ -122,7 +122,7 @@ vi.mock('@renderer/components/Control/FileExplorer/FileBrowser', () => ({
       </button>
       <button
         onClick={() => {
-          onSelectionChange(new Set(['A']))
+          selection.setSelectedIds(new Set(['A']))
           onCut(new Set(['A']))
         }}
       >
@@ -130,7 +130,7 @@ vi.mock('@renderer/components/Control/FileExplorer/FileBrowser', () => ({
       </button>
       <button
         onClick={async () => {
-          onSelectionChange(new Set(['sync-root']))
+          selection.setSelectedIds(new Set(['sync-root']))
           mocks.deleteResult(await onDelete(new Set(['sync-root'])))
         }}
       >
@@ -138,7 +138,7 @@ vi.mock('@renderer/components/Control/FileExplorer/FileBrowser', () => ({
       </button>
       <button
         onClick={() => {
-          onSelectionChange(new Set(['A']))
+          selection.setSelectedIds(new Set(['A']))
           onCopy(new Set(['A']))
         }}
       >

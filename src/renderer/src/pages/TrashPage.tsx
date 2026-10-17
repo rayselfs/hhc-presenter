@@ -394,7 +394,7 @@ export default function TrashPage(): React.JSX.Element {
 
   useKeyboardShortcuts(
     [
-      { config: SHORTCUTS.EDIT.SELECT_ALL, handler: selectAll, preventDefault: true },
+      { config: SHORTCUTS.EDIT.SELECT_ALL, handler: () => selectAll(), preventDefault: true },
       { config: SHORTCUTS.EDIT.ESCAPE, handler: clearSelection, preventDefault: true },
       {
         config: SHORTCUTS.EDIT.DELETE,

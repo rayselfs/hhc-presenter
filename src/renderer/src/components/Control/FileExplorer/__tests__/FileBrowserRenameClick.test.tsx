@@ -1,3 +1,4 @@
+import { useItemSelection } from '@renderer/hooks/useItemSelection'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DragEndEvent } from '@dnd-kit/core'
@@ -248,7 +249,7 @@ function renderFileBrowser(): void {
 
   render(
     <MemoryRouter>
-      <FileBrowser />
+      <SelectedFileBrowser />
       <LocationProbe />
     </MemoryRouter>
   )
@@ -263,6 +264,30 @@ describe('FileBrowser slow-click inline rename', () => {
     mockStartPresentation.mockClear()
     mockStartPresentationWithReadiness.mockClear()
     viewMode = 'medium-icon'
+  })
+
+  it('shares parent clears, context targets and range selection with the rendered highlights', () => {
+    renderFileBrowser()
+    const file = screen.getByText('slides.pdf').closest('[data-file-item]')!
+    const folder = screen.getByText('Drama Audio').closest('[data-file-item]')!
+    click(file, 1000)
+    expect(file).toHaveClass('bg-surface')
+    expect(screen.getByTestId('selected-ids')).toHaveTextContent('file-1')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear parent selection' }))
+    expect(file).not.toHaveClass('bg-surface')
+    expect(screen.getByTestId('selected-ids')).toBeEmptyDOMElement()
+    fireEvent.click(folder, { shiftKey: true })
+    expect(screen.getByTestId('selected-ids')).toHaveTextContent(/^folder-1$/)
+    fireEvent.click(file, { shiftKey: true })
+    expect(file).toHaveClass('bg-surface')
+    expect(folder).toHaveClass('bg-surface')
+    expect(screen.getByTestId('selected-ids')).toHaveTextContent('folder-1,file-1')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select file from parent' }))
+    expect(file).toHaveClass('bg-surface')
+    expect(folder).not.toHaveClass('bg-surface')
+    expect(screen.getByTestId('selected-ids')).toHaveTextContent(/^file-1$/)
   })
 
   it('only starts rename from the file name region', () => {
@@ -352,6 +377,22 @@ describe('FileBrowser slow-click inline rename', () => {
   })
 })
 
+function SelectedFileBrowser(
+  props: Omit<React.ComponentProps<typeof FileBrowser>, 'selection'> = {}
+): React.JSX.Element {
+  const selection = useItemSelection()
+  return (
+    <>
+      <button onClick={selection.clearSelection}>Clear parent selection</button>
+      <button onClick={() => selection.setSelectedIds(new Set(['file-1']))}>
+        Select file from parent
+      </button>
+      <output data-testid="selected-ids">{[...selection.selectedIds].join(',')}</output>
+      <FileBrowser {...props} selection={selection} />
+    </>
+  )
+}
+
 describe('durable rename editor ownership', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -369,7 +410,7 @@ describe('durable rename editor ownership', () => {
       renameMocks.rename.mockReturnValueOnce(pending)
       const view = render(
         <MemoryRouter>
-          <FileBrowser />
+          <SelectedFileBrowser />
         </MemoryRouter>
       )
       const fileName = screen.getByText('slides.pdf')
@@ -383,23 +424,23 @@ describe('durable rename editor ownership', () => {
         viewMode = 'list'
         view.rerender(
           <MemoryRouter>
-            <FileBrowser />
+            <SelectedFileBrowser />
           </MemoryRouter>
         )
         viewMode = 'medium-icon'
         view.rerender(
           <MemoryRouter>
-            <FileBrowser />
+            <SelectedFileBrowser />
           </MemoryRouter>
         )
         view.rerender(
           <MemoryRouter>
-            <FileBrowser renameItemRequestId={fileItem.id} />
+            <SelectedFileBrowser renameItemRequestId={fileItem.id} />
           </MemoryRouter>
         )
         view.rerender(
           <MemoryRouter>
-            <FileBrowser />
+            <SelectedFileBrowser />
           </MemoryRouter>
         )
       } else {
