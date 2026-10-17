@@ -41,7 +41,7 @@ import { Spinner } from '@heroui/react/spinner'
 import { toast } from '@heroui/react/toast'
 import { SHORTCUTS } from '@renderer/config/shortcuts'
 import EditableSlideSurface from '@renderer/components/Common/EditableSlideSurface'
-import type { TextEditFinalizer, EditableTextSelection } from '@renderer/types/presentation-text'
+import type { EditableTextSelection } from '@renderer/types/presentation-text'
 import PresentationHomeRibbon from '@renderer/components/Control/Presentation/PresentationHomeRibbon'
 import {
   InspectorPanel,
@@ -116,6 +116,7 @@ import {
   supportsLocalFontAccess
 } from '@renderer/lib/local-fonts'
 import { useSettingsStore } from '@renderer/stores/settings'
+import { usePresentationTextTransactions } from '@renderer/hooks/usePresentationTextTransactions'
 import { usePresentationSessionRegistry } from '@renderer/contexts/PresentationSessionRegistryContext'
 import type { PresentationEditorSession } from '@renderer/lib/presentation-editor-session'
 import { ensurePresentationPageDocument } from '@renderer/lib/presentation-page-document'
@@ -629,11 +630,7 @@ function EditableSessionDocumentView({
       : Math.min(lastActiveSlideIndex, Math.max(0, document.slideOrder.length - 1))
   const activeSlideId = document.slideOrder[activeSlideIndex] ?? null
   const imageInputRef = useRef<HTMLInputElement>(null)
-  const textDraftStartedAtRef = useRef<number | null>(null)
-  const textCommitTimerRef = useRef<number | null>(null)
-  const textEditorFinalizerRef = useRef<TextEditFinalizer | null>(null)
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
-  const newEmptyTextRef = useRef<string | null>(null)
   const [selectedElementIds, setSelectedElementIds] = useState<Set<string>>(() => new Set())
   const [copiedElement, setCopiedElement] = useState<EditablePresentationElement | null>(null)
   const [selectedSlideIds, setSelectedSlideIds] = useState<Set<string>>(() => new Set())
@@ -663,29 +660,18 @@ function EditableSessionDocumentView({
     horizontal?: number
   }>({})
 
-  const finalizeTextEditor = useCallback(
-    (): boolean => textEditorFinalizerRef.current?.() ?? true,
-    []
-  )
-  const setTextEditorFinalizer = useCallback(
-    (finalize: TextEditFinalizer | null): void => {
-      textEditorFinalizerRef.current = finalize
-      registry.notifyEditorLifecycle?.(deck.itemId)
-    },
-    [deck.itemId, registry]
-  )
-
-  useEffect(
-    () =>
-      registry.registerEditorFinalizer?.(
-        deck.itemId,
-        finalizeTextEditor,
-        () => textEditorFinalizerRef.current?.hasUnsafeWork?.() ?? false,
-        () => textEditorFinalizerRef.current !== null,
-        () => textEditorFinalizerRef.current?.isComposing?.() ?? false
-      ),
-    [deck.itemId, finalizeTextEditor, registry]
-  )
+  const {
+    setTextEditorFinalizer,
+    getTextEditorFinalizer,
+    finalizeTextEditor,
+    commitTextDraft,
+    finalizeDocumentMutation,
+    commitDocument,
+    previewTextElement,
+    beginEmptyTextDraft,
+    isEmptyTextDraft,
+    cancelEmptyTextDraft
+  } = usePresentationTextTransactions(deck.itemId, session, registry)
   const projectionPlaylist = useMediaProjectionStore((state) => state.playlist)
   const projectionIndex = useMediaProjectionStore((state) => state.currentIndex)
   const isPresenting = useMediaProjectionStore((state) => state.isPresenting)
@@ -698,15 +684,6 @@ function EditableSessionDocumentView({
     setCompactOverlay(null)
     queueMicrotask(() => formatBackgroundTriggerRef.current?.focus())
   }
-
-  useEffect(
-    () => () => {
-      if (textCommitTimerRef.current !== null) {
-        window.clearTimeout(textCommitTimerRef.current)
-      }
-    },
-    []
-  )
 
   useEffect(() => {
     setSlideCount(deck.itemId, document.slideOrder.length)
@@ -756,82 +733,9 @@ function EditableSessionDocumentView({
     NonNullable<React.ComponentProps<typeof EditableSlideSurface>['onTextLayoutChange']>
   >((slideId, elementId, size) => session.reflowText(slideId, elementId, size), [session])
 
-  const clearTextCommitTimer = useCallback((resetDeadline = true): void => {
-    if (resetDeadline) textDraftStartedAtRef.current = null
-    if (textCommitTimerRef.current === null) return
-    window.clearTimeout(textCommitTimerRef.current)
-    textCommitTimerRef.current = null
-  }, [])
-
-  const commitTextDraft = (): void => {
-    clearTextCommitTimer()
-    if (newEmptyTextRef.current) return
-    if (session.getSnapshot().draftKind === 'text') session.commitDraft()
-  }
-
-  const finalizeDocumentMutation = (): EditablePresentationDocument | null => {
-    if (!finalizeTextEditor()) return null
-    clearTextCommitTimer()
-    return session.getSnapshot().renderedDocument
-  }
-
-  const commitDocument = (
-    update: (currentDocument: EditablePresentationDocument) => EditablePresentationDocument
-  ): boolean => {
-    const currentDocument = finalizeDocumentMutation()
-    if (!currentDocument) return false
-    session.commit(update(currentDocument))
-    return true
-  }
-
   function commitNotes(): void {
     if (session.getSnapshot().draftKind === 'notes') session.commitDraft()
   }
-
-  const previewTextElement = useCallback(
-    (slideId: string, elementId: string, updates: Partial<EditablePresentationElement>): void => {
-      const preview = session.getSnapshot().renderedDocument
-      if (
-        newEmptyTextRef.current === elementId &&
-        'text' in updates &&
-        updates.text?.replace(/[\u200b\ufeff]/g, '').trim()
-      ) {
-        newEmptyTextRef.current = null
-      }
-      const current = preview.slides[slideId]?.elements[elementId]
-      if (
-        current &&
-        Object.entries(updates).every(
-          ([key, value]) => current[key as keyof typeof current] === value
-        )
-      ) {
-        return
-      }
-      textDraftStartedAtRef.current ??= Date.now()
-      if (session.getSnapshot().draftKind !== 'text') session.beginDraft('text')
-      session.previewDraft(updateElementInSlide(preview, slideId, elementId, updates))
-      clearTextCommitTimer(false)
-      if (newEmptyTextRef.current === elementId) return
-      if (
-        Date.now() - (textDraftStartedAtRef.current ?? Date.now()) >= 4000 &&
-        !textEditorFinalizerRef.current?.isComposing?.()
-      ) {
-        session.commitDraft()
-        textDraftStartedAtRef.current = null
-        return
-      }
-      textCommitTimerRef.current = window.setTimeout(function commitWhenReady() {
-        textCommitTimerRef.current = null
-        if (textEditorFinalizerRef.current?.isComposing?.()) {
-          textCommitTimerRef.current = window.setTimeout(commitWhenReady, 750)
-          return
-        }
-        textDraftStartedAtRef.current = null
-        if (session.getSnapshot().draftKind === 'text') session.commitDraft()
-      }, 750)
-    },
-    [session, clearTextCommitTimer]
-  )
 
   const selectElement = (
     elementId: string | null,
@@ -959,9 +863,7 @@ function EditableSessionDocumentView({
       fontSize,
       text: ''
     })
-    newEmptyTextRef.current = element.id
-    session.beginDraft('text')
-    session.previewDraft(addElementToSlide(currentDocument, activeSlideId, element))
+    beginEmptyTextDraft(element.id, addElementToSlide(currentDocument, activeSlideId, element))
     setSelectedElementId(element.id)
     setSelectedElementIds(new Set([element.id]))
     setEditingElementId(element.id)
@@ -1326,7 +1228,7 @@ function EditableSessionDocumentView({
         ) => Partial<Extract<EditablePresentationElement, { type: 'text' }>>)
   ): void => {
     if (!activeSlideId || !selectedElementId) return
-    if (textEditorFinalizerRef.current?.flush?.() === false) return
+    if (getTextEditorFinalizer()?.flush?.() === false) return
     commitTextDraft()
     const current = session.getSnapshot().renderedDocument
     const element = current.slides[activeSlideId]?.elements[selectedElementId]
@@ -1375,7 +1277,7 @@ function EditableSessionDocumentView({
       }
     }
     const next = updateElementInSlide(current, activeSlideId, element.id, updates)
-    if (newEmptyTextRef.current === element.id) session.previewDraft(next)
+    if (isEmptyTextDraft(element.id)) session.previewDraft(next)
     else session.commit(next)
   }
 
@@ -1383,7 +1285,7 @@ function EditableSessionDocumentView({
     window.requestAnimationFrame(() => {
       const focused = window.document.activeElement
       if (focused?.closest('[data-ribbon-surface], [data-presentation-text-tool]')) {
-        textEditorFinalizerRef.current?.restoreSelection?.()
+        getTextEditorFinalizer()?.restoreSelection?.()
       }
     })
   }
@@ -1391,7 +1293,7 @@ function EditableSessionDocumentView({
   const getTextCommandRange = (
     element: Extract<EditablePresentationElement, { type: 'text' }>
   ): { start: number; end: number } => {
-    const selection = textEditorFinalizerRef.current?.getSelection?.() ?? textSelection
+    const selection = getTextEditorFinalizer()?.getSelection?.() ?? textSelection
     return selection?.elementId === element.id ? selection : { start: 0, end: element.text.length }
   }
 
@@ -2383,10 +2285,7 @@ function EditableSessionDocumentView({
                       }}
                       onEditingElementChange={(elementId) => {
                         if (elementId === null) {
-                          if (newEmptyTextRef.current) {
-                            newEmptyTextRef.current = null
-                            clearTextCommitTimer()
-                            session.cancelDraft()
+                          if (cancelEmptyTextDraft()) {
                             setSelectedElementId(null)
                             setSelectedElementIds(new Set())
                           }
