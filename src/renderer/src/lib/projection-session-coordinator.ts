@@ -462,7 +462,11 @@ export function createProjectionSessionCoordinator(
         if (snapshot) snapshot = endMediaSnapshot(snapshot)
         pendingFileControls = null
       }
-      if (recovery.status === 'ready') send(channel, data)
+      if (recovery.status === 'ready') {
+        send(channel, data)
+        // The file child may not have subscribed when the playlist ends.
+        sendReplay(recovery.generation)
+      }
       notify()
     },
 
