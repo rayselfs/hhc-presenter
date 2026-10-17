@@ -1,3 +1,6 @@
+import { parseTimerCommand } from '@shared/timer-command'
+import { parseLanRemoteCommand } from '@shared/lan-remote'
+import { MAX_DURATION_SECONDS } from '@shared/constants/timer'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockMainWindow = { id: 1 }
@@ -439,4 +442,57 @@ it('validates bounded document render reports and PDF initial state', () => {
       { ...show, pdf: { page: 0, scroll: Infinity, viewMode: 'continuous' } }
     ])
   ).toBe(false)
+})
+
+describe('shared seconds command parser', () => {
+  const cases: Array<[unknown, boolean]> = [
+    ...[
+      'start',
+      'pause',
+      'resume',
+      'reset',
+      'startStopwatch',
+      'pauseStopwatch',
+      'resetStopwatch'
+    ].map((type): [unknown, boolean] => [{ type }, true]),
+    ...['setDuration', 'addTime', 'removeTime'].flatMap(
+      (type): Array<[unknown, boolean]> => [
+        [{ type, seconds: 0 }, true],
+        [{ type, seconds: 0.5 }, true],
+        [{ type, seconds: MAX_DURATION_SECONDS }, true],
+        [{ type, seconds: -1 }, false],
+        [{ type, seconds: MAX_DURATION_SECONDS + 1 }, false],
+        [{ type, seconds: NaN }, false],
+        [{ type, seconds: Infinity }, false],
+        [{ type, seconds: '1' }, false]
+      ]
+    ),
+    [{ type: 'setMode', mode: 'stopwatch' }, true],
+    [{ type: 'setMode', mode: 'other' }, false],
+    [{ type: 'setReminder', enabled: true, durationSeconds: 0.5 }, true],
+    [{ type: 'setReminder', enabled: 1, durationSeconds: 1 }, false],
+    [{ type: 'setReminder', enabled: true, durationSeconds: NaN }, false],
+    [{ type: 'setOvertimeMessage', enabled: false, message: 'x'.repeat(1000) }, true],
+    [{ type: 'setOvertimeMessage', enabled: true, message: 'x'.repeat(1001) }, false],
+    [null, false],
+    [{ type: 'unknown' }, false]
+  ]
+
+  it.each(cases)('keeps IPC and LAN acceptance for %j', (input, accepted) => {
+    expect(validateTimerCommand(input)).toBe(accepted)
+    expect(parseTimerCommand(input) !== null).toBe(accepted)
+    expect(
+      parseLanRemoteCommand({ requestId: 'r', type: 'timer:command', command: input }) !== null
+    ).toBe(accepted)
+  })
+
+  it('returns only fields allowed for the command', () => {
+    expect(parseTimerCommand({ type: 'start', seconds: 99, other: 'discard' })).toEqual({
+      type: 'start'
+    })
+    expect(parseTimerCommand({ type: 'addTime', seconds: 0.5, other: 'discard' })).toEqual({
+      type: 'addTime',
+      seconds: 0.5
+    })
+  })
 })
