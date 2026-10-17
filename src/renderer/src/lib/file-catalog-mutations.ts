@@ -185,3 +185,76 @@ export async function restoreLocalCatalogEntry(
     throw error
   }
 }
+
+export async function renameLocalCatalogEntry(
+  kind: 'folder' | 'file',
+  id: string,
+  name: string
+): Promise<FolderRecord | FileItemRecord> {
+  const nextName = name.trim()
+  if (!validateDisplayName(nextName)) throw new Error('Rename name is invalid')
+  const db = await openFileExplorerDB()
+  const tx = db.transaction(['folder-items', 'folder-records', 'catalog-deletions'], 'readwrite')
+  try {
+    const record =
+      kind === 'folder'
+        ? await tx.objectStore('folder-records').get(id)
+        : await tx.objectStore('folder-items').get(id)
+    if (
+      !record ||
+      record.personalOwnerId ||
+      record.deletedAt ||
+      !record.parentId ||
+      ('type' in record && record.type !== 'file')
+    )
+      throw new Error('Rename source is unavailable')
+    const folders = await tx.objectStore('folder-records').getAll()
+    assertLocalDestination(record.parentId, folders)
+    if (
+      kind === 'folder' &&
+      isFolderReadOnlyBySyncLink(
+        id,
+        Object.fromEntries(folders.map((folder) => [folder.id, folder]))
+      )
+    )
+      throw new Error('Rename source is read-only')
+    let ancestor: string | null = id
+    const seen = new Set<string>()
+    while (ancestor && !seen.has(ancestor)) {
+      seen.add(ancestor)
+      if (await tx.objectStore('catalog-deletions').get(ancestor))
+        throw new Error('Rename source was deleted')
+      ancestor =
+        ancestor === id
+          ? record.parentId
+          : ((await tx.objectStore('folder-records').get(ancestor))?.parentId ?? null)
+    }
+    const siblings =
+      kind === 'folder'
+        ? folders.filter((folder) => folder.parentId === record.parentId)
+        : (await tx.objectStore('folder-items').index('by-parent').getAll(record.parentId)).filter(
+            (item) => item.type === 'file'
+          )
+    if (
+      hasNameConflict(
+        nextName,
+        siblings.filter((entry) => !entry.deletedAt).map((entry) => entry.name),
+        { excludeName: record.name }
+      )
+    )
+      throw new Error('Rename name already exists')
+    const renamed = { ...record, name: nextName }
+    if ('type' in renamed) await tx.objectStore('folder-items').put(renamed)
+    else await tx.objectStore('folder-records').put(renamed)
+    await tx.done
+    return renamed
+  } catch (error) {
+    try {
+      tx.abort()
+    } catch {
+      /* Already completed. */
+    }
+    await tx.done.catch(() => undefined)
+    throw error
+  }
+}

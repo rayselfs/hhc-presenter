@@ -42,6 +42,7 @@ import { compareByField } from '@renderer/lib/file-explorer-sort'
 import { searchAllItems } from '@renderer/lib/file-explorer-search'
 import {
   FILE_EXPLORER_ROOT_ID,
+  renameExplorerEntry,
   deleteFolderFromStore,
   removeFileItemFromStore,
   useFileExplorerCustomOrder,
@@ -418,6 +419,7 @@ export function FileBrowser({
   const [draggedIds, setDraggedIds] = useState<Set<string>>(new Set())
   const [selectedSearchId, setSelectedSearchId] = useState<string | null>(null)
   const [renamingItemId, setRenamingItemId] = useState<string | null>(null)
+  const renameSessionRef = React.useRef(0)
   const [syncStates, setSyncStates] = useState<Record<string, SyncItemViewState>>({})
   const [syncEntries, setSyncEntries] = useState<SyncEntryRecord[]>([])
   const [unsupportedMediaIds, setUnsupportedMediaIds] = useState<Set<string>>(new Set())
@@ -737,7 +739,10 @@ export function FileBrowser({
     const item = sortedItems.find((entry) => entry.id === renameItemRequestId)
     if (item && !item.isFolder) {
       setSelectedIds(new Set([renameItemRequestId]))
-      if (!isCurrentFolderReadOnly) setRenamingItemId(renameItemRequestId)
+      if (!isCurrentFolderReadOnly) {
+        renameSessionRef.current++
+        setRenamingItemId(renameItemRequestId)
+      }
     }
     onRenameItemRequestHandled?.()
   }, [
@@ -853,62 +858,73 @@ export function FileBrowser({
   )
 
   const handleRenameSubmit = useCallback(
-    (itemId: string, baseName: string): void => {
+    async (itemId: string, baseName: string): Promise<boolean> => {
+      const renameSession = renameSessionRef.current
       const folder = useFileExplorerStore.getState().folders[itemId]
       if (folder && isPersonalRootFolder(folder)) {
         setRenamingItemId(null)
-        return
+        return true
       }
       if (isCurrentFolderReadOnly) {
         setRenamingItemId(null)
-        return
+        return true
       }
       const item = sortedItems.find((entry) => entry.id === itemId)
       if (!item) {
         setRenamingItemId(null)
-        return
+        return true
       }
 
       const trimmedBase = baseName.trim()
       if (!validateDisplayName(trimmedBase)) {
         toast.danger(t('fileExplorer.invalidName', 'Invalid name'))
-        return
+        return false
       }
 
-      if (item.isFolder) {
-        const folder = folders.find((entry) => entry.id === itemId)
-        if (!folder) {
-          setRenamingItemId(null)
-          return
+      try {
+        if (item.isFolder) {
+          const folder = folders.find((entry) => entry.id === itemId)
+          if (!folder) {
+            setRenamingItemId(null)
+            return true
+          }
+          const siblingNames = folders
+            .filter((entry) => entry.parentId === folder.parentId)
+            .map((entry) => entry.name)
+          if (hasNameConflict(trimmedBase, siblingNames, { excludeName: folder.name })) {
+            toast.danger(
+              t('fileExplorer.folderAlreadyExists', 'A folder with this name already exists')
+            )
+            return false
+          }
+          await renameExplorerEntry('folder', itemId, trimmedBase)
+        } else {
+          const file = fileItems.find((entry) => entry.id === itemId)
+          if (!file) {
+            setRenamingItemId(null)
+            return true
+          }
+          const { extension } = splitFileName(file.name)
+          const nextName = `${trimmedBase}${extension}`
+          const siblingNames = fileItems
+            .filter((entry) => entry.parentId === file.parentId)
+            .map((entry) => entry.name)
+          if (hasNameConflict(nextName, siblingNames, { excludeName: file.name })) {
+            toast.danger(
+              t('fileExplorer.fileAlreadyExists', 'A file with this name already exists')
+            )
+            return false
+          }
+          await renameExplorerEntry('file', itemId, nextName)
         }
-        const siblingNames = folders
-          .filter((entry) => entry.parentId === folder.parentId)
-          .map((entry) => entry.name)
-        if (hasNameConflict(trimmedBase, siblingNames, { excludeName: folder.name })) {
-          toast.danger(
-            t('fileExplorer.folderAlreadyExists', 'A folder with this name already exists')
-          )
-          return
-        }
-        useFileExplorerStore.getState().updateFolder(itemId, { name: trimmedBase })
-      } else {
-        const file = fileItems.find((entry) => entry.id === itemId)
-        if (!file) {
-          setRenamingItemId(null)
-          return
-        }
-        const { extension } = splitFileName(file.name)
-        const nextName = `${trimmedBase}${extension}`
-        const siblingNames = fileItems
-          .filter((entry) => entry.parentId === file.parentId)
-          .map((entry) => entry.name)
-        if (hasNameConflict(nextName, siblingNames, { excludeName: file.name })) {
-          toast.danger(t('fileExplorer.fileAlreadyExists', 'A file with this name already exists'))
-          return
-        }
-        useFileExplorerStore.getState().updateItem?.(itemId, { name: nextName })
+        if (renameSessionRef.current === renameSession) setRenamingItemId(null)
+        return true
+      } catch (error) {
+        toast.danger(
+          error instanceof Error ? error.message : t('fileExplorer.renameFailed', 'Rename failed')
+        )
+        return false
       }
-      setRenamingItemId(null)
     },
     [fileItems, folders, sortedItems, t, isCurrentFolderReadOnly]
   )
@@ -982,6 +998,7 @@ export function FileBrowser({
         cancelPendingRename()
         pendingRenameItemIdRef.current = itemId
         renameClickTimerRef.current = setTimeout(() => {
+          renameSessionRef.current++
           setRenamingItemId(itemId)
           renameClickTimerRef.current = null
           pendingRenameItemIdRef.current = null
