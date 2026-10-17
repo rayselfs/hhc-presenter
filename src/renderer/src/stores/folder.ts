@@ -1,8 +1,7 @@
 import { create } from 'zustand'
 import type { FolderRecord, AnyItemRecord, FolderStoreConfig } from '@shared/types/folder'
 import { FOLDER_DURATION_MS } from '@shared/types/folder'
-import { createFolderDB } from '@renderer/lib/folder-db'
-import { openBibleDB } from '@renderer/lib/bible-db'
+import { createBibleFolderDB } from '@renderer/lib/folder-db'
 import { commitLocalFileItem } from '@renderer/lib/file-catalog-mutations'
 import { resolveUniqueName } from '@renderer/lib/file-naming'
 import { isFolderReadOnlyBySyncLink } from '@renderer/lib/sync-readonly'
@@ -81,7 +80,7 @@ function isItemInReadOnlyFolder(
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function createFolderStore(config: FolderStoreConfig) {
-  const ops = createFolderDB(config.getDB, config.rootId)
+  const ops = config.persistence
   const persistenceQueue = createPersistenceOperationQueue()
   let isInitializing = false
   const itemsLoadPromises = new Map<string, Promise<void>>()
@@ -1069,5 +1068,5 @@ function getDescendantFolderIds(folderId: string, folders: Record<string, Folder
 export const useBibleFolderStore = createFolderStore({
   rootId: 'bible-root',
   rootName: 'Bible Library',
-  getDB: () => openBibleDB()
+  persistence: createBibleFolderDB()
 })
