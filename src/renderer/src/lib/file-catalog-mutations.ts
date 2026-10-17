@@ -66,8 +66,9 @@ export async function saveCatalogRecords(
 
 export async function commitLocalFileItem(
   item: FileItemRecord,
-  options: { copyFromId?: string; stagingCleanupId?: string } = {}
+  options: { copyFromId?: string; stagingCleanupId?: string; signal?: AbortSignal } = {}
 ): Promise<void> {
+  options.signal?.throwIfAborted()
   const db = await openFileExplorerDB()
   const tx = db.transaction(
     [
@@ -79,7 +80,16 @@ export async function commitLocalFileItem(
     ],
     'readwrite'
   )
+  const abort = (): void => {
+    try {
+      tx.abort()
+    } catch {
+      /* Already completed. */
+    }
+  }
+  options.signal?.addEventListener('abort', abort, { once: true })
   try {
+    options.signal?.throwIfAborted()
     assertLocalDestination(item.parentId, await tx.objectStore('folder-records').getAll())
     if (await tx.objectStore('catalog-deletions').get(item.id))
       throw new Error('File has been deleted')
@@ -118,7 +128,10 @@ export async function commitLocalFileItem(
       /* The transaction may have already aborted. */
     }
     await tx.done.catch(() => undefined)
+    options.signal?.throwIfAborted()
     throw error
+  } finally {
+    options.signal?.removeEventListener('abort', abort)
   }
 }
 
