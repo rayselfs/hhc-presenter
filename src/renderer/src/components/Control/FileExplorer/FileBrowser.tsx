@@ -35,7 +35,7 @@ import { SHORTCUTS } from '@renderer/config/shortcuts'
 import { useConfirm } from '@renderer/contexts/ConfirmDialogContext'
 import { useProjection } from '@renderer/contexts/ProjectionContext'
 import { useKeyboardShortcuts } from '@renderer/hooks/useKeyboardShortcuts'
-import { useItemSelection } from '@renderer/hooks/useItemSelection'
+import type { UseItemSelectionReturn } from '@renderer/hooks/useItemSelection'
 import { useOsFileDrop } from '@renderer/hooks/useOsFileDrop'
 import { useThumbnails, canHaveThumbnail } from '@renderer/hooks/useThumbnails'
 import { compareByField } from '@renderer/lib/file-explorer-sort'
@@ -82,7 +82,7 @@ export interface FileBrowserProps {
   onItemContextMenu?: (itemId: string, event: React.MouseEvent) => void
   onFolderContextMenu?: (folderId: string, event: React.MouseEvent) => void
   onEmptyAreaContextMenu?: (event: React.MouseEvent) => void
-  onSelectionChange?: (selectedIds: Set<string>) => void
+  selection: UseItemSelectionReturn
   onCopy?: (selectedIds: Set<string>) => void
   onCut?: (selectedIds: Set<string>) => void
   onDelete?: (selectedIds: Set<string>) => void | Promise<void>
@@ -380,7 +380,7 @@ export function FileBrowser({
   onItemContextMenu,
   onFolderContextMenu,
   onEmptyAreaContextMenu,
-  onSelectionChange,
+  selection,
   onCopy,
   onCut,
   onDelete,
@@ -688,13 +688,19 @@ export function FileBrowser({
     selectedIds,
     setSelectedIds,
     clearSelection,
-    selectAll,
-    handleItemClick,
+    selectAll: selectAllItems,
+    handleItemClick: selectItem,
     handleContainerClick,
     handleContainerMouseDown,
     rubberBandRect,
     containerRef
-  } = useItemSelection(allIds)
+  } = selection
+
+  const selectAll = useCallback(() => selectAllItems(allIds), [selectAllItems, allIds])
+  const handleItemClick = useCallback(
+    (itemId: string, event: React.MouseEvent) => selectItem(itemId, event, allIds),
+    [selectItem, allIds]
+  )
 
   const {
     isOsDragOver,
@@ -719,10 +725,6 @@ export function FileBrowser({
     }
     pendingRenameItemIdRef.current = null
   }, [])
-
-  useEffect(() => {
-    onSelectionChange?.(selectedIds)
-  }, [selectedIds, onSelectionChange])
 
   useEffect(() => {
     clearSelection()

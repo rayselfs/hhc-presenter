@@ -101,11 +101,11 @@ vi.mock('@renderer/components/Control/FileExplorer/FileBrowser', () => ({
   default: ({
     onEmptyAreaContextMenu,
     onCopy,
-    onSelectionChange
+    selection
   }: {
     onEmptyAreaContextMenu: (event: React.MouseEvent) => void
     onCopy: (ids: Set<string>) => void
-    onSelectionChange: (ids: Set<string>) => void
+    selection: { setSelectedIds: (ids: Set<string>) => void }
   }) => (
     <>
       <button onClick={() => onEmptyAreaContextMenu({} as React.MouseEvent)}>
@@ -113,7 +113,7 @@ vi.mock('@renderer/components/Control/FileExplorer/FileBrowser', () => ({
       </button>
       <button
         onClick={() => {
-          onSelectionChange(new Set(['A']))
+          selection.setSelectedIds(new Set(['A']))
           onCopy(new Set(['A']))
         }}
       >
