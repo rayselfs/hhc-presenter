@@ -318,6 +318,100 @@ export function createLocalRecoveryFileBackup(
   })
 }
 
+export async function createLocalRecoveryEntryBackup(
+  ownerId: string,
+  entryId: string,
+  signal: AbortSignal
+): Promise<string> {
+  const assertOwner = (): void => {
+    signal.throwIfAborted()
+    const account = usePersonalSyncStore.getState()
+    if (account.activeOwnerId !== ownerId || account.accountStatus !== 'authenticated')
+      throw new Error('Recovery account changed')
+  }
+  assertOwner()
+  await useFileExplorerStore.getState().flushPersistence()
+  assertOwner()
+  const db = await openFileExplorerDB()
+  const tx = db.transaction(['folder-records', 'folder-items'])
+  const [allFolders, allItems] = await Promise.all([
+    tx.objectStore('folder-records').getAll(),
+    tx.objectStore('folder-items').getAll()
+  ])
+  await tx.done
+  assertOwner()
+  const folders = [...allFolders].sort((a, b) => a.sortIndex - b.sortIndex)
+  const items = [...allItems].sort((a, b) => a.sortIndex - b.sortIndex)
+  const foldersById = new Map(folders.map((folder) => [folder.id, folder]))
+  const itemsById = new Map(items.map((item) => [item.id, item]))
+  const childFolders = new Map<string, FolderRecord[]>()
+  const childItems = new Map<string, typeof items>()
+  for (const folder of folders) {
+    if (folder.parentId) {
+      const siblings = childFolders.get(folder.parentId) ?? []
+      siblings.push(folder)
+      childFolders.set(folder.parentId, siblings)
+    }
+  }
+  for (const item of items) {
+    const siblings = childItems.get(item.parentId) ?? []
+    siblings.push(item)
+    childItems.set(item.parentId, siblings)
+  }
+  const { getBlobId } = await import('@renderer/lib/blob-identity')
+  const visited = new Set<string>()
+  const copyEntry = async (id: string, parentId: string): Promise<string> => {
+    assertOwner()
+    if (visited.has(id)) throw new Error('Recovery source is cyclic')
+    visited.add(id)
+    const item = itemsById.get(id)
+    if (item) {
+      if (item.type !== 'file' || item.personalOwnerId !== ownerId)
+        throw new Error('Recovery source is unavailable')
+      const source = await getFileSource(db, getBlobId(item), item.mimeType)
+      if (!source) throw new Error('Recovery source is not available offline')
+      try {
+        const response = await fetch(source.url, { signal })
+        if (!response.ok) throw new Error('Recovery source could not be read')
+        const bytes = await response.blob()
+        assertOwner()
+        if (bytes.size !== item.size) throw new Error('Recovery source size changed')
+        return await addLocalFileItem(
+          new File([bytes], item.name, { type: item.mimeType }),
+          parentId,
+          item.mimeType,
+          item.notes,
+          { expiresAt: null, signal }
+        )
+      } finally {
+        source.revoke()
+      }
+    }
+    const folder = foldersById.get(id)
+    if (!folder || folder.personalOwnerId !== ownerId)
+      throw new Error('Recovery source is unavailable')
+    let backupId = ''
+    await filePersistenceQueue.commit(async () => {
+      assertOwner()
+      const backup = await createLocalCatalogFolder(
+        folder.name,
+        parentId,
+        null,
+        isPersonalRecordVisible,
+        signal
+      )
+      publishPersistedExplorerEntry(backup)
+      backupId = backup.id
+    })
+    for (const child of childItems.get(id) ?? []) await copyEntry(child.id, backupId)
+    for (const child of childFolders.get(id) ?? []) await copyEntry(child.id, backupId)
+    return backupId
+  }
+  const backupId = await copyEntry(entryId, FILE_EXPLORER_ROOT_ID)
+  assertOwner()
+  return backupId
+}
+
 async function addLocalFileItem(
   file: File,
   parentId: string,
