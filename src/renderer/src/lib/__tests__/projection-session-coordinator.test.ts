@@ -717,3 +717,54 @@ describe('late video promotion', () => {
     }
   )
 })
+
+it('publishes a stable coordinator view and retains the last owner after close', () => {
+  const coordinator = createProjectionSessionCoordinator(vi.fn())
+  try {
+    const initial = coordinator.getViewState()
+    expect(coordinator.getViewState()).toBe(initial)
+    const observed: ReturnType<typeof coordinator.getViewState>[] = []
+    const unsubscribe = coordinator.subscribe(() => observed.push(coordinator.getViewState()))
+    coordinator.startSession('bible', [['bible:chapter', chapter]])
+    const started = coordinator.getViewState()
+    expect(started).not.toBe(initial)
+    expect(started.snapshot).toBe(coordinator.getSnapshot())
+    expect(started.recovery).toBe(coordinator.getRecoveryState())
+    expect(started.activeOwner).toBe('bible')
+    coordinator.endSession()
+    const closed = coordinator.getViewState()
+    expect(closed).toMatchObject({
+      snapshot: null,
+      activeOwner: 'bible',
+      recovery: { status: 'closed' }
+    })
+    expect(observed).toEqual([started, closed])
+    expect(coordinator.getViewState()).toBe(closed)
+    unsubscribe()
+  } finally {
+    coordinator.dispose()
+  }
+})
+
+it('keeps duplicate ready notifications idempotent and permits explicit same-generation recovery', () => {
+  const send = vi.fn()
+  const coordinator = createProjectionSessionCoordinator(send)
+  try {
+    coordinator.startSession('timer', [['timer:tick', timerTick]])
+    coordinator.beginGeneration({ generation: 1, status: 'opening', reason: 'created' })
+    coordinator.ready(1)
+    const ready = coordinator.getViewState()
+    send.mockClear()
+    coordinator.beginGeneration({ generation: 1, status: 'ready', reason: 'created' })
+    expect(coordinator.getRecoveryState().status).toBe('ready')
+    expect(coordinator.getViewState()).toBe(ready)
+    expect(send).not.toHaveBeenCalled()
+    coordinator.beginGeneration({ generation: 1, status: 'recovering', reason: 'reload' })
+    coordinator.ready(1)
+    expect(coordinator.getViewState().recovery.status).toBe('ready')
+    expect(coordinator.getViewState()).not.toBe(ready)
+    expect(send).toHaveBeenCalledOnce()
+  } finally {
+    coordinator.dispose()
+  }
+})

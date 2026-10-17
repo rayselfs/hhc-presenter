@@ -1108,6 +1108,20 @@ describe('late native decode recovery', () => {
     await act(async () => {
       store.next()
       result.current.send('file:end', null)
+    })
+    expect(mockAdapter.send).toHaveBeenLastCalledWith(
+      '__system:replay',
+      expect.objectContaining({
+        snapshot: expect.objectContaining({
+          media: expect.objectContaining({
+            show: expect.objectContaining({ playbackMode: 'native' }),
+            state: expect.objectContaining({ playlistEnded: true })
+          })
+        })
+      })
+    )
+    vi.mocked(mockAdapter.send).mockClear()
+    await act(async () => {
       resolve({ status: 'ready' })
       await Promise.resolve()
     })
@@ -1323,3 +1337,22 @@ it.each(['video/mp4', 'audio/mpeg'])(
     expect(useMediaProjectionStore.getState().projectionRenderStatus).toBeNull()
   }
 )
+
+it('subscribes to the recreated coordinator in StrictMode and retains the closed owner', async () => {
+  vi.mocked(isElectron).mockReturnValue(false)
+  const { result, unmount } = renderHook(() => useProjection(), {
+    wrapper: ProjectionProvider,
+    reactStrictMode: true
+  })
+  act(() => result.current.claimProjection('bible'))
+  expect(result.current.activeOwner).toBe('bible')
+  expect(result.current.getProjectionSnapshot()?.owner).toBe('bible')
+  await act(async () => {
+    await result.current.closeProjection()
+  })
+  expect(result.current.activeOwner).toBe('bible')
+  expect(result.current.recovery.status).toBe('closed')
+  expect(result.current.getProjectionSnapshot()).toBeNull()
+  unmount()
+  expect(mockAdapter.dispose).toHaveBeenCalledTimes(2)
+})

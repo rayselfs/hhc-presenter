@@ -34,6 +34,12 @@ export type ProjectionCoordinatorSend = <C extends ProjectionChannel>(
   data: ProjectionPayload<C>
 ) => void
 
+export interface ProjectionCoordinatorViewState {
+  snapshot: ProjectionSessionSnapshot | null
+  recovery: ProjectionRecoveryState
+  activeOwner: ProjectionOwner
+}
+
 export interface ProjectionSessionCoordinator {
   startSession(owner: ProjectionOwner, payloads: ProjectionContentMessageTuple[]): void
   claim(owner: ProjectionOwner, unblank?: boolean): void
@@ -52,6 +58,7 @@ export interface ProjectionSessionCoordinator {
   endSession(): void
   getIntentRevision(): number
   invalidateIntent(): void
+  getViewState(): ProjectionCoordinatorViewState
   getSnapshot(): ProjectionSessionSnapshot | null
   getRecoveryState(): ProjectionRecoveryState
   subscribe(listener: () => void): () => void
@@ -281,6 +288,7 @@ export function createProjectionSessionCoordinator(
     generation: 0,
     failure: null
   }
+  let viewState: ProjectionCoordinatorViewState = { snapshot, recovery, activeOwner: 'timer' }
   let intentRevision = 0
   let contentRevision = 0
   let replayedGeneration = 0
@@ -305,6 +313,7 @@ export function createProjectionSessionCoordinator(
 
   const notify = (): void => {
     if (disposed) return
+    viewState = { snapshot, recovery, activeOwner: snapshot?.owner ?? viewState.activeOwner }
     for (const listener of listeners) listener()
   }
 
@@ -551,6 +560,7 @@ export function createProjectionSessionCoordinator(
       if (!Number.isSafeInteger(event.generation) || event.generation <= 0) return
       if (event.generation < recovery.generation) return
       if (event.status === 'ready') {
+        if (event.generation === recovery.generation && recovery.status === 'ready') return
         recovery = {
           status: 'opening',
           generation: event.generation,
@@ -667,6 +677,10 @@ export function createProjectionSessionCoordinator(
 
     getSnapshot() {
       return snapshot
+    },
+
+    getViewState() {
+      return viewState
     },
 
     getRecoveryState() {
