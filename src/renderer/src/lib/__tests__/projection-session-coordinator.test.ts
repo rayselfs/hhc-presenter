@@ -33,6 +33,8 @@ const fileShow: ProjectionPayload<'file:show'> = {
 
 const playback: ProjectionPayload<'file:playback-state'> = {
   itemId: 'video-1',
+  blobId: 'blob-1',
+  contentRevision: 1,
   phase: 'playing',
   currentTime: 24,
   duration: 120,
@@ -53,6 +55,59 @@ describe('ProjectionSessionCoordinator', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('rejects queued reports from previous content of the same item before acknowledging controls', () => {
+    const coordinator = createProjectionSessionCoordinator(send)
+    coordinator.startSession('media', [['file:show', fileShow]])
+    coordinator.beginGeneration({ generation: 3, status: 'opening', reason: 'created' })
+    coordinator.ready(3)
+    const oldShow = coordinator.getSnapshot()!.media.show!
+    const oldReport = {
+      ...playback,
+      blobId: oldShow.blobId,
+      contentRevision: oldShow.contentRevision
+    }
+    coordinator.project('file:show', { ...fileShow, blobId: 'replacement-blob' })
+    coordinator.project('file:control', { action: 'seek', itemId: fileShow.itemId, value: 24 })
+    const before = coordinator.getSnapshot()
+    const changed = vi.fn()
+    const unsubscribe = coordinator.subscribe(changed)
+    expect(coordinator.recordPlayback(3, oldReport)).toBe(false)
+    expect(coordinator.getSnapshot()).toBe(before)
+    const { blobId: _blobId, contentRevision: _revision, ...legacyPlayback } = playback
+    expect(coordinator.recordPlayback(3, legacyPlayback)).toBe(false)
+    const currentShow = coordinator.getSnapshot()!.media.show!
+    const wrongBlob = {
+      ...playback,
+      blobId: oldShow.blobId,
+      contentRevision: currentShow.contentRevision
+    }
+    expect(coordinator.recordPlayback(3, wrongBlob)).toBe(false)
+    expect(coordinator.recordPlayback(3, { ...oldReport, blobId: currentShow.blobId })).toBe(false)
+    expect(coordinator.recordPlayback(3, { ...legacyPlayback, blobId: currentShow.blobId })).toBe(
+      false
+    )
+    expect(changed).not.toHaveBeenCalled()
+    coordinator.replay(3)
+    expect(send).toHaveBeenLastCalledWith(
+      '__system:replay',
+      expect.objectContaining({
+        pendingFileControls: { itemId: fileShow.itemId, seekSeconds: 24 }
+      })
+    )
+    const currentReport = {
+      ...playback,
+      blobId: currentShow.blobId,
+      contentRevision: currentShow.contentRevision
+    }
+    expect(coordinator.recordPlayback(3, currentReport)).toBe(true)
+    expect(coordinator.getSnapshot()!.media.state!.positionSeconds).toBe(24)
+    expect(changed).toHaveBeenCalledOnce()
+    coordinator.replay(3)
+    expect(send.mock.calls.at(-1)?.[1]).not.toHaveProperty('pendingFileControls')
+    unsubscribe()
+    coordinator.dispose()
   })
 
   it('invalidates pending preparation on every explicit intent, not ticks or recovery', () => {

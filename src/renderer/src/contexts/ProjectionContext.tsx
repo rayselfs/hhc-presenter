@@ -307,6 +307,8 @@ export function ProjectionProvider({ children }: { children: React.ReactNode }):
       attemptedGeneration = generation
       coordinator.recordPlayback(generation, {
         itemId: data.itemId,
+        blobId: data.blobId,
+        contentRevision: data.contentRevision,
         phase: data.transport === 'play' ? 'playing' : 'paused',
         currentTime: data.currentTime,
         duration: data.duration,

@@ -561,6 +561,76 @@ describe('FileProjection copied media identity', () => {
     resolveOldStop?.()
   })
 
+  it('keeps the VLC attempt through a content revision renewal', async () => {
+    const props = {
+      generation: 4,
+      initialItemId: 'video-id',
+      initialBlobId: 'video-blob',
+      initialMimeType: 'video/mp4',
+      initialPlaybackMode: 'vlc-embedded' as const
+    }
+    const { rerender } = render(<FileProjection {...props} initialContentRevision={1} />)
+    await waitFor(() => expect(window.api.projectionVlc.start).toHaveBeenCalledOnce())
+    expect(window.api.projectionVlc.start).toHaveBeenCalledWith(
+      expect.objectContaining({ contentRevision: 1 })
+    )
+    mockProjectionVlcStop.mockClear()
+    rerender(<FileProjection {...props} initialContentRevision={2} />)
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(window.api.projectionVlc.start).toHaveBeenCalledOnce()
+    expect(mockProjectionVlcStop).not.toHaveBeenCalled()
+  })
+
+  it.each(['video/mp4', 'audio/mpeg'])(
+    'reports installed source identity for %s',
+    async (initialMimeType) => {
+      const props = {
+        initialItemId: 'same-item',
+        initialBlobId: 'old-blob',
+        initialMimeType,
+        initialStreamUrl: 'https://media.example/old',
+        initialContentRevision: 1
+      }
+      const { container, rerender } = render(<FileProjection {...props} />)
+      const selector = initialMimeType.startsWith('video/') ? 'video' : 'audio'
+      const oldElement = await waitFor(() => {
+        const element = container.querySelector(selector)
+        expect(element).not.toBeNull()
+        return element!
+      })
+      fireEvent.timeUpdate(oldElement)
+      expect(mockProjectionSend).toHaveBeenLastCalledWith(
+        'file:playback-state',
+        expect.objectContaining({ itemId: 'same-item', blobId: 'old-blob', contentRevision: 1 })
+      )
+      rerender(
+        <FileProjection
+          {...props}
+          initialBlobId="new-blob"
+          initialContentRevision={2}
+          initialStreamUrl="https://media.example/new"
+        />
+      )
+      const current = await waitFor(() => {
+        const element = container.querySelector(selector)
+        expect(element).toHaveAttribute('src', 'https://media.example/new')
+        return element!
+      })
+      expect(current).not.toBe(oldElement)
+      mockProjectionSend.mockClear()
+      fireEvent.timeUpdate(oldElement)
+      expect(mockProjectionSend).not.toHaveBeenCalled()
+      fireEvent.timeUpdate(current)
+      expect(mockProjectionSend).toHaveBeenCalledOnce()
+      expect(mockProjectionSend).toHaveBeenLastCalledWith(
+        'file:playback-state',
+        expect.objectContaining({ itemId: 'same-item', blobId: 'new-blob', contentRevision: 2 })
+      )
+    }
+  )
+
   it('restarts embedded VLC exactly once for a same-generation replay revision', async () => {
     const props = {
       generation: 4,
@@ -642,6 +712,8 @@ describe('FileProjection copied media identity', () => {
 
     expect(mockProjectionSend).toHaveBeenCalledWith('file:playback-state', {
       itemId: 'live-id',
+      blobId: 'source-id',
+      contentRevision: undefined,
       phase: 'paused',
       currentTime: 12,
       duration: 100,

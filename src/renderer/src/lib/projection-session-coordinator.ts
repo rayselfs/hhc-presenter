@@ -257,6 +257,9 @@ function reducePlaybackState(
   if (
     !snapshot.media.state ||
     snapshot.media.state.itemId !== data.itemId ||
+    (snapshot.media.show?.contentRevision !== undefined &&
+      (snapshot.media.show.blobId !== data.blobId ||
+        snapshot.media.show.contentRevision !== data.contentRevision)) ||
     snapshot.media.state.playlistEnded
   )
     return snapshot

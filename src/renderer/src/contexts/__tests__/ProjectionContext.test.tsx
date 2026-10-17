@@ -1026,6 +1026,8 @@ describe('late native decode recovery', () => {
       result.current.send('file:control', { itemId: 'video-1', action: 'volume', value: 0.2 })
       mockAdapter._trigger('file:playback-state', {
         itemId: 'video-1',
+        blobId: report.blobId,
+        contentRevision: report.contentRevision,
         phase: 'paused',
         currentTime: 70,
         duration: 100,
@@ -1406,6 +1408,8 @@ it('publishes accepted playback once with capability and monotonic start state',
     })
     const playing: ProjectionPayload<'file:playback-state'> = {
       itemId: file.id,
+      blobId: file.id,
+      contentRevision: result.current.getProjectionSnapshot()!.media.show!.contentRevision!,
       phase: 'playing',
       currentTime: 0,
       duration: 120,
