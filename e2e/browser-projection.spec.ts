@@ -443,6 +443,7 @@ test('restores the HHC account session without storing the access token', async 
     .poll(() =>
       projectedVideo.evaluate(
         (video) =>
+          video instanceof HTMLVideoElement &&
           video.readyState >= HTMLMediaElement.HAVE_METADATA &&
           Number.isFinite(video.duration) &&
           video.duration > 0 &&
