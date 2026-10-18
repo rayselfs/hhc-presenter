@@ -161,7 +161,7 @@ describe('HHC browser auth entry and hosting config', () => {
     expect(release).toContain('dist/*.zip')
   })
 
-  it('publishes only after every packaged artifact is checksummed and uploaded', () => {
+  it('keeps releases in draft after every packaged artifact is checksummed and uploaded', () => {
     const release = read('.github/workflows/build-release.yml')
     const checksumStep = release.match(
       /- name: Generate release checksums[\s\S]*?(?=\n\s{6}- name:)/
@@ -181,14 +181,24 @@ describe('HHC browser auth entry and hosting config', () => {
       release.indexOf('- name: Generate release checksums')
     )
     expect(release.indexOf('- name: Generate release checksums')).toBeLessThan(
-      release.indexOf('- name: Publish GitHub release')
+      release.indexOf('- name: Prepare draft GitHub release')
     )
     expect(release).toContain('find release-artifacts -maxdepth 1 -type f -print0')
     expect(release).toContain('gh release create "${GITHUB_REF_NAME}" --draft')
     expect(release).toContain('expected_digest="sha256:$(sha256sum "${artifact}"')
     expect(release).toContain('timeout 30m gh release upload "${GITHUB_REF_NAME}" "${artifact}"')
-    expect(release).toContain('gh release edit "${GITHUB_REF_NAME}" --draft=false')
+    expect(release).toContain("--json isDraft --jq '.isDraft'")
+    expect(release).toContain('Refusing to modify a published release')
+    expect(release).not.toContain('--draft=false')
     expect(release).not.toContain('release-artifacts/*')
+  })
+
+  it('deploys production web only when a release is published, keeping draft tags desktop-only', () => {
+    const staticWebApp = read('.github/workflows/azure-static-web-apps-zealous-river-03bbb7100.yml')
+    expect(staticWebApp).toMatch(/release:\s+types: \[published\]/)
+    expect(staticWebApp).not.toMatch(/push:|tags:/)
+    expect(staticWebApp).toContain("github.event_name == 'release'")
+    expect(staticWebApp).toContain("github.event_name == 'pull_request'")
   })
 
   it('keeps Asset tickets outside runtime caches and persisted browser storage', () => {

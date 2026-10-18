@@ -85,8 +85,8 @@ Every feature must work in both Electron and browser.
 | Workflow | File | Trigger | Steps |
 | -------- | ---- | ------- | ----- |
 | CI Quality Gates | `ci.yml` | PR → main | lint → node/web/E2E types → vitest → default/web build → Browser E2E |
-| Azure Static Web Apps | `azure-static-web-apps-*.yml` | PR + tag `v*` | PR preview / production deploy |
-| Build and Release | `build-release.yml` | tag `v*.*.*` | macOS (arm64) + Windows → GitHub Release |
+| Azure Static Web Apps | `azure-static-web-apps-*.yml` | PR + published release | PR preview / production deploy after manual release publication |
+| Build and Release | `build-release.yml` | tag `v*.*.*` | macOS (arm64) + Windows → draft GitHub Release |
 
 ## ANTI-PATTERNS
 

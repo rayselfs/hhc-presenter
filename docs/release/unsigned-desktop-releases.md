@@ -70,7 +70,13 @@ npm run build:unpack
 
 ## Release Verification
 
-Before publishing a tag release, the workflow runs:
+Tags build desktop packages and upload them to a draft GitHub Release. The workflow
+never publishes the draft automatically and refuses to overwrite a published release.
+After installing and accepting the candidate, publish the draft manually. That
+`release.published` event deploys the production web app; a tag or draft alone does not.
+PR web previews keep their existing behavior.
+
+Before preparing the draft release, the workflow runs:
 
 ```bash
 npm run lint

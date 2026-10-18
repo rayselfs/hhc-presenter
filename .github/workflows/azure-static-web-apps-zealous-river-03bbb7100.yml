@@ -1,9 +1,8 @@
 name: Azure Static Web Apps CI/CD
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
@@ -55,7 +54,7 @@ jobs:
     needs: cleanup_stale_previews
     if: >-
       always() &&
-      (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')) &&
+      (github.event_name == 'release' || (github.event_name == 'pull_request' && github.event.action != 'closed')) &&
       (needs.cleanup_stale_previews.result == 'success' || needs.cleanup_stale_previews.result == 'skipped')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
