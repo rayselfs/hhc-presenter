@@ -652,11 +652,8 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
           if (clipboard.mode === 'copy') {
             const uniqueName = resolveUniqueFileName(item.name, [...usedItemNames])
             usedItemNames.add(uniqueName)
-            const newId = await copyExplorerFile(id, currentFolderId)
-            if (!newId) continue
-            if (uniqueName !== item.name) {
-              useFileExplorerStore.getState().updateItem?.(newId, { name: uniqueName })
-            }
+            const newId = await copyExplorerFile(id, currentFolderId, { name: uniqueName })
+            if (!newId) throw new Error('File copy failed')
           } else {
             await moveExplorerEntry('file', id, currentFolderId)
           }

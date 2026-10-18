@@ -101,11 +101,11 @@ it.each(['local-fs', 'onedrive', 'hhc-line', 'hhc-share'] as const)(
   async (provider) => {
     await seed(provider)
     const db = await openFileExplorerDB()
-    const id = await copyExplorerFile('source', 'file-root')
+    const id = await copyExplorerFile('source', 'file-root', { name: 'Source 2.txt' })
     const copy = (await db.get('folder-items', id!)) as FileItemRecord
     expect(getBlobId(copy)).not.toBe('source')
     expect(copy).toMatchObject({
-      name: 'Source.txt',
+      name: 'Source 2.txt',
       notes: 'Keep this note',
       parentId: 'file-root'
     })
@@ -120,9 +120,10 @@ it.each(['local-fs', 'onedrive', 'hhc-line', 'hhc-share'] as const)(
 it('imports independent native bytes rather than retaining the mutable native path', async () => {
   await seed('local-fs', true)
   const db = await openFileExplorerDB()
-  const id = await copyExplorerFile('source', 'file-root')
+  const id = await copyExplorerFile('source', 'file-root', { name: 'Source 2.txt' })
   const copy = (await db.get('folder-items', id!)) as FileItemRecord
   expect(getBlobId(copy)).not.toBe('source')
+  expect(copy.name).toBe('Source 2.txt')
   nativeFiles.set('source', new NodeBlob(['B']) as Blob)
   nativeFiles.delete('source')
   expect(await nativeFiles.get(getBlobId(copy))?.text()).toBe('A')
