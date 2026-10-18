@@ -382,26 +382,3 @@ function OverlayClose({
     </Button>
   )
 }
-
-export function ProjectionSessionControl({
-  status,
-  primaryAction,
-  secondaryAction,
-  className = ''
-}: {
-  status: ReactNode
-  primaryAction?: ReactNode
-  secondaryAction?: ReactNode
-  className?: string
-}): React.JSX.Element {
-  return (
-    <section
-      className={`flex min-w-0 items-center gap-2 ${className}`}
-      aria-label="Projection session controls"
-    >
-      <div className="min-w-0 flex-1">{status}</div>
-      {secondaryAction}
-      {primaryAction}
-    </section>
-  )
-}

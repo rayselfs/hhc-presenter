@@ -2,11 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   canGenerateMediaThumbnail,
   classifyFile,
-  getAudioFileAcceptAttribute,
   getMediaFileAcceptAttribute,
   getFileExtension,
   getMediaSupport,
-  isAudioMediaItem,
   resolveMediaCapability,
   validateMediaCapabilityRegistry
 } from '../media-capabilities'
@@ -170,9 +168,8 @@ describe('audio media capabilities', () => {
     })
   })
 
-  it('includes audio in the general accept attribute and exposes audio-only accept', () => {
+  it('includes audio in the general accept attribute', () => {
     expect(getMediaFileAcceptAttribute('web')).toContain('audio/*')
-    expect(getAudioFileAcceptAttribute('web')).toBe('audio/*,.mp3,.wav,.m4a,.aac,.ogg')
   })
 
   it('detects audio file explorer items', () => {
@@ -189,7 +186,6 @@ describe('audio media capabilities', () => {
       mimeType: 'audio/mpeg'
     }
 
-    expect(isAudioMediaItem(item)).toBe(true)
     expect(resolveMediaCapability({ mimeType: item.mimeType, fileName: item.name })?.kind).toBe(
       'audio'
     )
