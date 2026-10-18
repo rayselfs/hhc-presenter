@@ -19,7 +19,8 @@ test('Electron next after the end screen hides the reusable projection window', 
       'Desktop launched',
       app.windows().map((page) => page.url())
     )
-    await page.getByRole('link', { name: 'FILES', exact: true }).click()
+    await page.setViewportSize({ width: 1000, height: 768 })
+    await page.goto(`${page.url().split('#')[0]}#/files`)
     const imagePath = join(userDataPath, 'End screen.png')
     await writeFile(
       imagePath,
