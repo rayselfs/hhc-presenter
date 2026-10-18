@@ -16,7 +16,6 @@ import { isWeb } from '@renderer/lib/env'
 import {
   canGenerateMediaThumbnail,
   resolveMediaCapability,
-  type MediaKind,
   type MediaPlatform
 } from '@renderer/lib/media-capabilities'
 import { classifyMediaImport, type MediaImportDecision } from '@renderer/lib/media-import-policy'
@@ -375,31 +374,6 @@ async function uploadPreparedFiles(destinations: UploadDestination[]): Promise<n
 
 export async function uploadFiles(files: File[], parentId: string): Promise<number> {
   const candidates = await prepareUploadCandidates(files, parentId)
-  const destinations: UploadDestination[] = []
-  const budget = createRendererBudget()
-  for (const candidate of candidates) {
-    destinations.push({ ...candidate, parentId })
-    await budget.yieldIfNeeded()
-  }
-  return uploadPreparedFiles(destinations)
-}
-
-export async function prepareUploadFilesForKind(
-  files: File[],
-  kind: Exclude<MediaKind, 'document'>
-): Promise<UploadCandidate[]> {
-  const candidates = await prepareUploadCandidates(files)
-  return candidates.filter((candidate) => candidate.classification.kind === kind)
-}
-
-export async function uploadFilesForKind(
-  files: File[],
-  parentId: string,
-  kind: Exclude<MediaKind, 'document'>
-): Promise<number> {
-  const candidates = (await prepareUploadCandidates(files, parentId)).filter(
-    (candidate) => candidate.classification.kind === kind
-  )
   const destinations: UploadDestination[] = []
   const budget = createRendererBudget()
   for (const candidate of candidates) {

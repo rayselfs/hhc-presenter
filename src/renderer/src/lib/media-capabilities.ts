@@ -1,5 +1,3 @@
-import type { FileItemRecord } from '@shared/types/folder'
-
 export type MediaKind = 'image' | 'video' | 'audio' | 'pdf' | 'presentation' | 'document'
 export type MediaPlatform = 'web' | 'electron'
 export type MediaSupportMode = 'native' | 'desktop-engine' | 'unsupported'
@@ -435,24 +433,14 @@ export function canGenerateMediaThumbnail(capability: MediaCapability | null): b
   return capability !== null && capability.thumbnail !== 'none'
 }
 
-function getSupportedExtensions(platform: MediaPlatform, kind?: MediaKind): string[] {
+function getSupportedExtensions(platform: MediaPlatform): string[] {
   return CAPABILITIES.filter(
-    (capability) =>
-      getMediaSupport(capability, platform) !== 'unsupported' &&
-      (kind === undefined || capability.kind === kind)
+    (capability) => getMediaSupport(capability, platform) !== 'unsupported'
   ).flatMap((capability) => capability.extensions.map((extension) => `.${extension}`))
 }
 
 export function getMediaFileAcceptAttribute(platform: MediaPlatform): string {
   return ['image/*', 'video/*', 'audio/*', ...new Set(getSupportedExtensions(platform))].join(',')
-}
-
-export function getAudioFileAcceptAttribute(platform: MediaPlatform): string {
-  return ['audio/*', ...new Set(getSupportedExtensions(platform, 'audio'))].join(',')
-}
-
-export function isAudioMediaItem(item: FileItemRecord): boolean {
-  return resolveMediaCapability({ mimeType: item.mimeType, fileName: item.name })?.kind === 'audio'
 }
 
 export function validateMediaCapabilityRegistry(): void {
