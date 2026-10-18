@@ -40,9 +40,15 @@ const bibleState = {
 
 const folderState = {
   isLoading: false,
+  isInitialized: false,
   initialize: mockFolderInitialize,
   cleanupExpired: mockFolderCleanupExpired
 }
+
+const mockSubscribeBibleFolders = vi.fn(
+  (_listener: (state: typeof folderState, prev: typeof folderState) => void) =>
+    mockUnsubscribeBibleFolders
+)
 
 const fileExplorerState = {
   isLoading: false,
@@ -74,7 +80,7 @@ vi.mock('@renderer/stores/folder', () => ({
     (selector: (s: typeof folderState) => unknown) => selector(folderState),
     {
       getState: () => folderState,
-      subscribe: vi.fn(() => mockUnsubscribeBibleFolders)
+      subscribe: mockSubscribeBibleFolders
     }
   )
 }))
@@ -331,5 +337,47 @@ describe('initializeApp — online handler', () => {
     expect(mockUnsubscribeBible).toHaveBeenCalledTimes(bibleCalls + 1)
     expect(mockUnsubscribeBibleFolders).toHaveBeenCalledTimes(folderCalls + 1)
     expect(mockUnsubscribeFileExplorer).toHaveBeenCalledTimes(fileExplorerCalls + 1)
+  })
+})
+
+describe('Bible expiry startup boundary', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.clearAllMocks()
+    folderState.isInitialized = false
+    folderState.isLoading = false
+    window.location.hash = ''
+  })
+  afterEach(() => {
+    folderState.isInitialized = false
+  })
+
+  it('ignores failed initialization and cleans after a successful retry', async () => {
+    const { initializeApp } = await import('../app-init')
+    const cleanup = initializeApp()
+    const listener = mockSubscribeBibleFolders.mock.calls.at(-1)![0]
+    listener(
+      { ...folderState, isLoading: false, isInitialized: false },
+      { ...folderState, isLoading: true }
+    )
+    expect(mockFolderCleanupExpired).not.toHaveBeenCalled()
+    listener({ ...folderState, isInitialized: true }, { ...folderState, isLoading: true })
+    expect(mockFolderCleanupExpired).toHaveBeenCalledTimes(1)
+    cleanup()
+  })
+
+  it('cleans an already initialized store and handles cleanup rejection', async () => {
+    folderState.isInitialized = true
+    const error = new Error('Expiry transaction aborted')
+    mockFolderCleanupExpired.mockRejectedValueOnce(error)
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const { initializeApp } = await import('../app-init')
+    const cleanup = initializeApp()
+    await vi.waitFor(() =>
+      expect(warning).toHaveBeenCalledWith('[bible] Failed to clean expired folders', error)
+    )
+    expect(mockFolderCleanupExpired).toHaveBeenCalledTimes(1)
+    cleanup()
+    warning.mockRestore()
   })
 })

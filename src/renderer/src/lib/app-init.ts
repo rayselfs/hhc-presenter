@@ -142,11 +142,18 @@ export function initializeApp(options: SyncRuntimeOptions = {}): () => void {
     tryInitSearch(current)
   }
 
+  const cleanupBibleFolders = (): void => {
+    void useBibleFolderStore
+      .getState()
+      .cleanupExpired()
+      .catch((error) => {
+        console.warn('[bible] Failed to clean expired folders', error)
+      })
+  }
   const unsubBibleFolders = useBibleFolderStore.subscribe((state, prev) => {
-    if (prev.isLoading && !state.isLoading) {
-      void useBibleFolderStore.getState().cleanupExpired()
-    }
+    if (!prev.isInitialized && state.isInitialized) cleanupBibleFolders()
   })
+  if (useBibleFolderStore.getState().isInitialized) cleanupBibleFolders()
 
   const unsubFileExplorer = useFileExplorerStore.subscribe((state, prev) => {
     if (prev.isLoading && !state.isLoading) {

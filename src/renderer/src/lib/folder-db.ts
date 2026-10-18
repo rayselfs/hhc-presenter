@@ -3,35 +3,15 @@ import { openBibleDB } from './bible-db'
 import { openFileExplorerDB } from './file-explorer-db'
 import { saveCatalogRecords } from './file-catalog-mutations'
 
-type FolderRecordsPersistence = Omit<
-  FolderPersistence,
-  'deleteExpiredFolders' | 'deleteExpiredItems' | 'purgeTrashOlderThan'
->
+type FolderRecordsPersistence = Omit<FolderPersistence, 'deleteExpired' | 'purgeTrashOlderThan'>
 export type FolderDB = FolderPersistence
 
 function withMaintenance(
   records: FolderRecordsPersistence,
-  rootId: string,
   loadDeletedItems: (cutoff: number) => ReturnType<FolderPersistence['loadItemsByParent']>
 ): FolderPersistence {
   return {
     ...records,
-    async deleteExpiredFolders(now) {
-      const expired = (await records.loadAllFolders()).filter(
-        (folder) => folder.expiresAt != null && folder.expiresAt < now
-      )
-      const ids = expired.map((folder) => folder.id)
-      if (ids.length) await records.deleteFolders(ids)
-      return ids
-    },
-    async deleteExpiredItems(now) {
-      const expired = (await records.loadItemsByParent(rootId)).filter(
-        (item) => item.expiresAt != null && item.expiresAt < now
-      )
-      const ids = expired.map((item) => item.id)
-      if (ids.length) await records.deleteItems(ids)
-      return ids
-    },
     async purgeTrashOlderThan(now, retentionMs) {
       const cutoff = now - retentionMs
       const expiredFolders = (await records.loadAllFolders()).filter(
@@ -91,17 +71,64 @@ export function createBibleFolderDB(
       await Promise.all([...ids.map((id) => tx.store.delete(id)), tx.done])
     }
   }
-  return withMaintenance(records, rootId, async (cutoff) => {
+  const persistence = withMaintenance(records, async (cutoff) => {
     const db = await getDB()
     return (await db.getAll('folder-items')).filter(
       (item) => item.deletedAt != null && item.deletedAt < cutoff
     )
   })
+  return {
+    ...persistence,
+    async deleteExpired(now) {
+      const tx = (await getDB()).transaction(['folder-records', 'folder-items'], 'readwrite')
+      try {
+        const folders = await tx.objectStore('folder-records').getAll()
+        const folderIds = new Set(
+          folders
+            .filter(
+              (folder) => folder.id !== rootId && folder.expiresAt != null && folder.expiresAt < now
+            )
+            .map((folder) => folder.id)
+        )
+        const children = new Map<string, string[]>()
+        for (const folder of folders) {
+          if (!folder.parentId || folder.id === rootId) continue
+          const siblings = children.get(folder.parentId) ?? []
+          siblings.push(folder.id)
+          children.set(folder.parentId, siblings)
+        }
+        for (const id of folderIds) {
+          for (const child of children.get(id) ?? []) folderIds.add(child)
+        }
+        const items = await tx.objectStore('folder-items').getAll()
+        const itemIds = items
+          .filter(
+            (item) =>
+              folderIds.has(item.parentId) ||
+              (item.parentId === rootId && item.expiresAt != null && item.expiresAt < now)
+          )
+          .map((item) => item.id)
+        await Promise.all([
+          ...[...folderIds].map((id) => tx.objectStore('folder-records').delete(id)),
+          ...itemIds.map((id) => tx.objectStore('folder-items').delete(id)),
+          tx.done
+        ])
+        return { folderIds: [...folderIds], itemIds }
+      } catch (error) {
+        try {
+          tx.abort()
+        } catch {
+          /* The transaction may already have aborted. */
+        }
+        await tx.done.catch(() => undefined)
+        throw error
+      }
+    }
+  }
 }
 
 export function createFileExplorerFolderDB(): FolderPersistence {
   const getDB = openFileExplorerDB
-  const rootId = 'file-root'
   const records: FolderRecordsPersistence = {
     async loadAllFolders() {
       return (await getDB()).getAll('folder-records')
@@ -139,7 +166,7 @@ export function createFileExplorerFolderDB(): FolderPersistence {
       await Promise.all([...ids.map((id) => tx.store.delete(id)), tx.done])
     }
   }
-  return withMaintenance(records, rootId, async (cutoff) => {
+  return withMaintenance(records, async (cutoff) => {
     const db = await getDB()
     try {
       return (
