@@ -196,7 +196,7 @@ export async function verifyLegacyRetirement(page: Page): Promise<void> {
   }
   await expect(page.getByRole('link', { name: 'SERVICE', exact: true })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'SOUNDBOARD', exact: true })).toHaveCount(0)
-  await page.getByRole('link', { name: 'FILES', exact: true }).click()
+  await page.goto(`${baseURL}#/files`)
   await expect(
     page.getByRole('button', { name: 'Legacy shared image.png', exact: true })
   ).toBeVisible()
