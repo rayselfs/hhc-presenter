@@ -1016,7 +1016,11 @@ async function runExplorerRestore(
   })
 }
 
-async function copyFileSnapshot(itemId: string, parentId: string): Promise<string | null> {
+async function copyFileSnapshot(
+  itemId: string,
+  parentId: string,
+  name?: string
+): Promise<string | null> {
   const item = useFileExplorerStore.getState().items[itemId]
   if (!item || item.type !== 'file' || !isPersonalRecordVisible(item)) return null
   const db = await openFileExplorerDB()
@@ -1029,7 +1033,7 @@ async function copyFileSnapshot(itemId: string, parentId: string): Promise<strin
     const blob = await response.blob()
     if (!isPersonalRecordVisible(item)) throw new Error('Personal account changed')
     return addFileItemToStore(
-      new File([blob], item.name, { type: item.mimeType }),
+      new File([blob], name ?? item.name, { type: item.mimeType }),
       parentId,
       item.mimeType,
       item.notes
@@ -1171,7 +1175,11 @@ useFileExplorerStore.setState({
   }
 })
 
-async function copyLocalFileItem(itemId: string, targetFolderId: string): Promise<string | null> {
+async function copyLocalFileItem(
+  itemId: string,
+  targetFolderId: string,
+  name?: string
+): Promise<string | null> {
   const sourceItem = useFileExplorerStore.getState().items[itemId]
   if (!sourceItem || sourceItem.type !== 'file') return null
   if (
@@ -1185,6 +1193,7 @@ async function copyLocalFileItem(itemId: string, targetFolderId: string): Promis
   const now = Date.now()
   const copiedItem: FileItemRecord = {
     ...sourceItem,
+    name: name ?? sourceItem.name,
     id: newId,
     parentId: targetFolderId,
     sortIndex: targetSiblings.length,
@@ -1210,16 +1219,20 @@ async function copyLocalFileItem(itemId: string, targetFolderId: string): Promis
   return newId
 }
 
-export async function copyExplorerFile(id: string, parentId: string): Promise<string | null> {
+export async function copyExplorerFile(
+  id: string,
+  parentId: string,
+  options: { name?: string } = {}
+): Promise<string | null> {
   if (!isPersonalNode(id) && !isPersonalNode(parentId)) {
     const state = useFileExplorerStore.getState()
     const source = state.items[id]
     if (source && isFolderReadOnlyBySyncLink(source.parentId, state.folders))
-      return copyFileSnapshot(id, parentId)
-    return copyLocalFileItem(id, parentId)
+      return copyFileSnapshot(id, parentId, options.name)
+    return copyLocalFileItem(id, parentId, options.name)
   }
   try {
-    return await copyFileSnapshot(id, parentId)
+    return await copyFileSnapshot(id, parentId, options.name)
   } catch (error) {
     reportPersonalWriteError(error)
     return null

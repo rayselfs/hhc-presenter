@@ -287,11 +287,12 @@ describe('copyItem blob sharing', () => {
       _itemsByParent: { 'file-root': [source] },
       isLoading: false
     })
-    const copiedId = await copyExplorerFile('file-1', 'target-folder')
+    const copiedId = await copyExplorerFile('file-1', 'target-folder', { name: 'original 2.txt' })
     expect(copiedId).toEqual(expect.any(String))
     expect((await db.get('file-blobs', 'file-1'))?.refCount).toBe(2)
     expect(await db.get('folder-items', copiedId!)).toMatchObject({
       parentId: 'target-folder',
+      name: 'original 2.txt',
       url: 'blob:file-1'
     })
     expect(await db.get('file-blobs', copiedId!)).toBeUndefined()
