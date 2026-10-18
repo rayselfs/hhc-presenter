@@ -12,8 +12,7 @@ const mockSaveItems = vi.fn()
 const mockDeleteItem = vi.fn()
 const mockDeleteItems = vi.fn()
 const mockDeleteItemsByParent = vi.fn()
-const mockDeleteExpiredFolders = vi.fn()
-const mockDeleteExpiredItems = vi.fn()
+const mockDeleteExpired = vi.fn().mockResolvedValue({ folderIds: [], itemIds: [] })
 const mockPurgeTrashOlderThan = vi.fn()
 
 vi.mock('@renderer/lib/folder-db', () => {
@@ -28,8 +27,7 @@ vi.mock('@renderer/lib/folder-db', () => {
     deleteItem: (...args: unknown[]) => mockDeleteItem(...args),
     deleteItems: (...args: unknown[]) => mockDeleteItems(...args),
     deleteItemsByParent: (...args: unknown[]) => mockDeleteItemsByParent(...args),
-    deleteExpiredFolders: (...args: unknown[]) => mockDeleteExpiredFolders(...args),
-    deleteExpiredItems: (...args: unknown[]) => mockDeleteExpiredItems(...args),
+    deleteExpired: (...args: unknown[]) => mockDeleteExpired(...args),
     purgeTrashOlderThan: (...args: unknown[]) => mockPurgeTrashOlderThan(...args)
   })
   return { createBibleFolderDB: factory, createFileExplorerFolderDB: factory }

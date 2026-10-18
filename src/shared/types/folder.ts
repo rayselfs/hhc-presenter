@@ -139,8 +139,7 @@ export interface FolderPersistence {
   deleteItem: (id: string) => Promise<void>
   deleteItems: (ids: string[]) => Promise<void>
   deleteItemsByParent: (parentId: string) => Promise<void>
-  deleteExpiredFolders: (now: number) => Promise<string[]>
-  deleteExpiredItems: (now: number) => Promise<string[]>
+  deleteExpired?: (now: number) => Promise<{ folderIds: string[]; itemIds: string[] }>
   purgeTrashOlderThan: (
     now: number,
     retentionMs: number

@@ -59,8 +59,7 @@ describe('persistence failure propagation', () => {
     { name: 'deleteItem', run: (ops) => ops.deleteItem('item') },
     { name: 'deleteItems', run: (ops) => ops.deleteItems(['item']) },
     { name: 'deleteItemsByParent', run: (ops) => ops.deleteItemsByParent(ROOT_ID) },
-    { name: 'deleteExpiredFolders', run: (ops) => ops.deleteExpiredFolders(Date.now()) },
-    { name: 'deleteExpiredItems', run: (ops) => ops.deleteExpiredItems(Date.now()) },
+    { name: 'deleteExpired', run: (ops) => ops.deleteExpired!(Date.now()) },
     { name: 'purgeTrashOlderThan', run: (ops) => ops.purgeTrashOlderThan(Date.now(), 1_000) }
   ]
 
@@ -107,7 +106,7 @@ describe('persistence failure propagation', () => {
 })
 
 describe('concrete folder persistence adapters', () => {
-  it('expires only root items through the parent index', async () => {
+  it('expires standalone items only at the root', async () => {
     const db = await openBibleDB()
     const ops = createBibleFolderDB(openBibleDB, ROOT_ID)
     await ops.saveItems([
@@ -115,9 +114,9 @@ describe('concrete folder persistence adapters', () => {
       makeItem({ id: 'valid', expiresAt: 20_000 }),
       makeItem({ id: 'nested', parentId: 'child', expiresAt: 1 })
     ])
-    expect(await ops.deleteExpiredItems(10_000)).toEqual(['expired'])
+    expect((await ops.deleteExpired!(10_000)).itemIds).toEqual(['expired'])
     expect(await db.get('folder-items', 'nested')).toBeDefined()
-    expect(await ops.deleteExpiredItems(10_000)).toEqual([])
+    expect((await ops.deleteExpired!(10_000)).itemIds).toEqual([])
   })
 
   it('rejects an aborted batch transaction without partial commits', async () => {

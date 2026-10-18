@@ -814,69 +814,55 @@ export function createFolderStore(
     },
 
     cleanupExpired: async () => {
-      const now = Date.now()
-      const expiredFolderIds = await ops.deleteExpiredFolders(now)
-      const expiredItemIds = await ops.deleteExpiredItems(now)
+      const deleteExpired = ops.deleteExpired
+      if (!get().isInitialized || !deleteExpired) return
+      await persistenceQueue.commit(async () => {
+        const { folderIds: allExpiredFolderIds, itemIds: expiredItemIds } = await deleteExpired(
+          Date.now()
+        )
+        if (allExpiredFolderIds.length === 0 && expiredItemIds.length === 0) return
 
-      if (expiredFolderIds.length === 0 && expiredItemIds.length === 0) return
-
-      const { folders } = get()
-
-      let cascadeFolderIds: string[] = []
-      for (const fid of expiredFolderIds) {
-        cascadeFolderIds = [...cascadeFolderIds, ...getDescendantFolderIds(fid, folders)]
-      }
-      const allExpiredFolderIds = [...expiredFolderIds, ...cascadeFolderIds]
-      for (const fid of expiredFolderIds) {
-        await ops.deleteItemsByParent(fid)
-      }
-      if (cascadeFolderIds.length > 0) {
-        await ops.deleteFolders(cascadeFolderIds)
-        for (const fid of cascadeFolderIds) {
-          await ops.deleteItemsByParent(fid)
-        }
-      }
-
-      set((state) => {
-        const newFolders = { ...state.folders }
-        const newItems = { ...state.items }
-        const expiredFolderIdSet = new Set(allExpiredFolderIds)
-        for (const id of allExpiredFolderIds) delete newFolders[id]
-        for (const id of expiredItemIds) delete newItems[id]
-        for (const item of Object.values(newItems)) {
-          if (expiredFolderIdSet.has(item.parentId)) {
-            delete newItems[item.id]
+        set((state) => {
+          const newFolders = { ...state.folders }
+          const newItems = { ...state.items }
+          const expiredFolderIdSet = new Set(allExpiredFolderIds)
+          for (const id of allExpiredFolderIds) delete newFolders[id]
+          for (const id of expiredItemIds) delete newItems[id]
+          for (const item of Object.values(newItems)) {
+            if (expiredFolderIdSet.has(item.parentId)) {
+              delete newItems[item.id]
+            }
           }
-        }
-        const newChildFoldersByParent: Record<string, FolderRecord[]> = {}
-        for (const f of Object.values(newFolders)) {
-          if (f.parentId !== null) {
-            const list = newChildFoldersByParent[f.parentId] ?? []
-            list.push(f)
-            newChildFoldersByParent[f.parentId] = list
+          const newChildFoldersByParent: Record<string, FolderRecord[]> = {}
+          for (const f of Object.values(newFolders)) {
+            if (f.parentId !== null) {
+              const list = newChildFoldersByParent[f.parentId] ?? []
+              list.push(f)
+              newChildFoldersByParent[f.parentId] = list
+            }
           }
-        }
-        for (const k of Object.keys(newChildFoldersByParent)) {
-          newChildFoldersByParent[k] = sortByIndex(newChildFoldersByParent[k])
-        }
-        const newLoadedParents = new Set<string>()
-        const newItemsByParent: Record<string, AnyItemRecord[]> = {}
-        for (const parentId of state.loadedParents) {
-          if (expiredFolderIdSet.has(parentId)) continue
-          newLoadedParents.add(parentId)
-          newItemsByParent[parentId] = sortByIndex(
-            Object.values(newItems).filter((i) => i.parentId === parentId)
-          )
-        }
-        return {
-          folders: newFolders,
-          items: newItems,
-          _foldersArray: Object.values(newFolders),
-          _itemsArray: Object.values(newItems),
-          _childFoldersByParent: newChildFoldersByParent,
-          _itemsByParent: newItemsByParent,
-          loadedParents: newLoadedParents
-        }
+          for (const k of Object.keys(newChildFoldersByParent)) {
+            newChildFoldersByParent[k] = sortByIndex(newChildFoldersByParent[k])
+          }
+          const newLoadedParents = new Set<string>()
+          const newItemsByParent: Record<string, AnyItemRecord[]> = {}
+          for (const parentId of state.loadedParents) {
+            if (expiredFolderIdSet.has(parentId)) continue
+            newLoadedParents.add(parentId)
+            newItemsByParent[parentId] = sortByIndex(
+              Object.values(newItems).filter((i) => i.parentId === parentId)
+            )
+          }
+          return {
+            folders: newFolders,
+            items: newItems,
+            _foldersArray: Object.values(newFolders),
+            _itemsArray: Object.values(newItems),
+            _childFoldersByParent: newChildFoldersByParent,
+            _itemsByParent: newItemsByParent,
+            loadedParents: newLoadedParents
+          }
+        })
       })
     },
 

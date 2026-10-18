@@ -37,8 +37,6 @@ vi.mock('@renderer/lib/folder-db', () => {
     deleteItem: vi.fn().mockResolvedValue(undefined),
     deleteItems: vi.fn().mockResolvedValue(undefined),
     deleteItemsByParent: vi.fn().mockResolvedValue(undefined),
-    deleteExpiredFolders: vi.fn().mockResolvedValue([]),
-    deleteExpiredItems: vi.fn().mockResolvedValue([]),
     purgeTrashOlderThan: vi.fn().mockResolvedValue({ folderIds: [], itemIds: [] })
   }))
   return { createBibleFolderDB: factory, createFileExplorerFolderDB: factory }
