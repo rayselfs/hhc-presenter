@@ -12,7 +12,7 @@ function readInstallCommands(workflowFile: string): string[] {
 
 describe('CI workflow dependency installation policy', () => {
   test.each([
-    ['ci.yml', ['npm ci --ignore-scripts']],
+    ['ci.yml', ['npm ci --ignore-scripts', 'npm ci --ignore-scripts']],
     ['azure-static-web-apps-zealous-river-03bbb7100.yml', ['npm ci --ignore-scripts']],
     ['build-release.yml', ['npm ci --ignore-scripts', 'npm ci']]
   ])(
