@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 
-const ci = readFileSync('.github/workflows/ci.yml', 'utf8')
+const ci = readFileSync('.github/workflows/ci.yml', 'utf8').replace(/\r\n/g, '\n')
 const azure = readFileSync(
   '.github/workflows/azure-static-web-apps-zealous-river-03bbb7100.yml',
   'utf8'
-)
+).replace(/\r\n/g, '\n')
 
 function job(workflow: string, name: string): string {
   const match = workflow.match(
