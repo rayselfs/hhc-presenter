@@ -47,6 +47,7 @@ describe('same-run PR hosted renderer validation', () => {
     expect(producer).toContain('retention-days: 1')
     expect(producer).toContain('include-hidden-files: true')
     expect(producer).toContain('if-no-files-found: error')
+    expect(producer).toContain('set -euo pipefail')
   })
 
   test('makes the original required quality job fail when producer fails', () => {
@@ -74,6 +75,7 @@ describe('same-run PR hosted renderer validation', () => {
       )
       expect(consumer).toContain('test "$actual" = "$EXPECTED_SHA256"')
       expect(consumer).toContain('test -z "$(find out/renderer -type l -print -quit)"')
+      expect(consumer).toContain('set -euo pipefail')
       expect(consumer).not.toContain('continue-on-error:')
       expect(consumer).not.toContain('run-id:')
     }

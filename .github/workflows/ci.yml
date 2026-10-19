@@ -70,6 +70,7 @@ jobs:
       - name: Hash hosted renderer
         id: digest
         run: |
+          set -euo pipefail
           test -z "$(find out/renderer -type l -print -quit)"
           find out/renderer -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print "sha256=" $1}' >> "$GITHUB_OUTPUT"
 
@@ -112,6 +113,7 @@ jobs:
         env:
           EXPECTED_SHA256: ${{ needs.quality-build.outputs.renderer-sha256 }}
         run: |
+          set -euo pipefail
           test -z "$(find out/renderer -type l -print -quit)"
           actual="$(find out/renderer -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d ' ' -f 1)"
           test "$actual" = "$EXPECTED_SHA256"
@@ -174,6 +176,7 @@ jobs:
         env:
           EXPECTED_SHA256: ${{ needs.quality-build.outputs.renderer-sha256 }}
         run: |
+          set -euo pipefail
           test -z "$(find out/renderer -type l -print -quit)"
           actual="$(find out/renderer -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d ' ' -f 1)"
           test "$actual" = "$EXPECTED_SHA256"
