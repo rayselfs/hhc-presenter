@@ -9,11 +9,17 @@ permissions:
   packages: read
 
 jobs:
-  quality-gates:
+  quality-build:
     runs-on: ubuntu-latest
+    outputs:
+      renderer-artifact-id: ${{ steps.renderer.outputs.artifact-id }}
+      renderer-sha256: ${{ steps.digest.outputs.sha256 }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5.1.0
+        with:
+          submodules: true
+          lfs: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v5.0.0
@@ -58,5 +64,130 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
+      - name: Verify hosted artifact
+        run: npx playwright test e2e/hosted-artifact.spec.ts --project=chromium --workers=1 --retries=0
+
+      - name: Hash hosted renderer
+        id: digest
+        run: |
+          test -z "$(find out/renderer -type l -print -quit)"
+          find out/renderer -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print "sha256=" $1}' >> "$GITHUB_OUTPUT"
+
+      - name: Share verified hosted renderer
+        id: renderer
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: hosted-renderer-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/renderer/
+          if-no-files-found: error
+          retention-days: 1
+          include-hidden-files: true
+
+  quality-gates:
+    needs: quality-build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful shared validation
+        env:
+          QUALITY_BUILD_RESULT: ${{ needs.quality-build.result }}
+        run: test "$QUALITY_BUILD_RESULT" = success
+
+      - uses: actions/checkout@v5.1.0
+      - uses: actions/setup-node@v5.0.0
+        with:
+          node-version: 22
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download verified renderer
+        uses: actions/download-artifact@v4.3.0
+        with:
+          artifact-ids: ${{ needs.quality-build.outputs.renderer-artifact-id }}
+          path: out/renderer
+          merge-multiple: true
+      - name: Verify renderer digest
+        env:
+          EXPECTED_SHA256: ${{ needs.quality-build.outputs.renderer-sha256 }}
+        run: |
+          test -z "$(find out/renderer -type l -print -quit)"
+          actual="$(find out/renderer -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d ' ' -f 1)"
+          test "$actual" = "$EXPECTED_SHA256"
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
       - name: Browser projection E2E
         run: npm run test:e2e:browser
+
+  cleanup_stale_previews:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      pull-requests: read
+    steps:
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_SWA_CLEANUP_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Remove previews for closed pull requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          set -euo pipefail
+          open_prs="$(gh api --paginate "/repos/${GITHUB_REPOSITORY}/pulls?state=open&base=main&per_page=100" --jq '.[].number')"
+
+          while IFS= read -r preview; do
+            [[ "$preview" =~ ^[0-9]+$ ]] || continue
+            if ! grep -Fxq "$preview" <<< "$open_prs"; then
+              az rest \
+                --method delete \
+                --url "https://management.azure.com/subscriptions/${AZURE_SUBSCRIPTION_ID}/resourceGroups/alive/providers/Microsoft.Web/staticSites/hhc-client/builds/${preview}?api-version=2024-04-01" \
+                --only-show-errors
+            fi
+          done < <(az staticwebapp environment list \
+            --name hhc-client \
+            --resource-group alive \
+            --query "[?name != 'default'].name" \
+            --output tsv)
+
+  build_and_deploy_job:
+    name: Build and Deploy Job
+    needs: [quality-build, cleanup_stale_previews]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Download verified renderer
+        uses: actions/download-artifact@v4.3.0
+        with:
+          artifact-ids: ${{ needs.quality-build.outputs.renderer-artifact-id }}
+          path: out/renderer
+          merge-multiple: true
+      - name: Verify renderer digest
+        env:
+          EXPECTED_SHA256: ${{ needs.quality-build.outputs.renderer-sha256 }}
+        run: |
+          test -z "$(find out/renderer -type l -print -quit)"
+          actual="$(find out/renderer -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d ' ' -f 1)"
+          test "$actual" = "$EXPECTED_SHA256"
+      - name: Build And Deploy
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ZEALOUS_RIVER_03BBB7100 }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
+          action: 'upload'
+          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
+          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
+          app_location: 'out/renderer'
+          api_location: ''
+          output_location: ''
+          skip_app_build: true
+          ###### End of Repository/Build Configurations ######
