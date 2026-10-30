@@ -1,3 +1,4 @@
+import { PERSONAL_MAX_FILE_BYTES } from '@shared/personal-cloud'
 import type { EditablePresentationDocument } from './editable-presentation'
 
 function record(value: unknown): value is Record<string, unknown> {
@@ -204,8 +205,20 @@ export function validatePortablePresentation(
   document: Partial<EditablePresentationDocument>
 ): void {
   requireValid(record(document))
-  if (document.schemaVersion !== undefined && document.schemaVersion !== 1) {
+  if (
+    document.schemaVersion !== undefined &&
+    document.schemaVersion !== 1 &&
+    document.schemaVersion !== 2
+  ) {
     throw new Error('Unsupported presentation schema version')
+  }
+  if (document.pptxSource !== undefined) {
+    const source = document.pptxSource
+    requireValid(document.schemaVersion === 2 && record(source))
+    requireValid(source.version === 1 && typeof source.base64 === 'string')
+    requireValid(source.base64.length > 0 && source.base64.length <= 279620268)
+    requireValid(source.base64.length % 4 === 0 && /^[A-Za-z0-9+/]*={0,2}$/.test(source.base64))
+    requireValid(typeof source.sha256 === 'string' && /^[a-f0-9]{64}$/.test(source.sha256))
   }
   requireValid(typeof document.id === 'string' && document.id.trim())
   requireValid(typeof document.name === 'string' && document.name.trim())
@@ -220,6 +233,13 @@ export function validatePortablePresentation(
   let totalElements = 0
   for (const [id, slide] of Object.entries(document.slides ?? {})) {
     requireValid(record(slide) && slide.id === id)
+    if (slide.pptxSourcePart !== undefined) {
+      requireValid(document.schemaVersion === 2 && document.pptxSource !== undefined)
+      requireValid(
+        typeof slide.pptxSourcePart === 'string' &&
+          /^ppt\/slides\/[^/]+\.xml$/.test(slide.pptxSourcePart)
+      )
+    }
     background(slide.background)
     requireValid(!slide.themeId || Object.hasOwn(themes, slide.themeId))
     orderedMap(slide.elementOrder, slide.elements, 10000)
@@ -227,6 +247,25 @@ export function validatePortablePresentation(
     requireValid(totalElements <= 100000)
     for (const [elementId, element] of Object.entries(slide.elements)) {
       requireValid(record(element) && element.id === elementId)
+      if (element.pptxSourceNode !== undefined) {
+        const reference = element.pptxSourceNode
+        requireValid(
+          document.schemaVersion === 2 &&
+            document.pptxSource !== undefined &&
+            slide.pptxSourcePart !== undefined
+        )
+        requireValid(
+          record(reference) &&
+            typeof reference.id === 'string' &&
+            reference.id.length > 0 &&
+            reference.id.length <= 512
+        )
+        requireValid(
+          (reference.role === 'text' && element.type === 'text') ||
+            (reference.role === 'image' && element.type === 'image') ||
+            (reference.role === 'geometry' && ['shape', 'line'].includes(element.type))
+        )
+      }
       requireValid(coordinate(element.x) && coordinate(element.y) && coordinate(element.rotation))
       requireValid(
         typeof element.opacity === 'number' &&
@@ -261,4 +300,14 @@ export function validatePortablePresentation(
     requireValid(id && record(asset) && asset.id === id)
     validatePresentationImage(asset.mimeType, asset.dataUrl)
   }
+}
+
+export function serializePortablePresentation(document: EditablePresentationDocument): string {
+  const body = JSON.stringify(document)
+  assertPortablePresentationSize(new Blob([body]).size)
+  return body
+}
+
+export function assertPortablePresentationSize(size: number): void {
+  if (size > PERSONAL_MAX_FILE_BYTES) throw new Error('Presentation exceeds the 200 MiB size limit')
 }

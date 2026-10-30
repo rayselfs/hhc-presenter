@@ -34,6 +34,11 @@ it('imports one directly editable deck with all slides and no extra catalog copy
   expect(item).toMatchObject({ name: 'Sunday.lpdeck', mimeType: EDITABLE_PRESENTATION_MIME_TYPE })
   const reopened = await loadEditablePresentation(item)
   expect(reopened.name).toBe('Sunday')
+  expect(reopened.schemaVersion).toBe(1)
+  expect(reopened).not.toHaveProperty('pptxSource')
+  expect(Object.values(reopened.slides).every((slide) => slide.pptxSourcePart === undefined)).toBe(
+    true
+  )
   expect(reopened.slideOrder).toHaveLength(22)
   const sourceZip = await JSZip.loadAsync(bytes)
   for (const [index, slideId] of reopened.slideOrder.entries()) {
