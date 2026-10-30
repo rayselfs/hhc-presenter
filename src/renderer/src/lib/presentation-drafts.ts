@@ -1,4 +1,8 @@
-import { validatePortablePresentation } from './portable-presentation'
+import {
+  validatePortablePresentation,
+  serializePortablePresentation
+} from './portable-presentation'
+import { validatePptxSource } from './pptx-source'
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 import type { EditablePresentationDocument } from './editable-presentation'
 import { openFileExplorerDB } from './file-explorer-db'
@@ -68,6 +72,11 @@ export async function createPresentationDraft(
   source: FileItemRecord,
   document: EditablePresentationDocument
 ): Promise<FileItemRecord> {
+  const ownerId = usePersonalSyncStore.getState().activeOwnerId
+  const body = serializePortablePresentation(document)
+  await validatePptxSource(document)
+  if (usePersonalSyncStore.getState().activeOwnerId !== ownerId)
+    throw new Error('Personal account changed')
   if (!isPersonalRecordVisible(source)) throw new Error('Personal account changed')
   validatePortablePresentation(document)
   const item: FileItemRecord = {
@@ -78,7 +87,7 @@ export async function createPresentationDraft(
     personalOwnerId: usePersonalSyncStore.getState().activeOwnerId ?? undefined,
     url: `blob:${document.id}`,
     mimeType: EDITABLE_PRESENTATION_MIME_TYPE,
-    size: new Blob([JSON.stringify(document)]).size,
+    size: new Blob([body]).size,
     sortIndex: 0,
     createdAt: Date.now(),
     expiresAt: null
@@ -94,6 +103,8 @@ export async function getPresentationDraft(id: string): Promise<PresentationDraf
   if (!draft) return null
   // A crash after promotion must not resurrect a second copy or restrict the saved file.
   if (await db.get('folder-items', id)) return null
+  serializePortablePresentation(draft.document)
+  await validatePptxSource(draft.document)
   assertDraftOwner(draft)
   return draft
 }
@@ -118,7 +129,10 @@ export async function persistDraftRevision(
   revision: number,
   catalogName?: string
 ): Promise<boolean> {
+  const body = serializePortablePresentation(document)
   const db = await openFileExplorerDB()
+  if (!(await db.get('presentation-drafts', id))) return false
+  await validatePptxSource(document)
   const tx = db.transaction(['presentation-drafts', 'folder-items'], 'readwrite')
   try {
     const draft = await tx.objectStore('presentation-drafts').get(id)
@@ -136,7 +150,7 @@ export async function persistDraftRevision(
       item: {
         ...draft.item,
         name: catalogName ?? draft.item.name,
-        size: new Blob([JSON.stringify(document)]).size
+        size: new Blob([body]).size
       }
     })
     await tx.done
@@ -179,8 +193,9 @@ export async function savePresentationDraft(
   )
     throw new Error('A file with this name already exists')
   const document = { ...draft.document, name: trimmed }
-  validatePortablePresentation(document)
-  const blob = new Blob([JSON.stringify(document)], { type: EDITABLE_PRESENTATION_MIME_TYPE })
+  const blob = new Blob([serializePortablePresentation(document)], {
+    type: EDITABLE_PRESENTATION_MIME_TYPE
+  })
   const item: FileItemRecord = {
     ...draft.item,
     parentId,

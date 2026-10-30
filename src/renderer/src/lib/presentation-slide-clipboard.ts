@@ -83,6 +83,7 @@ export function pasteSlideClipboard(
         const elementId = elementIds.get(sourceId)
         if (!element || !elementId) return []
         const next = { ...structuredClone(element), id: elementId }
+        delete next.pptxSourceNode
         if (next.type === 'image') next.assetId = assetIds.get(next.assetId) ?? next.assetId
         return [[elementId, next]]
       })
@@ -96,6 +97,7 @@ export function pasteSlideClipboard(
       elementOrder: sourceSlide.elementOrder.flatMap((id) => elementIds.get(id) ?? []),
       elements
     }
+    delete slides[slideId].pptxSourcePart
     return slideId
   })
   const safeIndex = Math.max(0, Math.min(insertionIndex, document.slideOrder.length))
