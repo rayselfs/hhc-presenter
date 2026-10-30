@@ -19,7 +19,7 @@ The original source is split by responsibility. Main's extracted text DOM/protoc
 | C                  | [#189](https://github.com/rayselfs/hhc-presenter/pull/189) | Native and explicit source-preserving PPTX export; notes and safe editor download lifecycle; MIT attribution    |
 | D                  | [#190](https://github.com/rayselfs/hhc-presenter/pull/190) | Shared compatibility policy, typed located errors, soft breaks and notes; reject known lossy imports            |
 | E                  | [#191](https://github.com/rayselfs/hhc-presenter/pull/191) | Explicit schema3 presets/adjustments; solid theme style resolution; thumbnail/projection/export parity          |
-| F                  | Final snapping PR, linked from #185                        | Screen-space snapping and Alt bypass, near-top explicit XML frames, current reference/evidence reconciliation   |
+| F                  | [#192](https://github.com/rayselfs/hhc-presenter/pull/192)                        | Screen-space snapping and Alt bypass, near-top explicit XML frames, current reference/evidence reconciliation   |
 
 Ordinary upload/create/edit-copy still writes schema1. Reading explicit schema2/3 is not a rollout of those formats. Companion Asset API #103 remains separate; no server schema migration, capability endpoint, default activation or ProPresenter feature is included. Unsupported content fails closed, retaining the original raw file and stored revision.
 
@@ -34,7 +34,7 @@ Each slice receives one independent read-only advisor. Findings are verified wit
 - E: inherited line width/noFill survives missing local line; unrepresented arrow round joins reject; malformed projection snapshots report render failure rather than throwing. Render validation strips non-rendering package/theme ownership metadata and keeps source-backed projection valid.
 - F: no new important regression found by the advisor. Two existing interaction defects were reproduced (6 failures): group drag collapsed selection; image corner minima changed aspect ratio. The shared resize and selection paths now preserve ratio/opposite anchors and group preview/commit/cancel/undo; 78 focused follow-up cases pass. Explicit large/off-slide EMU coordinates are also covered.
 
-CI also identified legacy test fixtures which omitted XML source nodes or removed package parts while retaining dangling relationships. Fixtures now describe valid package data so the original behavioral assertions remain meaningful; no production validation was relaxed.
+CI also identified legacy test fixtures which omitted XML source nodes or removed package parts while retaining dangling relationships. Fixtures now describe valid package data, projection PNG fixtures contain actual PNG bytes, and persistence tests clear their document cache when resetting IndexedDB so the original behavioral assertions remain meaningful; no production validation was relaxed.
 
 ## Validation evidence
 
