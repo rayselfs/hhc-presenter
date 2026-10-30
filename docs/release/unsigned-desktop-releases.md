@@ -119,3 +119,12 @@ a reliable audio device. These skipped steps remain visible in the test report.
 Local packaged smoke runs all steps by default. Use a graphics-capable Mac for the
 live-frame check and real devices for external display/DPI/audio acceptance. The
 hosted runner limitation does not disable or alter the product's live preview.
+
+## Redeploying an existing web release
+
+The web workflow uses Ubuntu 24.04 because the pinned Playwright browser installer
+does not support Ubuntu 26.04. Production publication still uses `release.published`.
+If runner infrastructure prevents a deployment, run the Azure workflow manually
+with the existing published tag as `tag`. It checks that the release is published
+and checks out that tag explicitly before the normal validation/build/deploy gates.
+A draft or an unversioned branch is not a production redeployment target.
