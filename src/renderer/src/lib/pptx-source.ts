@@ -137,6 +137,10 @@ function readDirectory(buffer: ArrayBuffer): ZipMember[] {
   return members
 }
 
+export function readPptxPackageMemberSizes(buffer: ArrayBuffer): ReadonlyMap<string, number> {
+  return new Map(readDirectory(buffer).map(({ name, size }) => [name, size]))
+}
+
 const crcTable = Uint32Array.from({ length: 256 }, (_, value) => {
   let crc = value
   for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0)
@@ -334,6 +338,10 @@ function encodeBase64(bytes: Uint8Array): string {
 async function digest(buffer: ArrayBuffer): Promise<string> {
   const hash = await crypto.subtle.digest('SHA-256', buffer)
   return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+export async function validatePptxPackage(buffer: ArrayBuffer): Promise<void> {
+  await inspectPackage(buffer)
 }
 
 export async function createPptxSource(buffer: ArrayBuffer): Promise<PptxSource> {

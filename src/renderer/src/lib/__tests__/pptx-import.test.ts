@@ -3,7 +3,11 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { readFile } from 'node:fs/promises'
 import { Blob as NodeBlob } from 'node:buffer'
 import { importEditablePptx } from '../pptx-import'
-import { loadEditablePresentation } from '../editable-presentation'
+import { buildNativePptx } from '../pptx-export-package'
+import {
+  createBlankEditablePresentationDocument,
+  loadEditablePresentation
+} from '../editable-presentation'
 import { openFileExplorerDB, resetFileExplorerDBForTests } from '../file-explorer-db'
 import { resetMediaWorkDBForTests } from '../media-work-db'
 import { resetThumbnailDBForTests } from '../thumbnail-db'
@@ -21,6 +25,20 @@ beforeEach(async () => {
     _itemsByParent: {},
     pendingPersistenceCount: 0
   })
+})
+
+it('retains exported speaker notes through ordinary import and local reopen', async () => {
+  const document = createBlankEditablePresentationDocument('Notes')
+  const slide = document.slides[document.slideOrder[0]]
+  slide.notes = '  中文 notes <&>\nSecond line '
+  const bytes = await buildNativePptx(document)
+  const item = await importEditablePptx(
+    new File([new Uint8Array(bytes)], 'Notes.pptx', { type: PPTX_MIME_TYPE }),
+    'file-root'
+  )
+  const reopened = await loadEditablePresentation(item)
+  expect(reopened.slides[reopened.slideOrder[0]].notes).toBe(slide.notes)
+  expect(reopened.schemaVersion).toBe(1)
 })
 
 it('imports one directly editable deck with all slides and no extra catalog copy', async () => {
