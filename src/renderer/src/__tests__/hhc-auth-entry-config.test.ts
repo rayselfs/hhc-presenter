@@ -201,6 +201,24 @@ describe('HHC browser auth entry and hosting config', () => {
     expect(staticWebApp).toContain("github.event_name == 'pull_request'")
   })
 
+  it('uses a supported Linux image and redeploys only a published immutable tag', () => {
+    for (const name of [
+      'ci.yml',
+      'build-release.yml',
+      'azure-static-web-apps-zealous-river-03bbb7100.yml'
+    ]) {
+      const workflow = read(`.github/workflows/${name}`)
+      expect(workflow).not.toContain('ubuntu-latest')
+      expect(workflow).toContain('ubuntu-24.04')
+    }
+    const web = read('.github/workflows/azure-static-web-apps-zealous-river-03bbb7100.yml')
+    expect(web).toContain('Require published release')
+    expect(web).toContain("--json isDraft --jq '.isDraft'")
+    expect(web).toContain('ref: refs/tags/${{ github.event.release.tag_name || inputs.tag }}')
+    expect(web).toContain('RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}')
+    expect(web.indexOf('Require published release')).toBeLessThan(web.indexOf('actions/checkout@'))
+  })
+
   it('keeps Asset tickets outside runtime caches and persisted browser storage', () => {
     const config = read('electron.vite.config.ts')
     expect(config).toContain('navigateFallbackDenylist: [/^\\/api\\//')
