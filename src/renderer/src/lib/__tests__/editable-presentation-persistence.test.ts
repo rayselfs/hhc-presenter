@@ -5,6 +5,7 @@ import {
   addElementToSlide,
   createShapeElement,
   loadEditablePresentation,
+  clearEditablePresentationCache,
   createBlankEditablePresentationDocument
 } from '../editable-presentation'
 import {
@@ -82,6 +83,7 @@ async function seedAuthority(
 }
 
 beforeEach(async () => {
+  clearEditablePresentationCache()
   vi.stubGlobal('Blob', NodeBlob)
   vi.stubGlobal('File', NodeFile)
   await resetFileExplorerDBForTests()

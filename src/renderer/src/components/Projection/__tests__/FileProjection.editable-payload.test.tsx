@@ -111,7 +111,8 @@ describe('FileProjection editable payload', () => {
               id: 'asset-1',
               name: 'photo.png',
               mimeType: 'image/png',
-              dataUrl: 'data:image/png;base64,AAA='
+              dataUrl:
+                'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6ZaoAAAAASUVORK5CYII='
             }
           }
         }}
@@ -133,7 +134,10 @@ describe('FileProjection editable payload', () => {
       width: '600px',
       height: '120px'
     })
-    expect(screen.getByAltText('photo.png')).toHaveAttribute('src', 'data:image/png;base64,AAA=')
+    expect(screen.getByAltText('photo.png')).toHaveAttribute(
+      'src',
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6ZaoAAAAASUVORK5CYII='
+    )
     const frame = document.querySelector('[data-editable-projection-frame]')
     expect(frame).toHaveStyle({
       width: 'min(100vw, calc(100vh * 1.3333333333333333))',
