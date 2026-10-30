@@ -22,9 +22,9 @@ test('unsupported PPTX stays original after upload and Edit a copy rejection', a
   const id = await seedRawPptx(page, 'Animated.pptx', buffer)
   await page.goto(`/#/presentations/${id}`)
   await page.getByRole('button', { name: /^Edit a copy$|^編輯副本$/ }).click()
-  await expect(
-    page.getByText('PowerPoint animation is not supported for editable import', { exact: true })
-  ).toBeVisible()
+  const failure =
+    'Slide 1: PowerPoint animation is not supported for editable import yet. Open the original PPTX to view it; the source file has not been changed.'
+  await expect(page.getByText(failure, { exact: true })).toBeVisible()
   await expect(page).toHaveURL(new RegExp(`/presentations/${id}$`))
   await page.goto('/#/files')
   await page.locator('input[type="file"]:not([webkitdirectory])').first().setInputFiles({
@@ -33,11 +33,7 @@ test('unsupported PPTX stays original after upload and Edit a copy rejection', a
     buffer
   })
   await expect(page.getByText('Animated.lpdeck', { exact: true })).toHaveCount(0)
-  await expect(
-    page.getByText('Animated.pptx: PowerPoint animation is not supported for editable import', {
-      exact: true
-    })
-  ).toBeVisible()
+  await expect(page.getByText(`Animated.pptx: ${failure}`, { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Animated.pptx', exact: true })).toBeVisible()
   const records = await page.evaluate(async (id) => {
     const request = indexedDB.open('hhc-file-explorer')
