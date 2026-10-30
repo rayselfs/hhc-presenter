@@ -8,6 +8,7 @@ import {
   convertPresentationData,
   createBlankEditablePresentationDocument,
   createTextElement,
+  createShapeElement,
   duplicateEditableSlides,
   type EditablePresentationDocument,
   type EditableTextElement
@@ -38,7 +39,10 @@ beforeEach(() => {
   )
 })
 afterEach(() => vi.unstubAllGlobals())
-async function documentFrom(bytes: ArrayBuffer): Promise<EditablePresentationDocument> {
+async function documentFrom(
+  bytes: ArrayBuffer,
+  targetVersion?: 3
+): Promise<EditablePresentationDocument> {
   const source = await createPptxSource(bytes)
   const presentation = buildPresentation(await parseZip(bytes))
   materializeAllSlideNodes(presentation)
@@ -46,7 +50,8 @@ async function documentFrom(bytes: ArrayBuffer): Promise<EditablePresentationDoc
     sourceItem,
     presentation,
     source,
-    await readPptxNotes(bytes, presentation)
+    await readPptxNotes(bytes, presentation),
+    targetVersion
   )
 }
 async function hymn(): Promise<{ bytes: ArrayBuffer; document: EditablePresentationDocument }> {
@@ -860,3 +865,128 @@ it.each(['insert', 'delete'])(
     })
   }
 )
+
+async function presetSource(guides = '<a:gd name="adj" fmla="val 16667"/>'): Promise<ArrayBuffer> {
+  const document = createBlankEditablePresentationDocument('Preset source')
+  const slide = document.slides[document.slideOrder[0]]
+  const shape = createShapeElement('rectangle', { x: 10, y: 20, width: 200, height: 100 })
+  slide.elements = { [shape.id]: shape }
+  slide.elementOrder = [shape.id]
+  const zip = await JSZip.loadAsync(await buildNativePptx(document))
+  const name = 'ppt/slides/slide1.xml'
+  const xml = (await zip.file(name)!.async('string')).replace(
+    /<a:prstGeom[^>]*>[\s\S]*?<\/a:prstGeom>/,
+    `<a:prstGeom prst="roundRect" xmlns:q="urn:geometry-test" q:retained="yes"><a:avLst>${guides}<a:extLst><a:ext uri="adjustment-meta"><q:payload value="unchanged"/></a:ext></a:extLst></a:avLst><a:extLst><a:ext uri="geometry-meta"><q:payload value="unchanged"/></a:ext></a:extLst></a:prstGeom>`
+  )
+  zip.file(name, xml)
+  zip.file('custom/retained.bin', Uint8Array.of(11, 22, 33))
+  zip.file(
+    '[Content_Types].xml',
+    (await zip.file('[Content_Types].xml')!.async('string')).replace(
+      '</Types>',
+      '<Default Extension="bin" ContentType="application/octet-stream"/></Types>'
+    )
+  )
+  return zip.generateAsync({ type: 'arraybuffer' })
+}
+
+it('round-trips native v3 presets and raw named adjustments', async () => {
+  const document = createBlankEditablePresentationDocument('Native v3')
+  document.schemaVersion = 3
+  const slide = document.slides[document.slideOrder[0]]
+  for (const kind of [
+    'roundRect',
+    'triangle',
+    'rtTriangle',
+    'diamond',
+    'rightArrow',
+    'leftArrow',
+    'upArrow',
+    'downArrow'
+  ] as const) {
+    const element = createShapeElement(kind)
+    if (kind === 'roundRect') element.adjustments = [2147483647]
+    if (kind.endsWith('Arrow')) element.adjustments = [25000, 75000]
+    slide.elementOrder.push(element.id)
+    slide.elements[element.id] = element
+  }
+  const reopened = await documentFrom(await buildNativePptx(document), 3)
+  const elements = Object.values(reopened.slides[reopened.slideOrder[0]].elements)
+  expect(elements.map((element) => element.type === 'shape' && element.shape)).toEqual([
+    'roundRect',
+    'triangle',
+    'rtTriangle',
+    'diamond',
+    'rightArrow',
+    'leftArrow',
+    'upArrow',
+    'downArrow'
+  ])
+  expect(elements[0]).toMatchObject({ adjustments: [2147483647] })
+  expect(elements[1]).not.toHaveProperty('adjustments')
+  expect(elements[4]).toMatchObject({ adjustments: [25000, 75000] })
+})
+
+it('keeps exact source no-op bytes and patches adjustments without losing opaque geometry metadata', async () => {
+  const bytes = await presetSource()
+  const document = await documentFrom(bytes, 3)
+  expect(new Uint8Array(await buildSourcePptx(document))).toEqual(new Uint8Array(bytes))
+  const shape = Object.values(document.slides[document.slideOrder[0]].elements).find(
+    (element) => element.type === 'shape'
+  )!
+  shape.adjustments = [30000]
+  const output = await buildSourcePptx(document)
+  await assertUntouched(bytes, output, new Set(['ppt/slides/slide1.xml']))
+  const zip = await JSZip.loadAsync(output)
+  const xml = new DOMParser().parseFromString(
+    await zip.file('ppt/slides/slide1.xml')!.async('string'),
+    'application/xml'
+  )
+  const geometry = xml.getElementsByTagNameNS(ans, 'prstGeom')[0]
+  expect(geometry.getAttributeNS('urn:geometry-test', 'retained')).toBe('yes')
+  expect(geometry.getElementsByTagNameNS('urn:geometry-test', 'payload')).toHaveLength(2)
+  expect(geometry.getElementsByTagNameNS(ans, 'gd')[0].getAttribute('fmla')).toBe('val 30000')
+  expect(
+    Object.values(Object.values((await documentFrom(output, 3)).slides)[0].elements)[0]
+  ).toMatchObject({ shape: 'roundRect', adjustments: [30000] })
+})
+
+it('rejects ambiguous retained adjustment mapping as source-conflict before export', async () => {
+  const document = await documentFrom(await presetSource(), 3)
+  document.pptxSource = await createPptxSource(
+    await presetSource('<a:gd name="adj" fmla="*/ w 1 2"/>')
+  )
+  await expect(buildSourcePptx(document)).rejects.toMatchObject({
+    diagnostics: [{ code: 'source-conflict' }]
+  })
+})
+
+it('changes a retained preset kind while preserving opaque geometry extensions', async () => {
+  const bytes = await presetSource()
+  const document = await documentFrom(bytes, 3)
+  const shape = Object.values(document.slides[document.slideOrder[0]].elements).find(
+    (element) => element.type === 'shape'
+  )!
+  shape.shape = 'rightArrow'
+  shape.adjustments = [25000, 75000]
+  const output = await buildSourcePptx(document)
+  await assertUntouched(bytes, output, new Set(['ppt/slides/slide1.xml']))
+  const zip = await JSZip.loadAsync(output)
+  const xml = new DOMParser().parseFromString(
+    await zip.file('ppt/slides/slide1.xml')!.async('string'),
+    'application/xml'
+  )
+  const geometry = xml.getElementsByTagNameNS(ans, 'prstGeom')[0]
+  expect(geometry.getAttribute('prst')).toBe('rightArrow')
+  expect(geometry.getAttributeNS('urn:geometry-test', 'retained')).toBe('yes')
+  expect(geometry.getElementsByTagNameNS('urn:geometry-test', 'payload')).toHaveLength(2)
+  expect(
+    Array.from(geometry.getElementsByTagNameNS(ans, 'gd')).map((entry) => [
+      entry.getAttribute('name'),
+      entry.getAttribute('fmla')
+    ])
+  ).toEqual([
+    ['adj1', 'val 25000'],
+    ['adj2', 'val 75000']
+  ])
+})

@@ -12,7 +12,14 @@ const nativeImportPattern = new RegExp(
 
 export default defineConfig(
   {
-    ignores: ['**/node_modules', '**/dist', '**/out', '.agents/**', '.local-runtimes/**']
+    ignores: [
+      '**/node_modules',
+      '**/dist',
+      '**/out',
+      '.agents/**',
+      '.local-runtimes/**',
+      '.superpowers/**'
+    ]
   },
   tseslint.configs.recommended,
   eslintPluginReact.configs.flat.recommended,

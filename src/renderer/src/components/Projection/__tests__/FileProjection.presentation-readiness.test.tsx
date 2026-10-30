@@ -61,7 +61,8 @@ const editable: NonNullable<ProjectionPayload<'file:show'>['editablePresentation
       id: 'image',
       name: 'image.png',
       mimeType: 'image/png',
-      dataUrl: 'data:image/png;base64,AAA='
+      dataUrl:
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6ZaoAAAAASUVORK5CYII='
     }
   }
 }
@@ -82,10 +83,11 @@ function status(revision: number, value: string): unknown[] {
   ]
 }
 
+beforeEach(() => {
+  vi.clearAllMocks()
+})
+
 describe('presentation readiness', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
   afterEach(() => {
     if (originalDecode) Object.defineProperty(HTMLImageElement.prototype, 'decode', originalDecode)
     else Reflect.deleteProperty(HTMLImageElement.prototype, 'decode')
@@ -227,4 +229,68 @@ describe('presentation readiness', () => {
     })
     await waitFor(() => expect(send).toHaveBeenCalledWith(...status(2, 'ready')))
   })
+})
+
+const adjustedPayload: NonNullable<ProjectionPayload<'file:show'>['editablePresentation']> = {
+  ...editable,
+  schemaVersion: 3,
+  assets: {},
+  slide: {
+    ...editable.slide,
+    elementOrder: ['shape'],
+    elements: {
+      shape: {
+        id: 'shape',
+        type: 'shape',
+        shape: 'triangle',
+        adjustments: [25000],
+        x: 10,
+        y: 20,
+        width: 200,
+        height: 100,
+        rotation: 35,
+        opacity: 1,
+        fillColor: '#abcdef',
+        strokeColor: '#000000',
+        strokeWidth: 2
+      }
+    }
+  }
+}
+
+it('renders a v3 adjusted preset from the projection payload', async () => {
+  const { container } = render(
+    <FileProjection {...props} initialEditablePresentation={adjustedPayload} />
+  )
+  await waitFor(() =>
+    expect(container.querySelector('svg[data-shape-kind="triangle"] path')).toHaveAttribute(
+      'd',
+      'M0 100 L50 0 L200 100 Z'
+    )
+  )
+})
+
+it.each([{ shape: 'unknown-preset' }, { width: 0 }, { adjustments: [Number.NaN] }])(
+  'reports malformed v3 geometry instead of throwing during render: %j',
+  async (patch) => {
+    const payload = structuredClone(adjustedPayload)
+    Object.assign(payload.slide.elements.shape, patch)
+    const { container } = render(
+      <FileProjection {...props} initialEditablePresentation={payload} />
+    )
+    await waitFor(() => expect(send).toHaveBeenCalledWith(...status(1, 'failed')))
+    expect(container.querySelector('[data-slide-surface]')).toBeNull()
+    expect(send).not.toHaveBeenCalledWith(...status(1, 'ready'))
+  }
+)
+
+it('validates source-backed projection as render data without requiring the opaque package', async () => {
+  const payload = structuredClone(adjustedPayload)
+  Object.assign(payload.slide, {
+    pptxSourcePart: 'ppt/slides/slide1.xml',
+    themeId: 'original-theme'
+  })
+  Object.assign(payload.slide.elements.shape, { pptxSourceNode: { id: '2', role: 'geometry' } })
+  render(<FileProjection {...props} initialEditablePresentation={payload} />)
+  await waitFor(() => expect(send).toHaveBeenCalledWith(...status(1, 'ready')))
 })
