@@ -1,3 +1,4 @@
+import { validatePortablePresentation } from '@renderer/lib/portable-presentation'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createProjectionAdapter } from '@renderer/lib/projection-adapter'
 import { getFileSource, openFileExplorerDB } from '@renderer/lib/file-explorer-db'
@@ -851,23 +852,45 @@ function EditableProjectionSurface({
   editablePresentation?: ProjectionPayload<'file:show'>['editablePresentation']
 }): React.JSX.Element {
   const frameRef = useRef<HTMLDivElement>(null)
-  const payloadDocument = useMemo(
-    () =>
-      editablePresentation
-        ? {
-            id: itemId,
-            name: fileName,
-            width: editablePresentation.width,
-            height: editablePresentation.height,
-            slideOrder: [editablePresentation.slide.id],
-            slides: { [editablePresentation.slide.id]: editablePresentation.slide },
-            assets: editablePresentation.assets,
-            createdAt: 0,
-            updatedAt: 0
+  const payload = useMemo<{
+    document: EditablePresentationDocument | null
+    error: string | null
+  }>(() => {
+    if (!editablePresentation) return { document: null, error: null }
+    try {
+      const slide = editablePresentation.slide
+      // Projection consumes render data, not original-package ownership or theme identities.
+      const document: EditablePresentationDocument = {
+        id: itemId,
+        schemaVersion: editablePresentation.schemaVersion,
+        name: fileName || itemId,
+        width: editablePresentation.width,
+        height: editablePresentation.height,
+        slideOrder: [slide.id],
+        slides: {
+          [slide.id]: {
+            ...slide,
+            pptxSourcePart: undefined,
+            themeId: undefined,
+            elements: Object.fromEntries(
+              Object.entries(slide.elements).map(([id, element]) => [
+                id,
+                { ...element, pptxSourceNode: undefined }
+              ])
+            )
           }
-        : null,
-    [editablePresentation, fileName, itemId]
-  )
+        },
+        assets: editablePresentation.assets,
+        createdAt: 0,
+        updatedAt: 0
+      }
+      validatePortablePresentation(document)
+      return { document, error: null }
+    } catch (error) {
+      return { document: null, error: error instanceof Error ? error.message : String(error) }
+    }
+  }, [editablePresentation, fileName, itemId])
+  const payloadDocument = payload.document
   const sourceKey = `${itemId}:${blobId}`
   const [loaded, setLoaded] = useState<{
     sourceKey: string
@@ -876,7 +899,7 @@ function EditableProjectionSurface({
   } | null>(null)
 
   useEffect(() => {
-    if (payloadDocument) return
+    if (editablePresentation) return
     let cancelled = false
     void loadEditablePresentation({ id: itemId, url: `blob:${blobId}`, name: fileName })
       .then((loadedDocument) => {
@@ -896,11 +919,12 @@ function EditableProjectionSurface({
     return () => {
       cancelled = true
     }
-  }, [blobId, fileName, itemId, payloadDocument, sourceKey])
+  }, [blobId, editablePresentation, fileName, itemId, sourceKey])
 
   const durableDocument = loaded?.sourceKey === sourceKey ? loaded.document : null
   const document = payloadDocument ?? durableDocument
-  const error = payloadDocument || loaded?.sourceKey !== sourceKey ? null : loaded.error
+  const error =
+    payload.error ?? (payloadDocument || loaded?.sourceKey !== sourceKey ? null : loaded.error)
 
   const slideId =
     document?.slideOrder[Math.min(slideIndex, Math.max(0, document.slideOrder.length - 1))]

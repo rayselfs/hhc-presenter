@@ -827,7 +827,67 @@
       "sw": "左下",
       "w": "左",
       "nw": "左上"
-    }
+    },
+    "shapeNames": {
+      "roundRect": "圆角矩形",
+      "triangle": "三角形",
+      "rtTriangle": "直角三角形",
+      "diamond": "菱形",
+      "rightArrow": "向右箭头",
+      "leftArrow": "向左箭头",
+      "upArrow": "向上箭头",
+      "downArrow": "向下箭头"
+    },
+    "shapeParameters": "形状参数",
+    "shapeAdjustmentValues": {
+      "roundRect": {
+        "0": "圆角半径"
+      },
+      "triangle": {
+        "0": "顶点位置"
+      },
+      "rightArrow": {
+        "0": "箭身宽度",
+        "1": "箭头长度"
+      },
+      "leftArrow": {
+        "0": "箭身宽度",
+        "1": "箭头长度"
+      },
+      "upArrow": {
+        "0": "箭身宽度",
+        "1": "箭头长度"
+      },
+      "downArrow": {
+        "0": "箭身宽度",
+        "1": "箭头长度"
+      }
+    },
+    "adjustShape": {
+      "roundRect": {
+        "0": "调整圆角半径"
+      },
+      "triangle": {
+        "0": "调整顶点位置"
+      },
+      "rightArrow": {
+        "0": "调整箭身宽度",
+        "1": "调整箭头长度"
+      },
+      "leftArrow": {
+        "0": "调整箭身宽度",
+        "1": "调整箭头长度"
+      },
+      "upArrow": {
+        "0": "调整箭身宽度",
+        "1": "调整箭头长度"
+      },
+      "downArrow": {
+        "0": "调整箭身宽度",
+        "1": "调整箭头长度"
+      }
+    },
+    "incompatibleShapePaste": "目前无法将这些形状粘贴到此演示文稿。"
   },
   "projection": {
     "startButton": "开始投影",

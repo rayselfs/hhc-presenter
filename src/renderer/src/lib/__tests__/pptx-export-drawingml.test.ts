@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createBlankEditablePresentationDocument,
   createTextElement,
+  createShapeElement,
   type EditablePresentationElement,
   type EditablePresentationDocument,
   type EditableSlideBackground
@@ -240,4 +241,25 @@ describe('editable DrawingML output', () => {
       expect(JSON.stringify(background)).toBe(before)
     }
   })
+})
+
+it.each([
+  ['roundRect', [22000], ['adj']],
+  ['triangle', [-10], ['adj']],
+  ['rightArrow', [25000, 75000], ['adj1', 'adj2']],
+  ['leftArrow', [], []],
+  ['upArrow', [50000], ['adj1']],
+  ['downArrow', [25000, 75000], ['adj1', 'adj2']],
+  ['diamond', undefined, []],
+  ['rtTriangle', undefined, []]
+] as const)('writes exact preset and bounded constant guides for %s', (kind, values, guides) => {
+  const element = { ...createShapeElement(kind), ...(values ? { adjustments: values } : {}) }
+  const { document, slideId } = fixture([element])
+  document.schemaVersion = 3
+  const xml = writeSlideDrawingMl(document, slideId, new Map())
+  expect(one(xml, 'prstGeom').getAttribute('prst')).toBe(kind)
+  expect(all(xml, 'gd').map((entry) => entry.getAttribute('name'))).toEqual(guides)
+  expect(all(xml, 'gd').map((entry) => entry.getAttribute('fmla'))).toEqual(
+    (values ?? []).map((value) => `val ${value}`)
+  )
 })

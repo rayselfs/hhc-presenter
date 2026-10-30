@@ -163,6 +163,39 @@ function appendRelationship(root: Element, type: string, target: string): string
   root.appendChild(node)
   return id
 }
+function patchPresetGeometry(properties: Element, nextProperties: Element): void {
+  const next = drawingChild(nextProperties, 'prstGeom')
+  if (!next) return conflict('The generated preset geometry is missing')
+  const original = drawingChild(properties, 'prstGeom')
+  if (!original) {
+    replaceDrawingChild(properties, nextProperties, 'prstGeom', SP_ORDER)
+    return
+  }
+  original.setAttribute('prst', next.getAttribute('prst')!)
+  let adjustments = drawingChild(original, 'avLst')
+  if (!adjustments) {
+    adjustments = properties.ownerDocument.createElementNS(A_NS, 'a:avLst')
+    original.insertBefore(adjustments, original.firstChild)
+  }
+  const owned = Array.from(adjustments.children).filter(
+    (node) => node.namespaceURI === A_NS && node.localName === 'gd'
+  )
+  const generated = Array.from(drawingChild(next, 'avLst')?.children ?? []).filter(
+    (node) => node.namespaceURI === A_NS && node.localName === 'gd'
+  )
+  const names = new Set(generated.map((node) => node.getAttribute('name')))
+  for (const node of owned) if (!names.has(node.getAttribute('name'))) node.remove()
+  for (const node of generated) {
+    const existing = owned.find((entry) => entry.getAttribute('name') === node.getAttribute('name'))
+    if (existing) existing.setAttribute('fmla', node.getAttribute('fmla')!)
+    else
+      adjustments.insertBefore(
+        properties.ownerDocument.importNode(node, true),
+        drawingChild(adjustments, 'extLst') ?? null
+      )
+  }
+}
+
 function roleKey(element: EditablePresentationElement): string | undefined {
   const ref = element.pptxSourceNode
   return ref ? `${ref.id}:${ref.role}` : undefined
@@ -185,7 +218,8 @@ export async function buildSourcePptx(
       { id: 'pptx-export-baseline', name: 'Original.pptx', url: '' } as FileItemRecord,
       presentation,
       document.pptxSource,
-      await readPptxNotes(bytes, presentation)
+      await readPptxNotes(bytes, presentation),
+      document.schemaVersion === 3 ? 3 : undefined
     )
   } catch (error) {
     throw new PptxExportError(
@@ -501,8 +535,8 @@ export async function buildSourcePptx(
         )
           patchSourceText(target, next, old, current, slide.id)
         if (old && current.type === 'shape' && old.type === 'shape') {
-          if (current.shape !== old.shape)
-            replaceDrawingChild(properties, nextProperties, 'prstGeom', SP_ORDER)
+          if (current.shape !== old.shape || !equal(current.adjustments, old.adjustments))
+            patchPresetGeometry(properties, nextProperties)
           if (current.fillColor !== old.fillColor || current.opacity !== old.opacity) {
             for (const name of ['noFill', 'gradFill', 'blipFill', 'pattFill', 'grpFill'])
               drawingChild(properties, name)?.remove()

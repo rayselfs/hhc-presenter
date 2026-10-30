@@ -3,6 +3,7 @@ import {
   addElementToSlide,
   createBlankEditablePresentationDocument,
   createImageElement,
+  createShapeElement,
   insertBlankEditableSlide
 } from '../editable-presentation'
 import {
@@ -108,3 +109,47 @@ describe('presentation slide clipboard', () => {
     expect(result.slideOrder[0]).not.toBe(source.slideOrder[0])
   })
 })
+
+it('preserves adjusted v3 clipboard geometry and detaches source references', () => {
+  const source = createBlankEditablePresentationDocument('Source')
+  source.schemaVersion = 3
+  const slideId = source.slideOrder[0]
+  source.slides[slideId].pptxSourcePart = 'ppt/slides/slide1.xml'
+  const shape = {
+    ...createShapeElement('rightArrow'),
+    adjustments: [25000, 75000],
+    pptxSourceNode: { id: '2', role: 'geometry' as const }
+  }
+  const clipboard = createSlideClipboard(addElementToSlide(source, slideId, shape), [slideId])
+  const destination = createBlankEditablePresentationDocument('Destination')
+  destination.schemaVersion = 3
+  const pasted = pasteSlideClipboard(destination, clipboard, 1)
+  const slide = pasted.document.slides[pasted.slideIds[0]]
+  const copied = slide.elements[slide.elementOrder[0]]
+  expect(copied).toMatchObject({ shape: 'rightArrow', adjustments: [25000, 75000] })
+  expect(copied.id).not.toBe(shape.id)
+  expect(copied).not.toHaveProperty('pptxSourceNode')
+  expect(slide).not.toHaveProperty('pptxSourcePart')
+  expect(pasted.document.schemaVersion).toBe(3)
+  expect(clipboard.slides[0].elements[shape.id]).toHaveProperty('pptxSourceNode')
+})
+
+it.each([1, 2] as const)(
+  'rejects v3-only clipboard content in schema v%s without upgrading the destination',
+  (version) => {
+    const source = createBlankEditablePresentationDocument('Source')
+    source.schemaVersion = 3
+    const slideId = source.slideOrder[0]
+    const clipboard = createSlideClipboard(
+      addElementToSlide(source, slideId, createShapeElement('triangle')),
+      [slideId]
+    )
+    const destination = createBlankEditablePresentationDocument('Destination')
+    destination.schemaVersion = version
+    expect(() => pasteSlideClipboard(destination, clipboard, 1)).toThrow(
+      'Shape parameters require schema v3'
+    )
+    expect(destination.schemaVersion).toBe(version)
+    expect(destination.slideOrder).toHaveLength(1)
+  }
+)

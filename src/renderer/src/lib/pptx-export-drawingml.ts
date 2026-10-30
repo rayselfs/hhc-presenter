@@ -1,3 +1,4 @@
+import { getPresetShapeDescriptor, resolvePresetShapeGeometry } from './presentation-shape-geometry'
 import {
   getSortedGradientStops,
   normalizeSlideBackground,
@@ -298,17 +299,25 @@ export function writeSlideDrawingMl(
     }
     const properties = add(node, 'p:spPr')
     transform(properties, element)
-    add(
+    const preset = element.type === 'shape' ? getPresetShapeDescriptor(element.shape) : undefined
+    if (element.type === 'shape') {
+      if (
+        !preset ||
+        (document.schemaVersion !== 3 &&
+          (!['rectangle', 'ellipse'].includes(element.shape) || element.adjustments !== undefined))
+      )
+        fail('The shape requires presentation schema v3', 'unsupported-content')
+      resolvePresetShapeGeometry(element)
+    }
+    const adjustments = add(
       add(properties, 'a:prstGeom', {
-        prst:
-          element.type === 'shape' && element.shape === 'ellipse'
-            ? 'ellipse'
-            : element.type === 'line'
-              ? 'line'
-              : 'rect'
+        prst: preset?.preset ?? (element.type === 'line' ? 'line' : 'rect')
       }),
       'a:avLst'
     )
+    if (element.type === 'shape')
+      for (const [index, value] of (element.adjustments ?? []).entries())
+        add(adjustments, 'a:gd', { name: preset!.guides[index], fmla: `val ${value}` })
     if (element.type === 'shape') {
       fill(properties, element.fillColor, element.opacity)
       outline(properties, element.strokeColor, element.strokeWidth, element.opacity)

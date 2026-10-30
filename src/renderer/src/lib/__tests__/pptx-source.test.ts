@@ -273,3 +273,16 @@ it('accepts and rejects the shared portable source corpus', async () => {
     else await expect(validatePptxSource(entry.document), entry.name).rejects.toThrow()
   }
 })
+
+it('checks version 3 geometry through the asynchronous source boundary without mutation', async () => {
+  const cases = JSON.parse(
+    await readFile('src/renderer/src/lib/__fixtures__/preset-geometry/contract.json', 'utf8')
+  ) as { name: string; valid: boolean; document: Parameters<typeof validatePptxSource>[0] }[]
+  for (const entry of cases) {
+    const original = JSON.stringify(entry.document)
+    if (entry.valid)
+      await expect(validatePptxSource(entry.document), entry.name).resolves.toBeUndefined()
+    else await expect(validatePptxSource(entry.document), entry.name).rejects.toThrow()
+    expect(JSON.stringify(entry.document), entry.name).toBe(original)
+  }
+})
