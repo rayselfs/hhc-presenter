@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import JSZip from 'jszip'
+import { validatePortablePresentation } from '../portable-presentation'
 import { buildPresentation, materializeAllSlideNodes, parseZip } from '@aiden0z/pptx-renderer'
 import {
   convertPresentationData,
@@ -9,7 +10,10 @@ import type { PresentationData } from '@aiden0z/pptx-renderer'
 import type { FileItemRecord } from '@shared/types/folder'
 
 async function parseFixture(
-  background = '<a:solidFill><a:schemeClr val="tx1"/></a:solidFill>'
+  background = '<a:solidFill><a:schemeClr val="tx1"/></a:solidFill>',
+  shapeProperties = '',
+  image?: { extension: string; bytes: Uint8Array },
+  inheritedFrame = false
 ): Promise<PresentationData> {
   const zip = new JSZip()
   const ns =
@@ -23,7 +27,7 @@ async function parseFixture(
   zip.file('ppt/_rels/presentation.xml.rels', rel('slide', 'slides/slide1.xml'))
   zip.file(
     'ppt/slides/slide1.xml',
-    `<p:sld ${ns}><p:cSld><p:spTree><p:sp><p:nvSpPr><p:cNvPr id="2" name="Synthetic text"/><p:cNvSpPr/><p:nvPr><p:ph type="subTitle" idx="1"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="12192000" cy="6858000"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr sz="9000"><a:solidFill><a:schemeClr val="bg1"/></a:solidFill><a:ea typeface="標楷體"/></a:rPr><a:t>Synthetic sample</a:t></a:r></a:p><a:p><a:r><a:t>Inherited style</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>`
+    `<p:sld ${ns}><p:cSld><p:spTree><p:sp><p:nvSpPr><p:cNvPr id="2" name="Synthetic text"/><p:cNvSpPr/><p:nvPr><p:ph type="subTitle" idx="1"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="12192000" cy="6858000"/></a:xfrm>${shapeProperties}</p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr sz="9000"><a:solidFill><a:schemeClr val="bg1"/></a:solidFill><a:ea typeface="標楷體"/></a:rPr><a:t>Synthetic sample</a:t></a:r></a:p><a:p><a:r><a:t>Inherited style</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>`
   )
   zip.file(
     'ppt/slides/_rels/slide1.xml.rels',
@@ -46,6 +50,37 @@ async function parseFixture(
     'ppt/theme/theme1.xml',
     `<a:theme ${ns}><a:themeElements><a:clrScheme name="Synthetic"><a:dk1><a:srgbClr val="000000"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1></a:clrScheme><a:fontScheme name="Synthetic"><a:majorFont/><a:minorFont/></a:fontScheme><a:fmtScheme name="Synthetic"/></a:themeElements></a:theme>`
   )
+  if (image) {
+    const slideXml = await zip.file('ppt/slides/slide1.xml')!.async('string')
+    zip.file(
+      'ppt/slides/slide1.xml',
+      slideXml.replace(
+        '</p:spTree>',
+        '<p:pic><p:nvPicPr><p:cNvPr id="3" name="Picture"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="952500" cy="952500"/></a:xfrm><a:prstGeom prst="rect"/></p:spPr></p:pic></p:spTree>'
+      )
+    )
+    const relationships = await zip.file('ppt/slides/_rels/slide1.xml.rels')!.async('string')
+    zip.file(
+      'ppt/slides/_rels/slide1.xml.rels',
+      relationships.replace(
+        '</Relationships>',
+        `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image.${image.extension}"/></Relationships>`
+      )
+    )
+    zip.file(`ppt/media/image.${image.extension}`, image.bytes)
+  }
+  if (inheritedFrame) {
+    const slide = await zip.file('ppt/slides/slide1.xml')!.async('string')
+    const layout = await zip.file('ppt/slideLayouts/slideLayout1.xml')!.async('string')
+    zip.file('ppt/slides/slide1.xml', slide.replace(/<a:xfrm>.*?<\/a:xfrm>/, ''))
+    zip.file(
+      'ppt/slideLayouts/slideLayout1.xml',
+      layout.replace(
+        '<p:spPr/>',
+        '<p:spPr><a:xfrm><a:off x="95250" y="190500"/><a:ext cx="952500" cy="476250"/></a:xfrm></p:spPr>'
+      )
+    )
+  }
   const presentation = buildPresentation(
     await parseZip(await zip.generateAsync({ type: 'arraybuffer' }))
   )
@@ -54,6 +89,235 @@ async function parseFixture(
 }
 
 describe('PPTX parser conversion contract', () => {
+  it('preserves embedded BMP MIME and bytes through portable JSON reload', async () => {
+    const bytes = new Uint8Array(58)
+    const header = new DataView(bytes.buffer)
+    bytes.set([0x42, 0x4d])
+    header.setUint32(2, 58, true)
+    header.setUint32(10, 54, true)
+    header.setUint32(14, 40, true)
+    header.setInt32(18, 1, true)
+    header.setInt32(22, 1, true)
+    header.setUint16(26, 1, true)
+    header.setUint16(28, 24, true)
+    header.setUint32(34, 4, true)
+    const presentation = await parseFixture(undefined, '', { extension: 'bmp', bytes })
+    const document = convertPresentationData(
+      { id: 'test', name: 'Picture.pptx', url: 'blob:test' } as FileItemRecord,
+      presentation
+    )
+    const asset = Object.values(document.assets)[0]
+    expect(asset.mimeType).toBe('image/bmp')
+    expect(asset.dataUrl).toBe(`data:image/bmp;base64,${btoa(String.fromCharCode(...bytes))}`)
+    const reopened = JSON.parse(JSON.stringify(document))
+    expect(() => validatePortablePresentation(reopened)).not.toThrow()
+    expect(reopened.assets).toEqual(document.assets)
+  })
+
+  it('rejects an unknown embedded image extension explicitly', async () => {
+    const presentation = await parseFixture(undefined, '', {
+      extension: 'unknown',
+      bytes: new Uint8Array([1, 2, 3])
+    })
+    expect(() =>
+      convertPresentationData(
+        { id: 'test', name: 'Picture.pptx', url: 'blob:test' } as FileItemRecord,
+        presentation
+      )
+    ).toThrow('Unsupported PowerPoint image format')
+  })
+
+  it.each(['rect', 'line'])('preserves explicit %s outline width', async (geometry) => {
+    const presentation = await parseFixture(
+      undefined,
+      `<a:prstGeom prst="${geometry}"/><a:ln w="38100"><a:solidFill><a:srgbClr val="FF0000"/></a:solidFill></a:ln>`
+    )
+    const document = convertPresentationData(
+      { id: 'test', name: 'Outline.pptx', url: 'blob:test' } as FileItemRecord,
+      presentation
+    )
+    const slide = document.slides[document.slideOrder[0]]
+    const outline = Object.values(slide.elements).find(
+      (element) => element.type === 'shape' || element.type === 'line'
+    )
+    expect(outline).toMatchObject({ strokeWidth: 4, strokeColor: '#FF0000' })
+    expect(atob(generateEditablePresentationThumbnail(document).split(',')[1])).toContain(
+      'stroke-width="4"'
+    )
+  })
+
+  it.each(['<a:ln w="38100"><a:noFill/></a:ln>', ''])(
+    'does not invent an outline for %s',
+    async (line) => {
+      const presentation = await parseFixture(
+        undefined,
+        `<a:prstGeom prst="rect"/><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>${line}`
+      )
+      const document = convertPresentationData(
+        { id: 'test', name: 'Outline.pptx', url: 'blob:test' } as FileItemRecord,
+        presentation
+      )
+      const slide = document.slides[document.slideOrder[0]]
+      const shape = Object.values(slide.elements).find((element) => element.type === 'shape')
+      expect(shape?.type === 'shape' ? shape.strokeWidth : 0).toBe(0)
+    }
+  )
+
+  it('retains the one-pixel fallback for a visible outline without explicit width', async () => {
+    const presentation = await parseFixture(
+      undefined,
+      '<a:prstGeom prst="rect"/><a:ln><a:solidFill><a:srgbClr val="FF0000"/></a:solidFill></a:ln>'
+    )
+    const document = convertPresentationData(
+      { id: 'test', name: 'Outline.pptx', url: 'blob:test' } as FileItemRecord,
+      presentation
+    )
+    const slide = document.slides[document.slideOrder[0]]
+    expect(Object.values(slide.elements).find((element) => element.type === 'shape')).toMatchObject(
+      { strokeWidth: 1 }
+    )
+  })
+
+  it.each(['-1', 'NaN', 'Infinity'])('rejects invalid outline width %s', async (width) => {
+    const presentation = await parseFixture(
+      undefined,
+      `<a:prstGeom prst="rect"/><a:ln w="${width}"><a:solidFill><a:srgbClr val="FF0000"/></a:solidFill></a:ln>`
+    )
+    expect(() =>
+      convertPresentationData(
+        { id: 'test', name: 'Outline.pptx', url: 'blob:test' } as FileItemRecord,
+        presentation
+      )
+    ).toThrow('Invalid PowerPoint outline width')
+  })
+
+  it('inherits extended run styles while respecting explicit local overrides', async () => {
+    const presentation = await parseFixture()
+    const layout = [...presentation.layouts.values()][0]
+    const defaults = layout.placeholders[0].node
+      .child('txBody')
+      .child('lstStyle')
+      .child('lvl1pPr')
+      .child('defRPr').element
+    if (!defaults) throw new Error('Expected defaults')
+    defaults.setAttribute('strike', 'sngStrike')
+    defaults.setAttribute('baseline', '30000')
+    defaults.setAttribute('spc', '150')
+    const highlight = defaults.ownerDocument.createElementNS(
+      'http://schemas.openxmlformats.org/drawingml/2006/main',
+      'a:highlight'
+    )
+    const color = defaults.ownerDocument.createElementNS(
+      'http://schemas.openxmlformats.org/drawingml/2006/main',
+      'a:srgbClr'
+    )
+    color.setAttribute('val', 'FFFF00')
+    highlight.appendChild(color)
+    defaults.appendChild(highlight)
+    const node = presentation.slides[0].nodes[0]
+    if (node.nodeType !== 'shape') throw new Error('Expected shape')
+    const local = node.textBody?.paragraphs[0].runs[0].properties?.element
+    if (!local) throw new Error('Expected local style')
+    local.setAttribute('strike', 'noStrike')
+    local.setAttribute('baseline', '0')
+    local.setAttribute('spc', '0')
+    const document = convertPresentationData(
+      { id: 'test', name: 'Styles.pptx', url: 'blob:test' } as FileItemRecord,
+      presentation
+    )
+    const slide = document.slides[document.slideOrder[0]]
+    const text = Object.values(slide.elements).find((element) => element.type === 'text')
+    if (text?.type !== 'text') throw new Error('Expected text')
+    expect(text.paragraphs?.[0].runs[0]).toMatchObject({
+      strikethrough: false,
+      baseline: 'normal',
+      characterSpacing: 0,
+      highlightColor: '#FFFF00'
+    })
+    expect(text.paragraphs?.[1].runs[0]).toMatchObject({
+      strikethrough: true,
+      baseline: 'superscript',
+      characterSpacing: 2,
+      highlightColor: '#FFFF00'
+    })
+  })
+
+  it('retains whitespace and empty paragraphs across imported text representations', async () => {
+    const presentation = await parseFixture()
+    const node = presentation.slides[0].nodes[0]
+    if (node.nodeType !== 'shape' || !node.textBody) throw new Error('Expected text')
+    const paragraphs = node.textBody.paragraphs
+    paragraphs[0].runs[0].text = '  title  '
+    paragraphs[1].runs[0].text = ''
+    paragraphs.push({ ...paragraphs[1], runs: [{ ...paragraphs[1].runs[0], text: 'tail ' }] })
+    const document = convertPresentationData(
+      { id: 'test', name: 'Whitespace.pptx', url: 'blob:test' } as FileItemRecord,
+      presentation
+    )
+    const slide = document.slides[document.slideOrder[0]]
+    const text = Object.values(slide.elements).find((element) => element.type === 'text')
+    if (text?.type !== 'text') throw new Error('Expected text')
+    expect(text.text).toBe('  title  \n\ntail ')
+    expect(text.runs?.map((run) => run.text).join('')).toBe(text.text)
+    expect(
+      text.paragraphs?.map((paragraph) => paragraph.runs.map((run) => run.text).join('')).join('\n')
+    ).toBe(text.text)
+    expect(() => validatePortablePresentation(JSON.parse(JSON.stringify(document)))).not.toThrow()
+  })
+
+  it('retains an editable invisible rectangle without treating it as unsupported', async () => {
+    const presentation = await parseFixture(
+      undefined,
+      '<a:prstGeom prst="rect"/><a:noFill/><a:ln><a:noFill/></a:ln>'
+    )
+    const node = presentation.slides[0].nodes[0]
+    if (node.nodeType !== 'shape') throw new Error('Expected shape')
+    node.textBody = undefined
+    const document = convertPresentationData(
+      { id: 'test', name: 'Invisible.pptx', url: 'blob:test' } as FileItemRecord,
+      presentation
+    )
+    const slide = document.slides[document.slideOrder[0]]
+    expect(Object.values(slide.elements)).toEqual([
+      expect.objectContaining({ type: 'shape', fillColor: 'transparent', strokeWidth: 0 })
+    ])
+  })
+
+  it('uses inherited placeholder dimensions for the retained transparent shape', async () => {
+    const presentation = await parseFixture(
+      undefined,
+      '<a:prstGeom prst="rect"/><a:noFill/>',
+      undefined,
+      true
+    )
+    const document = convertPresentationData(
+      { id: 'test', name: 'Inherited.pptx', url: 'blob:test' } as FileItemRecord,
+      presentation
+    )
+    const slide = document.slides[document.slideOrder[0]]
+    expect(Object.values(slide.elements).find((element) => element.type === 'shape')).toMatchObject(
+      {
+        x: 10,
+        y: 20,
+        width: 100,
+        height: 50
+      }
+    )
+    expect(() => validatePortablePresentation(document)).not.toThrow()
+  })
+
+  it('keeps the visible line fallback when its outline is not local', async () => {
+    const presentation = await parseFixture(undefined, '<a:prstGeom prst="line"/>')
+    const document = convertPresentationData(
+      { id: 'test', name: 'Inherited line.pptx', url: 'blob:test' } as FileItemRecord,
+      presentation
+    )
+    const slide = document.slides[document.slideOrder[0]]
+    expect(Object.values(slide.elements).find((element) => element.type === 'line')).toMatchObject({
+      strokeWidth: 1
+    })
+  })
+
   it('inherits master background, mapped text colors and layout paragraph formatting', async () => {
     const presentation = await parseFixture()
     const document = convertPresentationData(

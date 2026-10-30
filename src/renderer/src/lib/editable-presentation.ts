@@ -324,7 +324,10 @@ type TextShapeFrame = {
   height: number
 }
 
-type TextShapeStyle = {
+type TextShapeStyle = Pick<
+  EditableTextStyle,
+  'strikethrough' | 'baseline' | 'characterSpacing' | 'highlightColor'
+> & {
   fontFamily: string
   fontSize: number
   bold: boolean
@@ -1275,17 +1278,31 @@ function convertShapeNode(
     throw new Error('Unsupported PowerPoint shape fill')
   const fillColor = readTextColor(node.fill, theme) ?? 'transparent'
   const strokeColor = readTextColor(node.line, theme) ?? '#000000'
-  const strokeWidth = node.line?.exists() ? 1 : 0
+  const rawStrokeWidth = node.line?.attr('w')
+  const sourceStrokeWidth = rawStrokeWidth === undefined ? undefined : Number(rawStrokeWidth)
+  if (
+    sourceStrokeWidth !== undefined &&
+    (!Number.isFinite(sourceStrokeWidth) || sourceStrokeWidth < 0)
+  )
+    throw new Error('Invalid PowerPoint outline width')
+  const strokeWidth =
+    !node.line?.exists() || node.line.child('noFill').exists()
+      ? 0
+      : sourceStrokeWidth === undefined
+        ? 1
+        : emuToPx(sourceStrokeWidth)
 
-  if (shape && (fillColor !== 'transparent' || strokeWidth > 0)) {
+  if (shape && (node.presetGeometry || fillColor !== 'transparent' || strokeWidth > 0)) {
+    const frame = resolveTextShapeFrame(node, slide, presentation)
+    if (!frame) throw new Error(`Shape placeholder frame is missing: ${node.name}`)
     elements.push({
       id: crypto.randomUUID(),
       type: 'shape',
       shape,
-      x: node.position.x,
-      y: node.position.y,
-      width: node.size.w,
-      height: node.size.h,
+      x: frame.x,
+      y: frame.y,
+      width: frame.width,
+      height: frame.height,
       rotation: node.rotation,
       opacity: 1,
       fillColor,
@@ -1305,7 +1322,7 @@ function convertShapeNode(
       rotation: node.rotation,
       opacity: 1,
       strokeColor,
-      strokeWidth: Math.max(1, strokeWidth)
+      strokeWidth: node.line?.exists() ? strokeWidth : 1
     })
   }
 
@@ -1344,6 +1361,10 @@ function convertShapeNode(
       bold: style.bold,
       italic: style.italic,
       underline: style.underline,
+      strikethrough: style.strikethrough,
+      baseline: style.baseline,
+      characterSpacing: style.characterSpacing,
+      highlightColor: style.highlightColor,
       color: style.color,
       align: style.align,
       lineHeight: style.lineHeight
@@ -1427,8 +1448,7 @@ function getShapeText(node: ShapeNodeData): string {
   return (
     node.textBody?.paragraphs
       .map((paragraph) => paragraph.runs.map((run) => run.text).join(''))
-      .join('\n')
-      .trim() ?? ''
+      .join('\n') ?? ''
   )
 }
 
@@ -1660,30 +1680,34 @@ function resolveTextRuns(
 ): EditableTextRun[] | undefined {
   const runs: EditableTextRun[] = []
   for (const [paragraphIndex, paragraph] of (node.textBody?.paragraphs ?? []).entries()) {
+    const inherited = inheritedParagraphProperties(node, slide, presentation, paragraph.level ?? 0)
+    if (paragraphIndex > 0 && paragraph.runs.length === 0) {
+      const style = resolveTextStyle(
+        undefined,
+        paragraph.endParaRPr,
+        paragraph.properties,
+        theme,
+        inherited
+      )
+      const { align: _align, lineHeight: _lineHeight, ...runStyle } = style
+      runs.push({ ...runStyle, text: '\n' })
+    }
     for (const [runIndex, run] of paragraph.runs.entries()) {
       const style = resolveTextStyle(
         run.properties,
         paragraph.endParaRPr,
         paragraph.properties,
         theme,
-        inheritedParagraphProperties(node, slide, presentation, paragraph.level ?? 0)
+        inherited
       )
+      const { align: _align, lineHeight: _lineHeight, ...runStyle } = style
       runs.push({
-        text: `${paragraphIndex > 0 && runIndex === 0 ? '\n' : ''}${run.text}`,
-        fontFamily: style.fontFamily,
-        fontSize: style.fontSize,
-        bold: style.bold,
-        italic: style.italic,
-        underline: style.underline,
-        color: style.color
+        ...runStyle,
+        text: `${paragraphIndex > 0 && runIndex === 0 ? '\n' : ''}${run.text}`
       })
     }
   }
-  if (runs.length === 0) return undefined
-  runs[0] = { ...runs[0], text: runs[0].text.trimStart() }
-  const lastIndex = runs.length - 1
-  runs[lastIndex] = { ...runs[lastIndex], text: runs[lastIndex].text.trimEnd() }
-  return runs.filter((run) => run.text.length > 0)
+  return runs.length ? runs : undefined
 }
 
 function resolveTextParagraphs(
@@ -1701,8 +1725,6 @@ function resolveTextParagraphs(
         theme,
         inheritedParagraphProperties(node, slide, presentation, paragraph.level ?? 0)
       )
-      const baseline = Number(run.properties?.attr('baseline') ?? 0)
-      const spacing = Number(run.properties?.attr('spc') ?? 0)
       return {
         text: run.text,
         fontFamily: style.fontFamily,
@@ -1711,15 +1733,10 @@ function resolveTextParagraphs(
         italic: style.italic,
         underline: style.underline,
         color: style.color,
-        strikethrough: isStrikeEnabled(run.properties?.attr('strike')),
-        baseline:
-          baseline > 0
-            ? ('superscript' as const)
-            : baseline < 0
-              ? ('subscript' as const)
-              : ('normal' as const),
-        characterSpacing: characterSpacingToPx(spacing),
-        highlightColor: readTextColor(run.properties?.child('highlight'), theme)
+        strikethrough: style.strikethrough,
+        baseline: style.baseline,
+        characterSpacing: style.characterSpacing,
+        highlightColor: style.highlightColor
       }
     })
     const sources = [
@@ -1789,7 +1806,21 @@ function resolveTextStyle(
   ]
   const attr = (name: string): string | undefined =>
     sources.map((source) => source?.attr(name)).find((value) => value !== undefined)
+  const baseline = Number(attr('baseline') ?? 0)
+  const highlight = sources
+    .map((source) => source?.child('highlight'))
+    .find((node) => node?.exists())
+  const highlightRgb = highlight?.child('srgbClr').attr('val')
+  const highlightScheme = highlight?.child('schemeClr').attr('val')
   return {
+    strikethrough: isStrikeEnabled(attr('strike')),
+    baseline: baseline > 0 ? 'superscript' : baseline < 0 ? 'subscript' : 'normal',
+    characterSpacing: characterSpacingToPx(Number(attr('spc') ?? 0)),
+    highlightColor: highlightRgb
+      ? `#${highlightRgb}`
+      : highlightScheme && theme?.colorScheme.has(highlightScheme)
+        ? normalizeThemeColor(theme.colorScheme.get(highlightScheme)!)
+        : null,
     fontFamily:
       sources.map((source) => readFontFamily(source, theme)).find(Boolean) ?? DEFAULT_FONT_FAMILY,
     fontSize: fontSizeToPx(Number(attr('sz') ?? 3200)),
@@ -1826,8 +1857,8 @@ function fontSizeToPx(hundredthsOfPoint: number): number {
   return (hundredthsOfPoint / 100) * (CSS_PX_PER_INCH / 72)
 }
 
-function characterSpacingToPx(thousandthsOfPoint: number): number {
-  return (thousandthsOfPoint / 1000) * (CSS_PX_PER_INCH / 72)
+function characterSpacingToPx(hundredthsOfPoint: number): number {
+  return (hundredthsOfPoint / 100) * (CSS_PX_PER_INCH / 72)
 }
 
 function isXmlTrue(value: string | undefined): boolean {
@@ -1922,8 +1953,10 @@ function getMimeTypeFromPath(path: string): string {
   if (extension === 'jpg' || extension === 'jpeg') return 'image/jpeg'
   if (extension === 'gif') return 'image/gif'
   if (extension === 'webp') return 'image/webp'
+  if (extension === 'bmp') return 'image/bmp'
+  if (extension === 'png') return 'image/png'
   if (extension === 'svg') return 'image/svg+xml'
-  return 'image/png'
+  throw new Error('Unsupported PowerPoint image format')
 }
 
 function uint8ArrayToDataUrl(bytes: Uint8Array, mimeType: string): string {
