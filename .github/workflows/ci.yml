@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   quality-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       renderer-artifact-id: ${{ steps.renderer.outputs.artifact-id }}
       renderer-sha256: ${{ steps.digest.outputs.sha256 }}
@@ -87,7 +87,7 @@ jobs:
   quality-gates:
     needs: quality-build
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Require successful shared validation
         env:
@@ -124,7 +124,7 @@ jobs:
 
   cleanup_stale_previews:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
       pull-requests: read
@@ -161,7 +161,7 @@ jobs:
   build_and_deploy_job:
     name: Build and Deploy Job
     needs: [quality-build, cleanup_stale_previews]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: read
