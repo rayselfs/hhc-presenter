@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { Blob as NodeBlob } from 'node:buffer'
 import { validatePortablePresentation } from '../portable-presentation'
@@ -39,7 +40,7 @@ it('migrates legacy decks to v1 without retaining another computer provenance', 
   expect(loaded).not.toHaveProperty('sourceBlobId', 'old-blob')
 })
 
-it.each([{ schemaVersion: 3 }, { width: 0 }, { height: 100001 }, { slideOrder: ['missing'] }])(
+it.each([{ schemaVersion: 4 }, { width: 0 }, { height: 100001 }, { slideOrder: ['missing'] }])(
   'rejects unsupported or inconsistent portable documents: %j',
   async (changes) => {
     const document = { ...createBlankEditablePresentationDocument('Portable'), ...changes }
@@ -208,4 +209,57 @@ it('rejects source records attached to a legacy or v1 graph', () => {
     }
     expect(() => validatePortablePresentation(document)).toThrow()
   }
+})
+
+it('validates the shared preset geometry contract without rewriting stored values', async () => {
+  const cases = JSON.parse(
+    await readFile('src/renderer/src/lib/__fixtures__/preset-geometry/contract.json', 'utf8')
+  ) as {
+    name: string
+    valid: boolean
+    document: Parameters<typeof validatePortablePresentation>[0]
+  }[]
+  for (const entry of cases) {
+    const original = JSON.stringify(entry.document)
+    if (entry.valid)
+      expect(() => validatePortablePresentation(entry.document), entry.name).not.toThrow()
+    else expect(() => validatePortablePresentation(entry.document), entry.name).toThrow()
+    expect(JSON.stringify(entry.document), entry.name).toBe(original)
+  }
+})
+
+it.each([NaN, Infinity, -Infinity])('rejects nonfinite runtime adjustments: %s', (value) => {
+  const document = createBlankEditablePresentationDocument('Geometry')
+  document.schemaVersion = 3
+  const slide = document.slides[document.slideOrder[0]]
+  slide.elements.shape = {
+    id: 'shape',
+    type: 'shape',
+    shape: 'roundRect',
+    adjustments: [value],
+    x: 0,
+    y: 0,
+    width: 200,
+    height: 100,
+    rotation: 0,
+    opacity: 1,
+    fillColor: '#ffffff',
+    strokeColor: '#000000',
+    strokeWidth: 1
+  }
+  slide.elementOrder = ['shape']
+  expect(() => validatePortablePresentation(document)).toThrow()
+})
+
+it('keeps v3 preset identity and raw adjustment values through local reopening', async () => {
+  const cases = JSON.parse(
+    await readFile('src/renderer/src/lib/__fixtures__/preset-geometry/contract.json', 'utf8')
+  ) as { name: string; document: Parameters<typeof validatePortablePresentation>[0] }[]
+  const document = cases.find((entry) => entry.name === 'valid-adjustments-downArrow')!.document
+  expect(await load(document)).toMatchObject({
+    schemaVersion: 3,
+    slides: {
+      s: { elements: { e: { shape: 'downArrow', adjustments: [-2147483648, 2147483647] } } }
+    }
+  })
 })

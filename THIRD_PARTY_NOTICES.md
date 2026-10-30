@@ -63,3 +63,14 @@ and checksum details should be recorded with each published release.
 
 Before publishing a release, run the package license check and ensure this file
 and bundled binary notices are included in the packaged app.
+
+## DeckCraft reference implementation
+
+PPTX DrawingML property serialization references DeckCraft v0.5.0
+(`crates/pptx/src/write/dml.rs`, especially `rpr`). Adapted code is identified
+in the TypeScript source. Preset adjustment defaults and geometry reference
+`crates/geom/src/preset.rs`. Theme fill selection and ordered color transforms reference
+`crates/model/src/resolve.rs` and `crates/color/src/lib.rs`. Original source: https://github.com/storytold/deckcraft/tree/v0.5.0.
+
+Copyright (c) 2026 ArtCraft Team and the DeckCraft contributors.
+Used under the MIT license; full text: `resources/licenses/deckcraft/LICENSE-MIT`.

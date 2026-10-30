@@ -34,6 +34,7 @@ function buildEditableSlide(
   }
 
   return {
+    schemaVersion: document.schemaVersion,
     width: document.width,
     height: document.height,
     slide,

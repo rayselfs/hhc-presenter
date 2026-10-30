@@ -4,7 +4,7 @@ import { ButtonGroup } from '@heroui/react/button-group'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Button } from '@heroui/react/button'
 import { toast } from '@heroui/react/toast'
-import { Home, Monitor, Redo2, Undo2, X } from 'lucide-react'
+import { Download, Home, Monitor, Redo2, Undo2, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { usePresentationSafeAction } from '@renderer/components/Control/PresentationNavigationGuard'
@@ -15,6 +15,8 @@ import { SHORTCUTS } from '@renderer/config/shortcuts'
 import { useKeyboardShortcuts } from '@renderer/hooks/useKeyboardShortcuts'
 import { hasNameConflict, splitFileName, validateDisplayName } from '@renderer/lib/file-naming'
 import { openFileExplorerDB } from '@renderer/lib/file-explorer-db'
+import { PptxExportError } from '@renderer/lib/pptx-export-drawingml'
+import { isPersonalRecordVisible, usePersonalSyncStore } from '@renderer/stores/personal-sync'
 import { isWeb } from '@renderer/lib/env'
 import {
   getPresentationWorkspacePath,
@@ -41,6 +43,8 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
   )
   const activeDocument = usePresentationWorkspaceStore((state) => state.getActiveDocument())
   const updateDocumentName = usePresentationWorkspaceStore((state) => state.updateDocumentName)
+  const [isExporting, setIsExporting] = useState(false)
+  const exportingRef = useRef<{ cancelled: boolean } | null>(null)
   const [savingItemId, setSavingItemId] = useState<string | null>(null)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
@@ -75,6 +79,123 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
     editInputRef.current?.focus()
     editInputRef.current?.select()
   }, [editingItemId])
+
+  useEffect(
+    () => () => {
+      if (exportingRef.current) exportingRef.current.cancelled = true
+      exportingRef.current = null
+    },
+    []
+  )
+
+  const exportActiveDocument = async (): Promise<void> => {
+    const deck = activeDocument
+    const session = activeSession
+    if (
+      !deck ||
+      deck.mode !== 'editable' ||
+      !session ||
+      exportingRef.current ||
+      !isPersonalRecordVisible(deck) ||
+      registry.hasComposingEditor?.(deck.itemId)
+    )
+      return
+    const ownerId = usePersonalSyncStore.getState().activeOwnerId
+    const attempt = { cancelled: false }
+    exportingRef.current = attempt
+    setIsExporting(true)
+    const unsubscribeEditor = registry.subscribe(() => {
+      if (registry.get(deck.itemId) !== session || registry.hasComposingEditor?.(deck.itemId))
+        attempt.cancelled = true
+    })
+    const unsubscribeAccount = usePersonalSyncStore.subscribe((state) => {
+      if (state.activeOwnerId !== ownerId) attempt.cancelled = true
+    })
+    const unsubscribeWorkspace = usePresentationWorkspaceStore.subscribe((state) => {
+      if (
+        state.activeItemId !== deck.itemId ||
+        !state.documents.some(
+          (entry) =>
+            entry.itemId === deck.itemId &&
+            entry.openedAt === deck.openedAt &&
+            isPersonalRecordVisible(entry)
+        )
+      )
+        attempt.cancelled = true
+    })
+    const isCurrent = (): boolean =>
+      !attempt.cancelled &&
+      exportingRef.current === attempt &&
+      usePersonalSyncStore.getState().activeOwnerId === ownerId &&
+      usePresentationWorkspaceStore.getState().activeItemId === deck.itemId &&
+      registry.get(deck.itemId) === session &&
+      !registry.hasComposingEditor?.(deck.itemId) &&
+      isPersonalRecordVisible(deck)
+    let snapshot = session.getSnapshot().history.present
+    try {
+      const finalized = await registry.finalizeAndFlush(deck.itemId)
+      if (!finalized || !isCurrent()) return
+      snapshot = finalized
+      const { exportPresentationPptx } = await import('@renderer/lib/pptx-export')
+      if (!isCurrent()) return
+      const blob = await exportPresentationPptx(snapshot)
+      if (!isCurrent()) return
+      const base =
+        splitFileName(deck.name)
+          .base.replace(/[<>:"/\\|?*\p{Cc}]/gu, '_')
+          .trim()
+          .replace(/[ .]+$/, '') || 'Presentation'
+      const url = URL.createObjectURL(blob)
+      try {
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${base}.pptx`
+        link.click()
+      } finally {
+        URL.revokeObjectURL(url)
+      }
+    } catch (error) {
+      if (!isCurrent()) return
+      const diagnostic = error instanceof PptxExportError ? error.diagnostics[0] : undefined
+      const messages = {
+        'unsupported-content':
+          'This presentation contains content that cannot be exported yet. Replace the unsupported object and try again.',
+        'source-conflict':
+          'This edit cannot preserve retained content safely. Recreate the affected object and try again.',
+        'invalid-value': 'Check the affected text, image or formatting and try again.',
+        'package-limit':
+          'This presentation is too large to export. Reduce its images or slides and try again.'
+      }
+      const message = diagnostic
+        ? t(`presentationWorkspace.exportErrors.${diagnostic.code}`, messages[diagnostic.code])
+        : t('presentationWorkspace.exportFailed', 'Unable to export PPTX')
+      const index = diagnostic?.slideId ? snapshot.slideOrder.indexOf(diagnostic.slideId) : -1
+      const location =
+        index >= 0
+          ? t('presentationWorkspace.exportErrorSlide', 'Slide {{slide}}', { slide: index + 1 })
+          : ''
+      const elementIndex =
+        diagnostic?.slideId && diagnostic.elementId
+          ? (snapshot.slides[diagnostic.slideId]?.elementOrder.indexOf(diagnostic.elementId) ?? -1)
+          : -1
+      const elementLocation =
+        elementIndex >= 0
+          ? t('presentationWorkspace.exportErrorElement', 'Object {{element}}', {
+              element: elementIndex + 1
+            })
+          : ''
+      const position = [location, elementLocation].filter(Boolean).join(', ')
+      toast.danger(position ? `${position}: ${message}` : message)
+    } finally {
+      unsubscribeEditor()
+      unsubscribeAccount()
+      unsubscribeWorkspace()
+      if (exportingRef.current === attempt) {
+        exportingRef.current = null
+        setIsExporting(false)
+      }
+    }
+  }
 
   const activateDocument = async (itemId: string): Promise<void> => {
     if (!(await registry.activate(itemId))) return
@@ -373,6 +494,18 @@ export default function PresentationWorkspaceHeader(): React.JSX.Element {
         </div>
       ))}
       <div className="relative z-10 ml-auto flex items-center gap-3">
+        {activeDocument?.mode === 'editable' && (
+          <Button
+            variant="outline"
+            isDisabled={!activeSession || hasComposingEditor || isExporting}
+            isPending={isExporting}
+            onPress={() => void exportActiveDocument()}
+            aria-label={t('presentationWorkspace.exportPptx', 'Export PPTX')}
+          >
+            <Download size={16} />
+            {t('presentationWorkspace.exportPptx', 'Export PPTX')}
+          </Button>
+        )}
         {activeDocument?.isUnsaved && (
           <Button variant="primary" onPress={() => setSavingItemId(activeDocument.itemId)}>
             {t('common.save', 'Save')}

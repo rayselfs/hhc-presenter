@@ -11,7 +11,11 @@ import {
   INSERTED_TEXT_CLICK_SIZE,
   hasContentHeight
 } from '@renderer/lib/editable-presentation'
-import { getPlainText, normalizeTextParagraphs } from '@renderer/lib/presentation-rich-text'
+import {
+  getPlainText,
+  normalizeTextParagraphs,
+  resolveParagraphListNumbers
+} from '@renderer/lib/presentation-rich-text'
 import {
   readTextSelection,
   getTextSelectionPoints,
@@ -140,6 +144,7 @@ export default function TextElementContent({
   const measuredLayoutRef = useRef<unknown[]>([])
   const contentHeight = hasContentHeight(element)
   const paragraphs = useMemo(() => normalizeTextParagraphs(element), [element])
+  const listNumbers = useMemo(() => resolveParagraphListNumbers(paragraphs), [paragraphs])
   const hasRichText = Boolean(element.paragraphs?.length || element.runs?.length)
   const [template] = useState(() => window.document.createElement('div'))
   const domParagraphsRef = useRef(paragraphs)
@@ -488,7 +493,7 @@ export default function TextElementContent({
           <div
             key={paragraphIndex}
             data-text-paragraph={paragraphIndex}
-            data-list-marker={getListMarker(paragraph, paragraphIndex)}
+            data-list-marker={getListMarker(paragraph, listNumbers[paragraphIndex])}
             className={
               paragraph.list ? 'before:mr-2 before:content-[attr(data-list-marker)]' : undefined
             }
@@ -671,9 +676,9 @@ export default function TextElementContent({
 
 function getListMarker(
   paragraph: EditableTextParagraph,
-  paragraphIndex: number
+  listNumber: number | undefined
 ): string | undefined {
   if (!paragraph.list) return undefined
   if (paragraph.list.kind === 'bullet') return paragraph.list.char || '•'
-  return `${(paragraph.list.startAt ?? 1) + paragraphIndex}.`
+  return `${listNumber}.`
 }

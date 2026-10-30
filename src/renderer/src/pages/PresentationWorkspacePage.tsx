@@ -3,6 +3,12 @@ import {
   PRESENTATION_IMAGE_MIME_TYPES,
   validatePresentationImage
 } from '@renderer/lib/portable-presentation'
+import {
+  getPresetShapeDescriptor,
+  projectPresetAdjustment,
+  resolvePresetShapeGeometry
+} from '@renderer/lib/presentation-shape-geometry'
+import { formatPptxCompatibilityError } from '@renderer/lib/pptx-compatibility-message'
 import { getPresentationItem } from '@renderer/lib/presentation-drafts'
 import React, {
   useCallback,
@@ -84,6 +90,7 @@ import {
   type EditablePresentationDocument,
   type EditablePresentationElement,
   type EditableSlideBackground,
+  type EditableShapeKind,
   type EditableTextInsertFrame,
   type EditableTextParagraph,
   type EditableTextStyle
@@ -150,6 +157,17 @@ const FONT_FAMILIES = ['Inter Variable', 'Noto Sans TC Variable', 'Noto Sans SC 
 const FONT_SIZES = [
   8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 54, 60, 66, 72, 80, 88, 96
 ]
+const EXTENDED_SHAPE_PRESETS = [
+  'roundRect',
+  'triangle',
+  'rtTriangle',
+  'diamond',
+  'rightArrow',
+  'leftArrow',
+  'upArrow',
+  'downArrow'
+] as const
+
 const NATIVE_CONTROL_CLASS =
   'presentation-native-control h-7 rounded-md border border-separator bg-surface-secondary px-2 text-sm text-foreground outline-none'
 const RANGE_CLASS = 'presentation-range w-full'
@@ -407,9 +425,7 @@ export function PptxDocumentView({
       openDocument(createdItem)
       navigate(getPresentationWorkspacePath(createdItem.id))
     } catch (conversionError) {
-      toast.danger(
-        conversionError instanceof Error ? conversionError.message : String(conversionError)
-      )
+      toast.danger(formatPptxCompatibilityError(conversionError))
     } finally {
       setIsConverting(false)
     }
@@ -667,6 +683,13 @@ function EditableSessionDocumentView({
   const activeSlide = activeSlideId ? document.slides[activeSlideId] : null
   const selectedElement =
     activeSlide && selectedElementId ? activeSlide.elements[selectedElementId] : null
+  const adjustableShape =
+    document.schemaVersion === 3 &&
+    selectedElement?.type === 'shape' &&
+    !selectedElement.locked &&
+    getPresetShapeDescriptor(selectedElement.shape)!.guides.length
+      ? selectedElement
+      : null
   const projectedItem = projectionPlaylist[projectionIndex]
   const projectedSlideIndex =
     isPresenting && projectedItem?.id === deck.itemId
@@ -719,12 +742,38 @@ function EditableSessionDocumentView({
     setIsTextInsertMode(false)
   }
 
-  const addShape = (shape: 'rectangle' | 'ellipse'): void => {
+  const addShape = (shape: EditableShapeKind): void => {
     if (!activeSlideId) return
+    if (
+      shape !== 'rectangle' &&
+      shape !== 'ellipse' &&
+      session.getSnapshot().renderedDocument.schemaVersion !== 3
+    )
+      return
     const element = createShapeElement(shape)
     if (!commitDocument((current) => addElementToSlide(current, activeSlideId, element))) return
     setSelectedElementId(element.id)
     setSelectedElementIds(new Set([element.id]))
+  }
+
+  const setShapeAdjustment = (index: number, percentage: number): void => {
+    if (!activeSlideId || !selectedElementId || !Number.isFinite(percentage)) return
+    commitDocument((current) => {
+      const element = current.slides[activeSlideId]?.elements[selectedElementId]
+      if (current.schemaVersion !== 3 || element?.type !== 'shape' || element.locked) return current
+      const handle = resolvePresetShapeGeometry(element).handles[index]
+      if (!handle) return current
+      const adjustments = projectPresetAdjustment(element, index, {
+        x: handle.origin.x + handle.direction.x * percentage * 1000,
+        y: handle.origin.y + handle.direction.y * percentage * 1000
+      })
+      if (
+        element.adjustments?.length === adjustments.length &&
+        element.adjustments.every((value, i) => value === adjustments[i])
+      )
+        return current
+      return updateElementInSlide(current, activeSlideId, element.id, { adjustments })
+    })
   }
 
   const addLine = (): void => {
@@ -968,7 +1017,18 @@ function EditableSessionDocumentView({
       requestedIndex ??
       insertionIndex ??
       currentDocument.slideOrder.indexOf(activeSlideId ?? '') + 1
-    const result = pasteSlideClipboard(currentDocument, slideClipboard, targetIndex)
+    let result: ReturnType<typeof pasteSlideClipboard>
+    try {
+      result = pasteSlideClipboard(currentDocument, slideClipboard, targetIndex)
+    } catch {
+      toast.warning(
+        t(
+          'presentationWorkspace.incompatibleShapePaste',
+          'These shapes cannot be pasted into this presentation yet.'
+        )
+      )
+      return
+    }
     if (result.slideIds.length === 0) return
     session.commit(result.document)
     setSelectedSlideIds(new Set(result.slideIds))
@@ -1034,12 +1094,27 @@ function EditableSessionDocumentView({
 
   const pasteElement = (): void => {
     if (!copiedElement || !document || !activeSlideId) return
+    if (
+      session.getSnapshot().renderedDocument.schemaVersion !== 3 &&
+      copiedElement.type === 'shape' &&
+      ((copiedElement.shape !== 'rectangle' && copiedElement.shape !== 'ellipse') ||
+        copiedElement.adjustments !== undefined)
+    ) {
+      toast.warning(
+        t(
+          'presentationWorkspace.incompatibleShapePaste',
+          'These shapes cannot be pasted into this presentation yet.'
+        )
+      )
+      return
+    }
     const element = {
       ...copiedElement,
       id: crypto.randomUUID(),
       x: copiedElement.x + 24,
       y: copiedElement.y + 24
     } as EditablePresentationElement
+    delete element.pptxSourceNode
     if (!commitDocument((current) => addElementToSlide(current, activeSlideId, element))) return
     setSelectedElementId(element.id)
     setSelectedElementIds(new Set([element.id]))
@@ -1356,6 +1431,13 @@ function EditableSessionDocumentView({
           label: t('presentationWorkspace.ellipse', 'Ellipse'),
           onAction: () => addShape('ellipse')
         },
+        ...(document.schemaVersion === 3
+          ? EXTENDED_SHAPE_PRESETS.map((shape) => ({
+              id: `insert-${shape}`,
+              label: t(`presentationWorkspace.shapeNames.${shape}`),
+              onAction: () => addShape(shape)
+            }))
+          : []),
         {
           id: 'insert-line',
           label: t('presentationWorkspace.line', 'Line'),
@@ -2025,9 +2107,17 @@ function EditableSessionDocumentView({
         <ResponsivePanelGroup
           navigatorWidth={railWidth}
           navigatorLabel={t('presentationWorkspace.slides', 'Slides')}
-          inspectorLabel={t('presentationWorkspace.formatBackground', 'Format Background')}
-          overlay={compactOverlay === 'inspector' && !isBackgroundPanelOpen ? null : compactOverlay}
-          inspectorReturnFocusRef={formatBackgroundTriggerRef}
+          inspectorLabel={
+            isBackgroundPanelOpen
+              ? t('presentationWorkspace.formatBackground', 'Format Background')
+              : t('presentationWorkspace.shapeParameters', 'Shape parameters')
+          }
+          overlay={
+            compactOverlay === 'inspector' && !isBackgroundPanelOpen && !adjustableShape
+              ? null
+              : compactOverlay
+          }
+          inspectorReturnFocusRef={isBackgroundPanelOpen ? formatBackgroundTriggerRef : undefined}
           onOverlayChange={(overlay) => {
             setCompactOverlay(overlay)
             if (overlay === 'navigator' || (overlay === null && compactOverlay === 'inspector')) {
@@ -2325,6 +2415,54 @@ function EditableSessionDocumentView({
                   onReset={resetActiveSlideBackground}
                   onClose={closeBackgroundPanel}
                 />
+              </InspectorPanel>
+            ) : document.schemaVersion === 3 &&
+              selectedElement?.type === 'shape' &&
+              !selectedElement.locked &&
+              resolvePresetShapeGeometry(selectedElement).handles.length ? (
+              <InspectorPanel className="presentation-inspector">
+                <h2 className="mb-3 text-sm font-semibold">
+                  {t('presentationWorkspace.shapeParameters', 'Shape parameters')}
+                </h2>
+                {resolvePresetShapeGeometry(selectedElement).handles.map((handle) => (
+                  <label key={handle.index} className="mb-3 block text-sm text-muted">
+                    <span>
+                      {t(
+                        `presentationWorkspace.shapeAdjustmentValues.${selectedElement.shape}.${handle.index}`,
+                        selectedElement.shape === 'roundRect'
+                          ? 'Corner radius'
+                          : selectedElement.shape === 'triangle'
+                            ? 'Apex position'
+                            : handle.index === 0
+                              ? 'Shaft width'
+                              : 'Arrowhead length'
+                      )}{' '}
+                      (%)
+                    </span>
+                    <input
+                      className={`mt-2 h-10 w-full ${NATIVE_CONTROL_CLASS}`}
+                      type="number"
+                      min={handle.min / 1000}
+                      max={Math.ceil(handle.max) / 1000}
+                      step={0.001}
+                      value={
+                        Math.max(
+                          handle.min,
+                          Math.min(
+                            Math.ceil(handle.max),
+                            selectedElement.adjustments?.[handle.index] ??
+                              getPresetShapeDescriptor(selectedElement.shape)!.defaults[
+                                handle.index
+                              ]
+                          )
+                        ) / 1000
+                      }
+                      onChange={(event) =>
+                        setShapeAdjustment(handle.index, event.currentTarget.valueAsNumber)
+                      }
+                    />
+                  </label>
+                ))}
               </InspectorPanel>
             ) : undefined
           }

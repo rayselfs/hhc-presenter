@@ -1,3 +1,12 @@
+import {
+  addElementToSlide,
+  createBlankEditablePresentationDocument,
+  createShapeElement,
+  duplicateElementInSlide,
+  removeElementFromSlide,
+  reorderElementInSlide,
+  updateElementInSlide
+} from '../editable-presentation'
 import { describe, expect, it } from 'vitest'
 import type {
   EditablePresentationDocument,
@@ -144,5 +153,54 @@ describe('presentation editor commands', () => {
       verticalGuide: 500,
       horizontalGuide: 300
     })
+  })
+})
+
+describe('adjusted v3 shape document commands', () => {
+  it('retains creation parameters and avoids an equivalent adjustment edit', () => {
+    const source = createBlankEditablePresentationDocument('Geometry')
+    source.schemaVersion = 3
+    const shape = createShapeElement('rightArrow', { adjustments: [25000, 75000] })
+    expect(shape.adjustments).toEqual([25000, 75000])
+    const slideId = source.slideOrder[0]
+    const document = addElementToSlide(source, slideId, shape)
+    expect(updateElementInSlide(document, slideId, shape.id, { adjustments: [25000, 75000] })).toBe(
+      document
+    )
+  })
+
+  it('preserves parameters across edit, duplicate, reorder and delete while detaching copied source identity', () => {
+    const source = createBlankEditablePresentationDocument('Geometry')
+    source.schemaVersion = 3
+    const slideId = source.slideOrder[0]
+    const shape = {
+      ...createShapeElement('triangle'),
+      adjustments: [25000],
+      pptxSourceNode: { id: '2', role: 'geometry' as const }
+    }
+    const initial = addElementToSlide(source, slideId, shape)
+    const edited = updateElementInSlide(initial, slideId, shape.id, { adjustments: [75000] })
+    const duplicated = duplicateElementInSlide(edited, slideId, shape.id)
+    const clone = duplicated.document.slides[slideId].elements[duplicated.elementId]
+    expect(clone).toMatchObject({ shape: 'triangle', adjustments: [75000] })
+    expect(clone).not.toHaveProperty('pptxSourceNode')
+    expect(duplicated.document.slides[slideId].elements[shape.id]).toHaveProperty(
+      'pptxSourceNode',
+      shape.pptxSourceNode
+    )
+    const reordered = reorderElementInSlide(
+      duplicated.document,
+      slideId,
+      duplicated.elementId,
+      'send-to-back'
+    )
+    expect(reordered.slides[slideId].elementOrder).toEqual([duplicated.elementId, shape.id])
+    const deleted = removeElementFromSlide(reordered, slideId, shape.id)
+    expect(deleted.slides[slideId].elementOrder).toEqual([duplicated.elementId])
+    expect(deleted.slides[slideId].elements[duplicated.elementId]).toMatchObject({
+      adjustments: [75000]
+    })
+    expect(deleted.schemaVersion).toBe(3)
+    expect(initial.slides[slideId].elements[shape.id]).toMatchObject({ adjustments: [25000] })
   })
 })

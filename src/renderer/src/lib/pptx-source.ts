@@ -137,6 +137,10 @@ function readDirectory(buffer: ArrayBuffer): ZipMember[] {
   return members
 }
 
+export function readPptxPackageMemberSizes(buffer: ArrayBuffer): ReadonlyMap<string, number> {
+  return new Map(readDirectory(buffer).map(({ name, size }) => [name, size]))
+}
+
 const crcTable = Uint32Array.from({ length: 256 }, (_, value) => {
   let crc = value
   for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0)
@@ -202,7 +206,7 @@ function parseXml(bytes: Uint8Array): Document {
   return xml
 }
 
-function internalTarget(part: string, target: string): string {
+export function resolvePptxInternalTarget(part: string, target: string): string {
   check(
     target.length > 0 &&
       !/[\\]/.test(target) &&
@@ -279,7 +283,7 @@ async function inspectPackage(buffer: ArrayBuffer): Promise<Map<string, Map<stri
       const mode = rel.getAttribute('TargetMode')
       if (mode === 'External') continue
       check(mode === null || mode === 'Internal')
-      const resolved = internalTarget(owner, target)
+      const resolved = resolvePptxInternalTarget(owner, target)
       check(names.has(resolved))
       if (name === '_rels/.rels' && type === OFFICE_RELATIONSHIP) {
         check(presentationPart === undefined)
@@ -334,6 +338,10 @@ function encodeBase64(bytes: Uint8Array): string {
 async function digest(buffer: ArrayBuffer): Promise<string> {
   const hash = await crypto.subtle.digest('SHA-256', buffer)
   return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+export async function validatePptxPackage(buffer: ArrayBuffer): Promise<void> {
+  await inspectPackage(buffer)
 }
 
 export async function createPptxSource(buffer: ArrayBuffer): Promise<PptxSource> {
