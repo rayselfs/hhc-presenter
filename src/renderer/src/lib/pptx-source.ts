@@ -206,7 +206,7 @@ function parseXml(bytes: Uint8Array): Document {
   return xml
 }
 
-function internalTarget(part: string, target: string): string {
+export function resolvePptxInternalTarget(part: string, target: string): string {
   check(
     target.length > 0 &&
       !/[\\]/.test(target) &&
@@ -283,7 +283,7 @@ async function inspectPackage(buffer: ArrayBuffer): Promise<Map<string, Map<stri
       const mode = rel.getAttribute('TargetMode')
       if (mode === 'External') continue
       check(mode === null || mode === 'Internal')
-      const resolved = internalTarget(owner, target)
+      const resolved = resolvePptxInternalTarget(owner, target)
       check(names.has(resolved))
       if (name === '_rels/.rels' && type === OFFICE_RELATIONSHIP) {
         check(presentationPart === undefined)

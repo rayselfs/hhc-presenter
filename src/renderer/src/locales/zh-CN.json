@@ -606,6 +606,22 @@
     }
   },
   "presentationWorkspace": {
+    "importOriginalKept": "可打开原始 PPTX 查看；原文件未被修改。",
+    "importErrors": {
+      "invalid-package": "PowerPoint 文件包无效、已加密、包含宏，或超过导入限制。",
+      "no-slides": "演示文稿没有幻灯片。",
+      "animation": "可编辑导入目前不支持 PowerPoint 动画。",
+      "transition": "可编辑导入目前不支持 PowerPoint 切换。",
+      "media": "可编辑导入目前不支持 PowerPoint 音频或视频。",
+      "color-mapping": "此幻灯片覆盖了继承的颜色映射。",
+      "unsupported-object": "目前无法编辑此对象。",
+      "shape": "此形状包含不支持的几何或格式。",
+      "text": "此文本包含不支持的布局或格式。",
+      "image": "此图片包含不支持的效果或格式。",
+      "background": "此背景包含不支持的填充格式。",
+      "layout": "此布局或母版包含不支持的装饰对象。",
+      "invalid-content": "此幻灯片包含无效或不支持的内容。"
+    },
     "exportPptx": "导出 PPTX",
     "exportErrorElement": "第 {{element}} 个对象",
     "exportFailed": "无法导出 PPTX",

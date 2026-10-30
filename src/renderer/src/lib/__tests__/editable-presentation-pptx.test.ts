@@ -433,6 +433,8 @@ describe('PPTX parser conversion contract', () => {
       'a:buChar'
     )
     bullet.setAttribute('char', '•')
+    level.setAttribute('marL', '381000')
+    level.setAttribute('indent', '-190500')
     level.appendChild(bullet)
     const node = presentation.slides[0].nodes[0]
     if (node.nodeType !== 'shape' || !node.textBody) throw new Error('Expected text')

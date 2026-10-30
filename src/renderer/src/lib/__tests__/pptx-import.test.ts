@@ -202,6 +202,14 @@ async function pictureFixture(extension: string, bytes: Uint8Array): Promise<Fil
       `<Relationship Id="rIdImage" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image.${extension}"/></Relationships>`
     )
   )
+  const contentTypes = await zip.file('[Content_Types].xml')!.async('string')
+  zip.file(
+    '[Content_Types].xml',
+    contentTypes.replace(
+      '</Types>',
+      `<Default Extension="${extension}" ContentType="${extension === 'bmp' ? 'image/bmp' : 'application/octet-stream'}"/></Types>`
+    )
+  )
   zip.file(`ppt/media/image.${extension}`, bytes)
   return new File([await zip.generateAsync({ type: 'arraybuffer' })], 'Picture.pptx', {
     type: PPTX_MIME_TYPE
@@ -285,4 +293,32 @@ it('imports fully invisible supported shapes without rejecting the deck', async 
   expect(Object.values(slide.elements)).toContainEqual(
     expect.objectContaining({ type: 'shape', fillColor: 'transparent', strokeWidth: 0 })
   )
+})
+
+it('preserves consecutive and trailing speaker-note soft breaks through import export and reopen', async () => {
+  const original = createBlankEditablePresentationDocument('Soft notes')
+  original.slides[original.slideOrder[0]].notes = 'seed'
+  const zip = await JSZip.loadAsync(await buildNativePptx(original))
+  const part = 'ppt/notesSlides/notesSlide1.xml'
+  zip.file(
+    part,
+    (await zip.file(part)!.async('string')).replace(
+      '<a:t xml:space="preserve">seed</a:t>',
+      '<a:t>First</a:t></a:r><a:br/><a:br/><a:r><a:t>Second</a:t></a:r><a:br/><a:r><a:t></a:t>'
+    )
+  )
+  const bytes = await zip.generateAsync({ type: 'arraybuffer' })
+  const imported = await importEditablePptx(
+    new File([bytes], 'Soft notes.pptx', { type: PPTX_MIME_TYPE }),
+    'file-root'
+  )
+  const document = await loadEditablePresentation(imported)
+  expect(document.slides[document.slideOrder[0]].notes).toBe('First\n\nSecond\n')
+  const exported = await buildNativePptx(document)
+  const roundtrip = await importEditablePptx(
+    new File([new Uint8Array(exported)], 'Soft notes again.pptx', { type: PPTX_MIME_TYPE }),
+    'file-root'
+  )
+  const reopened = await loadEditablePresentation(roundtrip)
+  expect(reopened.slides[reopened.slideOrder[0]].notes).toBe('First\n\nSecond\n')
 })
