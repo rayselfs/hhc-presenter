@@ -154,6 +154,7 @@ export default function EditableSlideSurface({
   const scaleRef = useRef({ x: 1, y: 1 })
   const [surfaceScale, setSurfaceScale] = useState(1)
   const [snapGuides, setSnapGuides] = useState<SlideSnapGuides>({})
+  const movedGroupRef = useRef<string | null>(null)
   const [marquee, setMarquee] = useState<MarqueeState | null>(null)
 
   const setTextEditFinalizer = useCallback(
@@ -245,6 +246,7 @@ export default function EditableSlideSurface({
     onEditingElementChange?.(null)
     const original = onTransformStart ? onTransformStart(element.id) : element
     if (!original) return
+    movedGroupRef.current = null
     if (mode === 'move') selectForMove(element.id, event)
     else onSelectElement?.(element.id, event)
     dragRef.current = {
@@ -433,6 +435,14 @@ export default function EditableSlideSurface({
     const drag = dragRef.current
     if (!drag) return
     dragRef.current = null
+    if (
+      drag.mode === 'move' &&
+      drag.hasPersistedChanges &&
+      selectedElementIds?.has(drag.elementId) &&
+      selectedElementIds.size > 1
+    ) {
+      movedGroupRef.current = drag.elementId
+    }
     setSnapGuides({})
     if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
@@ -688,7 +698,13 @@ export default function EditableSlideSurface({
               element={element}
               editable={editable}
               editing={element.id === editingElementId}
-              onSelect={(event) => selectForMove(element.id, event)}
+              onSelect={(event) => {
+                if (movedGroupRef.current === element.id) {
+                  movedGroupRef.current = null
+                  return
+                }
+                onSelectElement?.(element.id, event)
+              }}
               onPointerDown={(event) => startDrag(event, element, 'move')}
               onPointerMove={updateDrag}
               onPointerUp={endDrag}

@@ -412,6 +412,33 @@ describe('PresentationWorkspacePage session contract', () => {
     }
   )
 
+  it('keeps ordinary click selection after preserving a group at pointer-down', async () => {
+    const source = createBlankEditablePresentationDocument('Group selection')
+    const slideId = source.slideOrder[0]
+    const first = createShapeElement('rectangle', { x: 100, y: 100, width: 50, height: 50 })
+    const second = createShapeElement('rectangle', { x: 300, y: 100, width: 50, height: 50 })
+    mocks.loadEditablePresentationSnapshot.mockResolvedValue({
+      document: addElementToSlide(addElementToSlide(source, slideId, first), slideId, second),
+      revision: 0
+    })
+    await renderWorkspaceSession()
+    const surface = window.document.querySelector<HTMLElement>(
+      '.presentation-stage [data-slide-surface]'
+    )!
+    vi.spyOn(surface, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, source.width, source.height)
+    )
+    fireEvent.pointerDown(surface, { clientX: 0, clientY: 0, pointerId: 1 })
+    fireEvent.pointerMove(surface, { clientX: 500, clientY: 300, pointerId: 1 })
+    fireEvent.pointerUp(surface, { pointerId: 1 })
+    expect(surface.querySelectorAll('[data-selection-chrome]')).toHaveLength(2)
+    const element = surface.querySelector<HTMLElement>('[data-slide-element]')!
+    fireEvent.pointerDown(element, { clientX: 110, clientY: 110, pointerId: 2 })
+    fireEvent.pointerUp(element, { pointerId: 2 })
+    fireEvent.click(element)
+    expect(surface.querySelectorAll('[data-selection-chrome]')).toHaveLength(1)
+  })
+
   it('offers all eight new presets only in an explicit v3 document', async () => {
     const source = createBlankEditablePresentationDocument('Shapes')
     source.schemaVersion = 3
