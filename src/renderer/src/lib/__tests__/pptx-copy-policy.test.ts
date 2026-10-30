@@ -114,9 +114,6 @@ it('rejects an empty deck before either import or edit-copy writes', async () =>
     'src/renderer/src/lib/__fixtures__/pptx/text-placeholder-layout.pptx'
   )
   const zip = await JSZip.loadAsync(bytes)
-  for (const path of Object.keys(zip.files)) {
-    if (path.startsWith('ppt/slides/')) zip.remove(path)
-  }
   const path = 'ppt/presentation.xml'
   zip.file(
     path,
