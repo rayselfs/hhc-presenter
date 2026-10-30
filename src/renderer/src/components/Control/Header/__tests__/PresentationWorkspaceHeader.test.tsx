@@ -1,12 +1,13 @@
 import { makeEditableItem } from '@renderer/test/presentation-fixtures'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import PresentationWorkspaceHeader from '../PresentationWorkspaceHeader'
 import { ShortcutScopeProvider } from '@renderer/contexts/ShortcutScopeContext'
 import {
   createBlankEditablePresentationDocument,
+  createTextElement,
   insertBlankEditableSlide
 } from '@renderer/lib/editable-presentation'
 import type {
@@ -14,6 +15,8 @@ import type {
   PresentationSessionSnapshot
 } from '@renderer/lib/presentation-editor-session'
 import type { PresentationSessionRegistry } from '@renderer/contexts/PresentationSessionRegistryContext'
+import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
+import { PptxExportError } from '@renderer/lib/pptx-export-drawingml'
 import { useFileExplorerStore } from '@renderer/stores/file-explorer'
 import { useMediaProjectionStore } from '@renderer/stores/media-projection'
 import { usePresentationWorkspaceStore } from '@renderer/stores/presentation-workspace'
@@ -24,6 +27,7 @@ import type {
 } from '@renderer/lib/presentation-readiness'
 
 const mocks = vi.hoisted(() => ({
+  exportPresentationPptx: vi.fn(),
   navigate: vi.fn(),
   registry: null as PresentationSessionRegistry | null,
   requestCloseDecision: vi.fn(),
@@ -36,6 +40,16 @@ const mocks = vi.hoisted(() => ({
   ensureProjectionOpen: vi.fn(() => Promise.resolve()),
   stopProjection: vi.fn()
 }))
+
+vi.mock('@renderer/lib/pptx-export', async () => {
+  const actual = await vi.importActual<typeof import('@renderer/lib/pptx-export-drawingml')>(
+    '@renderer/lib/pptx-export-drawingml'
+  )
+  return {
+    exportPresentationPptx: mocks.exportPresentationPptx,
+    PptxExportError: actual.PptxExportError
+  }
+})
 
 vi.mock('react-i18next', async () => {
   const actual = await vi.importActual<typeof import('react-i18next')>('react-i18next')
@@ -212,6 +226,16 @@ describe('PresentationWorkspaceHeader', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubGlobal(
+      'URL',
+      class extends URL {
+        static createObjectURL = vi.fn(() => 'blob:export')
+        static revokeObjectURL = vi.fn()
+      }
+    )
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    mocks.exportPresentationPptx.mockReset().mockResolvedValue(new Blob(['PPTX']))
+    usePersonalSyncStore.setState({ activeOwnerId: null })
     item = makeEditableItem()
     session = createFakeSession(item)
     mocks.registry = createRegistry(session)
@@ -241,6 +265,228 @@ describe('PresentationWorkspaceHeader', () => {
       canUndo: false,
       canRedo: false
     })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('exports the finalized current document once with a safe filename and releases its object URL', async () => {
+    const user = userEvent.setup()
+    usePresentationWorkspaceStore
+      .getState()
+      .updateDocumentName(item.id, 'Worship/2026:<Sunday>.lpdeck')
+    renderHeader()
+    await user.click(screen.getByRole('button', { name: 'Export PPTX' }))
+    await waitFor(() => expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledOnce())
+    expect(mocks.registry!.finalizeAndFlush).toHaveBeenCalledWith(item.id)
+    expect(mocks.exportPresentationPptx).toHaveBeenCalledWith(session.getSnapshot().history.present)
+    expect(session.commitDraft).toHaveBeenCalledOnce()
+    expect(session.flush).toHaveBeenCalledOnce()
+    const link = vi.mocked(HTMLAnchorElement.prototype.click).mock.contexts[0]
+    if (!(link instanceof HTMLAnchorElement)) throw new Error('Download anchor missing')
+    expect(link.download).toBe('Worship_2026__Sunday_.pptx')
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:export')
+    expect(mocks.startMediaProjection).not.toHaveBeenCalled()
+    expect(mocks.stopProjectionSession).not.toHaveBeenCalled()
+  })
+
+  it('exports unsaved text after its editor finalizer commits the draft', async () => {
+    usePresentationWorkspaceStore.getState().updateEditorMetadata(item.id, { isUnsaved: true })
+    const text = createTextElement({ text: 'Finalized latest text' })
+    vi.mocked(session.commitDraft).mockImplementation(() => {
+      const snapshot = session.getSnapshot()
+      const slide = snapshot.history.present.slides[snapshot.history.present.slideOrder[0]]
+      slide.elements[text.id] = text
+      slide.elementOrder.push(text.id)
+    })
+    renderHeader()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Export PPTX' }))
+    await waitFor(() => expect(mocks.exportPresentationPptx).toHaveBeenCalledOnce())
+    const exported = mocks.exportPresentationPptx.mock.calls[0][0]
+    expect(exported.slides[exported.slideOrder[0]].elements[text.id].text).toBe(
+      'Finalized latest text'
+    )
+    expect(screen.getByRole('button', { name: 'Save' })).toBeVisible()
+  })
+
+  it('cancels a pending download when IME starts and ends before export completes', async () => {
+    let finish!: (blob: Blob) => void
+    mocks.exportPresentationPptx.mockReturnValue(
+      new Promise<Blob>((resolve) => {
+        finish = resolve
+      })
+    )
+    renderHeader()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Export PPTX' }))
+    await waitFor(() => expect(mocks.exportPresentationPptx).toHaveBeenCalledOnce())
+    act(() => {
+      vi.mocked(mocks.registry!.hasComposingEditor!).mockReturnValue(true)
+      for (const [listener] of vi.mocked(mocks.registry!.subscribe).mock.calls) listener()
+      vi.mocked(mocks.registry!.hasComposingEditor!).mockReturnValue(false)
+      for (const [listener] of vi.mocked(mocks.registry!.subscribe).mock.calls) listener()
+    })
+    await act(async () => finish(new Blob(['PPTX'])))
+    expect(HTMLAnchorElement.prototype.click).not.toHaveBeenCalled()
+    expect(URL.createObjectURL).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Export PPTX' })).toBeEnabled()
+  })
+
+  it('releases the object URL when the platform download fails', async () => {
+    vi.mocked(HTMLAnchorElement.prototype.click).mockImplementation(() => {
+      throw new Error('Download blocked')
+    })
+    renderHeader()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Export PPTX' }))
+    await waitFor(() => expect(mocks.toastDanger).toHaveBeenCalledWith('Unable to export PPTX'))
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:export')
+    expect(screen.getByRole('button', { name: 'Export PPTX' })).toBeEnabled()
+  })
+
+  it('offers export only for an editable workspace with a live session', () => {
+    usePresentationWorkspaceStore.getState().closeDocument(item.id)
+    usePresentationWorkspaceStore.getState().openDocument({
+      ...item,
+      name: 'Original.pptx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    })
+    const view = renderHeader()
+    expect(screen.queryByRole('button', { name: 'Export PPTX' })).not.toBeInTheDocument()
+    view.unmount()
+    usePresentationWorkspaceStore.getState().closeDocument(item.id)
+    usePresentationWorkspaceStore.getState().openDocument(item)
+    mocks.registry = { ...mocks.registry!, get: vi.fn(() => undefined) }
+    renderHeader()
+    expect(screen.getByRole('button', { name: 'Export PPTX' })).toBeDisabled()
+  })
+
+  it('disables export during IME composition and refuses a finalizer that returns null', async () => {
+    mocks.registry = { ...mocks.registry!, hasComposingEditor: vi.fn(() => true) }
+    const view = renderHeader()
+    expect(screen.getByRole('button', { name: 'Export PPTX' })).toBeDisabled()
+    view.unmount()
+    mocks.registry = {
+      ...mocks.registry!,
+      hasComposingEditor: vi.fn(() => false),
+      finalizeAndFlush: vi.fn().mockResolvedValue(null)
+    }
+    renderHeader()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Export PPTX' }))
+    await waitFor(() => expect(mocks.registry!.finalizeAndFlush).toHaveBeenCalledOnce())
+    expect(mocks.exportPresentationPptx).not.toHaveBeenCalled()
+    expect(HTMLAnchorElement.prototype.click).not.toHaveBeenCalled()
+  })
+
+  it.each(['flush', 'export'])('shows failure and never downloads when %s fails', async (step) => {
+    if (step === 'flush') vi.mocked(session.flush).mockRejectedValue(new Error('quota exceeded'))
+    else mocks.exportPresentationPptx.mockRejectedValue(new Error('Invalid package'))
+    renderHeader()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Export PPTX' }))
+    await waitFor(() => expect(mocks.toastDanger).toHaveBeenCalledWith('Unable to export PPTX'))
+    expect(HTMLAnchorElement.prototype.click).not.toHaveBeenCalled()
+    expect(URL.createObjectURL).not.toHaveBeenCalled()
+    expect(mocks.startMediaProjection).not.toHaveBeenCalled()
+  })
+
+  it('reports a localized compatibility failure without displaying retained XML', async () => {
+    mocks.exportPresentationPptx.mockRejectedValue(
+      new PptxExportError([
+        {
+          code: 'source-conflict',
+          message: '<opaque>private source XML</opaque>',
+          slideId: session.getSnapshot().history.present.slideOrder[0]
+        }
+      ])
+    )
+    renderHeader()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Export PPTX' }))
+    await waitFor(() => expect(mocks.toastDanger).toHaveBeenCalled())
+    expect(String(mocks.toastDanger.mock.calls[0][0])).not.toContain('private source')
+    expect(String(mocks.toastDanger.mock.calls[0][0])).toContain('retained content')
+    expect(HTMLAnchorElement.prototype.click).not.toHaveBeenCalled()
+  })
+
+  it('prevents a duplicate click while exporting', async () => {
+    let finish!: (blob: Blob) => void
+    mocks.exportPresentationPptx.mockReturnValue(
+      new Promise<Blob>((resolve) => {
+        finish = resolve
+      })
+    )
+    renderHeader()
+    const button = screen.getByRole('button', { name: 'Export PPTX' })
+    const user = userEvent.setup()
+    await user.click(button)
+    await user.click(button)
+    expect(button).toBeDisabled()
+    expect(mocks.exportPresentationPptx).toHaveBeenCalledOnce()
+    await act(async () => {
+      finish(new Blob(['PPTX']))
+    })
+    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledOnce()
+    expect(button).toBeEnabled()
+  })
+
+  it.each([
+    'tab',
+    'closed',
+    'reopened',
+    'account',
+    'account-returned',
+    'session',
+    'composition',
+    'unmount'
+  ])('cancels a pending download after %s changes', async (change) => {
+    let finish!: (blob: Blob) => void
+    mocks.exportPresentationPptx.mockReturnValue(
+      new Promise<Blob>((resolve) => {
+        finish = resolve
+      })
+    )
+    const view = renderHeader()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Export PPTX' }))
+    expect(mocks.exportPresentationPptx).toHaveBeenCalledOnce()
+    act(() => {
+      if (change === 'tab')
+        usePresentationWorkspaceStore.getState().openDocument(makeEditableItem('deck-2'))
+      if (change === 'reopened') {
+        usePresentationWorkspaceStore.getState().closeDocument(item.id)
+        usePresentationWorkspaceStore.getState().openDocument(item)
+      }
+      if (change === 'closed') usePresentationWorkspaceStore.getState().closeDocument(item.id)
+      if (change === 'account' || change === 'account-returned')
+        usePersonalSyncStore.setState({ activeOwnerId: 'different-owner' })
+      if (change === 'account-returned') usePersonalSyncStore.setState({ activeOwnerId: null })
+      if (change === 'session')
+        vi.mocked(mocks.registry!.get).mockReturnValue(createFakeSession(item))
+      if (change === 'composition')
+        vi.mocked(mocks.registry!.hasComposingEditor!).mockReturnValue(true)
+      if (change === 'unmount') view.unmount()
+    })
+    await act(async () => {
+      finish(new Blob(['PPTX']))
+    })
+    expect(HTMLAnchorElement.prototype.click).not.toHaveBeenCalled()
+    expect(URL.createObjectURL).not.toHaveBeenCalled()
+    expect(mocks.startMediaProjection).not.toHaveBeenCalled()
+  })
+
+  it('does not build a package when the tab changes during finalization', async () => {
+    let finish!: (
+      value: ReturnType<PresentationEditorSession['getSnapshot']>['history']['present']
+    ) => void
+    vi.mocked(mocks.registry!.finalizeAndFlush).mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve
+      })
+    )
+    renderHeader()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Export PPTX' }))
+    act(() => usePresentationWorkspaceStore.getState().openDocument(makeEditableItem('deck-2')))
+    await act(async () => finish(session.getSnapshot().history.present))
+    expect(mocks.exportPresentationPptx).not.toHaveBeenCalled()
+    expect(HTMLAnchorElement.prototype.click).not.toHaveBeenCalled()
   })
 
   it('joins the active document tab to the ribbon surface without a bottom shadow', () => {

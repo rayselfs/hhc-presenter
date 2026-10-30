@@ -86,6 +86,22 @@ export function normalizeTextParagraphs(element: EditableTextElement): EditableT
   return paragraphs
 }
 
+export function resolveParagraphListNumbers(
+  paragraphs: readonly EditableTextParagraph[]
+): (number | undefined)[] {
+  const sequences = new Map<string, { start: number; count: number }>()
+  return paragraphs.map((paragraph, index) => {
+    const list = paragraph.list
+    if (list?.kind !== 'number') return undefined
+    if (!list.sequenceId) return (list.startAt ?? 1) + index
+    const key = JSON.stringify([list.sequenceId, list.level])
+    const sequence = sequences.get(key) ?? { start: list.startAt ?? 1, count: 0 }
+    const value = sequence.start + sequence.count++
+    sequences.set(key, sequence)
+    return value
+  })
+}
+
 function paragraphBounds(
   paragraphs: readonly EditableTextParagraph[],
   index: number

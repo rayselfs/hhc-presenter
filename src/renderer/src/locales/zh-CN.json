@@ -606,6 +606,16 @@
     }
   },
   "presentationWorkspace": {
+    "exportPptx": "导出 PPTX",
+    "exportErrorElement": "第 {{element}} 个对象",
+    "exportFailed": "无法导出 PPTX",
+    "exportErrorSlide": "第 {{slide}} 张幻灯片",
+    "exportErrors": {
+      "unsupported-content": "此演示文稿含有尚未支持导出的内容，请替换不支持的对象后重试。",
+      "source-conflict": "这项修改无法安全保留原有内容，请重新创建受影响的对象后重试。",
+      "invalid-value": "请检查受影响的文字、图片或格式后重试。",
+      "package-limit": "此演示文稿超过导出大小限制，请减少图片或幻灯片后重试。"
+    },
     "saveDraftTitle": "保存演示文稿",
     "draftName": "名称",
     "draftLocation": "保存位置",
