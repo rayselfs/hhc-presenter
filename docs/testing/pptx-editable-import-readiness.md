@@ -90,3 +90,7 @@ hidden navigator; the focused local Electron smoke passes at that viewport.
 The v2.6.8 macOS packaged smoke passed, but the desktop release was not published
 because the Windows gate failed. The immutable tag is retained; v2.6.9 repeats
 all CI and packaged release gates with the corrected regression.
+
+## PR #96 integration follow-up (2026-10-30)
+
+Upload and raw/read-only-provider editable-copy paths share bounded package/conversion admission and located, localized failures. Unsupported content fails before catalog/blob/draft creation; represented values retain the existing v1 workflow. See [import compatibility](pptx-import-compatibility.md) for the original matrix and [the integration record](/docs/reports/2026-10-30-pr96-integration.md) for current evidence. This rejects previously lossy conversion; raw PPTX viewing remains available.

@@ -1430,6 +1430,15 @@ function convertShapeNode(
   conversionSchemaVersion?: 3,
   resolveThemeStyle = true
 ): EditablePresentationElement[] {
+  // The renderer may replace explicit near-top placeholder positions with layout coordinates.
+  const explicitFrame = readXfrmFrame(node.source)
+  if (explicitFrame) {
+    node = {
+      ...node,
+      position: { x: explicitFrame.x, y: explicitFrame.y },
+      size: { w: explicitFrame.width, h: explicitFrame.height }
+    }
+  }
   const elements: EditablePresentationElement[] = []
   const text = getShapeText(node)
   const theme = getSlideTheme(slide, presentation)
@@ -1844,10 +1853,10 @@ function readXfrmFrame(node: XmlNode): TextShapeFrame | null {
   const offset = xfrm.child('off')
   const extent = xfrm.child('ext')
   return createTextShapeFrame(
-    offset.numAttr('x'),
-    offset.numAttr('y'),
-    extent.numAttr('cx'),
-    extent.numAttr('cy')
+    emuToPx(offset.numAttr('x') ?? NaN),
+    emuToPx(offset.numAttr('y') ?? NaN),
+    emuToPx(extent.numAttr('cx') ?? NaN),
+    emuToPx(extent.numAttr('cy') ?? NaN)
   )
 }
 
