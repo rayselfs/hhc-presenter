@@ -16,6 +16,86 @@ import {
 } from '@renderer/test/editable-slide-surface-harness'
 
 describe('EditableSlideSurface interaction contract', () => {
+  it('draws the slide boundary without changing the canvas box geometry', () => {
+    const document = createBlankEditablePresentationDocument('Boundary')
+    const { container } = render(
+      <EditableSlideSurface document={document} slideId={document.slideOrder[0]} showBorder />
+    )
+    const surface = container.querySelector<HTMLElement>('[data-slide-surface]')!
+    expect(surface.style.border).toBe('')
+    expect(surface.style.outline).toContain('1px solid')
+    expect(surface.style.outlineOffset).toBe('-1px')
+  })
+
+  it('previews centered snapping, permits Alt bypass and clears guides on commit', () => {
+    const source = createBlankEditablePresentationDocument('Snapping')
+    const slideId = source.slideOrder[0]
+    const text = {
+      ...createTextElement(),
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 100,
+      autoWidth: false,
+      autoSize: 'fixed' as const
+    }
+    const onTransformPreview = vi.fn()
+    const onTransformCommit = vi.fn()
+    const { container } = render(
+      <EditableSlideSurface
+        document={addElementToSlide(source, slideId, text)}
+        slideId={slideId}
+        editable
+        selectedElementId={text.id}
+        onTransformStart={() => text}
+        onTransformPreview={onTransformPreview}
+        onTransformCommit={onTransformCommit}
+      />
+    )
+    const edge = screen.getByTestId('text-frame-edge-left')
+    fireEvent.pointerDown(edge, { clientX: 0, clientY: 0, pointerId: 1 })
+    const dx = source.width / 2 - 200 + 4,
+      dy = source.height / 2 - 150 + 4
+    fireEvent.pointerMove(edge, { clientX: dx, clientY: dy, pointerId: 1 })
+    expect(onTransformPreview).toHaveBeenLastCalledWith(text.id, {
+      x: source.width / 2 - 100,
+      y: source.height / 2 - 50
+    })
+    expect(container.querySelectorAll('[data-snap-guide]')).toHaveLength(2)
+    fireEvent.pointerMove(edge, { clientX: dx, clientY: dy, pointerId: 1, altKey: true })
+    expect(onTransformPreview).toHaveBeenLastCalledWith(text.id, { x: 100 + dx, y: 100 + dy })
+    expect(container.querySelectorAll('[data-snap-guide]')).toHaveLength(0)
+    fireEvent.pointerMove(edge, { clientX: dx, clientY: dy, pointerId: 1 })
+    fireEvent.pointerUp(edge, { pointerId: 1 })
+    expect(onTransformCommit).toHaveBeenCalledTimes(1)
+    expect(container.querySelectorAll('[data-snap-guide]')).toHaveLength(0)
+  })
+
+  it('clears snap guides and cancels the drag on Escape', () => {
+    const source = createBlankEditablePresentationDocument('Snapping')
+    const slideId = source.slideOrder[0]
+    const text = { ...createTextElement(), x: 100, y: 100, width: 200, height: 100 }
+    const cancel = vi.fn()
+    const { container } = render(
+      <EditableSlideSurface
+        document={addElementToSlide(source, slideId, text)}
+        slideId={slideId}
+        editable
+        selectedElementId={text.id}
+        onTransformStart={() => text}
+        onTransformPreview={vi.fn()}
+        onTransformCancel={cancel}
+      />
+    )
+    const edge = screen.getByTestId('text-frame-edge-left')
+    fireEvent.pointerDown(edge, { clientX: 0, clientY: 0, pointerId: 1 })
+    fireEvent.pointerMove(edge, { clientX: -96, clientY: 0, pointerId: 1 })
+    expect(container.querySelectorAll('[data-snap-guide]')).toHaveLength(1)
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(cancel).toHaveBeenCalledTimes(1)
+    expect(container.querySelectorAll('[data-snap-guide]')).toHaveLength(0)
+  })
+
   it.each([false, true])('only intercepts element clicks when editable=%s', async (editable) => {
     const source = createBlankEditablePresentationDocument('Sunday')
     const slideId = source.slideOrder[0]

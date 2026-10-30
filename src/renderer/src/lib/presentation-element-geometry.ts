@@ -3,8 +3,8 @@ import { hasContentHeight } from './editable-presentation'
 
 export type ResizeHandle = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw'
 
-const TEXT_MIN_WIDTH = 60
-const TEXT_MIN_HEIGHT = 24
+export const TEXT_MIN_WIDTH = 60
+export const TEXT_MIN_HEIGHT = 24
 export const MIN_ELEMENT_SIZE = 20
 const MAX_CROP_TOTAL = 95
 
@@ -95,10 +95,12 @@ export function calculateImageResize(
     } else {
       width = height * aspectRatio
     }
+    width = Math.max(MIN_ELEMENT_SIZE, MIN_ELEMENT_SIZE * aspectRatio, width)
+    height = width / aspectRatio
+  } else {
+    width = Math.max(MIN_ELEMENT_SIZE, width)
+    height = Math.max(MIN_ELEMENT_SIZE, height)
   }
-
-  width = Math.max(MIN_ELEMENT_SIZE, width)
-  height = Math.max(MIN_ELEMENT_SIZE, height)
 
   return {
     x: hasWest ? element.x + (element.width - width) : element.x,

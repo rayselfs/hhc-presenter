@@ -337,6 +337,108 @@ describe('PresentationWorkspacePage session contract', () => {
       })
     )
   })
+  it.each([
+    { x: 4, altKey: true },
+    { x: 7, altKey: false }
+  ])(
+    'does not re-snap pointer previews in the workspace (x=$x, Alt=$altKey)',
+    async ({ x, altKey }) => {
+      const source = createBlankEditablePresentationDocument('Snapping')
+      const slideId = source.slideOrder[0]
+      const text = {
+        ...createTextElement({ text: 'Snap target' }),
+        x: 100,
+        y: 100,
+        width: 200,
+        height: 100,
+        autoSize: 'fixed' as const,
+        autoWidth: false
+      }
+      mocks.loadEditablePresentationSnapshot.mockResolvedValue({
+        document: addElementToSlide(source, slideId, text),
+        revision: 0
+      })
+      const session = await renderWorkspaceSession()
+      const content = document.querySelector<HTMLElement>(
+        '.presentation-stage [data-text-content]'
+      )!
+      fireEvent.pointerDown(content, { clientX: 140, clientY: 120, pointerId: 1 })
+      fireEvent.keyDown(content, { key: 'Escape' })
+      const edge = screen.getByTestId('text-frame-edge-left')
+      fireEvent.pointerDown(edge, { clientX: 100, clientY: 120, pointerId: 2 })
+      fireEvent.pointerMove(edge, { clientX: x, clientY: 120, pointerId: 2, altKey })
+      expect(session.getSnapshot().renderedDocument.slides[slideId].elements[text.id].x).toBe(x)
+      fireEvent.pointerUp(edge, { pointerId: 2 })
+      expect(session.getSnapshot().history.present.slides[slideId].elements[text.id].x).toBe(x)
+    }
+  )
+
+  it.each(['commit', 'cancel'] as const)(
+    'keeps marquee-selected elements together during drag %s',
+    async (finish) => {
+      const source = createBlankEditablePresentationDocument('Group move')
+      const slideId = source.slideOrder[0]
+      const first = createShapeElement('rectangle', { x: 100, y: 100, width: 50, height: 50 })
+      const second = createShapeElement('rectangle', { x: 300, y: 100, width: 50, height: 50 })
+      const document = addElementToSlide(addElementToSlide(source, slideId, first), slideId, second)
+      mocks.loadEditablePresentationSnapshot.mockResolvedValue({ document, revision: 0 })
+      const session = await renderWorkspaceSession()
+      const surface = window.document.querySelector<HTMLElement>(
+        '.presentation-stage [data-slide-surface]'
+      )!
+      vi.spyOn(surface, 'getBoundingClientRect').mockReturnValue(
+        new DOMRect(0, 0, source.width, source.height)
+      )
+      fireEvent.pointerDown(surface, { clientX: 0, clientY: 0, pointerId: 1 })
+      fireEvent.pointerMove(surface, { clientX: 500, clientY: 300, pointerId: 1 })
+      fireEvent.pointerUp(surface, { pointerId: 1 })
+      expect(surface.querySelectorAll('[data-selection-chrome]')).toHaveLength(2)
+      const element = surface.querySelector<HTMLElement>('[data-slide-element]')!
+      fireEvent.pointerDown(element, { clientX: 110, clientY: 110, pointerId: 2 })
+      fireEvent.pointerMove(element, { clientX: 140, clientY: 130, pointerId: 2, altKey: true })
+      const preview = session.getSnapshot().renderedDocument.slides[slideId].elements
+      expect(preview[first.id]).toMatchObject({ x: 130, y: 120 })
+      expect(preview[second.id]).toMatchObject({ x: 330, y: 120 })
+      if (finish === 'cancel') fireEvent.pointerCancel(element, { pointerId: 2 })
+      else fireEvent.pointerUp(element, { pointerId: 2 })
+      expect(session.getSnapshot().history.past).toHaveLength(finish === 'commit' ? 1 : 0)
+      if (finish === 'commit') act(() => session.undo())
+      expect(
+        session.getSnapshot().history.present.slides[slideId].elements[first.id]
+      ).toMatchObject({ x: 100, y: 100 })
+      expect(
+        session.getSnapshot().history.present.slides[slideId].elements[second.id]
+      ).toMatchObject({ x: 300, y: 100 })
+    }
+  )
+
+  it('keeps ordinary click selection after preserving a group at pointer-down', async () => {
+    const source = createBlankEditablePresentationDocument('Group selection')
+    const slideId = source.slideOrder[0]
+    const first = createShapeElement('rectangle', { x: 100, y: 100, width: 50, height: 50 })
+    const second = createShapeElement('rectangle', { x: 300, y: 100, width: 50, height: 50 })
+    mocks.loadEditablePresentationSnapshot.mockResolvedValue({
+      document: addElementToSlide(addElementToSlide(source, slideId, first), slideId, second),
+      revision: 0
+    })
+    await renderWorkspaceSession()
+    const surface = window.document.querySelector<HTMLElement>(
+      '.presentation-stage [data-slide-surface]'
+    )!
+    vi.spyOn(surface, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, source.width, source.height)
+    )
+    fireEvent.pointerDown(surface, { clientX: 0, clientY: 0, pointerId: 1 })
+    fireEvent.pointerMove(surface, { clientX: 500, clientY: 300, pointerId: 1 })
+    fireEvent.pointerUp(surface, { pointerId: 1 })
+    expect(surface.querySelectorAll('[data-selection-chrome]')).toHaveLength(2)
+    const element = surface.querySelector<HTMLElement>('[data-slide-element]')!
+    fireEvent.pointerDown(element, { clientX: 110, clientY: 110, pointerId: 2 })
+    fireEvent.pointerUp(element, { pointerId: 2 })
+    fireEvent.click(element)
+    expect(surface.querySelectorAll('[data-selection-chrome]')).toHaveLength(1)
+  })
+
   it('offers all eight new presets only in an explicit v3 document', async () => {
     const source = createBlankEditablePresentationDocument('Shapes')
     source.schemaVersion = 3
