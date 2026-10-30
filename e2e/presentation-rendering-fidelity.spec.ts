@@ -116,3 +116,54 @@ test('renders real PPTX fonts, image geometry, pages and embedded-video surface'
     contentType: 'image/png'
   })
 })
+
+test('retains imported outline width in the editor and projection', async ({ page, context }) => {
+  const zip = await JSZip.loadAsync(
+    await readFile(resolve('src/renderer/src/lib/__fixtures__/pptx/text-placeholder-layout.pptx'))
+  )
+  const path = 'ppt/slides/slide1.xml'
+  const xml = await zip.file(path)!.async('string')
+  zip.file(
+    path,
+    xml.replace(
+      '</p:spTree>',
+      '<p:sp><p:nvSpPr><p:cNvPr id="99" name="Outline"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="914400" y="914400"/><a:ext cx="1828800" cy="914400"/></a:xfrm><a:prstGeom prst="rect"/><a:noFill/><a:ln w="38100"><a:solidFill><a:srgbClr val="FF0000"/></a:solidFill></a:ln></p:spPr></p:sp></p:spTree>'
+    )
+  )
+  await page.goto('/')
+  await completeOnboarding(page)
+  await page.goto('/#/files')
+  await page
+    .locator('input[type="file"]:not([webkitdirectory])')
+    .first()
+    .setInputFiles({
+      name: 'Outline.pptx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      buffer: await zip.generateAsync({ type: 'nodebuffer' })
+    })
+  const file = page.getByText('Outline.lpdeck', { exact: true })
+  await expect(file).toBeVisible()
+  await file.click({ button: 'right' })
+  await page.getByRole('menuitem', { name: /Open Presentation|開啟簡報|打开演示文稿/ }).click()
+  const hasOutline = (): Promise<boolean> =>
+    page.locator('.presentation-stage [data-slide-element] > div').evaluateAll((elements) =>
+      elements.some((element) => {
+        const style = getComputedStyle(element)
+        return style.borderTopWidth === '4px' && style.borderTopColor === 'rgb(255, 0, 0)'
+      })
+    )
+  await expect.poll(hasOutline).toBe(true)
+  const opened = context.waitForEvent('page')
+  await page.getByRole('button', { name: /Start projection|開始投影/ }).click()
+  const projection = await opened
+  await expect
+    .poll(() =>
+      projection.locator('[data-slide-element] > div').evaluateAll((elements) =>
+        elements.some((element) => {
+          const style = getComputedStyle(element)
+          return style.borderTopWidth === '4px' && style.borderTopColor === 'rgb(255, 0, 0)'
+        })
+      )
+    )
+    .toBe(true)
+})
