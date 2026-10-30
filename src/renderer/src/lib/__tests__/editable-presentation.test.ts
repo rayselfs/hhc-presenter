@@ -88,6 +88,7 @@ type MockXmlNodeInit = {
 
 type MockXmlNode = {
   child: (name: string) => MockXmlNode
+  children: () => MockXmlNode[]
   attr: (name: string) => string | undefined
   numAttr: (name: string) => number | undefined
   exists: () => boolean
@@ -95,6 +96,7 @@ type MockXmlNode = {
 
 const missingXmlNode: MockXmlNode = {
   child: () => missingXmlNode,
+  children: () => [],
   attr: () => undefined,
   numAttr: () => undefined,
   exists: () => false
@@ -106,6 +108,7 @@ function mockXmlNode(init: MockXmlNodeInit = {}): MockXmlNode {
   )
   return {
     child: (name) => children.get(name) ?? missingXmlNode,
+    children: () => [...children.values()],
     attr: (name) => init.attrs?.[name],
     numAttr: (name) => {
       const value = init.attrs?.[name]
@@ -997,6 +1000,7 @@ describe('editable presentation documents', () => {
         nodes: [
           {
             nodeType: 'picture',
+            source: mockXmlNode(),
             blipEmbed: 'image',
             position: { x: index, y: 0 },
             size: { w: 100, h: 100 },
@@ -1065,6 +1069,7 @@ describe('editable presentation documents', () => {
           ]),
           nodes: ['first', 'other', 'alias', 'fallback'].map((blipEmbed) => ({
             nodeType: 'picture',
+            source: mockXmlNode(),
             blipEmbed,
             position: { x: 0, y: 0 },
             size: { w: 100, h: 100 },
