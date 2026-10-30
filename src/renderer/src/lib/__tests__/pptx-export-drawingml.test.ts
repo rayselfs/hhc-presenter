@@ -73,6 +73,28 @@ describe('editable DrawingML output', () => {
     ).toHaveLength(0)
   })
 
+  it('writes soft breaks inside one listed paragraph without literal text newlines', () => {
+    const text = createTextElement({ text: 'first\n\nlast\n', fontSize: 24 })
+    const template = normalizeTextParagraphs(text)[0]
+    text.paragraphs = [
+      {
+        ...template,
+        list: { kind: 'bullet', level: 0, char: '•' },
+        runs: [{ ...template.runs[0], text: text.text }]
+      }
+    ]
+    const { document, slideId } = fixture([text])
+    const xml = writeSlideDrawingMl(document, slideId, new Map())
+    expect(all(xml, 'p')).toHaveLength(1)
+    expect(all(xml, 'br')).toHaveLength(3)
+    expect(all(xml, 't').map((entry) => entry.textContent)).toEqual(['first', 'last'])
+    expect(all(xml, 'buChar')).toHaveLength(1)
+    for (const br of all(xml, 'br')) {
+      expect(one(br, 'rPr').getAttribute('sz')).toBe('1800')
+      expect(all(br, 't')).toHaveLength(0)
+    }
+  })
+
   it('writes paragraph spacing, list starts, levels and rich styles including empty typing style', () => {
     const text = createTextElement({ text: 'first\nsecond\n', fontSize: 20 })
     text.paragraphs = normalizeTextParagraphs(text)

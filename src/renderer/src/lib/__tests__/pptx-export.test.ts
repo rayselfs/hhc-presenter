@@ -239,6 +239,28 @@ describe('native PPTX export', () => {
     expect(resolveParagraphListNumbers(normalizeTextParagraphs(result))).toEqual([3, 4])
   })
 
+  it.each(['romanUcPeriod', 'alphaLcParenR'])(
+    'rejects native %s numbering instead of silently exporting decimal',
+    async (format) => {
+      const document = createBlankEditablePresentationDocument('Unsupported numbers')
+      const text = createTextElement({ text: 'First', autoSize: 'fixed', autoWidth: false })
+      text.paragraphs = normalizeTextParagraphs(text)
+      text.paragraphs[0].list = { kind: 'number', level: 0, format, startAt: 1 }
+      put(document, [text])
+      const before = structuredClone(document)
+      await expect(exportPresentationPptx(document)).rejects.toMatchObject({
+        diagnostics: [
+          expect.objectContaining({
+            code: 'unsupported-content',
+            slideId: document.slideOrder[0],
+            elementId: text.id
+          })
+        ]
+      })
+      expect(document).toEqual(before)
+    }
+  )
+
   it('keeps slide ordering/deletion and plain speaker notes in the package', async () => {
     const document = createBlankEditablePresentationDocument('Ordering')
     const first = document.slides[document.slideOrder[0]]

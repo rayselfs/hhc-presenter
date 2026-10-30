@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import JSZip from 'jszip'
 import { EDITABLE_PRESENTATION_MIME_TYPE } from '../src/renderer/src/lib/presentation-media'
-import { completeOnboarding } from './helpers'
+import { completeOnboarding, seedRawPptx } from './helpers'
 import type { EditablePresentationDocument } from '../src/renderer/src/lib/editable-presentation'
 import { prepareSourceHymn } from './helpers/pptx-source-smoke'
 
@@ -18,12 +18,131 @@ async function openFile(page: Page, name: string): Promise<void> {
   await expect(page.locator('[data-slide-option]')).toHaveCount(22)
 }
 
+async function catalogSnapshot(
+  page: Page
+): Promise<{ items: unknown[]; blobs: unknown[]; drafts: unknown[] }> {
+  return page.evaluate(async () => {
+    const request = indexedDB.open('hhc-file-explorer')
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+    const read = <T>(request: IDBRequest<T>): Promise<T> =>
+      new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error)
+      })
+    const tx = db.transaction(['folder-items', 'file-blobs', 'presentation-drafts'])
+    const [items, blobs, drafts] = await Promise.all([
+      read<import('../src/shared/types/folder').FileItemRecord[]>(
+        tx.objectStore('folder-items').getAll()
+      ),
+      read<import('../src/renderer/src/lib/file-explorer-db').FileBlobRecord[]>(
+        tx.objectStore('file-blobs').getAll()
+      ),
+      read<unknown[]>(tx.objectStore('presentation-drafts').getAll())
+    ])
+    db.close()
+    return {
+      items: items.map(
+        ({ id, name, url, parentId, mimeType, size, personalOwnerId, sharedRecipientId }) => ({
+          id,
+          name,
+          url,
+          parentId,
+          mimeType,
+          size,
+          personalOwnerId,
+          sharedRecipientId
+        })
+      ),
+      blobs: await Promise.all(
+        blobs.map(async ({ blob, ...record }) => ({
+          ...record,
+          sha256: blob
+            ? Array.from(
+                new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()))
+              )
+                .map((value) => value.toString(16).padStart(2, '0'))
+                .join('')
+            : null
+        }))
+      ),
+      drafts
+    }
+  })
+}
+
+async function copyCompatibility(
+  page: Page,
+  bytes: Buffer,
+  animated: Buffer,
+  download: DownloadPptx
+): Promise<void> {
+  await page.goto(page.url().replace(/#.*$/, '#/files'))
+  const rawId = await seedRawPptx(page, 'Unsupported original.pptx', animated)
+  await page.getByText('Unsupported original.pptx', { exact: true }).click({ button: 'right' })
+  await page.getByRole('menuitem', { name: /Open Presentation|開啟簡報|打开演示文稿/ }).click()
+  await expect(page.getByRole('complementary').getByRole('button')).toHaveCount(22)
+  await expect(page.locator('[data-pptx-slide-surface] > *').first()).toBeVisible()
+  const before = await catalogSnapshot(page)
+  await page.getByRole('button', { name: /Edit a copy|編輯副本|编辑副本/ }).click()
+  await expect(page.getByText(/animation|動畫|动画/).first()).toBeVisible()
+  await expect(page).toHaveURL(new RegExp(`#/presentations/${rawId}$`))
+  await expect(page.getByRole('button', { name: /Edit a copy|編輯副本|编辑副本/ })).toBeEnabled()
+  expect(await catalogSnapshot(page)).toEqual(before)
+  await page.goto(page.url().replace(/#.*$/, '#/files'))
+  const supportedRawId = await seedRawPptx(page, 'Supported original.pptx', bytes)
+  const supportedBefore = await catalogSnapshot(page)
+  await page.getByText('Supported original.pptx', { exact: true }).click({ button: 'right' })
+  await page
+    .getByRole('menuitem', {
+      name: /Convert to Editable Presentation|轉成可編輯簡報|转换为可编辑演示文稿/
+    })
+    .click()
+  await expect(page.locator('[data-slide-option]')).toHaveCount(22)
+  await expect(page).not.toHaveURL(new RegExp(`#/presentations/${supportedRawId}$`))
+  const after = await catalogSnapshot(page)
+  expect(after.items).toHaveLength(supportedBefore.items.length + 1)
+  expect(after.blobs).toHaveLength(supportedBefore.blobs.length + 1)
+  expect(after.drafts).toEqual(supportedBefore.drafts)
+  for (const item of supportedBefore.items) expect(after.items).toContainEqual(item)
+  for (const blob of supportedBefore.blobs) expect(after.blobs).toContainEqual(blob)
+  const exported = await JSZip.loadAsync(await download('copy-native-hymn'))
+  expect(
+    Object.keys(exported.files).filter((name) => /^ppt\/slides\/[^/]+\.xml$/.test(name))
+  ).toHaveLength(22)
+  await page.keyboard.press('ControlOrMeta+s')
+  await page.reload()
+  await expect(page.locator('[data-slide-option]')).toHaveCount(22)
+  await expect(
+    page.locator('.presentation-stage').getByText('主愛永不止息', { exact: true })
+  ).toBeVisible()
+}
+
 async function nativeHymn(page: Page, download: DownloadPptx): Promise<void> {
   await completeOnboarding(page)
   await page.goto(page.url().replace(/#.*$/, '#/files'))
   const bytes = await readFile(
     'src/renderer/src/lib/__fixtures__/pptx/text-placeholder-layout.pptx'
   )
+  const sourceZip = await JSZip.loadAsync(bytes)
+  const slidePath = 'ppt/slides/slide1.xml'
+  sourceZip.file(
+    slidePath,
+    (await sourceZip.file(slidePath)!.async('string')).replace(
+      '</p:sld>',
+      '<p:timing><p:tnLst/></p:timing></p:sld>'
+    )
+  )
+  const animated = await sourceZip.generateAsync({ type: 'nodebuffer' })
+  const before = await catalogSnapshot(page)
+  await page
+    .locator('input[type="file"][multiple]:not([webkitdirectory])')
+    .first()
+    .setInputFiles({ name: 'Unsupported upload.pptx', mimeType: mime, buffer: animated })
+  await expect(page.getByText(/animation|動畫|动画/).first()).toBeVisible()
+  expect(await catalogSnapshot(page)).toEqual(before)
   await page
     .locator('input[type="file"][multiple]:not([webkitdirectory])')
     .first()
@@ -53,6 +172,7 @@ async function nativeHymn(page: Page, download: DownloadPptx): Promise<void> {
   await expect(
     page.locator('.presentation-stage').getByText('主愛永不止息', { exact: true })
   ).toBeVisible()
+  await copyCompatibility(page, bytes, animated, download)
 }
 
 async function sourceHymn(

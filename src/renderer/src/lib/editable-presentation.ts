@@ -1,4 +1,3 @@
-import { assertEditablePptxDocument, assertEditablePptxFeatures } from './editable-pptx-policy'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
 import {
   createPresentationDraft,
@@ -18,6 +17,13 @@ import {
 } from './portable-presentation'
 import { readPptxNotes } from './pptx-notes'
 import { validatePptxSource } from './pptx-source'
+import {
+  assertEditablePptxDocument,
+  assertEditablePptxFeatures,
+  assertEditablePptxPackage,
+  PptxCompatibilityError,
+  locatePptxCompatibilityError
+} from './pptx-compatibility'
 import { FOLDER_DURATION_MS, type FileItemRecord } from '@shared/types/folder'
 import type { PlaceholderInfo, PresentationData } from '@aiden0z/pptx-renderer'
 import type { SlideData, SlideNode } from '@aiden0z/pptx-renderer'
@@ -1059,6 +1065,7 @@ export async function convertPptxBytesToEditableDocument(
 ): Promise<EditablePresentationDocument> {
   const { parseZip, buildPresentation, materializeAllSlideNodes, RECOMMENDED_ZIP_LIMITS } =
     await import('@aiden0z/pptx-renderer')
+  await assertEditablePptxPackage(bytes)
   const files = await parseZip(bytes, RECOMMENDED_ZIP_LIMITS)
   const presentation = buildPresentation(files)
   assertEditablePptxFeatures(files, presentation)
@@ -1069,7 +1076,7 @@ export async function convertPptxBytesToEditableDocument(
     undefined,
     await readPptxNotes(bytes, presentation)
   )
-  assertEditablePptxDocument(document)
+  assertEditablePptxDocument(document, presentation)
   return document
 }
 
@@ -1139,15 +1146,23 @@ export function convertPresentationData(
   const themes = convertPresentationThemes(presentation, width)
   const defaultThemeId = Object.keys(themes)[0] ?? DEFAULT_PRESENTATION_THEME_ID
 
-  for (const slide of presentation.slides) {
+  for (const [slideIndex, slide] of presentation.slides.entries()) {
     const slideId = crypto.randomUUID()
-    const convertedSlide = convertSlide(
-      slide,
-      presentation,
-      assets,
-      assetIdsByMediaPath,
-      Boolean(pptxSource)
-    )
+    let convertedSlide: Omit<EditablePresentationSlide, 'id' | 'name'>
+    try {
+      convertedSlide = convertSlide(
+        slide,
+        presentation,
+        assets,
+        assetIdsByMediaPath,
+        Boolean(pptxSource)
+      )
+    } catch (error) {
+      throw locatePptxCompatibilityError(error, {
+        slideNumber: slideIndex + 1,
+        sourcePart: slide.slidePath
+      })
+    }
     slides[slideId] = {
       ...convertedSlide,
       notes: notesBySlide.get(slide.slidePath) ?? '',
@@ -1229,10 +1244,10 @@ function convertSlide(
   const masterId = presentation.layoutToMaster.get(slide.layoutIndex)
   const master = masterId ? presentation.masters.get(masterId) : undefined
   if (slide.showMasterSp !== false) {
-    for (const tree of [
-      layout?.spTree,
-      ...(layout?.showMasterSp !== false ? [master?.spTree] : [])
-    ]) {
+    for (const [sourcePart, tree] of [
+      [slide.layoutIndex, layout?.spTree],
+      ...(layout?.showMasterSp !== false ? [[masterId, master?.spTree] as const] : [])
+    ] as const) {
       for (const child of tree?.children() ?? []) {
         if (
           ['nvGrpSpPr', 'grpSpPr', 'extLst'].includes(child.localName) ||
@@ -1242,13 +1257,33 @@ function convertSlide(
           )
         )
           continue
-        throw new Error('Unsupported PowerPoint layout or master decoration')
+        throw new PptxCompatibilityError(
+          { code: 'layout', sourcePart },
+          'Unsupported PowerPoint layout or master decoration'
+        )
       }
     }
   }
 
-  for (const node of slide.nodes) {
-    const converted = convertNode(node, slide, presentation, assets, assetIdsByMediaPath)
+  for (const [objectIndex, node] of slide.nodes.entries()) {
+    let converted: EditablePresentationElement[]
+    try {
+      if (!preserveSource) {
+        assertPptxNodeVisualCompatibility(node)
+        if (node.nodeType === 'shape') assertPptxTextCompatibility(node, slide, presentation)
+      }
+      converted = convertNode(node, slide, presentation, assets, assetIdsByMediaPath)
+      if (!preserveSource && converted.some((element) => element.type === 'locked'))
+        throw new PptxCompatibilityError(
+          { code: 'unsupported-object' },
+          'This PowerPoint object cannot yet be edited'
+        )
+    } catch (error) {
+      throw locatePptxCompatibilityError(error, {
+        objectNumber: objectIndex + 1,
+        objectId: node.id
+      })
+    }
     for (const element of converted) {
       if (preserveSource && element.type !== 'locked') {
         element.pptxSourceNode = {
@@ -1278,50 +1313,70 @@ function resolveSlideBackground(
   const masterId = presentation.layoutToMaster.get(slide.layoutIndex)
   const master = masterId ? presentation.masters.get(masterId) : undefined
   const theme = getSlideTheme(slide, presentation)
-  for (const background of [slide.background, layout?.background, master?.background]) {
+  for (const [sourcePart, background] of [
+    [slide.slidePath, slide.background],
+    [slide.layoutIndex, layout?.background],
+    [masterId, master?.background]
+  ] as const) {
     if (!background?.exists()) continue
-    const properties = background.child('bgPr')
-    const color = readTextColor(properties, theme)
-    if (color) {
-      const fill = properties.child('solidFill')
-      const alpha =
-        fill.child('srgbClr').child('alpha').numAttr('val') ??
-        fill.child('schemeClr').child('alpha').numAttr('val') ??
-        100000
-      return { type: 'solid', color, transparency: 100 - alpha / 1000 }
-    }
-    const gradient = properties.child('gradFill')
-    if (gradient.exists()) {
-      const linear = gradient.child('lin')
-      if (!linear.exists() || gradient.child('path').exists())
-        throw new Error('Unsupported PowerPoint background fill: non-linear gradient')
-      const angle = ((linear.numAttr('ang') ?? 0) / 60000 + 90) % 360
-      const stops = gradient
-        .child('gsLst')
-        .children('gs')
-        .map((stop) => {
-          const color = readTextColor(stop, theme)
-          const position = stop.numAttr('pos')
-          if (!color || position === undefined || position < 0 || position > 100000)
-            throw new Error('Invalid PowerPoint gradient stop')
-          return {
-            color,
-            position: position / 1000,
-            transparency: 100 - readColorAlpha(stop) * 100,
-            brightness: 0
-          }
-        })
-      if (stops.length < 2 || stops.length > 1000)
-        throw new Error('Invalid PowerPoint gradient stops')
-      return {
-        type: 'gradient',
-        gradientType: 'linear',
-        direction: angle === 90 ? 'left-right' : angle === 180 ? 'top-bottom' : 'diagonal',
-        angle,
-        stops
+    try {
+      const properties = background.child('bgPr')
+      const color = readTextColor(properties, theme)
+      if (color) {
+        const fill = properties.child('solidFill')
+        const alpha =
+          fill.child('srgbClr').child('alpha').numAttr('val') ??
+          fill.child('schemeClr').child('alpha').numAttr('val') ??
+          100000
+        return { type: 'solid', color, transparency: 100 - alpha / 1000 }
       }
+      const gradient = properties.child('gradFill')
+      if (gradient.exists()) {
+        const linear = gradient.child('lin')
+        if (!linear.exists() || gradient.child('path').exists())
+          throw new PptxCompatibilityError(
+            { code: 'background' },
+            'Unsupported PowerPoint background fill: non-linear gradient'
+          )
+        const angle = ((linear.numAttr('ang') ?? 0) / 60000 + 90) % 360
+        const stops = gradient
+          .child('gsLst')
+          .children('gs')
+          .map((stop) => {
+            const color = readTextColor(stop, theme)
+            const position = stop.numAttr('pos')
+            if (!color || position === undefined || position < 0 || position > 100000)
+              throw new PptxCompatibilityError(
+                { code: 'background' },
+                'Invalid PowerPoint gradient stop'
+              )
+            return {
+              color,
+              position: position / 1000,
+              transparency: 100 - readColorAlpha(stop) * 100,
+              brightness: 0
+            }
+          })
+        if (stops.length < 2 || stops.length > 1000)
+          throw new PptxCompatibilityError(
+            { code: 'background' },
+            'Invalid PowerPoint gradient stops'
+          )
+        return {
+          type: 'gradient',
+          gradientType: 'linear',
+          direction: angle === 90 ? 'left-right' : angle === 180 ? 'top-bottom' : 'diagonal',
+          angle,
+          stops
+        }
+      }
+      throw new PptxCompatibilityError(
+        { code: 'background' },
+        'Unsupported PowerPoint background fill'
+      )
+    } catch (error) {
+      throw locatePptxCompatibilityError(error, { sourcePart }, 'background')
     }
-    throw new Error('Unsupported PowerPoint background fill')
   }
   return createDefaultSlideBackground()
 }
@@ -1352,11 +1407,11 @@ function convertShapeNode(
     node.customGeometry?.exists() ||
     (node.presetGeometry && !['rect', 'ellipse', 'oval', 'line'].includes(node.presetGeometry))
   )
-    throw new Error('Unsupported PowerPoint shape geometry')
+    throw new PptxCompatibilityError({ code: 'shape' }, 'Unsupported PowerPoint shape geometry')
   if (
     ['gradFill', 'pattFill', 'blipFill', 'grpFill'].some((fill) => node.fill?.child(fill).exists())
   )
-    throw new Error('Unsupported PowerPoint shape fill')
+    throw new PptxCompatibilityError({ code: 'shape' }, 'Unsupported PowerPoint shape fill')
   const fillColor = readPaintColor(node.fill, theme) ?? 'transparent'
   const strokeColor = readPaintColor(node.line, theme) ?? '#000000'
   const rawStrokeWidth = node.line?.attr('w')
@@ -1365,7 +1420,7 @@ function convertShapeNode(
     sourceStrokeWidth !== undefined &&
     (!Number.isFinite(sourceStrokeWidth) || sourceStrokeWidth < 0)
   )
-    throw new Error('Invalid PowerPoint outline width')
+    throw new PptxCompatibilityError({ code: 'shape' }, 'Invalid PowerPoint outline width')
   const strokeWidth =
     !node.line?.exists() || node.line.child('noFill').exists()
       ? 0
@@ -1420,14 +1475,18 @@ function convertShapeNode(
     (node.textBody && isXmlTrue(node.source.child('nvSpPr').child('cNvSpPr').attr('txBox')))
   ) {
     const frame = resolveTextShapeFrame(node, slide, presentation)
-    if (!frame) throw new Error(`Text placeholder frame is missing: ${node.name}`)
+    if (!frame)
+      throw new PptxCompatibilityError(
+        { code: 'text' },
+        `Text placeholder frame is missing: ${node.name}`
+      )
     const style = resolveTextShapeStyle(node, slide, presentation, theme)
     const runs = resolveTextRuns(node, slide, presentation, theme)
     const paragraphs = resolveTextParagraphs(node, slide, presentation, theme)
     const fontScale =
       (node.textBody?.bodyProperties?.child('normAutofit').numAttr('fontScale') ?? 100000) / 100000
     if (!Number.isFinite(fontScale) || fontScale <= 0 || fontScale > 1)
-      throw new Error('Invalid PowerPoint text scale')
+      throw new PptxCompatibilityError({ code: 'text' }, 'Invalid PowerPoint text scale')
     style.fontSize *= fontScale
     for (const run of runs ?? []) run.fontSize *= fontScale
     for (const paragraph of paragraphs ?? []) {
@@ -1480,13 +1539,13 @@ function convertPictureNode(
   const blip = node.source.child('blipFill').child('blip')
   const opacity = (blip.child('alphaModFix').numAttr('amt') ?? 100000) / 100000
   if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1)
-    throw new Error('Invalid PowerPoint image opacity')
+    throw new PptxCompatibilityError({ code: 'image' }, 'Invalid PowerPoint image opacity')
   const borderWidth =
     node.line?.child('noFill').exists() || !node.line?.exists()
       ? 0
       : emuToPx(node.line.numAttr('w') ?? 9525)
   if (!Number.isFinite(borderWidth) || borderWidth < 0)
-    throw new Error('Invalid PowerPoint image outline')
+    throw new PptxCompatibilityError({ code: 'image' }, 'Invalid PowerPoint image outline')
   const borderColor = readPaintColor(node.line, theme, opacity || 1) ?? '#ffffff'
   const effectList = node.source.child('spPr').child('effectLst')
   const shadow = effectList.child('outerShdw')
@@ -1507,10 +1566,10 @@ function convertPictureNode(
       Math.abs(alpha - expectedAlpha * opacity) < 0.00001
     if (matches(20, 8, 0.22)) imageShadow = 'soft'
     else if (matches(32, 14, 0.32)) imageShadow = 'medium'
-    else throw new Error('Unsupported PowerPoint image shadow')
+    else throw new PptxCompatibilityError({ code: 'image' }, 'Unsupported PowerPoint image shadow')
   }
   if (effectList.children().some((effect) => effect.localName !== 'outerShdw'))
-    throw new Error('Unsupported PowerPoint image effect')
+    throw new PptxCompatibilityError({ code: 'image' }, 'Unsupported PowerPoint image effect')
   const asset = resolvePictureAsset(node, slide, presentation, assets, assetIdsByMediaPath)
   if (!asset) return [createLockedElement(node, 'Picture')]
   return [
@@ -1770,11 +1829,13 @@ function resolveTextBodyLayout(
   const attr = (name: string): string | undefined =>
     sources.map((source) => source?.attr(name)).find((value) => value !== undefined)
   const vertical = attr('vert')
-  if (vertical && vertical !== 'horz') throw new Error('Unsupported PowerPoint vertical text')
+  if (vertical && vertical !== 'horz')
+    throw new PptxCompatibilityError({ code: 'text' }, 'Unsupported PowerPoint vertical text')
   const anchor = attr('anchor')
   if (anchor && !['t', 'ctr', 'b'].includes(anchor))
-    throw new Error('Unsupported PowerPoint text anchor')
-  if (Number(attr('numCol') ?? 1) > 1) throw new Error('Unsupported PowerPoint text columns')
+    throw new PptxCompatibilityError({ code: 'text' }, 'Unsupported PowerPoint text anchor')
+  if (Number(attr('numCol') ?? 1) > 1)
+    throw new PptxCompatibilityError({ code: 'text' }, 'Unsupported PowerPoint text columns')
   return {
     verticalAlign: anchor === 'ctr' ? 'center' : anchor === 'b' ? 'bottom' : 'top',
     textInsets: {
@@ -1841,6 +1902,70 @@ function resolveTextRuns(
   return runs.length ? runs : undefined
 }
 
+function assertPptxNodeVisualCompatibility(node: SlideNode): void {
+  if (node.nodeType !== 'shape' && node.nodeType !== 'picture') return
+  const properties = node.source.child('spPr')
+  const transform = properties.child('xfrm')
+  const code = node.nodeType === 'picture' ? 'image' : 'shape'
+  if (isXmlTrue(transform.attr('flipH')) || isXmlTrue(transform.attr('flipV')))
+    throw new PptxCompatibilityError({ code }, 'PowerPoint reflection cannot yet be edited')
+  if (
+    properties.child('effectDag').exists() ||
+    (node.nodeType === 'shape' && properties.child('effectLst').children().length > 0)
+  )
+    throw new PptxCompatibilityError({ code }, 'PowerPoint shape effects cannot yet be edited')
+}
+
+function assertPptxTextCompatibility(
+  node: ShapeNodeData,
+  slide: SlideData,
+  presentation: PresentationData
+): void {
+  for (const paragraph of node.textBody?.paragraphs ?? []) {
+    const sources = [
+      paragraph.properties,
+      ...inheritedParagraphProperties(node, slide, presentation, paragraph.level ?? 0)
+    ]
+    const listProperties = sources.find((source) =>
+      ['buNone', 'buChar', 'buAutoNum', 'buBlip'].some((kind) => source?.child(kind).exists())
+    )
+    for (const spacing of ['spcBef', 'spcAft']) {
+      const value = sources
+        .map((source) => source?.child(spacing))
+        .find((source) => source?.exists())
+      if (value && value.children().some((entry) => entry.numAttr('val') !== 0))
+        throw new PptxCompatibilityError(
+          { code: 'text' },
+          'PowerPoint paragraph spacing cannot yet be edited'
+        )
+    }
+    if (listProperties?.child('buBlip').exists())
+      throw new PptxCompatibilityError(
+        { code: 'text' },
+        'PowerPoint picture bullets cannot yet be edited'
+      )
+    const numbering = listProperties?.child('buAutoNum')
+    if (numbering?.exists() && (numbering.attr('type') ?? 'arabicPeriod') !== 'arabicPeriod')
+      throw new PptxCompatibilityError(
+        { code: 'text' },
+        'PowerPoint numbering format cannot yet be edited'
+      )
+    if (!listProperties || listProperties.child('buNone').exists()) continue
+    if (
+      ['marL', 'indent'].some((attribute) => {
+        const value = sources
+          .map((source) => source?.numAttr(attribute))
+          .find((value) => value !== undefined)
+        return value === undefined || !Number.isFinite(value)
+      })
+    )
+      throw new PptxCompatibilityError(
+        { code: 'text' },
+        'PowerPoint list indentation cannot be resolved for editable import'
+      )
+  }
+}
+
 function resolveTextParagraphs(
   node: ShapeNodeData,
   slide: SlideData,
@@ -1882,7 +2007,7 @@ function resolveTextParagraphs(
     const exactPoints = lineSpacing?.child('spcPts').numAttr('val')
     const multiple = lineSpacing?.child('spcPct').numAttr('val')
     const listProperties = sources.find((source) =>
-      ['buNone', 'buChar', 'buAutoNum'].some((kind) => source?.child(kind).exists())
+      ['buNone', 'buChar', 'buAutoNum', 'buBlip'].some((kind) => source?.child(kind).exists())
     )
     const bullet = listProperties?.child('buChar')
     const number = listProperties?.child('buAutoNum')

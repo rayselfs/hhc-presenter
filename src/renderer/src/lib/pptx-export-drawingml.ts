@@ -15,6 +15,17 @@ export const OFFICE_RELATIONSHIPS_NS =
   'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 const XMLNS_NS = 'http://www.w3.org/2000/xmlns/'
 
+export function expandPptxTextRuns(runs: readonly EditableTextRun[]): EditableTextRun[] {
+  return runs.flatMap((run) =>
+    run.text
+      .split('\n')
+      .flatMap((text, index) => [
+        ...(index > 0 ? [{ ...run, text: '\n' }] : []),
+        ...(text ? [{ ...run, text }] : [])
+      ])
+  )
+}
+
 export interface PptxExportDiagnostic {
   code: 'unsupported-content' | 'invalid-value' | 'source-conflict' | 'package-limit'
   message: string
@@ -217,9 +228,10 @@ export function writeSlideDrawingMl(
         // The current editor renders decimal markers regardless of the imported numbering format.
         add(properties, 'a:buAutoNum', { type: 'arabicPeriod', startAt: start })
       }
-      for (const run of paragraph.runs) {
-        const node = add(para, 'a:r')
+      for (const run of expandPptxTextRuns(paragraph.runs)) {
+        const node = add(para, run.text === '\n' ? 'a:br' : 'a:r')
         runProperties(node, 'a:rPr', run, element.opacity)
+        if (run.text === '\n') continue
         const text = add(node, 'a:t')
         text.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve')
         text.textContent = safeText(run.text)

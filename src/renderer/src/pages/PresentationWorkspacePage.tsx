@@ -3,6 +3,7 @@ import {
   PRESENTATION_IMAGE_MIME_TYPES,
   validatePresentationImage
 } from '@renderer/lib/portable-presentation'
+import { formatPptxCompatibilityError } from '@renderer/lib/pptx-compatibility-message'
 import { getPresentationItem } from '@renderer/lib/presentation-drafts'
 import React, {
   useCallback,
@@ -407,9 +408,7 @@ export function PptxDocumentView({
       openDocument(createdItem)
       navigate(getPresentationWorkspacePath(createdItem.id))
     } catch (conversionError) {
-      toast.danger(
-        conversionError instanceof Error ? conversionError.message : String(conversionError)
-      )
+      toast.danger(formatPptxCompatibilityError(conversionError))
     } finally {
       setIsConverting(false)
     }

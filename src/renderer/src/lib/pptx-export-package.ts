@@ -1,4 +1,5 @@
 import JSZip from 'jszip'
+import { normalizeTextParagraphs } from './presentation-rich-text'
 import {
   createTextElement,
   type EditablePresentationDocument,
@@ -193,6 +194,22 @@ export async function buildNativePptx(
   for (const slide of slides)
     for (const id of slide.elementOrder) {
       const element = slide.elements[id]
+      if (
+        element.type === 'text' &&
+        normalizeTextParagraphs(element).some(
+          (paragraph) =>
+            paragraph.list?.kind === 'number' &&
+            (paragraph.list.format ?? 'arabicPeriod') !== 'arabicPeriod'
+        )
+      )
+        throw new PptxExportError([
+          {
+            code: 'unsupported-content',
+            message: 'This numbering format cannot yet be exported faithfully',
+            slideId: slide.id,
+            elementId: element.id
+          }
+        ])
       if (element.type !== 'image' || assetPaths.has(element.assetId)) continue
       const asset = document.assets[element.assetId]
       if (!asset)
@@ -260,6 +277,22 @@ export async function buildNativePptx(
     const imageRels = new Map<string, string>()
     for (const id of slide.elementOrder) {
       const element = slide.elements[id]
+      if (
+        element.type === 'text' &&
+        normalizeTextParagraphs(element).some(
+          (paragraph) =>
+            paragraph.list?.kind === 'number' &&
+            (paragraph.list.format ?? 'arabicPeriod') !== 'arabicPeriod'
+        )
+      )
+        throw new PptxExportError([
+          {
+            code: 'unsupported-content',
+            message: 'This numbering format cannot yet be exported faithfully',
+            slideId: slide.id,
+            elementId: element.id
+          }
+        ])
       if (element.type !== 'image' || imageRels.has(element.assetId)) continue
       const relationshipId = `rId${slideRels.length + 1}`
       imageRels.set(element.assetId, relationshipId)

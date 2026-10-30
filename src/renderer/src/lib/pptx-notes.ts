@@ -34,10 +34,15 @@ export async function readPptxNotes(
       if (placeholder && placeholder !== 'body') continue
       for (const paragraph of shape.getElementsByTagNameNS(A_NS, 'p')) {
         paragraphs.push(
-          Array.from(
-            paragraph.getElementsByTagNameNS(A_NS, 't'),
-            (node) => node.textContent ?? ''
-          ).join('')
+          Array.from(paragraph.children, (node) => {
+            if (node.namespaceURI !== A_NS) return ''
+            if (node.localName === 'br') return '\n'
+            if (node.localName !== 'r' && node.localName !== 'fld') return ''
+            return Array.from(
+              node.getElementsByTagNameNS(A_NS, 't'),
+              (text) => text.textContent ?? ''
+            ).join('')
+          }).join('')
         )
       }
     }
