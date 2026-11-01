@@ -1,3 +1,5 @@
+import { isLyricsOutput, type LyricsOutput } from './lyrics'
+
 export type CameraSourceKind = 'screen' | 'window' | 'video'
 export type CameraSource = { id: string; label: string; kind: CameraSourceKind }
 
@@ -52,6 +54,7 @@ export function isCameraSignalFrom(value: unknown, role: 'main' | 'projection'):
 
 export type CameraTransform = { x: number; y: number; width: number; height: number }
 export type CameraState = {
+  lyrics?: LyricsOutput
   sessionId: string
   transform: CameraTransform
   status: 'connecting' | 'live' | 'unavailable'
@@ -73,7 +76,8 @@ export function isCameraState(value: unknown): value is CameraState {
       (key) => typeof t[key] === 'number' && Number.isFinite(t[key]) && Math.abs(t[key]) <= 320000
     ) &&
     Number(t.width) > 0 &&
-    Number(t.height) > 0
+    Number(t.height) > 0 &&
+    (v.lyrics === undefined || isLyricsOutput(v.lyrics))
   )
 }
 export function isCameraMessageFrom(

@@ -14,6 +14,9 @@ export default defineConfig(
   {
     ignores: [
       '**/node_modules',
+      'src/renderer/public/lyrics-runtime/**',
+      'test-results/**',
+      'playwright-report/**',
       '**/dist',
       '**/out',
       '.agents/**',

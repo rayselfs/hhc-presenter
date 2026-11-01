@@ -1,0 +1,57 @@
+name: Windows lyrics recognition
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/lyrics-windows.yml'
+      - 'src/**'
+      - 'e2e/**'
+      - 'scripts/**'
+      - '*config*'
+      - 'package*.json'
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: lyrics-windows-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  lyrics-windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5.1.0
+      - uses: actions/setup-node@v5.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Electron test runtime
+        run: node node_modules/electron/install.js
+      - uses: actions/cache@v4
+        with:
+          path: src/renderer/public/lyrics-runtime
+          key: lyrics-runtime-${{ runner.os }}-${{ hashFiles('scripts/prepare-lyrics-runtime.mjs', 'package-lock.json') }}
+      - name: Build desktop artifacts
+        run: npm run build
+      - name: Verify Electron local assets and projection
+        run: npx playwright test --config playwright.lyrics-electron.config.ts
+      - name: Build hosted artifacts
+        run: npm run build:web
+      - name: Install Chromium
+        run: npx playwright install chromium
+      - name: Recognize real images and verify camera projection
+        run: npx playwright test e2e/lyrics-recognition.spec.ts e2e/camera-projection.spec.ts --project=chromium --workers=1 --retries=0
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/lyrics-browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-lyrics-evidence
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7

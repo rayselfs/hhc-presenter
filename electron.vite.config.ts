@@ -168,6 +168,7 @@ export default defineConfig(({ mode }) => {
           workbox: {
             globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
             globIgnores: [
+              '**/lyrics-runtime/**',
               '**/assets/pdf-*.js',
               '**/assets/pdf.worker-*.js',
               '**/assets/transformers*.js',
@@ -180,6 +181,15 @@ export default defineConfig(({ mode }) => {
             navigateFallback: '/index.html',
             navigateFallbackDenylist: [/^\/api\//, OAUTH_CALLBACK_PWA_DENYLIST],
             runtimeCaching: [
+              {
+                urlPattern: ({ url }) => url.pathname.startsWith('/lyrics-runtime/'),
+                handler: 'NetworkFirst',
+                options: {
+                  cacheName: 'hhc-lyrics-runtime',
+                  networkTimeoutSeconds: 3,
+                  expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 30 }
+                }
+              },
               {
                 urlPattern: ({ url }) =>
                   url.pathname.endsWith('.woff2') ||

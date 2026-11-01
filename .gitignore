@@ -17,3 +17,6 @@ bundle-report.html
 resources/video-engine/**/*
 !resources/video-engine/**/
 !resources/video-engine/**/README.txt
+src/renderer/public/lyrics-runtime/
+playwright-report/
+test-results/

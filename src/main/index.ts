@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { registerCaptureHandlers } from './ipc/capture'
 import { registerMediaPermissions } from './media-permissions'
 import { app, BrowserWindow, ipcMain, nativeTheme, protocol, session } from 'electron'
@@ -28,9 +29,14 @@ import { createHhcAuthService, registerHhcAuthIpc } from './ipc/hhc-auth'
 import { registerHhcAssetHandlers } from './ipc/hhc-assets'
 import { registerPersonalCloudHandlers } from './ipc/personal-cloud'
 import { createHhcPresenterProtocolDispatcher } from './protocol-router'
+import { registerLyricsProtocol } from './lyrics-protocol'
 import { registerAppProtocol } from './app-protocol'
 
 protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'hhc-lyrics',
+    privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true }
+  },
   { scheme: 'local-model', privileges: { secure: true, supportFetchAPI: true, stream: true } },
   {
     scheme: 'hhc-media',
@@ -140,6 +146,7 @@ if (gotSingleInstanceLock) {
     registerHhcAssetHandlers(wm, hhcAuthService)
     registerPersonalCloudHandlers(wm, hhcAuthService)
     registerOneDriveDownloadHandlers(wm)
+    registerLyricsProtocol(join(__dirname, '../renderer'))
     registerNativeMediaProtocol()
     registerCaptureHandlers(wm, session.defaultSession)
     registerMediaPermissions(session.defaultSession, () => wm.getMainWindow()?.webContents)

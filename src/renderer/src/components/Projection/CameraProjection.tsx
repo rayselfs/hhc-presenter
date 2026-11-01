@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import LyricsOutput from '@renderer/components/Common/LyricsOutput'
 import CameraStage from '@renderer/components/Common/CameraStage'
 import { createCameraPeer } from '@renderer/lib/camera-peer'
 import { createProjectionAdapter } from '@renderer/lib/projection-adapter'
@@ -15,7 +16,9 @@ export default function CameraProjection({
 }): React.JSX.Element {
   const [received, setReceived] = useState<{ sessionId: string; stream: MediaStream } | null>(null)
   const { sessionId } = camera
+  const lyricsMode = camera.lyrics !== undefined
   useEffect(() => {
+    if (lyricsMode) return
     const adapter = createProjectionAdapter('projection', browserSessionId)
     adapter.setGeneration(generation)
     let active = true
@@ -43,7 +46,7 @@ export default function CameraProjection({
       peer.dispose()
       adapter.dispose()
     }
-  }, [sessionId, generation, browserSessionId])
+  }, [sessionId, generation, browserSessionId, lyricsMode])
   return (
     <div
       className="grid h-screen w-screen place-items-center bg-black"
@@ -53,14 +56,23 @@ export default function CameraProjection({
         className="relative"
         style={{ width: 'min(100vw, 177.777778vh)', aspectRatio: '16 / 9' }}
       >
-        <CameraStage
-          stream={
-            camera.status !== 'unavailable' && received?.sessionId === sessionId
-              ? received.stream
-              : null
-          }
-          transform={camera.transform}
-        />
+        {camera.lyrics ? (
+          <LyricsOutput
+            output={{
+              ...camera.lyrics,
+              visible: camera.status !== 'unavailable' && camera.lyrics.visible
+            }}
+          />
+        ) : (
+          <CameraStage
+            stream={
+              camera.status !== 'unavailable' && received?.sessionId === sessionId
+                ? received.stream
+                : null
+            }
+            transform={camera.transform}
+          />
+        )}
       </div>
     </div>
   )

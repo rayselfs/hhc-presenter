@@ -1,0 +1,5 @@
+PaddleOCR SDK 0.4.2 and PP-OCRv5 mobile detector / PP-OCRv6 small recognizer (Apache-2.0):
+https://github.com/PaddlePaddle/PaddleOCR
+ONNX Runtime Web 1.24.3 (MIT):
+https://github.com/microsoft/onnxruntime/tree/v1.24.3
+The distributed SDK worker retains its bundled third-party license comments.
