@@ -75,7 +75,7 @@ describe('BrowserBibleApiAdapter', () => {
 
       const result = await adapter.fetchVersions()
       expect(result).toEqual(raw)
-      expect(http.get).toHaveBeenCalledWith('/api/bible/v2/versions', { timeout: 3000 })
+      expect(http.get).toHaveBeenCalledWith('/api/bible/v2/versions', { timeout: 60_000 })
     })
 
     it('throws BibleApiError with type=network on non-ok response', async () => {
