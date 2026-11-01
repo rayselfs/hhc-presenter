@@ -1437,5 +1437,44 @@
     "invalidFile": "File upload rejected ({{reason}}). Keep the original, or back it up locally before cancelling the upload.",
     "backupCancel": "Back up locally and cancel upload",
     "backupCancelConfirm": "Create a permanent local copy, then cancel only this unsubmitted file upload. If the file has changed, contains unsaved editor work or has dependent operations, it will be kept and cancellation will stop."
+  },
+  "cameraLyrics": {
+    "title": "Lyrics subtitles",
+    "description": "Recognize lyrics from this source, preserving every line. Output white subtitles on black for the switcher.",
+    "crop": "Lyrics area (%)",
+    "x": "Left",
+    "y": "Top",
+    "width": "Width",
+    "height": "Height",
+    "cropHint": "Include all lyric lines, including a third line. Exclude window titles and logos.",
+    "font": "Font",
+    "notoFont": "Noto Sans TC",
+    "systemFont": "System sans serif",
+    "fontSize": "Font size",
+    "lineHeight": "Line height",
+    "bottom": "Bottom distance (%)",
+    "keyHint": "White text on black for SE-2200 keying. No shadow or outline. Lines never wrap automatically.",
+    "hide": "Hide subtitles",
+    "show": "Show subtitles",
+    "edit": "Correct text",
+    "resume": "Resume recognition",
+    "text": "Lyrics (one source line per row)",
+    "apply": "Apply correction",
+    "manualHint": "Applying pauses recognition. Resume recognition to accept automatic updates again.",
+    "status": {
+      "idle": "Select a source to begin.",
+      "loading": "Loading local recognition engine…",
+      "recognizing": "Recognizing lyrics…",
+      "ready": "Lyrics recognized",
+      "error": "Recognition needs attention",
+      "empty": "No lyrics in the selected area"
+    },
+    "errors": {
+      "load": "Unable to start recognition. Turn subtitles off and on to retry.",
+      "recognize": "Text is not stable enough to display. Check the lyrics area or correct it manually.",
+      "overflow": "Text exceeds the safe area. Reduce font size or line height, or adjust bottom distance. Lines will not be split or cropped.",
+      "source": "The source is unavailable. Subtitles will clear."
+    },
+    "inputError": "Use at most 12 rows, with at most 256 characters per row."
   }
 }

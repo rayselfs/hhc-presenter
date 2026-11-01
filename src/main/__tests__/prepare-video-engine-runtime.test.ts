@@ -57,7 +57,8 @@ describe('prepare video engine runtime script', () => {
       await readFile(resolve(process.cwd(), 'package.json'), 'utf8')
     ) as { scripts: Record<string, string> }
 
-    expect(packageJson.scripts.predev).toBe('npm run prepare:video-engine')
+    expect(packageJson.scripts.predev.split(' && ')).toContain('npm run prepare:video-engine')
+    expect(packageJson.scripts.predev.split(' && ')).toContain('npm run prepare:lyrics-runtime')
   })
 
   it('requires only the current platform runtime in strict mode', async () => {

@@ -1,3 +1,6 @@
+import { useCameraLyricsStore } from '@renderer/stores/camera-lyrics'
+import { startLyricsRecognition } from '@renderer/lib/lyrics/recognition'
+import { isLyricsLines } from '@shared/lyrics'
 import { isElectron } from '@renderer/lib/env'
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -29,6 +32,9 @@ export function CameraSessionProvider({
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [retry, setRetry] = useState(0)
   const projecting = activeOwner === 'camera' && isProjectionOpen
+  const lyricsEnabled = useCameraLyricsStore((state) => state.enabled)
+  const lyricsManual = useCameraLyricsStore((state) => state.manual)
+  const lyricsCrop = useCameraLyricsStore((state) => state.crop)
   const keepCapture = pathname === '/camera' || projecting
 
   useEffect(() => {
@@ -38,6 +44,7 @@ export function CameraSessionProvider({
       session.current?.dispose()
       session.current = null
       setStream(null)
+      useCameraLyricsStore.getState().setEnabled(false)
       useCameraStore.setState({
         capturing: false,
         busy: false,
@@ -77,6 +84,7 @@ export function CameraSessionProvider({
       }
       useCameraStore.setState({ busy: true, capturing: false, error: null, deviceId })
       setStream(null)
+      useCameraLyricsStore.setState({ lines: [], acceptedAt: 0, manual: false })
       try {
         const next = await current.selectSource(deviceId)
         if (session.current !== current) return
@@ -107,6 +115,12 @@ export function CameraSessionProvider({
           () => {
             if (session.current !== current || current.getStream() !== next) return
             setStream(null)
+            useCameraLyricsStore.setState({
+              lines: [],
+              acceptedAt: 0,
+              manual: false,
+              error: 'source'
+            })
             useCameraStore.setState({ error: 'ended', capturing: false, connection: 'unavailable' })
           },
           { once: true }
@@ -168,6 +182,92 @@ export function CameraSessionProvider({
   }, [pathname, listDevices, selectSource])
 
   useEffect(() => {
+    if (!lyricsEnabled || !stream) {
+      useCameraLyricsStore.setState({ lines: [], acceptedAt: 0, status: 'idle' })
+      return
+    }
+    if (lyricsManual) return
+    return startLyricsRecognition({
+      stream,
+      crop: lyricsCrop,
+      onStatus: (status) => useCameraLyricsStore.setState({ status, error: null }),
+      onLines: (lines) => {
+        if (isLyricsLines(lines))
+          useCameraLyricsStore.setState({
+            lines,
+            acceptedAt: Date.now(),
+            status: lines.length ? 'ready' : 'empty',
+            error: useCameraLyricsStore.getState().error === 'overflow' ? 'overflow' : null
+          })
+      },
+      onError: (error) => useCameraLyricsStore.setState({ error, status: 'error' })
+    })
+  }, [stream, lyricsEnabled, lyricsManual, lyricsCrop, retry])
+
+  useEffect(() => {
+    if (!lyricsEnabled || !stream) return
+    const track = stream.getVideoTracks()[0]
+    const clear = (): void => {
+      useCameraLyricsStore.setState({
+        lines: [],
+        acceptedAt: 0,
+        manual: false,
+        status: 'error',
+        error: 'source'
+      })
+    }
+    track?.addEventListener('mute', clear)
+    return () => track?.removeEventListener('mute', clear)
+  }, [lyricsEnabled, stream])
+
+  useEffect(() => {
+    if (!lyricsEnabled || !projecting || recovery.status !== 'ready' || !stream) return
+    const sessionId = crypto.randomUUID()
+    const publish = (): void => {
+      const lyrics = useCameraLyricsStore.getState()
+      send('camera:state', {
+        sessionId,
+        transform: useCameraStore.getState().transform,
+        status: 'live',
+        lyrics: {
+          lines: lyrics.lines,
+          style: lyrics.style,
+          visible: lyrics.visible && lyrics.error !== 'overflow',
+          expiresAt: lyrics.manual ? Date.now() + 1000 : lyrics.acceptedAt + 1000
+        }
+      })
+    }
+    useCameraStore.setState({ connection: 'live' })
+    publish()
+    const unsubscribe = useCameraLyricsStore.subscribe(publish)
+    const heartbeat = setInterval(publish, 250)
+    return () => {
+      unsubscribe()
+      clearInterval(heartbeat)
+      send('camera:state', {
+        sessionId,
+        transform: useCameraStore.getState().transform,
+        status: 'unavailable',
+        lyrics: {
+          lines: [],
+          style: useCameraLyricsStore.getState().style,
+          visible: false,
+          expiresAt: 0
+        }
+      })
+    }
+  }, [
+    lyricsEnabled,
+    projecting,
+    recovery.status,
+    recovery.generation,
+    projectionReadyCount,
+    stream,
+    send
+  ])
+
+  useEffect(() => {
+    if (lyricsEnabled) return
     if (!projecting || recovery.status !== 'ready' || !stream) {
       useCameraStore.setState({ connection: projecting ? 'unavailable' : 'idle' })
       return
@@ -253,6 +353,7 @@ export function CameraSessionProvider({
     }
   }, [
     projecting,
+    lyricsEnabled,
     recovery.status,
     recovery.generation,
     projectionReadyCount,
@@ -272,40 +373,51 @@ export function CameraSessionProvider({
       return
     const current = session.current
     let cancelled = false
-    void window.api.capture
-      .getSources()
-      .then((desktopSources) => {
-        if (cancelled || session.current !== current) return
-        useCameraStore.setState({ desktopSources })
-        const { deviceId, capturing } = useCameraStore.getState()
-        if (
-          capturing &&
-          cameraSourceKind(deviceId) !== 'video' &&
-          !desktopSources.some((source) => source.id === deviceId)
-        ) {
+    let checking = false
+    const check = (): void => {
+      if (checking || cancelled) return
+      checking = true
+      void window.api.capture
+        .getSources()
+        .then((desktopSources) => {
+          if (cancelled || session.current !== current) return
+          useCameraStore.setState({ desktopSources })
+          const { deviceId, capturing } = useCameraStore.getState()
+          if (
+            capturing &&
+            cameraSourceKind(deviceId) !== 'video' &&
+            !desktopSources.some((source) => source.id === deviceId)
+          ) {
+            current?.stop()
+            setStream(null)
+            useCameraStore.setState({
+              capturing: false,
+              connection: 'unavailable',
+              error: 'sourceExcluded'
+            })
+          }
+        })
+        .catch(() => {
+          if (cancelled || session.current !== current) return
           current?.stop()
           setStream(null)
           useCameraStore.setState({
             capturing: false,
             connection: 'unavailable',
-            error: 'sourceExcluded'
+            error: 'unavailable'
           })
-        }
-      })
-      .catch(() => {
-        if (cancelled || session.current !== current) return
-        current?.stop()
-        setStream(null)
-        useCameraStore.setState({
-          capturing: false,
-          connection: 'unavailable',
-          error: 'unavailable'
         })
-      })
+        .finally(() => {
+          checking = false
+        })
+    }
+    check()
+    const poll = lyricsEnabled ? setInterval(check, 1000) : undefined
     return () => {
       cancelled = true
+      if (poll) clearInterval(poll)
     }
-  }, [keepCapture, isProjectionOpen, recovery.generation, stream])
+  }, [keepCapture, isProjectionOpen, recovery.generation, stream, lyricsEnabled])
 
   const prepareSources = async (): Promise<void> => {
     const current = session.current

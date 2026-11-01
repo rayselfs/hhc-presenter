@@ -168,6 +168,7 @@ export default defineConfig(({ mode }) => {
           workbox: {
             globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
             globIgnores: [
+              '**/lyrics-runtime/**',
               '**/assets/pdf-*.js',
               '**/assets/pdf.worker-*.js',
               '**/assets/transformers*.js',
@@ -183,6 +184,7 @@ export default defineConfig(({ mode }) => {
               {
                 urlPattern: ({ url }) =>
                   url.pathname.endsWith('.woff2') ||
+                  url.pathname.startsWith('/lyrics-runtime/') ||
                   /\/assets\/(pdf(?:\.|-)|transformers(?:\.web)?-|microsoft\.cognitiveservices\.speech\.sdk-)/.test(
                     url.pathname
                   ) ||

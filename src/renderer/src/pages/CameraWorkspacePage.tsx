@@ -1,7 +1,10 @@
+import LyricsPreview from '@renderer/components/Control/Camera/LyricsPreview'
+import { useCameraLyricsStore } from '@renderer/stores/camera-lyrics'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Lock, LockOpen, Monitor, RotateCcw } from 'lucide-react'
 import { AlertDialog, Button } from '@heroui/react'
+import LyricsRecognitionControls from '@renderer/components/Control/Camera/LyricsRecognitionControls'
 import CameraStage from '@renderer/components/Common/CameraStage'
 import { useProjection } from '@renderer/contexts/ProjectionContext'
 import { useCameraSession } from '@renderer/contexts/CameraSessionContext'
@@ -54,13 +57,14 @@ export default function CameraWorkspacePage(): React.JSX.Element {
   const { activeOwner, isProjectionOpen, startProjection } = useProjection()
   const projecting = activeOwner === 'camera' && isProjectionOpen
   const state = useCameraStore()
+  const lyricsEnabled = useCameraLyricsStore((state) => state.enabled)
   const LockIcon = state.locked ? Lock : LockOpen
   const canvas = useRef<HTMLDivElement>(null)
   const drag = useRef<{ x: number; y: number; frame: CameraTransform; corner?: Corner } | null>(
     null
   )
   const begin = (event: React.PointerEvent<HTMLElement>, corner?: Corner): void => {
-    if (!camera.stream || state.locked || event.button !== 0) return
+    if (!camera.stream || state.locked || lyricsEnabled || event.button !== 0) return
     event.preventDefault()
     event.stopPropagation()
     setSnapGuides({})
@@ -124,7 +128,10 @@ export default function CameraWorkspacePage(): React.JSX.Element {
         })
       }
     })),
-    { sectionKey: 'camera', enabled: !!camera.stream && !state.selectorOpen && !state.locked }
+    {
+      sectionKey: 'camera',
+      enabled: !!camera.stream && !state.selectorOpen && !state.locked && !lyricsEnabled
+    }
   )
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-4" aria-label={t('camera.title')}>
@@ -191,18 +198,22 @@ export default function CameraWorkspacePage(): React.JSX.Element {
           setSnapGuides({})
         }}
       >
-        <CameraStage
-          stream={camera.stream}
-          transform={state.transform}
-          onError={videoError}
-          onDimensions={cameraDimensions}
-        />
+        {lyricsEnabled ? (
+          <LyricsPreview />
+        ) : (
+          <CameraStage
+            stream={camera.stream}
+            transform={state.transform}
+            onError={videoError}
+            onDimensions={cameraDimensions}
+          />
+        )}
         {!camera.stream && (
           <p className="pointer-events-none absolute inset-0 grid place-items-center text-white/60">
             {t('camera.empty')}
           </p>
         )}
-        {camera.stream && (
+        {camera.stream && !lyricsEnabled && (
           <div
             data-testid="camera-frame"
             className={`pointer-events-none absolute border-2 ${state.locked ? 'border-danger' : 'border-accent'}`}
@@ -214,31 +225,39 @@ export default function CameraWorkspacePage(): React.JSX.Element {
             }}
           ></div>
         )}
-        {camera.stream && !state.locked && snapGuides.verticalGuide !== undefined && (
-          <span
-            aria-hidden="true"
-            data-testid="camera-guide-vertical"
-            className="pointer-events-none absolute inset-y-0 w-px border-l border-dashed border-fuchsia-400"
-            style={{
-              left: `${(snapGuides.verticalGuide / CAMERA_STAGE.width) * 100}%`,
-              transform:
-                snapGuides.verticalGuide === CAMERA_STAGE.width ? 'translateX(-100%)' : undefined
-            }}
-          />
-        )}
-        {camera.stream && !state.locked && snapGuides.horizontalGuide !== undefined && (
-          <span
-            aria-hidden="true"
-            data-testid="camera-guide-horizontal"
-            className="pointer-events-none absolute inset-x-0 h-px border-t border-dashed border-fuchsia-400"
-            style={{
-              top: `${(snapGuides.horizontalGuide / CAMERA_STAGE.height) * 100}%`,
-              transform:
-                snapGuides.horizontalGuide === CAMERA_STAGE.height ? 'translateY(-100%)' : undefined
-            }}
-          />
-        )}
-        {camera.stream && state.locked && (
+        {camera.stream &&
+          !lyricsEnabled &&
+          !state.locked &&
+          snapGuides.verticalGuide !== undefined && (
+            <span
+              aria-hidden="true"
+              data-testid="camera-guide-vertical"
+              className="pointer-events-none absolute inset-y-0 w-px border-l border-dashed border-fuchsia-400"
+              style={{
+                left: `${(snapGuides.verticalGuide / CAMERA_STAGE.width) * 100}%`,
+                transform:
+                  snapGuides.verticalGuide === CAMERA_STAGE.width ? 'translateX(-100%)' : undefined
+              }}
+            />
+          )}
+        {camera.stream &&
+          !lyricsEnabled &&
+          !state.locked &&
+          snapGuides.horizontalGuide !== undefined && (
+            <span
+              aria-hidden="true"
+              data-testid="camera-guide-horizontal"
+              className="pointer-events-none absolute inset-x-0 h-px border-t border-dashed border-fuchsia-400"
+              style={{
+                top: `${(snapGuides.horizontalGuide / CAMERA_STAGE.height) * 100}%`,
+                transform:
+                  snapGuides.horizontalGuide === CAMERA_STAGE.height
+                    ? 'translateY(-100%)'
+                    : undefined
+              }}
+            />
+          )}
+        {camera.stream && !lyricsEnabled && state.locked && (
           <div
             role="status"
             aria-label={t('camera.locked')}
@@ -250,6 +269,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
           </div>
         )}
         {camera.stream &&
+          !lyricsEnabled &&
           !state.locked &&
           (['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const).map((corner) => (
             <button
@@ -287,7 +307,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
             aria-label={t(state.locked ? 'camera.unlock' : 'camera.lock')}
             title={t(state.locked ? 'camera.unlock' : 'camera.lock')}
             aria-pressed={state.locked}
-            disabled={!camera.stream && !state.locked}
+            disabled={lyricsEnabled || (!camera.stream && !state.locked)}
             onClick={() => {
               drag.current = null
               setSnapGuides({})
@@ -298,7 +318,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
           </button>
           <button
             className={control}
-            disabled={!camera.stream || state.locked}
+            disabled={!camera.stream || state.locked || lyricsEnabled}
             aria-label={t('camera.reset')}
             title={t('camera.reset')}
             onClick={() => setResetOpen(true)}
@@ -314,7 +334,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
                 className={`${control} w-28`}
                 type="number"
                 step="1"
-                disabled={!camera.stream || state.locked}
+                disabled={!camera.stream || state.locked || lyricsEnabled}
                 value={Math.round(state.transform[key])}
                 onChange={(event) => {
                   if (!event.target.value) return
@@ -330,6 +350,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
           ))}
         </div>
       </div>
+      <LyricsRecognitionControls stream={camera.stream} />
       <AlertDialog.Backdrop isOpen={resetOpen} onOpenChange={setResetOpen}>
         <AlertDialog.Container size="sm">
           <AlertDialog.Dialog role="alertdialog">

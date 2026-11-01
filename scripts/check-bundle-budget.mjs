@@ -7,6 +7,7 @@ const assetsDir = join(outputDir, 'assets')
 const MAX_PRECACHE_BYTES = 5 * 1024 * 1024
 const MAX_FONT_ASSETS_BYTES = 10 * 1024 * 1024
 const MAX_JS_CHUNK_BYTES = 2.25 * 1024 * 1024
+const MAX_LYRICS_RUNTIME_BYTES = 64 * 1024 * 1024
 const OPTIONAL_CHUNK_PATTERN =
   /assets\/(pdf|transformers(?:\.web)?|microsoft\.cognitiveservices\.speech\.sdk)-.*\.js$/
 
@@ -30,6 +31,11 @@ for (const url of precacheUrls) {
 }
 
 const assetFiles = await listFiles(assetsDir)
+const lyricsFiles = await listFiles(join(outputDir, 'lyrics-runtime'))
+const lyricsBytes = (
+  await Promise.all(lyricsFiles.map(async (path) => (await stat(path)).size))
+).reduce((sum, size) => sum + size, 0)
+if (lyricsBytes > MAX_LYRICS_RUNTIME_BYTES) throw new Error('Optional OCR runtime budget exceeded')
 let fontAssetBytes = 0
 let largestJsChunk = { path: '', size: 0 }
 for (const filePath of assetFiles) {
@@ -61,6 +67,10 @@ if (fontAssetBytes > MAX_FONT_ASSETS_BYTES) {
 if (largestJsChunk.size > MAX_JS_CHUNK_BYTES) {
   throw new Error('JavaScript chunk budget exceeded')
 }
-if (Array.from(precacheUrls).some((url) => OPTIONAL_CHUNK_PATTERN.test(url))) {
+if (
+  Array.from(precacheUrls).some(
+    (url) => OPTIONAL_CHUNK_PATTERN.test(url) || /lyrics-runtime\//.test(url)
+  )
+) {
   throw new Error('Optional dependency chunk must not be precached')
 }
