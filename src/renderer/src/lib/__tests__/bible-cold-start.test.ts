@@ -23,21 +23,21 @@ function delayedResponse(delay: number, content: string): void {
 }
 
 describe('Bible cold-start budget', () => {
-  it('waits for a version response beyond the previous browser and desktop budgets', async () => {
+  it('waits beyond the measured 84-second cold start without retrying', async () => {
     vi.useFakeTimers()
-    delayedResponse(15_000, '[]')
+    delayedResponse(90_000, '[]')
     const result = new BrowserBibleApiAdapter().fetchVersions()
-    await vi.advanceTimersByTimeAsync(15_000)
-    await expect(result).resolves.toEqual([])
+    await vi.advanceTimersByTimeAsync(90_000)
     expect(fetch).toHaveBeenCalledTimes(1)
+    await expect(result).resolves.toEqual([])
     expect(vi.getTimerCount()).toBe(0)
   })
 
   it('allows cold startup plus a complete content stream', async () => {
     vi.useFakeTimers()
-    delayedResponse(70_000, 'data: {"type":"start"}\n\ndata: {"type":"complete"}\n\n')
+    delayedResponse(90_000, 'data: {"type":"start"}\n\ndata: {"type":"complete"}\n\n')
     const result = new BrowserBibleApiAdapter().fetchContent(1)
-    await vi.advanceTimersByTimeAsync(70_000)
+    await vi.advanceTimersByTimeAsync(90_000)
     await expect(result).resolves.toEqual([])
     expect(fetch).toHaveBeenCalledTimes(1)
     expect(vi.getTimerCount()).toBe(0)
@@ -49,7 +49,7 @@ describe('Bible cold-start budget', () => {
     const result = expect(new BrowserBibleApiAdapter().fetchVersions()).rejects.toMatchObject({
       type: 'timeout'
     })
-    await vi.advanceTimersByTimeAsync(120_000)
+    await vi.advanceTimersByTimeAsync(240_000)
     await result
     expect(fetch).toHaveBeenCalledTimes(2)
     expect(vi.getTimerCount()).toBe(0)

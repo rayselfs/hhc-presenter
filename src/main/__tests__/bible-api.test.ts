@@ -41,7 +41,7 @@ describe('Desktop Bible SSE contract', () => {
     if (!handler) throw new Error('Bible handler not registered')
     await handler({} as Electron.IpcMainInvokeEvent)
     expect(http.get).toHaveBeenCalledWith(expect.stringContaining('/api/bible/v2/versions'), {
-      timeout: 60_000
+      timeout: 120_000
     })
   })
 
