@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ipcMain } from 'electron'
 import { registerBibleApiHandlers } from '../ipc/bible-api'
 import type { WindowManager } from '../windowManager'
+import { http } from '../lib/http'
 
 vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
 vi.mock('../ipc/validate', () => ({ isMainWindow: () => true }))
@@ -31,6 +32,19 @@ afterEach(() => {
 })
 
 describe('Desktop Bible SSE contract', () => {
+  it('gives the version request a cold-start budget without changing the shared HTTP client', async () => {
+    vi.mocked(http.get).mockResolvedValue({ data: [] })
+    registerBibleApiHandlers({} as WindowManager)
+    const handler = vi
+      .mocked(ipcMain.handle)
+      .mock.calls.find(([channel]) => channel === 'bible:get-versions')?.[1]
+    if (!handler) throw new Error('Bible handler not registered')
+    await handler({} as Electron.IpcMainInvokeEvent)
+    expect(http.get).toHaveBeenCalledWith(expect.stringContaining('/api/bible/v2/versions'), {
+      timeout: 60_000
+    })
+  })
+
   async function fetchContent(text: string): Promise<unknown> {
     vi.stubGlobal(
       'fetch',

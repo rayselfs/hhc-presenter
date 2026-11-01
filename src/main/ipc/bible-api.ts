@@ -3,17 +3,19 @@ import { ipcMain } from 'electron'
 import type { WindowManager } from '../windowManager'
 import { isMainWindow } from './validate'
 import type { BibleVersion, BibleBook } from '@shared/types/bible'
-import { BIBLE_API } from '@shared/api-paths'
+import { BIBLE_API, BIBLE_CONTENT_TIMEOUT_MS, BIBLE_VERSIONS_TIMEOUT_MS } from '@shared/api-paths'
 import { http } from '../lib/http'
 
 async function fetchVersions(): Promise<BibleVersion[]> {
-  const { data } = await http.get<BibleVersion[]>(BIBLE_API.versions)
+  const { data } = await http.get<BibleVersion[]>(BIBLE_API.versions, {
+    timeout: BIBLE_VERSIONS_TIMEOUT_MS
+  })
   return data
 }
 
 async function fetchContent(versionId: number): Promise<BibleBook[]> {
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 60_000)
+  const timeout = setTimeout(() => controller.abort(), BIBLE_CONTENT_TIMEOUT_MS)
   try {
     const response = await fetch(BIBLE_API.content(versionId), {
       signal: controller.signal
