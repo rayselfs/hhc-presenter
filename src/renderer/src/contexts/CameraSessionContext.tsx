@@ -1,6 +1,5 @@
 import { useCameraLyricsStore } from '@renderer/stores/camera-lyrics'
 import { startLyricsRecognition } from '@renderer/lib/lyrics/recognition'
-import { isLyricsLines } from '@shared/lyrics'
 import { isElectron } from '@renderer/lib/env'
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -191,15 +190,7 @@ export function CameraSessionProvider({
       stream,
       crop: lyricsCrop,
       onStatus: (status) => useCameraLyricsStore.setState({ status, error: null }),
-      onLines: (lines) => {
-        if (isLyricsLines(lines))
-          useCameraLyricsStore.setState({
-            lines,
-            acceptedAt: Date.now(),
-            status: lines.length ? 'ready' : 'empty',
-            error: useCameraLyricsStore.getState().error === 'overflow' ? 'overflow' : null
-          })
-      },
+      onLines: (lines) => useCameraLyricsStore.getState().acceptLines(lines),
       onError: (error) => useCameraLyricsStore.setState({ error, status: 'error' })
     })
   }, [stream, lyricsEnabled, lyricsManual, lyricsCrop, retry])

@@ -107,9 +107,25 @@ export async function verifyLyricsWorkflow(
     body: await projection.screenshot(),
     contentType: 'image/png'
   })
+  await page.getByRole('spinbutton', { name: 'Font size', exact: true }).fill('160')
+  await page.getByRole('spinbutton', { name: 'Line height', exact: true }).fill('2')
+  await page.getByRole('spinbutton', { name: 'Bottom distance (%)', exact: true }).fill('50')
+  await expect(page.getByTestId('lyrics-output')).toHaveAttribute('data-overflow', 'true')
+  await expect(projection.getByTestId('lyrics-line')).toHaveCount(0)
+  await page.evaluate(() => {
+    location.hash = '/files'
+  })
+  await setFixture(page, 'bright', allLines.slice(0, 1))
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines.slice(0, 1), {
+    timeout: 40000
+  })
+  await page.evaluate(() => {
+    location.hash = '/camera'
+  })
   await page.getByRole('spinbutton', { name: 'Font size', exact: true }).fill('48')
   await page.getByRole('spinbutton', { name: 'Line height', exact: true }).fill('1.4')
   await page.getByRole('spinbutton', { name: 'Bottom distance (%)', exact: true }).fill('8')
+  await setFixture(page, 'bright', allLines)
   await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines)
   await setFixture(page, 'bright', [])
   await expect(projection.getByTestId('lyrics-line')).toHaveCount(0, { timeout: 10000 })
@@ -135,6 +151,14 @@ export async function verifyLyricsWorkflow(
   await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines)
   await page.getByRole('button', { name: 'Resume recognition', exact: true }).click()
   await expect(projection.getByTestId('lyrics-line')).toHaveCount(0)
+  if (await page.evaluate(() => !!navigator.serviceWorker?.controller)) {
+    await page.context().setOffline(true)
+    await page.getByRole('checkbox', { name: 'Lyrics subtitles', exact: true }).uncheck()
+    await page.getByRole('checkbox', { name: 'Lyrics subtitles', exact: true }).check()
+    await setFixture(page, 'dark', allLines)
+    await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 40000 })
+    await page.context().setOffline(false)
+  }
   await page.getByRole('checkbox', { name: 'Lyrics subtitles', exact: true }).uncheck()
   await expect
     .poll(() => projection.locator('video').evaluate((v: HTMLVideoElement) => v.videoWidth), {

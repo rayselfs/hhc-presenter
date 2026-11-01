@@ -44,3 +44,34 @@ it('rejects invalid manual corrections without replacing accepted rows', () => {
   expect(store.setManual(Array(13).fill('row').join('\n'))).toBe(false)
   expect(useCameraLyricsStore.getState().lines).toEqual(['First', 'Second', 'Third'])
 })
+it('recovers from a previous overflow on the next cue even without the operator preview mounted', () => {
+  const store = useCameraLyricsStore.getState()
+  store.setEnabled(true)
+  store.acceptLines(['Long cue'])
+  useCameraLyricsStore.setState({ error: 'overflow' })
+  store.acceptLines(['Long cue'])
+  expect(useCameraLyricsStore.getState().error).toBe('overflow')
+  store.acceptLines(['Next cue'])
+  expect(useCameraLyricsStore.getState()).toMatchObject({
+    lines: ['Next cue'],
+    error: null,
+    status: 'ready'
+  })
+  const acceptedAt = useCameraLyricsStore.getState().acceptedAt
+  store.acceptLines(Array(13).fill('Invalid cue'))
+  expect(useCameraLyricsStore.getState()).toMatchObject({
+    lines: ['Next cue'],
+    acceptedAt,
+    error: 'recognize'
+  })
+})
+it('does not overwrite manual text while worker cleanup is pending', () => {
+  const store = useCameraLyricsStore.getState()
+  store.setEnabled(true)
+  store.setManual('Corrected cue')
+  store.acceptLines(['Late automatic cue'])
+  expect(useCameraLyricsStore.getState().lines).toEqual(['Corrected cue'])
+  store.setEnabled(false)
+  store.acceptLines(['Late automatic cue'])
+  expect(useCameraLyricsStore.getState().lines).toEqual([])
+})

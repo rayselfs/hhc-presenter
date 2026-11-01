@@ -22,12 +22,13 @@ interface LyricsStore {
   setEnabled(value: boolean): void
   setStyle(value: LyricsStyle): void
   setCrop(value: LyricsCrop): void
+  acceptLines(lines: string[]): void
   setManual(text: string): boolean
   resume(): void
 }
 export const useCameraLyricsStore = create<LyricsStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       enabled: false,
       visible: true,
       manual: false,
@@ -44,6 +45,23 @@ export const useCameraLyricsStore = create<LyricsStore>()(
       },
       setCrop: (crop) => {
         if (isLyricsCrop(crop)) set({ crop, lines: [], acceptedAt: 0, manual: false, error: null })
+      },
+      acceptLines: (lines) => {
+        const previous = get()
+        if (!previous.enabled || previous.manual) return
+        if (!isLyricsLines(lines)) {
+          set({ error: 'recognize', status: 'error' })
+          return
+        }
+        const unchanged =
+          previous.lines.length === lines.length &&
+          previous.lines.every((line, index) => line === lines[index])
+        set({
+          lines,
+          acceptedAt: Date.now(),
+          status: lines.length ? 'ready' : 'empty',
+          error: unchanged && previous.error === 'overflow' ? 'overflow' : null
+        })
       },
       setManual: (text) => {
         const lines = text.replace(/\r\n?/g, '\n').split('\n')

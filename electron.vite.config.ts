@@ -182,9 +182,17 @@ export default defineConfig(({ mode }) => {
             navigateFallbackDenylist: [/^\/api\//, OAUTH_CALLBACK_PWA_DENYLIST],
             runtimeCaching: [
               {
+                urlPattern: ({ url }) => url.pathname.startsWith('/lyrics-runtime/'),
+                handler: 'NetworkFirst',
+                options: {
+                  cacheName: 'hhc-lyrics-runtime',
+                  networkTimeoutSeconds: 3,
+                  expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 30 }
+                }
+              },
+              {
                 urlPattern: ({ url }) =>
                   url.pathname.endsWith('.woff2') ||
-                  url.pathname.startsWith('/lyrics-runtime/') ||
                   /\/assets\/(pdf(?:\.|-)|transformers(?:\.web)?-|microsoft\.cognitiveservices\.speech\.sdk-)/.test(
                     url.pathname
                   ) ||
