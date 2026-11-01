@@ -81,6 +81,15 @@ export async function verifyLyricsWorkflow(
     }
   }
   const times = results.map((result) => result.elapsedMs).sort((a, b) => a - b)
+  console.log(
+    'LYRICS_METRICS',
+    JSON.stringify({
+      platform: process.platform,
+      changes: results.length,
+      medianMs: times[15],
+      p95Ms: times[28]
+    })
+  )
   await testInfo.attach('real-ocr-results', {
     body: JSON.stringify(
       { platform: process.platform, medianMs: times[15], p95Ms: times[28], results },

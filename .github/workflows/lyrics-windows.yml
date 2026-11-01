@@ -12,6 +12,9 @@ on:
 permissions:
   contents: read
   packages: read
+concurrency:
+  group: lyrics-windows-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 jobs:
   lyrics-windows:
     runs-on: windows-latest
@@ -42,6 +45,8 @@ jobs:
         run: npx playwright install chromium
       - name: Recognize real images and verify camera projection
         run: npx playwright test e2e/lyrics-recognition.spec.ts e2e/camera-projection.spec.ts --project=chromium --workers=1 --retries=0
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/lyrics-browser
       - uses: actions/upload-artifact@v4
         if: always()
         with:
