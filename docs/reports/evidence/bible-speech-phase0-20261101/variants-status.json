@@ -1,0 +1,30 @@
+{
+  "running": null,
+  "completed": [
+    {
+      "engine": "sherpa-fp32",
+      "exit_code": 0,
+      "wall_s": 273.90511958299993
+    },
+    {
+      "engine": "whisper-small-bias-screen",
+      "exit_code": 0,
+      "wall_s": 108.59645104200001
+    },
+    {
+      "engine": "sherpa-fp32-beam-screen",
+      "exit_code": 0,
+      "wall_s": 66.13094766699999
+    },
+    {
+      "engine": "sherpa-fp32-bias-screen",
+      "exit_code": 0,
+      "wall_s": 80.205976083
+    },
+    {
+      "engine": "transformers-screen",
+      "exit_code": 0,
+      "wall_s": 160.42325804099994
+    }
+  ]
+}

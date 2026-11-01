@@ -1,0 +1,1 @@
+{"running": null, "results": [{"name": "regression", "exit_code": 0, "wall_s": 6.971203332999721}, {"name": "fresh-zh", "exit_code": 0, "wall_s": 72.53848716593347}, {"name": "fresh-en", "exit_code": 0, "wall_s": 14.14243320794776}, {"name": "fresh-v1", "exit_code": 0}, {"name": "fresh-v2", "exit_code": 0}]}

@@ -1,0 +1,168 @@
+[
+  {
+    "package": "pywhispercpp",
+    "version": "1.5.1",
+    "license": "MIT",
+    "native_files": [
+      {
+        "name": "_pywhispercpp.cpython-313-darwin.so",
+        "sha256": "3c5f26d8ac0ad0e9ec4207db96fe6497dfffc37870cc6083f3b671d4718be695",
+        "bytes": 462288
+      },
+      {
+        "name": "libggml-base.0.13.1.dylib",
+        "sha256": "84ea842a75d19ec64dcb268ddfaa2317af010111af9a3ceed7a8a19c41649c97",
+        "bytes": 770264
+      },
+      {
+        "name": "libggml-base.0.dylib",
+        "sha256": "84ea842a75d19ec64dcb268ddfaa2317af010111af9a3ceed7a8a19c41649c97",
+        "bytes": 770264
+      },
+      {
+        "name": "libggml-base.dylib",
+        "sha256": "84ea842a75d19ec64dcb268ddfaa2317af010111af9a3ceed7a8a19c41649c97",
+        "bytes": 770264
+      },
+      {
+        "name": "libggml-blas.0.13.1.dylib",
+        "sha256": "678a63d304fdb8103a13622d60b4e9fa4095e359deb63b3b9ed229bbecacb360",
+        "bytes": 76832
+      },
+      {
+        "name": "libggml-blas.0.dylib",
+        "sha256": "678a63d304fdb8103a13622d60b4e9fa4095e359deb63b3b9ed229bbecacb360",
+        "bytes": 76832
+      },
+      {
+        "name": "libggml-blas.dylib",
+        "sha256": "586b567b4da3fa5c11ae55482fadd2ece84249b72db209cab43ded4aebe54955",
+        "bytes": 76880
+      },
+      {
+        "name": "libggml-cpu.0.13.1.dylib",
+        "sha256": "b0d8793db5d6d340508f67bd39a72cada4de2ee0e00412b5e914f0e1716efc1b",
+        "bytes": 829504
+      },
+      {
+        "name": "libggml-cpu.0.dylib",
+        "sha256": "b0d8793db5d6d340508f67bd39a72cada4de2ee0e00412b5e914f0e1716efc1b",
+        "bytes": 829504
+      },
+      {
+        "name": "libggml-cpu.dylib",
+        "sha256": "65de88bb72133ecdb29ebb9fc5f313734231f28f660d331b84da5438616bef79",
+        "bytes": 829552
+      },
+      {
+        "name": "libggml-metal.0.13.1.dylib",
+        "sha256": "3c656a2125cbb29414aa25e2fe4b85d9eca24d98f6a385f63df0b8787917e180",
+        "bytes": 850000
+      },
+      {
+        "name": "libggml-metal.0.dylib",
+        "sha256": "3c656a2125cbb29414aa25e2fe4b85d9eca24d98f6a385f63df0b8787917e180",
+        "bytes": 850000
+      },
+      {
+        "name": "libggml-metal.dylib",
+        "sha256": "7d7fe60cbd9bf817e81599d10fc32986a4894d8be61721aa8142432f7330f8e9",
+        "bytes": 850048
+      },
+      {
+        "name": "libggml.0.13.1.dylib",
+        "sha256": "86f8fecc59957db98cdafd9d9a089feabfaeeb2332c32943a66f900ade2f0b5a",
+        "bytes": 94736
+      },
+      {
+        "name": "libggml.0.dylib",
+        "sha256": "86f8fecc59957db98cdafd9d9a089feabfaeeb2332c32943a66f900ade2f0b5a",
+        "bytes": 94736
+      },
+      {
+        "name": "libggml.dylib",
+        "sha256": "5169c8754422a42f3cb3493e6dfb29b12e21e610292f4b0845b3773ee592d176",
+        "bytes": 94784
+      },
+      {
+        "name": "libwhisper.1.8.5.dylib",
+        "sha256": "59e08c76892926c70a7d081883469b20dd265d07b741fd1e6e90c5180d2904a0",
+        "bytes": 480064
+      },
+      {
+        "name": "libwhisper.1.dylib",
+        "sha256": "59e08c76892926c70a7d081883469b20dd265d07b741fd1e6e90c5180d2904a0",
+        "bytes": 480064
+      },
+      {
+        "name": "libwhisper.dylib",
+        "sha256": "dd57299f93d88c78fa5e65ecd6d8bfa72e999b12a5cea5f183c0e6486130dae4",
+        "bytes": 480112
+      },
+      {
+        "name": "pywhispercpp/.dylibs/libggml-base.0.13.1.dylib",
+        "sha256": "f35e025586d0cfa826ab68269bab8c3822e6e66982cd67982d6fe92d98c8bf10",
+        "bytes": 788352
+      },
+      {
+        "name": "pywhispercpp/.dylibs/libggml-blas.0.13.1.dylib",
+        "sha256": "03f983229b961ad8f02747c1a5b2ade8c83a19246105c2087d8d45144cc27440",
+        "bytes": 76832
+      },
+      {
+        "name": "pywhispercpp/.dylibs/libggml-cpu.0.13.1.dylib",
+        "sha256": "0dc0d70cf8c8ee79e3a4bce6d46b90c647d9cf8780c6deaa8e9d2877933dd6b3",
+        "bytes": 829504
+      },
+      {
+        "name": "pywhispercpp/.dylibs/libggml-metal.0.13.1.dylib",
+        "sha256": "e2b870c283f471bd4413864aad958331f7b1029deff89489a4d5a92df83e6843",
+        "bytes": 850000
+      },
+      {
+        "name": "pywhispercpp/.dylibs/libggml.0.13.1.dylib",
+        "sha256": "ecc76cd8fb9543e3aaa5f07d096ce40fb9c3aff0194b8cc433be998cd7f40eeb",
+        "bytes": 94736
+      },
+      {
+        "name": "pywhispercpp/.dylibs/libwhisper.1.8.5.dylib",
+        "sha256": "4cb87493af65acad59b71e60851e04a1b0e7f54f94449b73c83f7bc066b042f2",
+        "bytes": 480064
+      }
+    ]
+  },
+  {
+    "package": "sherpa-onnx",
+    "version": "2.0.1",
+    "license": "Apache licensed, as found in the LICENSE file",
+    "native_files": [
+      {
+        "name": "sherpa_onnx/lib/_sherpa_onnx.cpython-313-darwin.so",
+        "sha256": "26434ad01944ba5829ec28d4b86343b76318a86a7f6fbe8fd8e5e72f5a5c2253",
+        "bytes": 5042336
+      }
+    ]
+  },
+  {
+    "package": "sherpa-onnx-core",
+    "version": "2.0.1",
+    "license": "Apache-2.0",
+    "native_files": [
+      {
+        "name": "sherpa_onnx/lib/libonnxruntime.dylib",
+        "sha256": "b0613d0ae53199a83b05fa48e169211498e9d40d54beaa372068ebe5ec5b0929",
+        "bytes": 29006384
+      },
+      {
+        "name": "sherpa_onnx/lib/libsherpa-onnx-c-api.dylib",
+        "sha256": "97d6d1d646549896b2cc596a7be8f7ff7e766da5f0828d55f7b098857d497bc6",
+        "bytes": 4139368
+      },
+      {
+        "name": "sherpa_onnx/lib/libsherpa-onnx-cxx-api.dylib",
+        "sha256": "55fa589964bce2cb853fae5e5611c8716aed9659d527868e703bab716d3a89cf",
+        "bytes": 164208
+      }
+    ]
+  }
+]

@@ -1,0 +1,398 @@
+[
+  {
+    "code": "gen",
+    "zh": "創世記",
+    "zhCN": "创世记",
+    "en": "Genesis"
+  },
+  {
+    "code": "exo",
+    "zh": "出埃及記",
+    "zhCN": "出埃及记",
+    "en": "Exodus"
+  },
+  {
+    "code": "lev",
+    "zh": "利未記",
+    "zhCN": "利未记",
+    "en": "Leviticus"
+  },
+  {
+    "code": "num",
+    "zh": "民數記",
+    "zhCN": "民数记",
+    "en": "Numbers"
+  },
+  {
+    "code": "deu",
+    "zh": "申命記",
+    "zhCN": "申命记",
+    "en": "Deuteronomy"
+  },
+  {
+    "code": "jos",
+    "zh": "約書亞記",
+    "zhCN": "约书亚记",
+    "en": "Joshua"
+  },
+  {
+    "code": "jdg",
+    "zh": "士師記",
+    "zhCN": "士师记",
+    "en": "Judges"
+  },
+  {
+    "code": "rut",
+    "zh": "路得記",
+    "zhCN": "路得记",
+    "en": "Ruth"
+  },
+  {
+    "code": "1sa",
+    "zh": "撒母耳記上",
+    "zhCN": "撒母耳记上",
+    "en": "1 Samuel"
+  },
+  {
+    "code": "2sa",
+    "zh": "撒母耳記下",
+    "zhCN": "撒母耳记下",
+    "en": "2 Samuel"
+  },
+  {
+    "code": "1ki",
+    "zh": "列王紀上",
+    "zhCN": "列王纪上",
+    "en": "1 Kings"
+  },
+  {
+    "code": "2ki",
+    "zh": "列王紀下",
+    "zhCN": "列王纪下",
+    "en": "2 Kings"
+  },
+  {
+    "code": "1ch",
+    "zh": "歷代志上",
+    "zhCN": "历代志上",
+    "en": "1 Chronicles"
+  },
+  {
+    "code": "2ch",
+    "zh": "歷代志下",
+    "zhCN": "历代志下",
+    "en": "2 Chronicles"
+  },
+  {
+    "code": "ezr",
+    "zh": "以斯拉記",
+    "zhCN": "以斯拉记",
+    "en": "Ezra"
+  },
+  {
+    "code": "neh",
+    "zh": "尼希米記",
+    "zhCN": "尼希米记",
+    "en": "Nehemiah"
+  },
+  {
+    "code": "est",
+    "zh": "以斯帖記",
+    "zhCN": "以斯帖记",
+    "en": "Esther"
+  },
+  {
+    "code": "job",
+    "zh": "約伯記",
+    "zhCN": "约伯记",
+    "en": "Job"
+  },
+  {
+    "code": "psa",
+    "zh": "詩篇",
+    "zhCN": "诗篇",
+    "en": "Psalms"
+  },
+  {
+    "code": "pro",
+    "zh": "箴言",
+    "zhCN": "箴言",
+    "en": "Proverbs"
+  },
+  {
+    "code": "ecc",
+    "zh": "傳道書",
+    "zhCN": "传道书",
+    "en": "Ecclesiastes"
+  },
+  {
+    "code": "sol",
+    "zh": "雅歌",
+    "zhCN": "雅歌",
+    "en": "Song of Solomon"
+  },
+  {
+    "code": "isa",
+    "zh": "以賽亞書",
+    "zhCN": "以赛亚书",
+    "en": "Isaiah"
+  },
+  {
+    "code": "jer",
+    "zh": "耶利米書",
+    "zhCN": "耶利米书",
+    "en": "Jeremiah"
+  },
+  {
+    "code": "lam",
+    "zh": "耶利米哀歌",
+    "zhCN": "耶利米哀歌",
+    "en": "Lamentations"
+  },
+  {
+    "code": "eze",
+    "zh": "以西結書",
+    "zhCN": "以西结书",
+    "en": "Ezekiel"
+  },
+  {
+    "code": "dan",
+    "zh": "但以理書",
+    "zhCN": "但以理书",
+    "en": "Daniel"
+  },
+  {
+    "code": "hos",
+    "zh": "何西阿書",
+    "zhCN": "何西阿书",
+    "en": "Hosea"
+  },
+  {
+    "code": "joe",
+    "zh": "約珥書",
+    "zhCN": "约珥书",
+    "en": "Joel"
+  },
+  {
+    "code": "amo",
+    "zh": "阿摩司書",
+    "zhCN": "阿摩司书",
+    "en": "Amos"
+  },
+  {
+    "code": "oba",
+    "zh": "俄巴底亞書",
+    "zhCN": "俄巴底亚书",
+    "en": "Obadiah"
+  },
+  {
+    "code": "jon",
+    "zh": "約拿書",
+    "zhCN": "约拿书",
+    "en": "Jonah"
+  },
+  {
+    "code": "mic",
+    "zh": "彌迦書",
+    "zhCN": "弥迦书",
+    "en": "Micah"
+  },
+  {
+    "code": "nah",
+    "zh": "那鴻書",
+    "zhCN": "那鸿书",
+    "en": "Nahum"
+  },
+  {
+    "code": "hab",
+    "zh": "哈巴谷書",
+    "zhCN": "哈巴谷书",
+    "en": "Habakkuk"
+  },
+  {
+    "code": "zep",
+    "zh": "西番雅書",
+    "zhCN": "西番雅书",
+    "en": "Zephaniah"
+  },
+  {
+    "code": "hag",
+    "zh": "哈該書",
+    "zhCN": "哈该书",
+    "en": "Haggai"
+  },
+  {
+    "code": "zec",
+    "zh": "撒迦利亞書",
+    "zhCN": "撒迦利亚书",
+    "en": "Zechariah"
+  },
+  {
+    "code": "mal",
+    "zh": "瑪拉基書",
+    "zhCN": "玛拉基书",
+    "en": "Malachi"
+  },
+  {
+    "code": "mat",
+    "zh": "馬太福音",
+    "zhCN": "马太福音",
+    "en": "Matthew"
+  },
+  {
+    "code": "mar",
+    "zh": "馬可福音",
+    "zhCN": "马可福音",
+    "en": "Mark"
+  },
+  {
+    "code": "luk",
+    "zh": "路加福音",
+    "zhCN": "路加福音",
+    "en": "Luke"
+  },
+  {
+    "code": "joh",
+    "zh": "約翰福音",
+    "zhCN": "约翰福音",
+    "en": "John"
+  },
+  {
+    "code": "act",
+    "zh": "使徒行傳",
+    "zhCN": "使徒行传",
+    "en": "Acts"
+  },
+  {
+    "code": "rom",
+    "zh": "羅馬書",
+    "zhCN": "罗马书",
+    "en": "Romans"
+  },
+  {
+    "code": "1co",
+    "zh": "哥林多前書",
+    "zhCN": "哥林多前书",
+    "en": "1 Corinthians"
+  },
+  {
+    "code": "2co",
+    "zh": "哥林多後書",
+    "zhCN": "哥林多后书",
+    "en": "2 Corinthians"
+  },
+  {
+    "code": "gal",
+    "zh": "加拉太書",
+    "zhCN": "加拉太书",
+    "en": "Galatians"
+  },
+  {
+    "code": "eph",
+    "zh": "以弗所書",
+    "zhCN": "以弗所书",
+    "en": "Ephesians"
+  },
+  {
+    "code": "phi",
+    "zh": "腓立比書",
+    "zhCN": "腓立比书",
+    "en": "Philippians"
+  },
+  {
+    "code": "col",
+    "zh": "歌羅西書",
+    "zhCN": "歌罗西书",
+    "en": "Colossians"
+  },
+  {
+    "code": "1th",
+    "zh": "帖撒羅尼迦前書",
+    "zhCN": "帖撒罗尼迦前书",
+    "en": "1 Thessalonians"
+  },
+  {
+    "code": "2th",
+    "zh": "帖撒羅尼迦後書",
+    "zhCN": "帖撒罗尼迦后书",
+    "en": "2 Thessalonians"
+  },
+  {
+    "code": "1ti",
+    "zh": "提摩太前書",
+    "zhCN": "提摩太前书",
+    "en": "1 Timothy"
+  },
+  {
+    "code": "2ti",
+    "zh": "提摩太後書",
+    "zhCN": "提摩太后书",
+    "en": "2 Timothy"
+  },
+  {
+    "code": "tit",
+    "zh": "提多書",
+    "zhCN": "提多书",
+    "en": "Titus"
+  },
+  {
+    "code": "phm",
+    "zh": "腓利門書",
+    "zhCN": "腓利门书",
+    "en": "Philemon"
+  },
+  {
+    "code": "heb",
+    "zh": "希伯來書",
+    "zhCN": "希伯来书",
+    "en": "Hebrews"
+  },
+  {
+    "code": "jas",
+    "zh": "雅各書",
+    "zhCN": "雅各书",
+    "en": "James"
+  },
+  {
+    "code": "1pe",
+    "zh": "彼得前書",
+    "zhCN": "彼得前书",
+    "en": "1 Peter"
+  },
+  {
+    "code": "2pe",
+    "zh": "彼得後書",
+    "zhCN": "彼得后书",
+    "en": "2 Peter"
+  },
+  {
+    "code": "1jo",
+    "zh": "約翰一書",
+    "zhCN": "约翰一书",
+    "en": "1 John"
+  },
+  {
+    "code": "2jo",
+    "zh": "約翰二書",
+    "zhCN": "约翰二书",
+    "en": "2 John"
+  },
+  {
+    "code": "3jo",
+    "zh": "約翰三書",
+    "zhCN": "约翰三书",
+    "en": "3 John"
+  },
+  {
+    "code": "jud",
+    "zh": "猶大書",
+    "zhCN": "犹大书",
+    "en": "Jude"
+  },
+  {
+    "code": "rev",
+    "zh": "啟示錄",
+    "zhCN": "启示录",
+    "en": "Revelation"
+  }
+]

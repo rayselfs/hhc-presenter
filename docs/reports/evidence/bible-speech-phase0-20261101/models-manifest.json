@@ -1,0 +1,218 @@
+[
+  {
+    "path": "whisper/README.md",
+    "repo": "ggerganov/whisper.cpp",
+    "revision": "5359861c739e955e79d9a303bcbc70fb988958b1",
+    "bytes": 3196,
+    "sha256": "21fd967098804f33fc84e803fb0e5ab7666d71801f4027cf28a65e7af09c1758",
+    "upstream_sha256": null
+  },
+  {
+    "path": "whisper/ggml-base.bin",
+    "repo": "ggerganov/whisper.cpp",
+    "revision": "5359861c739e955e79d9a303bcbc70fb988958b1",
+    "bytes": 147951465,
+    "sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+    "upstream_sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe"
+  },
+  {
+    "path": "whisper/ggml-large-v3-turbo-q5_0.bin",
+    "repo": "ggerganov/whisper.cpp",
+    "revision": "5359861c739e955e79d9a303bcbc70fb988958b1",
+    "bytes": 574041195,
+    "sha256": "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2",
+    "upstream_sha256": "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2"
+  },
+  {
+    "path": "whisper/ggml-small.bin",
+    "repo": "ggerganov/whisper.cpp",
+    "revision": "5359861c739e955e79d9a303bcbc70fb988958b1",
+    "bytes": 487601967,
+    "sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+    "upstream_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b"
+  },
+  {
+    "path": "sherpa/README.md",
+    "repo": "csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20",
+    "revision": "98590b7ed6443e77b714204da2757d75e1a642f4",
+    "bytes": 296,
+    "sha256": "b6f9458f4208ae821beaaf11dc983486916a4089a2f3677b40f9ff06ec4e6440",
+    "upstream_sha256": null
+  },
+  {
+    "path": "sherpa/bpe.vocab",
+    "repo": "csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20",
+    "revision": "98590b7ed6443e77b714204da2757d75e1a642f4",
+    "bytes": 12564,
+    "sha256": "d0b642f3a2eacd5fadefdeff9e0e1358cab729647cbb7fe58cf738e1f7407029",
+    "upstream_sha256": null
+  },
+  {
+    "path": "sherpa/decoder-epoch-99-avg-1.int8.onnx",
+    "repo": "csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20",
+    "revision": "98590b7ed6443e77b714204da2757d75e1a642f4",
+    "bytes": 13091040,
+    "sha256": "1a70c593d71e53f023f5f55b0b4cfff5055abb786ee3992e5f63dc2e273cc4fa",
+    "upstream_sha256": "1a70c593d71e53f023f5f55b0b4cfff5055abb786ee3992e5f63dc2e273cc4fa"
+  },
+  {
+    "path": "sherpa/decoder-epoch-99-avg-1.onnx",
+    "repo": "csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20",
+    "revision": "98590b7ed6443e77b714204da2757d75e1a642f4",
+    "bytes": 13876452,
+    "sha256": "2e3b5ec371f8899ee6acd829fd753ba45772df57a91bdf37cde3136354e7db7d",
+    "upstream_sha256": "2e3b5ec371f8899ee6acd829fd753ba45772df57a91bdf37cde3136354e7db7d"
+  },
+  {
+    "path": "sherpa/encoder-epoch-99-avg-1.int8.onnx",
+    "repo": "csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20",
+    "revision": "98590b7ed6443e77b714204da2757d75e1a642f4",
+    "bytes": 181895032,
+    "sha256": "8fa764187a261844f859d7143ebaa563af5d10adfece4c18a8f414c88cba2a9b",
+    "upstream_sha256": "8fa764187a261844f859d7143ebaa563af5d10adfece4c18a8f414c88cba2a9b"
+  },
+  {
+    "path": "sherpa/encoder-epoch-99-avg-1.onnx",
+    "repo": "csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20",
+    "revision": "98590b7ed6443e77b714204da2757d75e1a642f4",
+    "bytes": 330083505,
+    "sha256": "709f0ed53a734b7942f170127e7547b566cb29c4afc5e67719f314c3d63ccb10",
+    "upstream_sha256": "709f0ed53a734b7942f170127e7547b566cb29c4afc5e67719f314c3d63ccb10"
+  },
+  {
+    "path": "sherpa/joiner-epoch-99-avg-1.int8.onnx",
+    "repo": "csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20",
+    "revision": "98590b7ed6443e77b714204da2757d75e1a642f4",
+    "bytes": 3228404,
+    "sha256": "1ed689c5ed19dbaa725d9d191bb4822b5f4855a39e1ffd28cbc1f340d25b2ee0",
+    "upstream_sha256": "1ed689c5ed19dbaa725d9d191bb4822b5f4855a39e1ffd28cbc1f340d25b2ee0"
+  },
+  {
+    "path": "sherpa/joiner-epoch-99-avg-1.onnx",
+    "repo": "csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20",
+    "revision": "98590b7ed6443e77b714204da2757d75e1a642f4",
+    "bytes": 12833618,
+    "sha256": "5f2adc585dd1bec6421c8bb8660d2a73fc8b9ceb24491ef51399ba2a2f0fc31b",
+    "upstream_sha256": "5f2adc585dd1bec6421c8bb8660d2a73fc8b9ceb24491ef51399ba2a2f0fc31b"
+  },
+  {
+    "path": "sherpa/tokens.txt",
+    "repo": "csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20",
+    "revision": "98590b7ed6443e77b714204da2757d75e1a642f4",
+    "bytes": 56317,
+    "sha256": "a8e0e4ec53810e433789b54a5c0134a7eaa2ffca595a6334d54c00da858841d3",
+    "upstream_sha256": null
+  },
+  {
+    "path": "transformers/README.md",
+    "repo": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "bytes": 531,
+    "sha256": "60a378018182c57cf382866ddfbf0fb2b4031b3895ae932aa34ecb8ff7065a13",
+    "upstream_sha256": null
+  },
+  {
+    "path": "transformers/added_tokens.json",
+    "repo": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "bytes": 34604,
+    "sha256": "9715fd2243b6f06a5858b5e32950d2853f73dd5bc201aafcf76f5082a2d8acd1",
+    "upstream_sha256": null
+  },
+  {
+    "path": "transformers/config.json",
+    "repo": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "bytes": 2243,
+    "sha256": "f4d0608f7d918166da7edb3e188de5ef1bfe70d9802e785d271fd88111e9cf4b",
+    "upstream_sha256": null
+  },
+  {
+    "path": "transformers/generation_config.json",
+    "repo": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "bytes": 3832,
+    "sha256": "61070cf8de25b1e9256e8e102ded49d8d24a8369ed36ef84fdf21549e68125a0",
+    "upstream_sha256": null
+  },
+  {
+    "path": "transformers/merges.txt",
+    "repo": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "bytes": 493869,
+    "sha256": "2df2990a395e35e8dfbc7511e08c12d56018d8d04691e0133e5d63b21e154dc6",
+    "upstream_sha256": null
+  },
+  {
+    "path": "transformers/normalizer.json",
+    "repo": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "bytes": 52666,
+    "sha256": "bf1c507dc8724ca9cf9903640dacfb69dae2f00edee4f21ceba106a7392f26dd",
+    "upstream_sha256": null
+  },
+  {
+    "path": "transformers/onnx/decoder_model_merged_quantized.onnx",
+    "repo": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "bytes": 53693315,
+    "sha256": "fa3ef9902734ce5ae6f9ef2bdb2ba9a6c4b5785b09f4f420ce036573dc9d090b",
+    "upstream_sha256": "fa3ef9902734ce5ae6f9ef2bdb2ba9a6c4b5785b09f4f420ce036573dc9d090b"
+  },
+  {
+    "path": "transformers/onnx/encoder_model_quantized.onnx",
+    "repo": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "bytes": 23201314,
+    "sha256": "5862993336bf33acd23736071aae2b32261d3b1b2f37780194460d4ef974dd46",
+    "upstream_sha256": "5862993336bf33acd23736071aae2b32261d3b1b2f37780194460d4ef974dd46"
+  },
+  {
+    "path": "transformers/preprocessor_config.json",
+    "repo": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "bytes": 339,
+    "sha256": "a6a76d28c93edb273669eb9e0b0636a2bddbb1272c3261e47b7ca6dfdbac1b8d",
+    "upstream_sha256": null
+  },
+  {
+    "path": "transformers/quantize_config.json",
+    "repo": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "bytes": 10126,
+    "sha256": "6e0e27f293a5c17ff2ca8046f06079c0120aa2ede6456faac8ec4b3203471a55",
+    "upstream_sha256": null
+  },
+  {
+    "path": "transformers/special_tokens_map.json",
+    "repo": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "bytes": 2194,
+    "sha256": "e67ae3a0aaa99abcd9f187138e12db1f65c16a14761c50ef10eef2c174a7a691",
+    "upstream_sha256": null
+  },
+  {
+    "path": "transformers/tokenizer.json",
+    "repo": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "bytes": 2480466,
+    "sha256": "27fc476bfe7f17299480be2273fc0608e4d5a99aba2ab5dec5374b4482d1a566",
+    "upstream_sha256": null
+  },
+  {
+    "path": "transformers/tokenizer_config.json",
+    "repo": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "bytes": 282682,
+    "sha256": "2e036e4dbacfdeb7242c7d4ec4149f4a16e86026048f94d1637e3a8ee9c6a573",
+    "upstream_sha256": null
+  },
+  {
+    "path": "transformers/vocab.json",
+    "repo": "onnx-community/whisper-base",
+    "revision": "1846881b6b3a3024392c1eea3ad983695bc23925",
+    "bytes": 1036584,
+    "sha256": "50d6a919f0a0601d56a04eb583c780d18553aa388254ba3158eb6a00f13e2c1a",
+    "upstream_sha256": null
+  }
+]

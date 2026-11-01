@@ -1,0 +1,7 @@
+{
+  "bytes": 4147327,
+  "sha256": "431d8f40e4ddc0ee66ad2c5ce17577bead0ef1c557684bf27184cb602038d0eb",
+  "generator": "locate-v2.mjs --phonetic-corpus",
+  "runtime": "pinyin-pro from existing application dependencies",
+  "pinyin_pro_version": "3.28.1"
+}

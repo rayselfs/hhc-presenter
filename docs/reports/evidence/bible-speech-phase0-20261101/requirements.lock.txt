@@ -1,0 +1,15 @@
+certifi==2026.10.23
+charset-normalizer==3.5.2
+docopt==0.6.2
+idna==3.20
+num2words==0.5.14
+numpy==2.5.4
+opencc-python-reimplemented==0.1.7
+platformdirs==4.14.2
+psutil==7.2.2
+pywhispercpp==1.5.1
+requests==2.34.2
+sherpa-onnx-core==2.0.1
+sherpa_onnx==2.0.1
+tqdm==4.70.1
+urllib3==2.8.0

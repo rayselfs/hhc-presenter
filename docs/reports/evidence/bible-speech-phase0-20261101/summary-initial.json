@@ -1,0 +1,2286 @@
+[
+  {
+    "file": "sherpa.jsonl",
+    "metadata": {
+      "type": "metadata",
+      "engine": "sherpa",
+      "version": "2.0.1",
+      "load_s": 0.8465077910805121,
+      "threads": 4,
+      "cpu_only": true,
+      "bias": false,
+      "subset": "all",
+      "beam": false,
+      "timing": "presegmented waveform decode; excludes capture, VAD endpoint and UI"
+    },
+    "n": 660,
+    "groups": {
+      "zh/reference": {
+        "n": 200,
+        "normalized_error_rate": 0.803763440860215,
+        "reference_correct": 0,
+        "decode_p50_s": 0.2754072080133483,
+        "decode_p95_s": 0.668016083072871,
+        "rtf_p95": 0.26105480310553464,
+        "cpu_core_equivalent": 4.8166853437739645,
+        "peak_rss_mib": 437.875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/quotation": {
+        "n": 100,
+        "normalized_error_rate": 1.0133681121617215,
+        "reference_correct": null,
+        "decode_p50_s": 0.5907799580600113,
+        "decode_p95_s": 1.9509001660626382,
+        "rtf_p95": 0.14493725766662016,
+        "cpu_core_equivalent": 5.556795090919341,
+        "peak_rss_mib": 437.875,
+        "quote_top3_correct": 90,
+        "oracle_top3_correct": 100,
+        "negative_reference_count": null
+      },
+      "en/reference": {
+        "n": 200,
+        "normalized_error_rate": 0.4299363057324841,
+        "reference_correct": 26,
+        "decode_p50_s": 0.3391104160109535,
+        "decode_p95_s": 0.6274186670780182,
+        "rtf_p95": 0.23377748364408563,
+        "cpu_core_equivalent": 4.060546117951,
+        "peak_rss_mib": 437.875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "en/quotation": {
+        "n": 100,
+        "normalized_error_rate": 0.2708920187793427,
+        "reference_correct": null,
+        "decode_p50_s": 0.7771385000087321,
+        "decode_p95_s": 1.9022194999270141,
+        "rtf_p95": 0.2837874920221276,
+        "cpu_core_equivalent": 4.237783656538025,
+        "peak_rss_mib": 437.875,
+        "quote_top3_correct": 96,
+        "oracle_top3_correct": 100,
+        "negative_reference_count": null
+      },
+      "zh/mixed": {
+        "n": 50,
+        "normalized_error_rate": 0.7484375,
+        "reference_correct": 2,
+        "decode_p50_s": 0.2950171249685809,
+        "decode_p95_s": 0.5218572079902515,
+        "rtf_p95": 0.17093290205042858,
+        "cpu_core_equivalent": 4.480331755310764,
+        "peak_rss_mib": 437.875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.5568181818181818,
+        "reference_correct": null,
+        "decode_p50_s": 0.46549950004555285,
+        "decode_p95_s": 0.551328832982108,
+        "rtf_p95": 0.13314965051269903,
+        "cpu_core_equivalent": 5.200318507957019,
+        "peak_rss_mib": 437.875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      },
+      "en/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.5227272727272727,
+        "reference_correct": null,
+        "decode_p50_s": 0.2559351669624448,
+        "decode_p95_s": 0.4010897079715505,
+        "rtf_p95": 0.1151053168646167,
+        "cpu_core_equivalent": 5.172726092982546,
+        "peak_rss_mib": 437.875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      }
+    },
+    "slices": {
+      "zh/reference/Meijia/calibration": {
+        "n": 20,
+        "edits": 113,
+        "units": 226,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 80,
+        "edits": 997,
+        "units": 896,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Meijia/holdout": {
+        "n": 80,
+        "edits": 457,
+        "units": 891,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 20,
+        "edits": 227,
+        "units": 219,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/quotation/Meijia/calibration": {
+        "n": 10,
+        "edits": 260,
+        "units": 326,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/quotation/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 40,
+        "edits": 1671,
+        "units": 1230,
+        "reference_correct": 0,
+        "quote_top3_correct": 32
+      },
+      "zh/quotation/Meijia/holdout": {
+        "n": 40,
+        "edits": 892,
+        "units": 1277,
+        "reference_correct": 0,
+        "quote_top3_correct": 40
+      },
+      "zh/quotation/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 10,
+        "edits": 285,
+        "units": 234,
+        "reference_correct": 0,
+        "quote_top3_correct": 8
+      },
+      "en/reference/Samantha/calibration": {
+        "n": 20,
+        "edits": 44,
+        "units": 127,
+        "reference_correct": 3,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Daniel/holdout": {
+        "n": 80,
+        "edits": 260,
+        "units": 505,
+        "reference_correct": 11,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Samantha/holdout": {
+        "n": 80,
+        "edits": 174,
+        "units": 499,
+        "reference_correct": 10,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Daniel/calibration": {
+        "n": 20,
+        "edits": 62,
+        "units": 125,
+        "reference_correct": 2,
+        "quote_top3_correct": 0
+      },
+      "en/quotation/Samantha/calibration": {
+        "n": 10,
+        "edits": 59,
+        "units": 188,
+        "reference_correct": 0,
+        "quote_top3_correct": 9
+      },
+      "en/quotation/Daniel/holdout": {
+        "n": 40,
+        "edits": 220,
+        "units": 862,
+        "reference_correct": 0,
+        "quote_top3_correct": 40
+      },
+      "en/quotation/Samantha/holdout": {
+        "n": 40,
+        "edits": 223,
+        "units": 827,
+        "reference_correct": 0,
+        "quote_top3_correct": 38
+      },
+      "en/quotation/Daniel/calibration": {
+        "n": 10,
+        "edits": 75,
+        "units": 253,
+        "reference_correct": 0,
+        "quote_top3_correct": 9
+      },
+      "zh/mixed/Meijia/calibration": {
+        "n": 5,
+        "edits": 33,
+        "units": 65,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 20,
+        "edits": 250,
+        "units": 255,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Meijia/holdout": {
+        "n": 20,
+        "edits": 131,
+        "units": 255,
+        "reference_correct": 2,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 5,
+        "edits": 65,
+        "units": 65,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/calibration": {
+        "n": 1,
+        "edits": 3,
+        "units": 20,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 2,
+        "edits": 39,
+        "units": 36,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/holdout": {
+        "n": 2,
+        "edits": 7,
+        "units": 32,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/calibration": {
+        "n": 1,
+        "edits": 6,
+        "units": 11,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Samantha/holdout": {
+        "n": 2,
+        "edits": 8,
+        "units": 19,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/holdout": {
+        "n": 2,
+        "edits": 9,
+        "units": 14,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      }
+    }
+  },
+  {
+    "file": "sherpa-fp32.jsonl",
+    "metadata": {
+      "type": "metadata",
+      "engine": "sherpa-fp32",
+      "version": "2.0.1",
+      "load_s": 10.172095917048864,
+      "threads": 4,
+      "cpu_only": true,
+      "bias": false,
+      "subset": "all",
+      "beam": false,
+      "timing": "presegmented waveform decode; excludes capture, VAD endpoint and UI"
+    },
+    "n": 660,
+    "groups": {
+      "zh/reference": {
+        "n": 200,
+        "normalized_error_rate": 0.47939068100358423,
+        "reference_correct": 12,
+        "decode_p50_s": 0.2997612500330433,
+        "decode_p95_s": 0.8635255410335958,
+        "rtf_p95": 0.30145038124546353,
+        "cpu_core_equivalent": 2.8973299550049045,
+        "peak_rss_mib": 594.828125,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/quotation": {
+        "n": 100,
+        "normalized_error_rate": 0.35311379197913273,
+        "reference_correct": null,
+        "decode_p50_s": 0.46598783298395574,
+        "decode_p95_s": 1.1128647910663858,
+        "rtf_p95": 0.11406034483532497,
+        "cpu_core_equivalent": 4.274863428039768,
+        "peak_rss_mib": 594.828125,
+        "quote_top3_correct": 94,
+        "oracle_top3_correct": 100,
+        "negative_reference_count": null
+      },
+      "en/reference": {
+        "n": 200,
+        "normalized_error_rate": 0.4195859872611465,
+        "reference_correct": 33,
+        "decode_p50_s": 0.20247258397284895,
+        "decode_p95_s": 0.3154884590767324,
+        "rtf_p95": 0.12188162635465412,
+        "cpu_core_equivalent": 4.042818228391228,
+        "peak_rss_mib": 594.828125,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "en/quotation": {
+        "n": 100,
+        "normalized_error_rate": 0.268075117370892,
+        "reference_correct": null,
+        "decode_p50_s": 0.5017775829182938,
+        "decode_p95_s": 1.6633660000516102,
+        "rtf_p95": 0.13892427704052104,
+        "cpu_core_equivalent": 3.7708356891360886,
+        "peak_rss_mib": 594.828125,
+        "quote_top3_correct": 97,
+        "oracle_top3_correct": 100,
+        "negative_reference_count": null
+      },
+      "zh/mixed": {
+        "n": 50,
+        "normalized_error_rate": 0.5859375,
+        "reference_correct": 8,
+        "decode_p50_s": 0.24757108301855624,
+        "decode_p95_s": 0.6276151250349358,
+        "rtf_p95": 0.2396622225092641,
+        "cpu_core_equivalent": 3.4322995155383618,
+        "peak_rss_mib": 594.828125,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.125,
+        "reference_correct": null,
+        "decode_p50_s": 0.38823954202234745,
+        "decode_p95_s": 0.515540459076874,
+        "rtf_p95": 0.1271331913996078,
+        "cpu_core_equivalent": 3.9988627983479734,
+        "peak_rss_mib": 594.828125,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      },
+      "en/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.5454545454545454,
+        "reference_correct": null,
+        "decode_p50_s": 0.24427820893470198,
+        "decode_p95_s": 0.27213320799637586,
+        "rtf_p95": 0.10580068124015833,
+        "cpu_core_equivalent": 4.073907852630417,
+        "peak_rss_mib": 594.828125,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      }
+    },
+    "slices": {
+      "zh/reference/Meijia/calibration": {
+        "n": 20,
+        "edits": 36,
+        "units": 226,
+        "reference_correct": 3,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 80,
+        "edits": 705,
+        "units": 896,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Meijia/holdout": {
+        "n": 80,
+        "edits": 149,
+        "units": 891,
+        "reference_correct": 9,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 20,
+        "edits": 180,
+        "units": 219,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/quotation/Meijia/calibration": {
+        "n": 10,
+        "edits": 41,
+        "units": 326,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/quotation/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 40,
+        "edits": 703,
+        "units": 1230,
+        "reference_correct": 0,
+        "quote_top3_correct": 36
+      },
+      "zh/quotation/Meijia/holdout": {
+        "n": 40,
+        "edits": 205,
+        "units": 1277,
+        "reference_correct": 0,
+        "quote_top3_correct": 40
+      },
+      "zh/quotation/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 10,
+        "edits": 134,
+        "units": 234,
+        "reference_correct": 0,
+        "quote_top3_correct": 8
+      },
+      "en/reference/Samantha/calibration": {
+        "n": 20,
+        "edits": 41,
+        "units": 127,
+        "reference_correct": 4,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Daniel/holdout": {
+        "n": 80,
+        "edits": 261,
+        "units": 505,
+        "reference_correct": 11,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Samantha/holdout": {
+        "n": 80,
+        "edits": 167,
+        "units": 499,
+        "reference_correct": 16,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Daniel/calibration": {
+        "n": 20,
+        "edits": 58,
+        "units": 125,
+        "reference_correct": 2,
+        "quote_top3_correct": 0
+      },
+      "en/quotation/Samantha/calibration": {
+        "n": 10,
+        "edits": 55,
+        "units": 188,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "en/quotation/Daniel/holdout": {
+        "n": 40,
+        "edits": 230,
+        "units": 862,
+        "reference_correct": 0,
+        "quote_top3_correct": 40
+      },
+      "en/quotation/Samantha/holdout": {
+        "n": 40,
+        "edits": 211,
+        "units": 827,
+        "reference_correct": 0,
+        "quote_top3_correct": 37
+      },
+      "en/quotation/Daniel/calibration": {
+        "n": 10,
+        "edits": 75,
+        "units": 253,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/mixed/Meijia/calibration": {
+        "n": 5,
+        "edits": 0,
+        "units": 65,
+        "reference_correct": 5,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 20,
+        "edits": 251,
+        "units": 255,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Meijia/holdout": {
+        "n": 20,
+        "edits": 63,
+        "units": 255,
+        "reference_correct": 3,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 5,
+        "edits": 61,
+        "units": 65,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/calibration": {
+        "n": 1,
+        "edits": 0,
+        "units": 20,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 2,
+        "edits": 10,
+        "units": 36,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/holdout": {
+        "n": 2,
+        "edits": 1,
+        "units": 32,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/calibration": {
+        "n": 1,
+        "edits": 6,
+        "units": 11,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Samantha/holdout": {
+        "n": 2,
+        "edits": 8,
+        "units": 19,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/holdout": {
+        "n": 2,
+        "edits": 10,
+        "units": 14,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      }
+    }
+  },
+  {
+    "file": "whisper-base.jsonl",
+    "metadata": {
+      "type": "metadata",
+      "engine": "whisper-base",
+      "version": "1.5.1",
+      "load_s": 0.3108547499869019,
+      "threads": 4,
+      "cpu_only": false,
+      "bias": false,
+      "subset": "all",
+      "beam": false,
+      "timing": "presegmented waveform decode; excludes capture, VAD endpoint and UI"
+    },
+    "n": 660,
+    "groups": {
+      "zh/reference": {
+        "n": 200,
+        "normalized_error_rate": 0.78584229390681,
+        "reference_correct": 7,
+        "decode_p50_s": 0.15704866696614772,
+        "decode_p95_s": 0.21884612494613975,
+        "rtf_p95": 0.09089336116289322,
+        "cpu_core_equivalent": 0.23467020083307727,
+        "peak_rss_mib": 353.4375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/quotation": {
+        "n": 100,
+        "normalized_error_rate": 0.32018258884903816,
+        "reference_correct": null,
+        "decode_p50_s": 0.22954883298370987,
+        "decode_p95_s": 0.3609907089266926,
+        "rtf_p95": 0.04860145936689945,
+        "cpu_core_equivalent": 0.3227865735036382,
+        "peak_rss_mib": 353.4375,
+        "quote_top3_correct": 94,
+        "oracle_top3_correct": 100,
+        "negative_reference_count": null
+      },
+      "en/reference": {
+        "n": 200,
+        "normalized_error_rate": 0.1767515923566879,
+        "reference_correct": 102,
+        "decode_p50_s": 0.1371318749152124,
+        "decode_p95_s": 0.17989604198373854,
+        "rtf_p95": 0.07900119403642265,
+        "cpu_core_equivalent": 0.19013596161719948,
+        "peak_rss_mib": 353.4375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "en/quotation": {
+        "n": 100,
+        "normalized_error_rate": 0.1619718309859155,
+        "reference_correct": null,
+        "decode_p50_s": 0.22438400005921721,
+        "decode_p95_s": 0.6233009999850765,
+        "rtf_p95": 0.0640932375565923,
+        "cpu_core_equivalent": 0.34346394712187067,
+        "peak_rss_mib": 353.4375,
+        "quote_top3_correct": 99,
+        "oracle_top3_correct": 100,
+        "negative_reference_count": null
+      },
+      "zh/mixed": {
+        "n": 50,
+        "normalized_error_rate": 0.8171875,
+        "reference_correct": 1,
+        "decode_p50_s": 0.16297395899891853,
+        "decode_p95_s": 0.36308566597290337,
+        "rtf_p95": 0.14252963892768827,
+        "cpu_core_equivalent": 0.25812425076650225,
+        "peak_rss_mib": 353.4375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.10227272727272728,
+        "reference_correct": null,
+        "decode_p50_s": 0.21488454099744558,
+        "decode_p95_s": 0.24613066599704325,
+        "rtf_p95": 0.07040224995893045,
+        "cpu_core_equivalent": 0.29537917839322825,
+        "peak_rss_mib": 353.4375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      },
+      "en/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.045454545454545456,
+        "reference_correct": null,
+        "decode_p50_s": 0.20855929097160697,
+        "decode_p95_s": 0.26359641598537564,
+        "rtf_p95": 0.12384139816085303,
+        "cpu_core_equivalent": 0.2210697104775063,
+        "peak_rss_mib": 353.4375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      }
+    },
+    "slices": {
+      "zh/reference/Meijia/calibration": {
+        "n": 20,
+        "edits": 50,
+        "units": 226,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 80,
+        "edits": 1169,
+        "units": 896,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Meijia/holdout": {
+        "n": 80,
+        "edits": 191,
+        "units": 891,
+        "reference_correct": 7,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 20,
+        "edits": 344,
+        "units": 219,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/quotation/Meijia/calibration": {
+        "n": 10,
+        "edits": 56,
+        "units": 326,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/quotation/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 40,
+        "edits": 541,
+        "units": 1230,
+        "reference_correct": 0,
+        "quote_top3_correct": 36
+      },
+      "zh/quotation/Meijia/holdout": {
+        "n": 40,
+        "edits": 274,
+        "units": 1277,
+        "reference_correct": 0,
+        "quote_top3_correct": 40
+      },
+      "zh/quotation/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 10,
+        "edits": 111,
+        "units": 234,
+        "reference_correct": 0,
+        "quote_top3_correct": 8
+      },
+      "en/reference/Samantha/calibration": {
+        "n": 20,
+        "edits": 23,
+        "units": 127,
+        "reference_correct": 9,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Daniel/holdout": {
+        "n": 80,
+        "edits": 79,
+        "units": 505,
+        "reference_correct": 47,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Samantha/holdout": {
+        "n": 80,
+        "edits": 100,
+        "units": 499,
+        "reference_correct": 37,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Daniel/calibration": {
+        "n": 20,
+        "edits": 20,
+        "units": 125,
+        "reference_correct": 9,
+        "quote_top3_correct": 0
+      },
+      "en/quotation/Samantha/calibration": {
+        "n": 10,
+        "edits": 32,
+        "units": 188,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "en/quotation/Daniel/holdout": {
+        "n": 40,
+        "edits": 76,
+        "units": 862,
+        "reference_correct": 0,
+        "quote_top3_correct": 40
+      },
+      "en/quotation/Samantha/holdout": {
+        "n": 40,
+        "edits": 221,
+        "units": 827,
+        "reference_correct": 0,
+        "quote_top3_correct": 39
+      },
+      "en/quotation/Daniel/calibration": {
+        "n": 10,
+        "edits": 16,
+        "units": 253,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/mixed/Meijia/calibration": {
+        "n": 5,
+        "edits": 5,
+        "units": 65,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 20,
+        "edits": 204,
+        "units": 255,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Meijia/holdout": {
+        "n": 20,
+        "edits": 62,
+        "units": 255,
+        "reference_correct": 1,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 5,
+        "edits": 252,
+        "units": 65,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/calibration": {
+        "n": 1,
+        "edits": 0,
+        "units": 20,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 2,
+        "edits": 5,
+        "units": 36,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/holdout": {
+        "n": 2,
+        "edits": 4,
+        "units": 32,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/calibration": {
+        "n": 1,
+        "edits": 0,
+        "units": 11,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Samantha/holdout": {
+        "n": 2,
+        "edits": 2,
+        "units": 19,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/holdout": {
+        "n": 2,
+        "edits": 0,
+        "units": 14,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      }
+    }
+  },
+  {
+    "file": "whisper-small.jsonl",
+    "metadata": {
+      "type": "metadata",
+      "engine": "whisper-small",
+      "version": "1.5.1",
+      "load_s": 0.9352306670043617,
+      "threads": 4,
+      "cpu_only": false,
+      "bias": false,
+      "subset": "all",
+      "beam": false,
+      "timing": "presegmented waveform decode; excludes capture, VAD endpoint and UI"
+    },
+    "n": 660,
+    "groups": {
+      "zh/reference": {
+        "n": 200,
+        "normalized_error_rate": 0.31989247311827956,
+        "reference_correct": 30,
+        "decode_p50_s": 0.510079792002216,
+        "decode_p95_s": 0.621976500027813,
+        "rtf_p95": 0.26561885693969384,
+        "cpu_core_equivalent": 0.11208584015314405,
+        "peak_rss_mib": 594.265625,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/quotation": {
+        "n": 100,
+        "normalized_error_rate": 0.23899576133029019,
+        "reference_correct": null,
+        "decode_p50_s": 0.7176768749486655,
+        "decode_p95_s": 1.313784125028178,
+        "rtf_p95": 0.18379168473702445,
+        "cpu_core_equivalent": 0.16860690052299956,
+        "peak_rss_mib": 594.265625,
+        "quote_top3_correct": 99,
+        "oracle_top3_correct": 100,
+        "negative_reference_count": null
+      },
+      "en/reference": {
+        "n": 200,
+        "normalized_error_rate": 0.058121019108280256,
+        "reference_correct": 134,
+        "decode_p50_s": 0.47303312504664063,
+        "decode_p95_s": 0.6847936670528725,
+        "rtf_p95": 0.31530604098823906,
+        "cpu_core_equivalent": 0.07029734828637031,
+        "peak_rss_mib": 594.265625,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "en/quotation": {
+        "n": 100,
+        "normalized_error_rate": 0.056338028169014086,
+        "reference_correct": null,
+        "decode_p50_s": 0.6443222500383854,
+        "decode_p95_s": 1.307906165951863,
+        "rtf_p95": 0.1769250998003079,
+        "cpu_core_equivalent": 0.159048517412882,
+        "peak_rss_mib": 594.265625,
+        "quote_top3_correct": 100,
+        "oracle_top3_correct": 100,
+        "negative_reference_count": null
+      },
+      "zh/mixed": {
+        "n": 50,
+        "normalized_error_rate": 0.384375,
+        "reference_correct": 15,
+        "decode_p50_s": 0.6357426668982953,
+        "decode_p95_s": 1.2487943330779672,
+        "rtf_p95": 0.45158100452753575,
+        "cpu_core_equivalent": 0.08445494216738167,
+        "peak_rss_mib": 594.265625,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.011363636363636364,
+        "reference_correct": null,
+        "decode_p50_s": 1.7406835000729188,
+        "decode_p95_s": 2.1910054159816355,
+        "rtf_p95": 0.5938761821147368,
+        "cpu_core_equivalent": 0.07325353326215493,
+        "peak_rss_mib": 594.265625,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      },
+      "en/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.0,
+        "reference_correct": null,
+        "decode_p50_s": 0.9067661250010133,
+        "decode_p95_s": 1.1069964580237865,
+        "rtf_p95": 0.5200829025246825,
+        "cpu_core_equivalent": 0.07059079766003486,
+        "peak_rss_mib": 594.265625,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      }
+    },
+    "slices": {
+      "zh/reference/Meijia/calibration": {
+        "n": 20,
+        "edits": 27,
+        "units": 226,
+        "reference_correct": 4,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 80,
+        "edits": 486,
+        "units": 896,
+        "reference_correct": 4,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Meijia/holdout": {
+        "n": 80,
+        "edits": 100,
+        "units": 891,
+        "reference_correct": 22,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 20,
+        "edits": 101,
+        "units": 219,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/quotation/Meijia/calibration": {
+        "n": 10,
+        "edits": 47,
+        "units": 326,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/quotation/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 40,
+        "edits": 358,
+        "units": 1230,
+        "reference_correct": 0,
+        "quote_top3_correct": 40
+      },
+      "zh/quotation/Meijia/holdout": {
+        "n": 40,
+        "edits": 255,
+        "units": 1277,
+        "reference_correct": 0,
+        "quote_top3_correct": 39
+      },
+      "zh/quotation/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 10,
+        "edits": 73,
+        "units": 234,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "en/reference/Samantha/calibration": {
+        "n": 20,
+        "edits": 9,
+        "units": 127,
+        "reference_correct": 11,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Daniel/holdout": {
+        "n": 80,
+        "edits": 35,
+        "units": 505,
+        "reference_correct": 51,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Samantha/holdout": {
+        "n": 80,
+        "edits": 21,
+        "units": 499,
+        "reference_correct": 59,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Daniel/calibration": {
+        "n": 20,
+        "edits": 8,
+        "units": 125,
+        "reference_correct": 13,
+        "quote_top3_correct": 0
+      },
+      "en/quotation/Samantha/calibration": {
+        "n": 10,
+        "edits": 18,
+        "units": 188,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "en/quotation/Daniel/holdout": {
+        "n": 40,
+        "edits": 49,
+        "units": 862,
+        "reference_correct": 0,
+        "quote_top3_correct": 40
+      },
+      "en/quotation/Samantha/holdout": {
+        "n": 40,
+        "edits": 43,
+        "units": 827,
+        "reference_correct": 0,
+        "quote_top3_correct": 40
+      },
+      "en/quotation/Daniel/calibration": {
+        "n": 10,
+        "edits": 10,
+        "units": 253,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/mixed/Meijia/calibration": {
+        "n": 5,
+        "edits": 0,
+        "units": 65,
+        "reference_correct": 5,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 20,
+        "edits": 193,
+        "units": 255,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Meijia/holdout": {
+        "n": 20,
+        "edits": 19,
+        "units": 255,
+        "reference_correct": 10,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 5,
+        "edits": 34,
+        "units": 65,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/calibration": {
+        "n": 1,
+        "edits": 0,
+        "units": 20,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 2,
+        "edits": 1,
+        "units": 36,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/holdout": {
+        "n": 2,
+        "edits": 0,
+        "units": 32,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/calibration": {
+        "n": 1,
+        "edits": 0,
+        "units": 11,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Samantha/holdout": {
+        "n": 2,
+        "edits": 0,
+        "units": 19,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/holdout": {
+        "n": 2,
+        "edits": 0,
+        "units": 14,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      }
+    }
+  },
+  {
+    "file": "whisper-small-bias-screen.jsonl",
+    "metadata": {
+      "type": "metadata",
+      "engine": "whisper-small",
+      "version": "1.5.1",
+      "load_s": 0.7590450000716373,
+      "threads": 4,
+      "cpu_only": false,
+      "bias": true,
+      "subset": "screen",
+      "beam": false,
+      "timing": "presegmented waveform decode; excludes capture, VAD endpoint and UI"
+    },
+    "n": 140,
+    "groups": {
+      "zh/reference": {
+        "n": 40,
+        "normalized_error_rate": 0.8,
+        "reference_correct": 13,
+        "decode_p50_s": 0.6914859999669716,
+        "decode_p95_s": 1.8959656660445035,
+        "rtf_p95": 0.7667243942047783,
+        "cpu_core_equivalent": 0.11847097243466088,
+        "peak_rss_mib": 743.875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/quotation": {
+        "n": 20,
+        "normalized_error_rate": 0.22678571428571428,
+        "reference_correct": null,
+        "decode_p50_s": 0.8131989169633016,
+        "decode_p95_s": 1.210186667041853,
+        "rtf_p95": 0.22952346562246145,
+        "cpu_core_equivalent": 0.13768029887330016,
+        "peak_rss_mib": 743.875,
+        "quote_top3_correct": 20,
+        "oracle_top3_correct": 20,
+        "negative_reference_count": null
+      },
+      "en/reference": {
+        "n": 40,
+        "normalized_error_rate": 0.09126984126984126,
+        "reference_correct": 17,
+        "decode_p50_s": 0.579314082977362,
+        "decode_p95_s": 0.8267306670313701,
+        "rtf_p95": 0.38052043059265134,
+        "cpu_core_equivalent": 0.07089817283866759,
+        "peak_rss_mib": 743.875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "en/quotation": {
+        "n": 20,
+        "normalized_error_rate": 0.06575963718820861,
+        "reference_correct": null,
+        "decode_p50_s": 0.819219124969095,
+        "decode_p95_s": 1.1261791660217568,
+        "rtf_p95": 0.1792500055558942,
+        "cpu_core_equivalent": 0.11933176927339857,
+        "peak_rss_mib": 743.875,
+        "quote_top3_correct": 20,
+        "oracle_top3_correct": 20,
+        "negative_reference_count": null
+      },
+      "zh/mixed": {
+        "n": 10,
+        "normalized_error_rate": 0.24615384615384617,
+        "reference_correct": 5,
+        "decode_p50_s": 0.5733029579278082,
+        "decode_p95_s": 0.9022690000711009,
+        "rtf_p95": 0.4574530705728378,
+        "cpu_core_equivalent": 0.08089071007742354,
+        "peak_rss_mib": 743.875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.011363636363636364,
+        "reference_correct": null,
+        "decode_p50_s": 0.6505250830668956,
+        "decode_p95_s": 0.8348537500714883,
+        "rtf_p95": 0.2125525381857294,
+        "cpu_core_equivalent": 0.09461215232983525,
+        "peak_rss_mib": 743.875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      },
+      "en/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.0,
+        "reference_correct": null,
+        "decode_p50_s": 0.5470788750099018,
+        "decode_p95_s": 0.5985097499797121,
+        "rtf_p95": 0.2811885130278187,
+        "cpu_core_equivalent": 0.09851220681135842,
+        "peak_rss_mib": 743.875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      }
+    },
+    "slices": {
+      "zh/reference/Meijia/calibration": {
+        "n": 20,
+        "edits": 20,
+        "units": 226,
+        "reference_correct": 9,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 20,
+        "edits": 336,
+        "units": 219,
+        "reference_correct": 4,
+        "quote_top3_correct": 0
+      },
+      "zh/quotation/Meijia/calibration": {
+        "n": 10,
+        "edits": 48,
+        "units": 326,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/quotation/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 10,
+        "edits": 79,
+        "units": 234,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "en/reference/Samantha/calibration": {
+        "n": 20,
+        "edits": 13,
+        "units": 127,
+        "reference_correct": 7,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Daniel/calibration": {
+        "n": 20,
+        "edits": 10,
+        "units": 125,
+        "reference_correct": 10,
+        "quote_top3_correct": 0
+      },
+      "en/quotation/Samantha/calibration": {
+        "n": 10,
+        "edits": 19,
+        "units": 188,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "en/quotation/Daniel/calibration": {
+        "n": 10,
+        "edits": 10,
+        "units": 253,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/mixed/Meijia/calibration": {
+        "n": 5,
+        "edits": 0,
+        "units": 65,
+        "reference_correct": 5,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 5,
+        "edits": 32,
+        "units": 65,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/calibration": {
+        "n": 1,
+        "edits": 0,
+        "units": 20,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 2,
+        "edits": 1,
+        "units": 36,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/holdout": {
+        "n": 2,
+        "edits": 0,
+        "units": 32,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/calibration": {
+        "n": 1,
+        "edits": 0,
+        "units": 11,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Samantha/holdout": {
+        "n": 2,
+        "edits": 0,
+        "units": 19,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/holdout": {
+        "n": 2,
+        "edits": 0,
+        "units": 14,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      }
+    }
+  },
+  {
+    "file": "sherpa-fp32-beam-screen.jsonl",
+    "metadata": {
+      "type": "metadata",
+      "engine": "sherpa-fp32",
+      "version": "2.0.1",
+      "load_s": 0.6449209999991581,
+      "threads": 4,
+      "cpu_only": true,
+      "bias": false,
+      "subset": "screen",
+      "beam": true,
+      "timing": "presegmented waveform decode; excludes capture, VAD endpoint and UI"
+    },
+    "n": 140,
+    "groups": {
+      "zh/reference": {
+        "n": 40,
+        "normalized_error_rate": 0.4584269662921348,
+        "reference_correct": 3,
+        "decode_p50_s": 0.28353962500113994,
+        "decode_p95_s": 0.4273054579971358,
+        "rtf_p95": 0.17137183895945243,
+        "cpu_core_equivalent": 6.528799893777597,
+        "peak_rss_mib": 715.546875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/quotation": {
+        "n": 20,
+        "normalized_error_rate": 0.30357142857142855,
+        "reference_correct": null,
+        "decode_p50_s": 0.6089293749537319,
+        "decode_p95_s": 1.480105458991602,
+        "rtf_p95": 0.12858357220131503,
+        "cpu_core_equivalent": 6.795452622453375,
+        "peak_rss_mib": 715.546875,
+        "quote_top3_correct": 19,
+        "oracle_top3_correct": 20,
+        "negative_reference_count": null
+      },
+      "en/reference": {
+        "n": 40,
+        "normalized_error_rate": 0.36507936507936506,
+        "reference_correct": 7,
+        "decode_p50_s": 0.30758629192132503,
+        "decode_p95_s": 0.489490499952808,
+        "rtf_p95": 0.23165352514289986,
+        "cpu_core_equivalent": 5.931456195292662,
+        "peak_rss_mib": 715.546875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "en/quotation": {
+        "n": 20,
+        "normalized_error_rate": 0.26077097505668934,
+        "reference_correct": null,
+        "decode_p50_s": 0.6738704999443144,
+        "decode_p95_s": 1.248074666946195,
+        "rtf_p95": 0.141688801884098,
+        "cpu_core_equivalent": 6.415046000663277,
+        "peak_rss_mib": 715.546875,
+        "quote_top3_correct": 20,
+        "oracle_top3_correct": 20,
+        "negative_reference_count": null
+      },
+      "zh/mixed": {
+        "n": 10,
+        "normalized_error_rate": 0.5,
+        "reference_correct": 5,
+        "decode_p50_s": 0.29963545803911984,
+        "decode_p95_s": 0.38181237503886223,
+        "rtf_p95": 0.15807990686044238,
+        "cpu_core_equivalent": 6.559494688721742,
+        "peak_rss_mib": 715.546875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.10227272727272728,
+        "reference_correct": null,
+        "decode_p50_s": 0.4905544590437785,
+        "decode_p95_s": 0.6163785419194028,
+        "rtf_p95": 0.12453988660720999,
+        "cpu_core_equivalent": 6.692001582862279,
+        "peak_rss_mib": 715.546875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      },
+      "en/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.5227272727272727,
+        "reference_correct": null,
+        "decode_p50_s": 0.30542941705789417,
+        "decode_p95_s": 0.47859562502708286,
+        "rtf_p95": 0.1356011049996162,
+        "cpu_core_equivalent": 6.145399508681563,
+        "peak_rss_mib": 715.546875,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      }
+    },
+    "slices": {
+      "zh/reference/Meijia/calibration": {
+        "n": 20,
+        "edits": 35,
+        "units": 226,
+        "reference_correct": 3,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 20,
+        "edits": 169,
+        "units": 219,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/quotation/Meijia/calibration": {
+        "n": 10,
+        "edits": 41,
+        "units": 326,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/quotation/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 10,
+        "edits": 129,
+        "units": 234,
+        "reference_correct": 0,
+        "quote_top3_correct": 9
+      },
+      "en/reference/Samantha/calibration": {
+        "n": 20,
+        "edits": 38,
+        "units": 127,
+        "reference_correct": 4,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Daniel/calibration": {
+        "n": 20,
+        "edits": 54,
+        "units": 125,
+        "reference_correct": 3,
+        "quote_top3_correct": 0
+      },
+      "en/quotation/Samantha/calibration": {
+        "n": 10,
+        "edits": 49,
+        "units": 188,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "en/quotation/Daniel/calibration": {
+        "n": 10,
+        "edits": 66,
+        "units": 253,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/mixed/Meijia/calibration": {
+        "n": 5,
+        "edits": 0,
+        "units": 65,
+        "reference_correct": 5,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 5,
+        "edits": 65,
+        "units": 65,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/calibration": {
+        "n": 1,
+        "edits": 0,
+        "units": 20,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 2,
+        "edits": 8,
+        "units": 36,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/holdout": {
+        "n": 2,
+        "edits": 1,
+        "units": 32,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/calibration": {
+        "n": 1,
+        "edits": 6,
+        "units": 11,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Samantha/holdout": {
+        "n": 2,
+        "edits": 8,
+        "units": 19,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/holdout": {
+        "n": 2,
+        "edits": 9,
+        "units": 14,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      }
+    }
+  },
+  {
+    "file": "sherpa-fp32-bias-screen.jsonl",
+    "metadata": {
+      "type": "metadata",
+      "engine": "sherpa-fp32",
+      "version": "2.0.1",
+      "load_s": 1.1075517919380218,
+      "threads": 4,
+      "cpu_only": true,
+      "bias": true,
+      "subset": "screen",
+      "beam": true,
+      "timing": "presegmented waveform decode; excludes capture, VAD endpoint and UI"
+    },
+    "n": 140,
+    "groups": {
+      "zh/reference": {
+        "n": 40,
+        "normalized_error_rate": 0.4314606741573034,
+        "reference_correct": 9,
+        "decode_p50_s": 0.3608817500062287,
+        "decode_p95_s": 0.9465279160067439,
+        "rtf_p95": 0.33521846418651424,
+        "cpu_core_equivalent": 4.561173933684284,
+        "peak_rss_mib": 731.34375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/quotation": {
+        "n": 20,
+        "normalized_error_rate": 0.30892857142857144,
+        "reference_correct": null,
+        "decode_p50_s": 0.7037622500211,
+        "decode_p95_s": 2.0492819169303402,
+        "rtf_p95": 0.22011035654182853,
+        "cpu_core_equivalent": 5.373990271276056,
+        "peak_rss_mib": 731.34375,
+        "quote_top3_correct": 19,
+        "oracle_top3_correct": 20,
+        "negative_reference_count": null
+      },
+      "en/reference": {
+        "n": 40,
+        "normalized_error_rate": 0.3412698412698413,
+        "reference_correct": 10,
+        "decode_p50_s": 0.2977022910490632,
+        "decode_p95_s": 0.4728772909147665,
+        "rtf_p95": 0.18360390570866206,
+        "cpu_core_equivalent": 6.171156610870703,
+        "peak_rss_mib": 731.34375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "en/quotation": {
+        "n": 20,
+        "normalized_error_rate": 0.26077097505668934,
+        "reference_correct": null,
+        "decode_p50_s": 0.7392900000559166,
+        "decode_p95_s": 1.055640709004365,
+        "rtf_p95": 0.1326454737812296,
+        "cpu_core_equivalent": 6.4186024976704825,
+        "peak_rss_mib": 731.34375,
+        "quote_top3_correct": 20,
+        "oracle_top3_correct": 20,
+        "negative_reference_count": null
+      },
+      "zh/mixed": {
+        "n": 10,
+        "normalized_error_rate": 0.5,
+        "reference_correct": 5,
+        "decode_p50_s": 0.33191995904780924,
+        "decode_p95_s": 0.5456753749167547,
+        "rtf_p95": 0.20026621705358463,
+        "cpu_core_equivalent": 5.942223074461879,
+        "peak_rss_mib": 731.34375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.10227272727272728,
+        "reference_correct": null,
+        "decode_p50_s": 0.8341749160317704,
+        "decode_p95_s": 1.1315165830310434,
+        "rtf_p95": 0.3236545636787224,
+        "cpu_core_equivalent": 4.865744376085368,
+        "peak_rss_mib": 731.34375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      },
+      "en/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.5,
+        "reference_correct": null,
+        "decode_p50_s": 0.3868472089525312,
+        "decode_p95_s": 0.6797983329743147,
+        "rtf_p95": 0.19260812324182386,
+        "cpu_core_equivalent": 5.2398665713654,
+        "peak_rss_mib": 731.34375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      }
+    },
+    "slices": {
+      "zh/reference/Meijia/calibration": {
+        "n": 20,
+        "edits": 23,
+        "units": 226,
+        "reference_correct": 9,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 20,
+        "edits": 169,
+        "units": 219,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/quotation/Meijia/calibration": {
+        "n": 10,
+        "edits": 41,
+        "units": 326,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/quotation/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 10,
+        "edits": 132,
+        "units": 234,
+        "reference_correct": 0,
+        "quote_top3_correct": 9
+      },
+      "en/reference/Samantha/calibration": {
+        "n": 20,
+        "edits": 37,
+        "units": 127,
+        "reference_correct": 7,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Daniel/calibration": {
+        "n": 20,
+        "edits": 49,
+        "units": 125,
+        "reference_correct": 3,
+        "quote_top3_correct": 0
+      },
+      "en/quotation/Samantha/calibration": {
+        "n": 10,
+        "edits": 49,
+        "units": 188,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "en/quotation/Daniel/calibration": {
+        "n": 10,
+        "edits": 66,
+        "units": 253,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/mixed/Meijia/calibration": {
+        "n": 5,
+        "edits": 0,
+        "units": 65,
+        "reference_correct": 5,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 5,
+        "edits": 65,
+        "units": 65,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/calibration": {
+        "n": 1,
+        "edits": 0,
+        "units": 20,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 2,
+        "edits": 8,
+        "units": 36,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/holdout": {
+        "n": 2,
+        "edits": 1,
+        "units": 32,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/calibration": {
+        "n": 1,
+        "edits": 6,
+        "units": 11,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Samantha/holdout": {
+        "n": 2,
+        "edits": 8,
+        "units": 19,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/holdout": {
+        "n": 2,
+        "edits": 8,
+        "units": 14,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      }
+    }
+  },
+  {
+    "file": "transformers-screen.jsonl",
+    "metadata": {
+      "type": "metadata",
+      "engine": "transformers-base-q8-node",
+      "version": "3.8.1",
+      "load_s": 1.2691994590000002,
+      "threads": 4,
+      "subset": "screen",
+      "timing": "Node CPU proxy; presegmented decode; not Electron renderer/WASM"
+    },
+    "n": 140,
+    "groups": {
+      "zh/reference": {
+        "n": 40,
+        "normalized_error_rate": 4.370786516853933,
+        "reference_correct": 0,
+        "decode_p50_s": 0.814802291,
+        "decode_p95_s": 7.796206832999997,
+        "rtf_p95": 2.7945897779370896,
+        "cpu_core_equivalent": 3.44511914282413,
+        "peak_rss_mib": 969.34375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/quotation": {
+        "n": 20,
+        "normalized_error_rate": 0.2910714285714286,
+        "reference_correct": null,
+        "decode_p50_s": 0.8833924590000097,
+        "decode_p95_s": 1.9004068750000005,
+        "rtf_p95": 0.23436578400830788,
+        "cpu_core_equivalent": 3.3258702803896267,
+        "peak_rss_mib": 969.34375,
+        "quote_top3_correct": 18,
+        "oracle_top3_correct": 20,
+        "negative_reference_count": null
+      },
+      "en/reference": {
+        "n": 40,
+        "normalized_error_rate": 0.21031746031746032,
+        "reference_correct": 15,
+        "decode_p50_s": 0.5795686249999998,
+        "decode_p95_s": 0.7598158330000006,
+        "rtf_p95": 0.30646820583749823,
+        "cpu_core_equivalent": 3.225320802654527,
+        "peak_rss_mib": 969.34375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "en/quotation": {
+        "n": 20,
+        "normalized_error_rate": 0.12471655328798185,
+        "reference_correct": null,
+        "decode_p50_s": 1.0387544159999962,
+        "decode_p95_s": 1.65735437500001,
+        "rtf_p95": 0.28921951857951683,
+        "cpu_core_equivalent": 3.187885141721552,
+        "peak_rss_mib": 969.34375,
+        "quote_top3_correct": 20,
+        "oracle_top3_correct": 20,
+        "negative_reference_count": null
+      },
+      "zh/mixed": {
+        "n": 10,
+        "normalized_error_rate": 5.369230769230769,
+        "reference_correct": 0,
+        "decode_p50_s": 0.6426002919999882,
+        "decode_p95_s": 7.884851250000007,
+        "rtf_p95": 3.264526329408723,
+        "cpu_core_equivalent": 3.8019522322947674,
+        "peak_rss_mib": 969.34375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.17045454545454544,
+        "reference_correct": null,
+        "decode_p50_s": 0.7068430409999855,
+        "decode_p95_s": 0.8621031249999942,
+        "rtf_p95": 0.19587616666410165,
+        "cpu_core_equivalent": 3.368743475198477,
+        "peak_rss_mib": 969.34375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      },
+      "en/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.045454545454545456,
+        "reference_correct": null,
+        "decode_p50_s": 0.7093162080000038,
+        "decode_p95_s": 0.7561501669999853,
+        "rtf_p95": 0.33221995160911244,
+        "cpu_core_equivalent": 3.3448158794415126,
+        "peak_rss_mib": 969.34375,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      }
+    },
+    "slices": {
+      "zh/reference/Meijia/calibration": {
+        "n": 20,
+        "edits": 50,
+        "units": 226,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 20,
+        "edits": 1895,
+        "units": 219,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/quotation/Meijia/calibration": {
+        "n": 10,
+        "edits": 53,
+        "units": 326,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/quotation/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 10,
+        "edits": 110,
+        "units": 234,
+        "reference_correct": 0,
+        "quote_top3_correct": 8
+      },
+      "en/reference/Samantha/calibration": {
+        "n": 20,
+        "edits": 30,
+        "units": 127,
+        "reference_correct": 7,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Daniel/calibration": {
+        "n": 20,
+        "edits": 23,
+        "units": 125,
+        "reference_correct": 8,
+        "quote_top3_correct": 0
+      },
+      "en/quotation/Samantha/calibration": {
+        "n": 10,
+        "edits": 34,
+        "units": 188,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "en/quotation/Daniel/calibration": {
+        "n": 10,
+        "edits": 21,
+        "units": 253,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/mixed/Meijia/calibration": {
+        "n": 5,
+        "edits": 5,
+        "units": 65,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 5,
+        "edits": 693,
+        "units": 65,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/calibration": {
+        "n": 1,
+        "edits": 1,
+        "units": 20,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 2,
+        "edits": 11,
+        "units": 36,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/holdout": {
+        "n": 2,
+        "edits": 3,
+        "units": 32,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/calibration": {
+        "n": 1,
+        "edits": 0,
+        "units": 11,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Samantha/holdout": {
+        "n": 2,
+        "edits": 2,
+        "units": 19,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/holdout": {
+        "n": 2,
+        "edits": 0,
+        "units": 14,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      }
+    }
+  },
+  {
+    "file": "whisper-small-cpu-screen.jsonl",
+    "metadata": {
+      "type": "metadata",
+      "engine": "whisper-small",
+      "version": "1.5.1",
+      "load_s": 0.3559745830716565,
+      "threads": 4,
+      "cpu_only": true,
+      "bias": false,
+      "subset": "screen",
+      "beam": false,
+      "timing": "presegmented waveform decode; excludes capture, VAD endpoint and UI"
+    },
+    "n": 140,
+    "groups": {
+      "zh/reference": {
+        "n": 40,
+        "normalized_error_rate": 0.29213483146067415,
+        "reference_correct": 4,
+        "decode_p50_s": 1.371973125031218,
+        "decode_p95_s": 2.201430750079453,
+        "rtf_p95": 0.884267256640997,
+        "cpu_core_equivalent": 3.077108216831214,
+        "peak_rss_mib": 742.203125,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/quotation": {
+        "n": 20,
+        "normalized_error_rate": 0.21428571428571427,
+        "reference_correct": null,
+        "decode_p50_s": 1.7650615000166,
+        "decode_p95_s": 3.0830222910735756,
+        "rtf_p95": 0.4883159252042232,
+        "cpu_core_equivalent": 2.9607056598609414,
+        "peak_rss_mib": 742.203125,
+        "quote_top3_correct": 20,
+        "oracle_top3_correct": 20,
+        "negative_reference_count": null
+      },
+      "en/reference": {
+        "n": 40,
+        "normalized_error_rate": 0.06746031746031746,
+        "reference_correct": 24,
+        "decode_p50_s": 1.7486292080720887,
+        "decode_p95_s": 3.215897500049323,
+        "rtf_p95": 1.3277700716630605,
+        "cpu_core_equivalent": 2.6112004254298844,
+        "peak_rss_mib": 742.203125,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "en/quotation": {
+        "n": 20,
+        "normalized_error_rate": 0.06349206349206349,
+        "reference_correct": null,
+        "decode_p50_s": 2.9662170839728788,
+        "decode_p95_s": 5.384869375033304,
+        "rtf_p95": 0.6587098176918199,
+        "cpu_core_equivalent": 2.332728435278794,
+        "peak_rss_mib": 742.203125,
+        "quote_top3_correct": 20,
+        "oracle_top3_correct": 20,
+        "negative_reference_count": null
+      },
+      "zh/mixed": {
+        "n": 10,
+        "normalized_error_rate": 0.26153846153846155,
+        "reference_correct": 5,
+        "decode_p50_s": 3.536770874983631,
+        "decode_p95_s": 17.05777625006158,
+        "rtf_p95": 5.680954581428443,
+        "cpu_core_equivalent": 1.493927209642435,
+        "peak_rss_mib": 742.203125,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": null
+      },
+      "zh/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.011363636363636364,
+        "reference_correct": null,
+        "decode_p50_s": 1.617980125010945,
+        "decode_p95_s": 1.8148327079834417,
+        "rtf_p95": 0.43949277452394747,
+        "cpu_core_equivalent": 3.138693271343253,
+        "peak_rss_mib": 742.203125,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      },
+      "en/negative": {
+        "n": 5,
+        "normalized_error_rate": 0.0,
+        "reference_correct": null,
+        "decode_p50_s": 1.5723380000563338,
+        "decode_p95_s": 1.7312042500125244,
+        "rtf_p95": 0.7390788310995671,
+        "cpu_core_equivalent": 3.1485921750439254,
+        "peak_rss_mib": 742.203125,
+        "quote_top3_correct": null,
+        "oracle_top3_correct": null,
+        "negative_reference_count": 0
+      }
+    },
+    "slices": {
+      "zh/reference/Meijia/calibration": {
+        "n": 20,
+        "edits": 27,
+        "units": 226,
+        "reference_correct": 4,
+        "quote_top3_correct": 0
+      },
+      "zh/reference/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 20,
+        "edits": 103,
+        "units": 219,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/quotation/Meijia/calibration": {
+        "n": 10,
+        "edits": 47,
+        "units": 326,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/quotation/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 10,
+        "edits": 73,
+        "units": 234,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "en/reference/Samantha/calibration": {
+        "n": 20,
+        "edits": 9,
+        "units": 127,
+        "reference_correct": 11,
+        "quote_top3_correct": 0
+      },
+      "en/reference/Daniel/calibration": {
+        "n": 20,
+        "edits": 8,
+        "units": 125,
+        "reference_correct": 13,
+        "quote_top3_correct": 0
+      },
+      "en/quotation/Samantha/calibration": {
+        "n": 10,
+        "edits": 18,
+        "units": 188,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "en/quotation/Daniel/calibration": {
+        "n": 10,
+        "edits": 10,
+        "units": 253,
+        "reference_correct": 0,
+        "quote_top3_correct": 10
+      },
+      "zh/mixed/Meijia/calibration": {
+        "n": 5,
+        "edits": 0,
+        "units": 65,
+        "reference_correct": 5,
+        "quote_top3_correct": 0
+      },
+      "zh/mixed/Eddy (Chinese (Taiwan))/calibration": {
+        "n": 5,
+        "edits": 34,
+        "units": 65,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/calibration": {
+        "n": 1,
+        "edits": 0,
+        "units": 20,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Eddy (Chinese (Taiwan))/holdout": {
+        "n": 2,
+        "edits": 1,
+        "units": 36,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "zh/negative/Meijia/holdout": {
+        "n": 2,
+        "edits": 0,
+        "units": 32,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/calibration": {
+        "n": 1,
+        "edits": 0,
+        "units": 11,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Samantha/holdout": {
+        "n": 2,
+        "edits": 0,
+        "units": 19,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      },
+      "en/negative/Daniel/holdout": {
+        "n": 2,
+        "edits": 0,
+        "units": 14,
+        "reference_correct": 0,
+        "quote_top3_correct": 0
+      }
+    }
+  }
+]

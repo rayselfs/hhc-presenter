@@ -1,0 +1,98 @@
+[
+  {
+    "suffix": ".int8.onnx",
+    "audio": "sherpa-upstream-test.wav",
+    "chunk_size": 1600,
+    "text": "这是第一种第二种叫呃与 ALWAYS ALWAYS什么意思啊"
+  },
+  {
+    "suffix": ".int8.onnx",
+    "audio": "sherpa-upstream-test.wav",
+    "chunk_size": 81600,
+    "text": "这是第一种第二种叫呃与 ALWAYS ALWAYS什么意思啊"
+  },
+  {
+    "suffix": ".int8.onnx",
+    "audio": "audio/0000.wav",
+    "chunk_size": 1600,
+    "text": "创创世纪第一第一张第一第一节"
+  },
+  {
+    "suffix": ".int8.onnx",
+    "audio": "audio/0000.wav",
+    "chunk_size": 37368,
+    "text": "创创世纪第一第一张第一第一节"
+  },
+  {
+    "suffix": ".int8.onnx",
+    "audio": "audio/0300.wav",
+    "chunk_size": 1600,
+    "text": "JENNISES CHAPTER ONE VERSE ONE"
+  },
+  {
+    "suffix": ".int8.onnx",
+    "audio": "audio/0300.wav",
+    "chunk_size": 36787,
+    "text": "JENNISES CHAPTER ONE VERSE ONE"
+  },
+  {
+    "suffix": ".int8.onnx",
+    "audio": "audio/0600.wav",
+    "chunk_size": 1600,
+    "text": "马太太太太符佛音鹰鹰第三章 VERSE ONE"
+  },
+  {
+    "suffix": ".int8.onnx",
+    "audio": "audio/0600.wav",
+    "chunk_size": 48042,
+    "text": "马太太太太符佛音鹰鹰第三章 VERSE ONE"
+  },
+  {
+    "suffix": ".onnx",
+    "audio": "sherpa-upstream-test.wav",
+    "chunk_size": 1600,
+    "text": "这是第一种第二种叫呃与 ALWAYS ALWAYS什么意思啊"
+  },
+  {
+    "suffix": ".onnx",
+    "audio": "sherpa-upstream-test.wav",
+    "chunk_size": 81600,
+    "text": "这是第一种第二种叫呃与 ALWAYS ALWAYS什么意思啊"
+  },
+  {
+    "suffix": ".onnx",
+    "audio": "audio/0000.wav",
+    "chunk_size": 1600,
+    "text": "创世纪第一章第一节"
+  },
+  {
+    "suffix": ".onnx",
+    "audio": "audio/0000.wav",
+    "chunk_size": 37368,
+    "text": "创世纪第一章第一节"
+  },
+  {
+    "suffix": ".onnx",
+    "audio": "audio/0300.wav",
+    "chunk_size": 1600,
+    "text": "JENNISES CHAPTER ONE VERSE ONE"
+  },
+  {
+    "suffix": ".onnx",
+    "audio": "audio/0300.wav",
+    "chunk_size": 36787,
+    "text": "JENNISES CHAPTER ONE VERSE ONE"
+  },
+  {
+    "suffix": ".onnx",
+    "audio": "audio/0600.wav",
+    "chunk_size": 1600,
+    "text": "马太福音第三章 VERSE ONE"
+  },
+  {
+    "suffix": ".onnx",
+    "audio": "audio/0600.wav",
+    "chunk_size": 48042,
+    "text": "马太福音第三章 VERSE ONE"
+  }
+]

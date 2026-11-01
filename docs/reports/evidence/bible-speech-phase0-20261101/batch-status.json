@@ -1,0 +1,25 @@
+{
+  "running": null,
+  "completed": [
+    {
+      "engine": "sherpa",
+      "exit_code": 0,
+      "wall_s": 333.954201334
+    },
+    {
+      "engine": "whisper-base",
+      "exit_code": 1,
+      "wall_s": 0.902866916999983
+    },
+    {
+      "engine": "whisper-small",
+      "exit_code": 1,
+      "wall_s": 1.1919571249999876
+    },
+    {
+      "engine": "transformers",
+      "exit_code": -15,
+      "wall_s": 174.43329712499997
+    }
+  ]
+}

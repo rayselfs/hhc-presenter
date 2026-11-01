@@ -1,0 +1,30 @@
+{
+  "舊資料回歸": {
+    "baseline": {
+      "new_wrong": 0,
+      "lost_correct": 14,
+      "gained_correct": 145,
+      "resolved_wrong": 139
+    },
+    "optimized": {
+      "new_wrong": 0,
+      "lost_correct": 8,
+      "gained_correct": 48,
+      "resolved_wrong": 25
+    }
+  },
+  "128 筆不同原文的新資料": {
+    "baseline": {
+      "new_wrong": 0,
+      "lost_correct": 5,
+      "gained_correct": 23,
+      "resolved_wrong": 20
+    },
+    "optimized": {
+      "new_wrong": 0,
+      "lost_correct": 4,
+      "gained_correct": 24,
+      "resolved_wrong": 17
+    }
+  }
+}

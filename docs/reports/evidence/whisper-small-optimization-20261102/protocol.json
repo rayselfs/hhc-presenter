@@ -1,0 +1,31 @@
+{
+  "configs": [
+    [
+      "baseline",
+      []
+    ],
+    [
+      "short-prompt",
+      [
+        "--short-prompt"
+      ]
+    ],
+    [
+      "beam3",
+      [
+        "--beam-size",
+        "3"
+      ]
+    ],
+    [
+      "beam3-short",
+      [
+        "--beam-size",
+        "3",
+        "--short-prompt"
+      ]
+    ]
+  ],
+  "selection": "calibration only; compare error rates per language, strict reference wrong outputs and P95; select accuracy gain only if decode P95 <= 2.5s, reserving 0.5s for localization; final scoring uses fixed settings",
+  "limitations": "original holdout was previously reported; not unseen human validation; no live navigation"
+}

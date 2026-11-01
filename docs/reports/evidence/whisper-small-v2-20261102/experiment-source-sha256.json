@@ -1,0 +1,20 @@
+{
+  "scripts/speech-benchmark/.gitignore": "32dae3052f331ee34d628ef535709b301259a45df7c7522c4d35dcf49873f00b",
+  "scripts/speech-benchmark/README.md": "261e7cbd29929d70a66c91c38f4f25d48d0496e7f248ef9902abd1f4ebf809bb",
+  "scripts/speech-benchmark/check_sherpa.py": "87f179fdb2398820afda0f9dcaf7a0aa86a670a8d34fd647691f2d16d6601614",
+  "scripts/speech-benchmark/corpus.py": "c9ee1fac6f2016b11301bd9684ce863008915a106998dd45e120452eee2f06bc",
+  "scripts/speech-benchmark/evaluate.py": "5d35250bca07ba803aa8a950c99de5de738dae68794d9e5ce67ab92ea9a0377f",
+  "scripts/speech-benchmark/evaluate_v2.py": "dd217825794d9e19ac13e7d9f7ff9b13976e8b7cfac2594cb03f5ee8662c3770",
+  "scripts/speech-benchmark/fetch_models.py": "24709da2f7790f0488cf367f75167ac71dd7fedb1023b29395e579a90901775b",
+  "scripts/speech-benchmark/locate-v2.mjs": "64cc21b8492359eaa7c51e274b1907989e7373e34f790818099330bc05c3ceb3",
+  "scripts/speech-benchmark/metrics.py": "9adc0988fd3844eedde78d658abd6113371a354af388c5014d4bcc27cf7239f5",
+  "scripts/speech-benchmark/optimization-locate.mjs": "4a1992bcd4bd7f099d327017e3ced64c049fe743a84f824ba4f7f92c38ca6596",
+  "scripts/speech-benchmark/optimization-negatives.py": "691ef77781a17dcb6c02346670a28de8b6898f2442dffa96bd90da965313525b",
+  "scripts/speech-benchmark/optimization_evaluate.py": "ee2f318d515e0f4e1f65f61de1e5f2e04634237e408b07700fd0a395e5f06382",
+  "scripts/speech-benchmark/product-parser.mjs": "3486bb7c5de7e964f7b2d1e2b752d4a7454e4585670e51edd5c277c51a973d16",
+  "scripts/speech-benchmark/run.py": "0caae832e70f6aace845380ef22553f7839669994273ddd9eecdbb02b9eca638",
+  "scripts/speech-benchmark/test_metrics.py": "60160ac5d7b040f4d16c93107e8b768caa4ef9274b0dc00e0ad6941ae08483e3",
+  "scripts/speech-benchmark/test_optimization.py": "7fa57050d6f09d837d0b0f5d44ba145c9a63a2b513b9509e96fb9ca3b04e7065",
+  "scripts/speech-benchmark/transformers.mjs": "70f26f1958ab12d201aac8529a040aa1ebbea4df997a187426aaf1b0770bd29e",
+  "scripts/speech-benchmark/v2_fixtures.py": "1f1ee37f4a93488e053a3773db1339fb16a9d36fcd92b56e148bebafea90749d"
+}

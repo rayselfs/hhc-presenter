@@ -1,0 +1,9 @@
+{
+  "reference_baseline": "Existing product parseVerseReference + matchBookName, unchanged",
+  "reference_optimized": "Normalized spoken English/mixed chapter-verse grammar; reuse existing Chinese parser; matcher score >= 0.85 and canonical chapter/verse bounds",
+  "quotation_both_arms": "Same independent retrieval probe; accept top1 only with similarity >= 0.82, margin >= 0.10, minimum 8 normalized Chinese units or 5 English words",
+  "routing": "Reference first. If explicit chapter/verse markers exist but no accepted reference, reject; otherwise try quotation gate. Never use expected kind or target to choose route.",
+  "timing": "Decode + normalization + reference localization + quotation ranking when needed. Excludes audio capture, VAD endpoint, IPC and UI. Index built once before requests.",
+  "safety_measurement": "Wrong non-null candidate on positive inputs; any non-null candidate on negative inputs. Rejection remains a failure to locate for positive inputs.",
+  "freeze": "Policy frozen before calibration localization and challenge inference; not tuned on final holdout/challenge. Existing corpus holdout was already reported in preceding experiment."
+}

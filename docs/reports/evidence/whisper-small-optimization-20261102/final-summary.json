@@ -1,0 +1,447 @@
+[
+  {
+    "file": "baseline-final.jsonl",
+    "metadata": {
+      "type": "metadata",
+      "engine": "whisper-small",
+      "version": "1.5.1",
+      "load_s": 0.5635888749966398,
+      "threads": 4,
+      "cpu_only": false,
+      "bias": false,
+      "subset": "all",
+      "short_prompt": false,
+      "beam_size": null,
+      "corpus": "optimization-final-corpus.json",
+      "language": null,
+      "beam": false,
+      "timing": "presegmented waveform decode; excludes capture, VAD endpoint and UI"
+    },
+    "n": 584,
+    "groups": {
+      "baseline/holdout/zh/reference": {
+        "n": 160,
+        "error_rate": 0.3279238947957471,
+        "correct": 99,
+        "wrong": 14,
+        "rejected": 47,
+        "correct_within_3s": 99,
+        "p95_s": 0.7918274579948634,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "optimized/holdout/zh/reference": {
+        "n": 160,
+        "error_rate": 0.3279238947957471,
+        "correct": 82,
+        "wrong": 6,
+        "rejected": 72,
+        "correct_within_3s": 82,
+        "p95_s": 0.7917877079948634,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "baseline/holdout/zh/quotation": {
+        "n": 80,
+        "error_rate": 0.2445153570003989,
+        "correct": 35,
+        "wrong": 0,
+        "rejected": 45,
+        "correct_within_3s": 35,
+        "p95_s": 1.2806651249917607,
+        "over_3s": 0,
+        "top3_correct": 79
+      },
+      "optimized/holdout/zh/quotation": {
+        "n": 80,
+        "error_rate": 0.2445153570003989,
+        "correct": 35,
+        "wrong": 0,
+        "rejected": 45,
+        "correct_within_3s": 35,
+        "p95_s": 1.2806515829917609,
+        "over_3s": 0,
+        "top3_correct": 79
+      },
+      "baseline/holdout/en/reference": {
+        "n": 160,
+        "error_rate": 0.055776892430278883,
+        "correct": 43,
+        "wrong": 100,
+        "rejected": 17,
+        "correct_within_3s": 43,
+        "p95_s": 0.716093250950214,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "optimized/holdout/en/reference": {
+        "n": 160,
+        "error_rate": 0.055776892430278883,
+        "correct": 115,
+        "wrong": 35,
+        "rejected": 10,
+        "correct_within_3s": 115,
+        "p95_s": 0.714710583950214,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "baseline/holdout/en/quotation": {
+        "n": 80,
+        "error_rate": 0.054470100651272946,
+        "correct": 70,
+        "wrong": 1,
+        "rejected": 9,
+        "correct_within_3s": 70,
+        "p95_s": 1.0100141249781358,
+        "over_3s": 0,
+        "top3_correct": 80
+      },
+      "optimized/holdout/en/quotation": {
+        "n": 80,
+        "error_rate": 0.054470100651272946,
+        "correct": 70,
+        "wrong": 0,
+        "rejected": 10,
+        "correct_within_3s": 70,
+        "p95_s": 1.0100142499781357,
+        "over_3s": 0,
+        "top3_correct": 80
+      },
+      "baseline/holdout/zh/mixed": {
+        "n": 40,
+        "error_rate": 0.41568627450980394,
+        "correct": 0,
+        "wrong": 2,
+        "rejected": 38,
+        "correct_within_3s": 0,
+        "p95_s": 0.669506207900803,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "optimized/holdout/zh/mixed": {
+        "n": 40,
+        "error_rate": 0.41568627450980394,
+        "correct": 6,
+        "wrong": 0,
+        "rejected": 34,
+        "correct_within_3s": 6,
+        "p95_s": 0.669502874900803,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "baseline/holdout/zh/negative": {
+        "n": 4,
+        "error_rate": 0.014705882352941176,
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 4,
+        "correct_within_3s": 0,
+        "p95_s": 0.7618268329531817,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "optimized/holdout/zh/negative": {
+        "n": 4,
+        "error_rate": 0.014705882352941176,
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 4,
+        "correct_within_3s": 0,
+        "p95_s": 0.7618146249531816,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "baseline/holdout/en/negative": {
+        "n": 4,
+        "error_rate": 0.0,
+        "correct": 0,
+        "wrong": 1,
+        "rejected": 3,
+        "correct_within_3s": 0,
+        "p95_s": 0.696136166075866,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "optimized/holdout/en/negative": {
+        "n": 4,
+        "error_rate": 0.0,
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 4,
+        "correct_within_3s": 0,
+        "p95_s": 0.7027680420199197,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "baseline/challenge/zh/negative": {
+        "n": 28,
+        "error_rate": 0.16901408450704225,
+        "correct": 0,
+        "wrong": 7,
+        "rejected": 21,
+        "correct_within_3s": 0,
+        "p95_s": 0.7265661259607864,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "optimized/challenge/zh/negative": {
+        "n": 28,
+        "error_rate": 0.16901408450704225,
+        "correct": 0,
+        "wrong": 4,
+        "rejected": 24,
+        "correct_within_3s": 0,
+        "p95_s": 0.7265230839607865,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "baseline/challenge/en/negative": {
+        "n": 28,
+        "error_rate": 0.07142857142857142,
+        "correct": 0,
+        "wrong": 14,
+        "rejected": 14,
+        "correct_within_3s": 0,
+        "p95_s": 0.6481410840503009,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "optimized/challenge/en/negative": {
+        "n": 28,
+        "error_rate": 0.07142857142857142,
+        "correct": 0,
+        "wrong": 6,
+        "rejected": 22,
+        "correct_within_3s": 0,
+        "p95_s": 0.6489519170971502,
+        "over_3s": 0,
+        "top3_correct": null
+      }
+    }
+  },
+  {
+    "file": "optimized-final.jsonl",
+    "metadata": {
+      "type": "metadata",
+      "engine": "whisper-small",
+      "selection": {
+        "zh": {
+          "name": "baseline",
+          "flags": [],
+          "reason": "Beam3 has no net accepted-localization gain (35/70 versus 35/70), identical wrong count, and higher latency; both prompt variants regress."
+        },
+        "en": {
+          "name": "short-prompt",
+          "flags": [
+            "--short-prompt"
+          ],
+          "reason": "With frozen optimized parser, calibration positive correct 53/60 versus 45/60, wrong 2 versus 9; quotation alone slightly regresses 17 versus 18/20. P95 meets compute budget."
+        },
+        "zh_results_reused": "Optimized ASR for Chinese is exactly baseline; reuse its final transcripts and timings to isolate parser effect.",
+        "fixed_before_final": true
+      },
+      "timing": "zh reuses baseline inference; en short prompt measured separately"
+    },
+    "n": 584,
+    "groups": {
+      "baseline/holdout/zh/reference": {
+        "n": 160,
+        "error_rate": 0.3279238947957471,
+        "correct": 99,
+        "wrong": 14,
+        "rejected": 47,
+        "correct_within_3s": 99,
+        "p95_s": 0.7919319170447141,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "optimized/holdout/zh/reference": {
+        "n": 160,
+        "error_rate": 0.3279238947957471,
+        "correct": 82,
+        "wrong": 6,
+        "rejected": 72,
+        "correct_within_3s": 82,
+        "p95_s": 0.7919272080447141,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "baseline/holdout/zh/quotation": {
+        "n": 80,
+        "error_rate": 0.2445153570003989,
+        "correct": 35,
+        "wrong": 0,
+        "rejected": 45,
+        "correct_within_3s": 35,
+        "p95_s": 1.2809527079828265,
+        "over_3s": 0,
+        "top3_correct": 79
+      },
+      "optimized/holdout/zh/quotation": {
+        "n": 80,
+        "error_rate": 0.2445153570003989,
+        "correct": 35,
+        "wrong": 0,
+        "rejected": 45,
+        "correct_within_3s": 35,
+        "p95_s": 1.2809361669828263,
+        "over_3s": 0,
+        "top3_correct": 79
+      },
+      "baseline/holdout/en/reference": {
+        "n": 160,
+        "error_rate": 0.01693227091633466,
+        "correct": 43,
+        "wrong": 101,
+        "rejected": 16,
+        "correct_within_3s": 43,
+        "p95_s": 0.6820107080782322,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "optimized/holdout/en/reference": {
+        "n": 160,
+        "error_rate": 0.01693227091633466,
+        "correct": 145,
+        "wrong": 9,
+        "rejected": 6,
+        "correct_within_3s": 145,
+        "p95_s": 0.6822747500782322,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "baseline/holdout/en/quotation": {
+        "n": 80,
+        "error_rate": 0.047365304914150384,
+        "correct": 72,
+        "wrong": 0,
+        "rejected": 8,
+        "correct_within_3s": 72,
+        "p95_s": 0.9883690829460088,
+        "over_3s": 0,
+        "top3_correct": 80
+      },
+      "optimized/holdout/en/quotation": {
+        "n": 80,
+        "error_rate": 0.047365304914150384,
+        "correct": 72,
+        "wrong": 0,
+        "rejected": 8,
+        "correct_within_3s": 72,
+        "p95_s": 0.9883695839460088,
+        "over_3s": 0,
+        "top3_correct": 80
+      },
+      "baseline/holdout/zh/mixed": {
+        "n": 40,
+        "error_rate": 0.41568627450980394,
+        "correct": 0,
+        "wrong": 2,
+        "rejected": 38,
+        "correct_within_3s": 0,
+        "p95_s": 0.669643582965356,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "optimized/holdout/zh/mixed": {
+        "n": 40,
+        "error_rate": 0.41568627450980394,
+        "correct": 6,
+        "wrong": 0,
+        "rejected": 34,
+        "correct_within_3s": 6,
+        "p95_s": 0.6695223749653559,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "baseline/holdout/zh/negative": {
+        "n": 4,
+        "error_rate": 0.014705882352941176,
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 4,
+        "correct_within_3s": 0,
+        "p95_s": 0.7615707489008371,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "optimized/holdout/zh/negative": {
+        "n": 4,
+        "error_rate": 0.014705882352941176,
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 4,
+        "correct_within_3s": 0,
+        "p95_s": 0.761570291900837,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "baseline/holdout/en/negative": {
+        "n": 4,
+        "error_rate": 0.0,
+        "correct": 0,
+        "wrong": 1,
+        "rejected": 3,
+        "correct_within_3s": 0,
+        "p95_s": 0.7497802098661928,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "optimized/holdout/en/negative": {
+        "n": 4,
+        "error_rate": 0.0,
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 4,
+        "correct_within_3s": 0,
+        "p95_s": 0.7497792928661927,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "baseline/challenge/zh/negative": {
+        "n": 28,
+        "error_rate": 0.16901408450704225,
+        "correct": 0,
+        "wrong": 7,
+        "rejected": 21,
+        "correct_within_3s": 0,
+        "p95_s": 0.7267184580027674,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "optimized/challenge/zh/negative": {
+        "n": 28,
+        "error_rate": 0.16901408450704225,
+        "correct": 0,
+        "wrong": 4,
+        "rejected": 24,
+        "correct_within_3s": 0,
+        "p95_s": 0.7266041670027673,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "baseline/challenge/en/negative": {
+        "n": 28,
+        "error_rate": 0.047619047619047616,
+        "correct": 0,
+        "wrong": 14,
+        "rejected": 14,
+        "correct_within_3s": 0,
+        "p95_s": 0.6753271249908401,
+        "over_3s": 0,
+        "top3_correct": null
+      },
+      "optimized/challenge/en/negative": {
+        "n": 28,
+        "error_rate": 0.047619047619047616,
+        "correct": 0,
+        "wrong": 6,
+        "rejected": 22,
+        "correct_within_3s": 0,
+        "p95_s": 0.6747166659908401,
+        "over_3s": 0,
+        "top3_correct": null
+      }
+    }
+  }
+]

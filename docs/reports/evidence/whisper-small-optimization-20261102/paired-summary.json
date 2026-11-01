@@ -1,0 +1,44 @@
+{
+  "zh/reference": {
+    "gained_correct": 0,
+    "lost_correct": 17,
+    "new_wrong": 0,
+    "resolved_wrong": 8
+  },
+  "zh/quotation": {
+    "gained_correct": 0,
+    "lost_correct": 0,
+    "new_wrong": 0,
+    "resolved_wrong": 0
+  },
+  "zh/mixed": {
+    "gained_correct": 6,
+    "lost_correct": 0,
+    "new_wrong": 0,
+    "resolved_wrong": 2
+  },
+  "zh/negative": {
+    "gained_correct": 0,
+    "lost_correct": 0,
+    "new_wrong": 0,
+    "resolved_wrong": 3
+  },
+  "en/reference": {
+    "gained_correct": 102,
+    "lost_correct": 0,
+    "new_wrong": 3,
+    "resolved_wrong": 94
+  },
+  "en/quotation": {
+    "gained_correct": 2,
+    "lost_correct": 0,
+    "new_wrong": 0,
+    "resolved_wrong": 1
+  },
+  "en/negative": {
+    "gained_correct": 0,
+    "lost_correct": 0,
+    "new_wrong": 0,
+    "resolved_wrong": 9
+  }
+}

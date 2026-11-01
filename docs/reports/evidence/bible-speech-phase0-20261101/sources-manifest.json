@@ -1,0 +1,12 @@
+[
+  {
+    "file": "en_kjv.json",
+    "url": "https://raw.githubusercontent.com/thiagobodruk/bible/98a52a5439c1cfe566676e8508795834424a5f3a/json/en_kjv.json",
+    "sha256": "f627b3c24a617013a4514ab24b6dd1bb305b09af237994c018f74cb9c7e71f41"
+  },
+  {
+    "file": "zh_cuv.json",
+    "url": "https://raw.githubusercontent.com/thiagobodruk/bible/98a52a5439c1cfe566676e8508795834424a5f3a/json/zh_cunpss-shen.json",
+    "sha256": "d2177183077dfb5753cc71416c64649a84003ff0b563127858c6cfc30e9d52a7"
+  }
+]

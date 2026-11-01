@@ -1,0 +1,441 @@
+{
+  "_id": "6650c7bf7473f3c257eb6ea3",
+  "id": "onnx-community/whisper-base",
+  "private": false,
+  "pipeline_tag": "automatic-speech-recognition",
+  "library_name": "transformers.js",
+  "tags": [
+    "transformers.js",
+    "onnx",
+    "whisper",
+    "automatic-speech-recognition",
+    "base_model:openai/whisper-base",
+    "base_model:quantized:openai/whisper-base",
+    "region:us"
+  ],
+  "downloads": 199531,
+  "likes": 33,
+  "modelId": "onnx-community/whisper-base",
+  "author": "onnx-community",
+  "sha": "1846881b6b3a3024392c1eea3ad983695bc23925",
+  "lastModified": "2025-06-19T13:49:48.000Z",
+  "gated": false,
+  "disabled": false,
+  "model-index": null,
+  "config": {
+    "architectures": [
+      "WhisperForConditionalGeneration"
+    ],
+    "model_type": "whisper",
+    "tokenizer_config": {
+      "bos_token": "<|endoftext|>",
+      "eos_token": "<|endoftext|>",
+      "unk_token": "<|endoftext|>",
+      "pad_token": "<|endoftext|>"
+    }
+  },
+  "cardData": {
+    "base_model": "openai/whisper-base",
+    "library_name": "transformers.js"
+  },
+  "transformersInfo": {
+    "auto_model": "AutoModelForSpeechSeq2Seq",
+    "pipeline_tag": "automatic-speech-recognition",
+    "processor": "AutoProcessor"
+  },
+  "siblings": [
+    {
+      "rfilename": ".gitattributes",
+      "blobId": "a6344aac8c09253b3b630fb776ae94478aa0275b",
+      "size": 1519
+    },
+    {
+      "rfilename": "README.md",
+      "blobId": "7bd640e742c138d667e1aa9070902917cde368d2",
+      "size": 531
+    },
+    {
+      "rfilename": "added_tokens.json",
+      "blobId": "e3d256c988462aa153dcabe2aa38b8e9b436c06f",
+      "size": 34604
+    },
+    {
+      "rfilename": "config.json",
+      "blobId": "ce7faf5d5e56e82d4800e55f524582a525639ff7",
+      "size": 2243
+    },
+    {
+      "rfilename": "generation_config.json",
+      "blobId": "a57cdbf036979f80bb7ff092a0fee6256a81d329",
+      "size": 3832
+    },
+    {
+      "rfilename": "merges.txt",
+      "blobId": "6038932a2a1f09a66991b1c2adae0d14066fa29e",
+      "size": 493869
+    },
+    {
+      "rfilename": "normalizer.json",
+      "blobId": "dd6ae819ad738ac1a546e9f9282ef325c33b9ea0",
+      "size": 52666
+    },
+    {
+      "rfilename": "onnx/decoder_model.onnx",
+      "blobId": "563bddee6c3cfa7f560a928b2b164f65b562a4e9",
+      "size": 208289724,
+      "lfs": {
+        "sha256": "70d26763610c0d6bb407373b7f30d415252ee470e62a0f816c8a46b2caca7326",
+        "size": 208289724,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_model_bnb4.onnx",
+      "blobId": "e573809db62fbfcd82117abd42a0954191a4c1ba",
+      "size": 121791631,
+      "lfs": {
+        "sha256": "da5b3d1df90c8a1493570969d00d7cac6c7eb3607c1fbdad6473ea81c8fad065",
+        "size": 121791631,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_model_fp16.onnx",
+      "blobId": "8f2a4b21bc2badc5fe226bcca5b73bae04e9f10f",
+      "size": 104396174,
+      "lfs": {
+        "sha256": "8acaa9ed6e16d309df746b097a2ea1363bf90ceeee51813b8aa67aca289ba3fc",
+        "size": 104396174,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_model_int8.onnx",
+      "blobId": "a9e56a1809e19c7f2aa98bb1d07a26971c224e20",
+      "size": 53310178,
+      "lfs": {
+        "sha256": "c859636f4463dd5a9ea752546c6c7badeb48ab3e22b340cafef08a15552fcb2e",
+        "size": 53310178,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_model_merged.onnx",
+      "blobId": "7d34ea71b97ad6685dd4d6f2e5521ec7628da56c",
+      "size": 208521528,
+      "lfs": {
+        "sha256": "514903744bb1b45803ec571af99b31110491c6f77b0a154825866995fb124b73",
+        "size": 208521528,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_model_merged_bnb4.onnx",
+      "blobId": "4e13c23ddf5761378d20e2c60cd0c97900eaa615",
+      "size": 122030467,
+      "lfs": {
+        "sha256": "c89adc212fe988bec3013348e6e78c0b9d587177ae67de583f24d751924cb613",
+        "size": 122030467,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_model_merged_fp16.onnx",
+      "blobId": "affa0e9a4ad0719e4ac33873f826d3c6d107095d",
+      "size": 104727818,
+      "lfs": {
+        "sha256": "2078fb08b753e3a74120e6a52446eef1b98f6152d1da43658731367a93fd71a4",
+        "size": 104727818,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_model_merged_int8.onnx",
+      "blobId": "292f1541d8234f2343023bc5c18063d33686f5e2",
+      "size": 53693315,
+      "lfs": {
+        "sha256": "fa3ef9902734ce5ae6f9ef2bdb2ba9a6c4b5785b09f4f420ce036573dc9d090b",
+        "size": 53693315,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_model_merged_q4.onnx",
+      "blobId": "db5a70f09f4fe8c99757c02837237e8cd3cf1bcc",
+      "size": 123602419,
+      "lfs": {
+        "sha256": "09f83b71ceedc97dab1d90b914715dc532a646a147abda11d83c64867b7c319c",
+        "size": 123602419,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_model_merged_quantized.onnx",
+      "blobId": "292f1541d8234f2343023bc5c18063d33686f5e2",
+      "size": 53693315,
+      "lfs": {
+        "sha256": "fa3ef9902734ce5ae6f9ef2bdb2ba9a6c4b5785b09f4f420ce036573dc9d090b",
+        "size": 53693315,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_model_merged_uint8.onnx",
+      "blobId": "d98c4d38b4e9acc04121241949e4beba3e1c0825",
+      "size": 53693343,
+      "lfs": {
+        "sha256": "cd342d30d837133239a83d66b70dc080b474a1a730b5a858e96c00eb8ba87c01",
+        "size": 53693343,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_model_q4.onnx",
+      "blobId": "08fa3112b5ee2f9a2f2b5ed460d14d4292f3d827",
+      "size": 123364015,
+      "lfs": {
+        "sha256": "97f93efe026e2bb174aa418d0b0c8650d4d09865da83d613c63ef1a73d89ac9f",
+        "size": 123364015,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_model_quantized.onnx",
+      "blobId": "a9e56a1809e19c7f2aa98bb1d07a26971c224e20",
+      "size": 53310178,
+      "lfs": {
+        "sha256": "c859636f4463dd5a9ea752546c6c7badeb48ab3e22b340cafef08a15552fcb2e",
+        "size": 53310178,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_model_uint8.onnx",
+      "blobId": "e7517469d48066a352ebda5c001eee8aa4573e17",
+      "size": 53310206,
+      "lfs": {
+        "sha256": "b11bd42fa4fa1a7c2ffdeab12d7b1546449d6c537286c180e5e7e0ab14012f3a",
+        "size": 53310206,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_with_past_model.onnx",
+      "blobId": "be81fa89e63c122d6bfe469e27c9073f05831530",
+      "size": 195647494,
+      "lfs": {
+        "sha256": "d777189c817e42824edb6a97bc613b37d824e0b2cfce06a41374a03cc54498c5",
+        "size": 195647494,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_with_past_model_bnb4.onnx",
+      "blobId": "9872a78232a11ccb644ab015af854b6c0f7ea585",
+      "size": 119960957,
+      "lfs": {
+        "sha256": "84925e5cce2b4de1d544fd71201344118e58662073c2c56991c017b7b9979413",
+        "size": 119960957,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_with_past_model_fp16.onnx",
+      "blobId": "49b59bfd4e295e6c209d21c83f12053c7a76b52c",
+      "size": 98035209,
+      "lfs": {
+        "sha256": "a80df24ce32fef82b8415dce6e37c09e958004b4a5a9170b4628a5cfddd82e3d",
+        "size": 98035209,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_with_past_model_int8.onnx",
+      "blobId": "c1a3aa0bec41b6d7848e3a3d8a6ed356f702b3a2",
+      "size": 50075136,
+      "lfs": {
+        "sha256": "dd0d9ff1c066992aa8db6ff1944b5fd5660e95ecbbc86e0da158300c23e52232",
+        "size": 50075136,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_with_past_model_q4.onnx",
+      "blobId": "d33f4a5b675cd60672298933cc261d1d007d6c5a",
+      "size": 121336829,
+      "lfs": {
+        "sha256": "7388e6102d651274656b05f0d094233e300db742b3cc22da83432fd4fee755a1",
+        "size": 121336829,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_with_past_model_quantized.onnx",
+      "blobId": "c1a3aa0bec41b6d7848e3a3d8a6ed356f702b3a2",
+      "size": 50075136,
+      "lfs": {
+        "sha256": "dd0d9ff1c066992aa8db6ff1944b5fd5660e95ecbbc86e0da158300c23e52232",
+        "size": 50075136,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/decoder_with_past_model_uint8.onnx",
+      "blobId": "ee90b204e7534eadfe2286cb422b11462c3f87b4",
+      "size": 50075159,
+      "lfs": {
+        "sha256": "966eaa585477bdf294e99d432dcb5be247408c6b56d4ec51a51bb63846cafaf2",
+        "size": 50075159,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/encoder_model.onnx",
+      "blobId": "f53792414c78b260e95a4190771ef030f3ea7846",
+      "size": 82468078,
+      "lfs": {
+        "sha256": "a9f3b752833b49e880dec91ee5b6d936112be7c3ea07c221024ba493439f46fe",
+        "size": 82468078,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/encoder_model_bnb4.onnx",
+      "blobId": "9247012f0754ba3ea5271e1ee1b4381d192f2105",
+      "size": 17593091,
+      "lfs": {
+        "sha256": "e85d47267b8a146e3d7b8fdceae5cf8081e3e9b1e5e66afb7de50e40481096b8",
+        "size": 17593091,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/encoder_model_fp16.onnx",
+      "blobId": "97a486ace0eae0c973f429f2d6654551fdb8b55f",
+      "size": 41332612,
+      "lfs": {
+        "sha256": "ffba51b20185377c1b89362b1128148d0132de936a32b200af973da2a11a5369",
+        "size": 41332612,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/encoder_model_int8.onnx",
+      "blobId": "03753dc9c4ff41e6ddc861983973eca7dc00c16e",
+      "size": 23201297,
+      "lfs": {
+        "sha256": "ca6177401f86a2c6b4dc5f7fc02fbca680678906bd0c22f6d89f0b80f124253f",
+        "size": 23201297,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/encoder_model_q4.onnx",
+      "blobId": "87950f133315ffb96481283d61e86e8ce8ec157f",
+      "size": 18772451,
+      "lfs": {
+        "sha256": "9d4e9c31e8559e71de3e0e49d60b830951484699ef53747a4a06261bbbc8cb88",
+        "size": 18772451,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/encoder_model_quantized.onnx",
+      "blobId": "176c6da9f79a5c0c49b8c662afcc7627a96173a5",
+      "size": 23201314,
+      "lfs": {
+        "sha256": "5862993336bf33acd23736071aae2b32261d3b1b2f37780194460d4ef974dd46",
+        "size": 23201314,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "onnx/encoder_model_uint8.onnx",
+      "blobId": "176c6da9f79a5c0c49b8c662afcc7627a96173a5",
+      "size": 23201314,
+      "lfs": {
+        "sha256": "5862993336bf33acd23736071aae2b32261d3b1b2f37780194460d4ef974dd46",
+        "size": 23201314,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "preprocessor_config.json",
+      "blobId": "91876762a536a746d268353c5cba57286e76b058",
+      "size": 339
+    },
+    {
+      "rfilename": "quantize_config.json",
+      "blobId": "dce20a7a4c0260823a4ee78104e723ebbe1b474b",
+      "size": 10126
+    },
+    {
+      "rfilename": "special_tokens_map.json",
+      "blobId": "bf69932dca4b3719b59fdd8f6cc1978109509f6c",
+      "size": 2194
+    },
+    {
+      "rfilename": "tokenizer.json",
+      "blobId": "1e95340ff836fad1b5932e800fb7b8c5e6d78a74",
+      "size": 2480466
+    },
+    {
+      "rfilename": "tokenizer_config.json",
+      "blobId": "25be523be5ac50a7671a77f55acba082459d6314",
+      "size": 282682
+    },
+    {
+      "rfilename": "vocab.json",
+      "blobId": "90e797dd4fd05d9dea443d702ca06be2463c5f2f",
+      "size": 1036584
+    }
+  ],
+  "spaces": [
+    "Xenova/realtime-whisper-webgpu",
+    "Xenova/whisper-webgpu",
+    "moeru-ai/airi",
+    "Nymbo/realtime-whisper-webgpu",
+    "moeru-ai/whisper-webgpu-vue",
+    "VinayHajare/Web-Whisper",
+    "RobinsAIWorld/whisper-webgpu",
+    "moeru-ai/conversational-webgpu-vue",
+    "CultriX/whisper-webgpu",
+    "elgabon/whisper-browser-stt",
+    "ArifYZ/WhisperRT",
+    "abdoeid/Al-Ajwad",
+    "seawolf2357/whiwebgpu",
+    "fhsp93/whisper-webgpu",
+    "koespe/whisper-webgpu",
+    "homegrownherbalist/realtime-whisper-webgpu",
+    "cyberluke/realtime-whisper-webgpu",
+    "awacke1/realtime-whisper-webgpu",
+    "MFF212/realtime-whisper-webgpu-for-sos",
+    "jasvir-singh1021/airi",
+    "yanblue/whisper-webgpu",
+    "RoversX/whisper-webgpu",
+    "eburondeveloper/realtime-whisper-webgpu",
+    "zhuqling/whisper-webgpu",
+    "Lafu01/eva-mirror",
+    "rj-vinodh/Math-Practice-with-Voice-Webgpu",
+    "desirel/realtime-whisper-webgpu",
+    "Titan900/voiceover-block-transcriber",
+    "developerjeremylive/whisper-webgpu-etheroi",
+    "UtopiaIA/elffuss-translator",
+    "brianjorden/tourcast",
+    "jasotoibm/DemandaAPS-GradioLite",
+    "Herrera475/ActaVox",
+    "WolfDavid/japanese-learning-avatar",
+    "Dhruv00101/speech-to-text-app",
+    "CyberMax-tools/hushscribe",
+    "MonteBristol/long-form-transcriber",
+    "CyberMax-tools/clipwhit",
+    "PiotrSty/gollem-dyktowanie",
+    "nxxk23/demo",
+    "nxxk23/demoo",
+    "nul001/whisper-web",
+    "Ydc36090/ydc-voice-note",
+    "mmoohhaammaadd/audiobook_reflections"
+  ],
+  "createdAt": "2024-05-24T17:00:47.000Z",
+  "usedStorage": 2277152799
+}

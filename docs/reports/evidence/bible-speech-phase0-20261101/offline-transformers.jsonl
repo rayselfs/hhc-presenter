@@ -1,0 +1,2 @@
+{"type":"metadata","engine":"transformers-base-q8-node","version":"3.8.1","load_s":0.40032737500000004,"threads":4,"subset":"all","timing":"Node CPU proxy; presegmented decode; not Electron renderer/WASM"}
+{"id":"0000","language":"zh","kind":"reference","text":"創世記第一章第一節","target":[1,1,1],"voice":"Meijia","rate":150,"split":"calibration","duration_s":2.3355,"sha256":"d4f3240926840f77a5ec39a946e251060443a90b3017ed736ffc3bb821b30b64","transcript":"創世紀第一章第一節","decode_s":0.42671466599999996,"cpu_s":1.403603,"rtf":0.18270805651894667,"max_rss_bytes":1010810880}
