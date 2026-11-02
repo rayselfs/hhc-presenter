@@ -240,7 +240,11 @@ export function BiblePreview({
     }
 
     return (
-      <div ref={scrollContainerCallbackRef} className="h-full overflow-y-auto">
+      <div
+        ref={scrollContainerCallbackRef}
+        className="h-full overflow-y-auto"
+        data-bible-passage={`${currentPassage.bookNumber}:${currentPassage.chapter}:${currentPassage.verse}`}
+      >
         <div className="flex flex-col gap-2 p-2 pt-0">
           {verses.map((verse, index) => {
             const isSelected =

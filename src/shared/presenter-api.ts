@@ -88,6 +88,10 @@ interface UpdateAPI {
 }
 
 interface SpeechAPI {
+  chineseAvailable: Invoke<'speech:chinese-available'>
+  chinesePrepare: Invoke<'speech:chinese-prepare'>
+  chineseTranscribe: Invoke<'speech:chinese-transcribe'>
+  chineseStop: Invoke<'speech:chinese-stop'>
   saveKey: Invoke<'speech:saveKey'>
   loadKey: Invoke<'speech:loadKey'>
   deleteKey: Invoke<'speech:deleteKey'>

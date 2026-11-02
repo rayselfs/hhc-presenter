@@ -1,0 +1,43 @@
+[
+  {
+    "id": "0292",
+    "kind": "quotation",
+    "target": [
+      26,
+      44,
+      24
+    ],
+    "reference": [
+      26,
+      44,
+      24
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 2019.9869999523144,
+    "captureClockOffsetMs": 7.859000000000378,
+    "trace": {
+      "result": {
+        "text": "有征颂的是,他们应当战利判断,要按我的典章判断,在我一切的节旗必守我的律法、条例,也必以我的安息日为圣日,他们不可挨尽死尸染自己,只可为父亲、母亲、儿子、女儿、弟兄、捍卫嫁人的姐妹沾染自己。",
+        "reference": [
+          26,
+          44,
+          24
+        ],
+        "asrMs": 1636.1265000887215,
+        "locateMs": 9.438332985155284
+      },
+      "lastSampleAt": 28807.872000047686,
+      "requestAt": 29084,
+      "responseAt": 30784.800000071526,
+      "stableAt": 30784.800000071526,
+      "manual": false,
+      "paintedAt": 30820,
+      "scrollCorrected": true,
+      "totalMs": 2012.127999952314,
+      "outcome": "located"
+    }
+  }
+]

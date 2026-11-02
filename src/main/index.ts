@@ -9,6 +9,7 @@ import { registerTimerHandlers } from './ipc/timer'
 import { registerBibleApiHandlers } from './ipc/bible-api'
 import { registerAppIpc, registerLocalModelProtocol } from './ipc/app'
 import { registerSpeechKeyStorageHandlers } from './ipc/speech-key-storage'
+import { registerChineseSpeechPilot } from './ipc/chinese-speech'
 import {
   clearNativeMediaLeases,
   clearStaleNativeMediaLeasesOnStartup,
@@ -136,6 +137,7 @@ if (gotSingleInstanceLock) {
     registerAppIpc(wm, hhcAuthService, oneDriveService)
     registerLocalModelProtocol()
     registerSpeechKeyStorageHandlers(wm)
+    registerChineseSpeechPilot(wm)
     registerNativeFsHandlers(wm)
     registerProjectionVlcHandlers(wm)
     registerVideoPosterHandlers(wm)

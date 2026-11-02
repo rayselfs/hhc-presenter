@@ -1,5 +1,6 @@
 import { useSpeechSession } from '@renderer/hooks/useSpeechSession'
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
+import { ChineseSpeechPilot } from './ChineseSpeechPilot'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@heroui/react/card'
 import { Button } from '@heroui/react/button'
@@ -46,6 +47,34 @@ const PROVIDER_REQUIREMENTS: Record<
 }
 
 export default function SpeechRecognitionCard(): React.JSX.Element {
+  const [available, setAvailable] = useState(false)
+  const [pilot, setPilot] = useState(true)
+  useEffect(() => {
+    let live = true
+    void window.api?.speech
+      ?.chineseAvailable?.()
+      .then((value) => {
+        if (live) setAvailable(value)
+      })
+      .catch(() => {})
+    return () => {
+      live = false
+    }
+  }, [])
+  if (!available) return <LegacySpeechRecognitionCard />
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <Button variant="ghost" size="sm" onPress={() => setPilot(!pilot)}>
+        {pilot ? '切回原有語音流程' : '開啟中文本機實測'}
+      </Button>
+      <div className="min-h-0 flex-1">
+        {pilot ? <ChineseSpeechPilot /> : <LegacySpeechRecognitionCard />}
+      </div>
+    </div>
+  )
+}
+
+function LegacySpeechRecognitionCard(): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const speech = useSettingsStore((s) => s.speech)
   const selectedVersionId = useBibleSettingsStore((s) => s.selectedVersionId)

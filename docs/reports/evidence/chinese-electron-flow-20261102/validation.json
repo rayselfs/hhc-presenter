@@ -1,0 +1,13 @@
+{
+  "desktopBuild": "passed",
+  "webBuildAndAllTypechecks": "passed",
+  "lint": "passed; one pre-existing unused-disable warning in FolderBrowser.tsx",
+  "unitSuite": { "filesPassed": 361, "testsPassed": 4652 },
+  "finalTargetedUnitSuite": { "filesPassed": 5, "testsPassed": 12 },
+  "browserE2E": { "passed": 103, "skipped": 3, "failed": 0 },
+  "residentLocatorParity": { "cases": 505, "mismatches": 0 },
+  "electronFlow": { "cases": 56, "priorCorrectRetained": 22, "correct": 24, "wrong": 0, "over3s": 0 },
+  "scrollFaultRecovery": "passed; correction exercised; visible target in 2019.987 ms",
+  "remoteCI": "not run; local checkpoint only",
+  "release": "not packaged, merged, tagged or released"
+}

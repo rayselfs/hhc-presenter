@@ -109,6 +109,11 @@ const updateApi = {
 }
 
 const speechApi = {
+  chineseAvailable: () => typedInvoke('speech:chinese-available'),
+  chinesePrepare: (session: string) => typedInvoke('speech:chinese-prepare', session),
+  chineseTranscribe: (session: string, pcm: Float32Array) =>
+    typedInvoke('speech:chinese-transcribe', session, pcm),
+  chineseStop: (session: string) => typedInvoke('speech:chinese-stop', session),
   saveKey: (provider: string, apiKey: string) => typedInvoke('speech:saveKey', provider, apiKey),
   loadKey: (provider: string) => typedInvoke('speech:loadKey', provider),
   deleteKey: (provider: string) => typedInvoke('speech:deleteKey', provider)

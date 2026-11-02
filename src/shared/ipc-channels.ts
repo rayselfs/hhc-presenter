@@ -1,4 +1,5 @@
 import type { CameraSource } from './camera'
+import type { ChineseSpeechResult } from './chinese-speech'
 /**
  * Typed IPC channel contract.
  *
@@ -292,6 +293,10 @@ export interface IpcInvokeMap {
   'speech:saveKey': { args: [string, string]; result: void }
   'speech:loadKey': { args: [string]; result: string }
   'speech:deleteKey': { args: [string]; result: void }
+  'speech:chinese-available': { args: []; result: boolean }
+  'speech:chinese-prepare': { args: [string]; result: void }
+  'speech:chinese-transcribe': { args: [string, Float32Array]; result: ChineseSpeechResult }
+  'speech:chinese-stop': { args: [string]; result: void }
   'app:select-directory': { args: []; result: string | null }
   'app:set-model-dir': { args: [string]; result: void }
   'app:check-whisper-dir': { args: [string]; result: WhisperDirInfo }

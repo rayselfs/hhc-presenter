@@ -1,0 +1,43 @@
+[
+  {
+    "id": "0001",
+    "kind": "reference",
+    "target": [
+      1,
+      25,
+      3
+    ],
+    "reference": [
+      1,
+      25,
+      3
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1518.4260000476825,
+    "captureClockOffsetMs": 7.959000095366719,
+    "trace": {
+      "result": {
+        "text": "请翻到创世纪第25章第三节",
+        "reference": [
+          1,
+          25,
+          3
+        ],
+        "asrMs": 731.0827090404928,
+        "locateMs": 2.865165937691927
+      },
+      "lastSampleAt": 9656.433000023842,
+      "requestAt": 9924.299999952316,
+      "responseAt": 10667.600000023842,
+      "stableAt": 11124.100000023842,
+      "manual": false,
+      "paintedAt": 11166.899999976158,
+      "scrollCorrected": false,
+      "totalMs": 1510.4669999523157,
+      "outcome": "located"
+    }
+  }
+]

@@ -1,0 +1,1938 @@
+[
+  {
+    "id": "segment-000",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "reference": [
+      1,
+      1,
+      1
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1528.1820000715252,
+    "captureClockOffsetMs": 17.88500000000022,
+    "trace": {
+      "result": {
+        "text": "请翻到创世纪第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 759.1864579590037,
+        "locateMs": 2.066874993033707
+      },
+      "lastSampleAt": 11275.602999904633,
+      "requestAt": 11548.099999904633,
+      "responseAt": 12319.299999952316,
+      "stableAt": 12747.5,
+      "manual": false,
+      "paintedAt": 12785.899999976158,
+      "scrollCorrected": false,
+      "totalMs": 1510.297000071525,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "segment-001",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1503.3104999999996,
+    "captureClockOffsetMs": 14.00400002384049,
+    "trace": {
+      "result": {
+        "text": "请不要切换到《创世纪》第一章第一节",
+        "reference": null,
+        "asrMs": 639.4348340108991,
+        "locateMs": 2.401915960945189
+      },
+      "lastSampleAt": 18926.5935,
+      "requestAt": 19203.599999904633,
+      "responseAt": 19858.099999904633,
+      "stableAt": 20403.699999928474,
+      "manual": false,
+      "paintedAt": 20415.899999976158,
+      "scrollCorrected": false,
+      "totalMs": 1489.306499976159,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-002",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1496.6499999761581,
+    "captureClockOffsetMs": 10.012000023838482,
+    "trace": {
+      "result": {
+        "text": "创世纪第一章第一节,只是举例,请不要切换。",
+        "reference": null,
+        "asrMs": 657.7373340260237,
+        "locateMs": 1.3348329812288284
+      },
+      "lastSampleAt": 27778.561999976155,
+      "requestAt": 28043.799999952316,
+      "responseAt": 28715.099999904633,
+      "stableAt": 29243.399999976158,
+      "manual": false,
+      "paintedAt": 29265.199999928474,
+      "scrollCorrected": false,
+      "totalMs": 1486.6379999523197,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-003",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1491.9775000476802,
+    "captureClockOffsetMs": 9.91700000000128,
+    "trace": {
+      "result": {
+        "text": "请不要切换到《创世纪》第一章第一节",
+        "reference": null,
+        "asrMs": 626.7849589930847,
+        "locateMs": 1.1902500409632921
+      },
+      "lastSampleAt": 34850.43949995232,
+      "requestAt": 35123.89999997616,
+      "responseAt": 35761.299999952316,
+      "stableAt": 36316.799999952316,
+      "manual": false,
+      "paintedAt": 36332.5,
+      "scrollCorrected": false,
+      "totalMs": 1482.060500047679,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-004",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "reference": [
+      1,
+      1,
+      1
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1505.6550000715288,
+    "captureClockOffsetMs": 16.848999976158666,
+    "trace": {
+      "result": {
+        "text": "请翻到创世纪第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 629.5434579951689,
+        "locateMs": 1.5364170540124178
+      },
+      "lastSampleAt": 42810.19399990463,
+      "requestAt": 43076.799999952316,
+      "responseAt": 43715.89999997616,
+      "stableAt": 44277.799999952316,
+      "manual": false,
+      "paintedAt": 44299,
+      "scrollCorrected": false,
+      "totalMs": 1488.80600009537,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "segment-005",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1505.8745000238341,
+    "captureClockOffsetMs": 13.93099999998958,
+    "trace": {
+      "result": {
+        "text": "请不要切换到《创世纪》第一章第一节",
+        "reference": null,
+        "asrMs": 627.1105000050738,
+        "locateMs": 1.2812500353902578
+      },
+      "lastSampleAt": 51390.25649990463,
+      "requestAt": 51661.199999928474,
+      "responseAt": 52297.5,
+      "stableAt": 52861,
+      "manual": false,
+      "paintedAt": 52882.199999928474,
+      "scrollCorrected": false,
+      "totalMs": 1491.9435000238445,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-006",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1499.4169999284786,
+    "captureClockOffsetMs": 11.135999928483216,
+    "trace": {
+      "result": {
+        "text": "创世纪第一章第一节只是举例,请不要切换",
+        "reference": null,
+        "asrMs": 632.7484169742092,
+        "locateMs": 1.3544580433517694
+      },
+      "lastSampleAt": 60243.41899992848,
+      "requestAt": 60517.299999952316,
+      "responseAt": 61163.5,
+      "stableAt": 61716.799999952316,
+      "manual": false,
+      "paintedAt": 61731.699999928474,
+      "scrollCorrected": false,
+      "totalMs": 1488.2809999999954,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-007",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1510.7675000000017,
+    "captureClockOffsetMs": 17.723999952315353,
+    "trace": {
+      "result": {
+        "text": "请不要切换到创世纪第一章第一节",
+        "reference": null,
+        "asrMs": 659.0558750322089,
+        "locateMs": 1.3864170759916306
+      },
+      "lastSampleAt": 68353.95649995231,
+      "requestAt": 68622.39999997616,
+      "responseAt": 69291.09999990463,
+      "stableAt": 69822.19999992847,
+      "manual": false,
+      "paintedAt": 69847,
+      "scrollCorrected": false,
+      "totalMs": 1493.0435000476864,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-008",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "reference": [
+      1,
+      1,
+      1
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1510.237999976147,
+    "captureClockOffsetMs": 13.331999976144289,
+    "trace": {
+      "result": {
+        "text": "请翻到创世纪第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 625.7420000620186,
+        "locateMs": 2.6596669340506196
+      },
+      "lastSampleAt": 76118.39399995231,
+      "requestAt": 76398.79999995232,
+      "responseAt": 77035.5,
+      "stableAt": 77598.79999995232,
+      "manual": false,
+      "paintedAt": 77615.29999995232,
+      "scrollCorrected": false,
+      "totalMs": 1496.9060000000027,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "segment-009",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1500.7804999999935,
+    "captureClockOffsetMs": 9.736999952307087,
+    "trace": {
+      "result": {
+        "text": "请不要切换到创世纪第一章第一节",
+        "reference": null,
+        "asrMs": 624.8606669250876,
+        "locateMs": 1.1602080194279552
+      },
+      "lastSampleAt": 84689.75649990463,
+      "requestAt": 84957,
+      "responseAt": 85591.39999997616,
+      "stableAt": 86156.79999995232,
+      "manual": false,
+      "paintedAt": 86180.79999995232,
+      "scrollCorrected": false,
+      "totalMs": 1491.0435000476864,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-010",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1520.5209999522922,
+    "captureClockOffsetMs": 17.540000023815082,
+    "trace": {
+      "result": {
+        "text": "创世纪第一章第一节只是举例,请不要切换",
+        "reference": null,
+        "asrMs": 647.6040000561625,
+        "locateMs": 1.652708975598216
+      },
+      "lastSampleAt": 94561.61899997616,
+      "requestAt": 94838.19999992847,
+      "responseAt": 95500.89999997616,
+      "stableAt": 96037.89999997616,
+      "manual": false,
+      "paintedAt": 96064.59999990463,
+      "scrollCorrected": false,
+      "totalMs": 1502.980999928477,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-011",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1499.893500023827,
+    "captureClockOffsetMs": 13.34999997614068,
+    "trace": {
+      "result": {
+        "text": "请不要切换到创世纪第一章第一节",
+        "reference": null,
+        "asrMs": 631.9882500683889,
+        "locateMs": 0.5066669546067715
+      },
+      "lastSampleAt": 102645.25649990463,
+      "requestAt": 102916.89999997616,
+      "responseAt": 103557.69999992847,
+      "stableAt": 104116.69999992847,
+      "manual": false,
+      "paintedAt": 104131.79999995232,
+      "scrollCorrected": false,
+      "totalMs": 1486.5435000476864,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-012",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "reference": [
+      1,
+      1,
+      1
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1519.1220000953763,
+    "captureClockOffsetMs": 17.241000071531744,
+    "trace": {
+      "result": {
+        "text": "请翻到创世纪 第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 640.5464999843389,
+        "locateMs": 2.6353340363129973
+      },
+      "lastSampleAt": 109263.11899997616,
+      "requestAt": 109542.19999992847,
+      "responseAt": 110190.5,
+      "stableAt": 110740.5,
+      "manual": false,
+      "paintedAt": 110765,
+      "scrollCorrected": false,
+      "totalMs": 1501.8810000238445,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "segment-013",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1519.2214999523276,
+    "captureClockOffsetMs": 11.852999976166757,
+    "trace": {
+      "result": {
+        "text": "请不要切换到《创世纪》第一章第一节。",
+        "reference": null,
+        "asrMs": 647.023499943316,
+        "locateMs": 1.194500015117228
+      },
+      "lastSampleAt": 115756.43149997616,
+      "requestAt": 116038.59999990463,
+      "responseAt": 116694.39999997616,
+      "stableAt": 117237.69999992847,
+      "manual": false,
+      "paintedAt": 117263.79999995232,
+      "scrollCorrected": false,
+      "totalMs": 1507.3684999761608,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-014",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1507.9354999523202,
+    "captureClockOffsetMs": 13.716999952317565,
+    "trace": {
+      "result": {
+        "text": "刷世纪第一节只是举例请不要切换",
+        "reference": null,
+        "asrMs": 621.7531659640372,
+        "locateMs": 2.5220420211553574
+      },
+      "lastSampleAt": 123470.48149992847,
+      "requestAt": 123742.09999990463,
+      "responseAt": 124378.39999997616,
+      "stableAt": 124940.5,
+      "manual": false,
+      "paintedAt": 124964.69999992847,
+      "scrollCorrected": false,
+      "totalMs": 1494.2185000000027,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-015",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1508.2174999523122,
+    "captureClockOffsetMs": 13.648999928467674,
+    "trace": {
+      "result": {
+        "text": "请不要切换照划视频第一章第一节",
+        "reference": null,
+        "asrMs": 638.9114579651505,
+        "locateMs": 2.9095839709043503
+      },
+      "lastSampleAt": 129670.13149990463,
+      "requestAt": 129943.5,
+      "responseAt": 130591.09999990463,
+      "stableAt": 131140.19999992847,
+      "manual": false,
+      "paintedAt": 131164.69999992847,
+      "scrollCorrected": false,
+      "totalMs": 1494.5685000238445,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-016",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "reference": [
+      1,
+      1,
+      1
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1511.914000047691,
+    "captureClockOffsetMs": 16.232999952335376,
+    "trace": {
+      "result": {
+        "text": "请翻到创世纪 第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 593.9211669610813,
+        "locateMs": 0.4717500414699316
+      },
+      "lastSampleAt": 136685.81899990464,
+      "requestAt": 136956.09999990463,
+      "responseAt": 137555.39999997616,
+      "stableAt": 138158.89999997616,
+      "manual": false,
+      "paintedAt": 138181.5,
+      "scrollCorrected": false,
+      "totalMs": 1495.6810000953556,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "segment-017",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1513.6994999046437,
+    "captureClockOffsetMs": 15.330999928497477,
+    "trace": {
+      "result": {
+        "text": "请不要切换灶创世纪第一章第一节",
+        "reference": null,
+        "asrMs": 628.8392080459744,
+        "locateMs": 1.0863329516723752
+      },
+      "lastSampleAt": 144199.7314999285,
+      "requestAt": 144478,
+      "responseAt": 145115.39999997616,
+      "stableAt": 145679.09999990463,
+      "manual": false,
+      "paintedAt": 145698.09999990463,
+      "scrollCorrected": false,
+      "totalMs": 1498.3684999761463,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-018",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1509.7505000238598,
+    "captureClockOffsetMs": 16.232000071555376,
+    "trace": {
+      "result": {
+        "text": "刷世纪第一节只是举例,请不要切换",
+        "reference": null,
+        "asrMs": 636.4281249698251,
+        "locateMs": 1.5310420421883464
+      },
+      "lastSampleAt": 151920.7815,
+      "requestAt": 152198.69999992847,
+      "responseAt": 152844.39999997616,
+      "stableAt": 153398.39999997616,
+      "manual": false,
+      "paintedAt": 153414.29999995232,
+      "scrollCorrected": false,
+      "totalMs": 1493.5184999523044,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-019",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1501.4915000238107,
+    "captureClockOffsetMs": 13.523000023822533,
+    "trace": {
+      "result": {
+        "text": "请不要切换照。创世纪第一章第一节。",
+        "reference": null,
+        "asrMs": 647.3841250408441,
+        "locateMs": 0.7885409286245704
+      },
+      "lastSampleAt": 159109.7314999285,
+      "requestAt": 159381.79999995232,
+      "responseAt": 160037.09999990463,
+      "stableAt": 160581.59999990463,
+      "manual": false,
+      "paintedAt": 160597.69999992847,
+      "scrollCorrected": false,
+      "totalMs": 1487.9684999999881,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-020",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "reference": [
+      1,
+      1,
+      1
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1512.8280000238155,
+    "captureClockOffsetMs": 10.547000023827422,
+    "trace": {
+      "result": {
+        "text": "请翻到创世纪 第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 637.5462090363726,
+        "locateMs": 0.442708027549088
+      },
+      "lastSampleAt": 165895.9189999285,
+      "requestAt": 166181.79999995232,
+      "responseAt": 166826.29999995232,
+      "stableAt": 167381.69999992847,
+      "manual": false,
+      "paintedAt": 167398.19999992847,
+      "scrollCorrected": false,
+      "totalMs": 1502.2809999999881,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "segment-021",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1497.5134999045986,
+    "captureClockOffsetMs": 19.144999928452307,
+    "trace": {
+      "result": {
+        "text": "请不要切换灶创世纪第一章第一节",
+        "reference": null,
+        "asrMs": 629.3515419820324,
+        "locateMs": 1.331124920397997
+      },
+      "lastSampleAt": 173419.2314999285,
+      "requestAt": 173685.19999992847,
+      "responseAt": 174324.79999995232,
+      "stableAt": 174886,
+      "manual": false,
+      "paintedAt": 174897.59999990463,
+      "scrollCorrected": false,
+      "totalMs": 1478.3684999761463,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-022",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1510.9574999523466,
+    "captureClockOffsetMs": 16.039000023884,
+    "trace": {
+      "result": {
+        "text": "刷世纪第一节只是举例,请不要切换",
+        "reference": null,
+        "asrMs": 635.7111670076847,
+        "locateMs": 0.4931669682264328
+      },
+      "lastSampleAt": 182152.2815,
+      "requestAt": 182429.39999997616,
+      "responseAt": 183074.59999990463,
+      "stableAt": 183628.89999997616,
+      "manual": false,
+      "paintedAt": 183647.19999992847,
+      "scrollCorrected": false,
+      "totalMs": 1494.9184999284626,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-023",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1519.5065000238246,
+    "captureClockOffsetMs": 18.73799995231093,
+    "trace": {
+      "result": {
+        "text": "请不要切换照。刷视频第一章第一节。",
+        "reference": null,
+        "asrMs": 625.3784580621868,
+        "locateMs": 0.6979169556871057
+      },
+      "lastSampleAt": 189362.7314999285,
+      "requestAt": 189646.09999990463,
+      "responseAt": 190282.5,
+      "stableAt": 190845.29999995232,
+      "manual": false,
+      "paintedAt": 190863.5,
+      "scrollCorrected": false,
+      "totalMs": 1500.7685000715137,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "0001",
+    "kind": "reference",
+    "target": [
+      1,
+      25,
+      3
+    ],
+    "reference": [
+      1,
+      25,
+      3
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1526.1960000238323,
+    "captureClockOffsetMs": 17.540000023844186,
+    "trace": {
+      "result": {
+        "text": "请翻到创世纪第25章第三节",
+        "reference": [
+          1,
+          25,
+          3
+        ],
+        "asrMs": 608.3194999955595,
+        "locateMs": 0.6127080414444208
+      },
+      "lastSampleAt": 194919.74399997617,
+      "requestAt": 195190.09999990463,
+      "responseAt": 195805.89999997616,
+      "stableAt": 196390.19999992847,
+      "manual": false,
+      "paintedAt": 196428.39999997616,
+      "scrollCorrected": false,
+      "totalMs": 1508.6559999999881,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0002",
+    "kind": "reference",
+    "target": [
+      1,
+      50,
+      5
+    ],
+    "reference": [
+      1,
+      50,
+      5
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1522.9485000477289,
+    "captureClockOffsetMs": 14.90500000002794,
+    "trace": {
+      "result": {
+        "text": "创世纪第五十章第五节",
+        "reference": [
+          1,
+          50,
+          5
+        ],
+        "asrMs": 644.2714999429882,
+        "locateMs": 1.8956250278279185
+      },
+      "lastSampleAt": 199448.35649992846,
+      "requestAt": 199725.89999997616,
+      "responseAt": 200377.69999992847,
+      "stableAt": 200925.5,
+      "manual": false,
+      "paintedAt": 200956.39999997616,
+      "scrollCorrected": false,
+      "totalMs": 1508.043500047701,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0004",
+    "kind": "reference",
+    "target": [
+      2,
+      20,
+      3
+    ],
+    "reference": [
+      2,
+      20,
+      3
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1522.9885000714858,
+    "captureClockOffsetMs": 17.57000002381392,
+    "trace": {
+      "result": {
+        "text": "请翻到出埃及记第20章第3节。",
+        "reference": [
+          2,
+          20,
+          3
+        ],
+        "asrMs": 619.1813329933211,
+        "locateMs": 0.4740830045193434
+      },
+      "lastSampleAt": 205470.58149995233,
+      "requestAt": 205750.09999990463,
+      "responseAt": 206375,
+      "stableAt": 206950.09999990463,
+      "manual": false,
+      "paintedAt": 206976,
+      "scrollCorrected": false,
+      "totalMs": 1505.4185000476718,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0006",
+    "kind": "reference",
+    "target": [
+      3,
+      1,
+      1
+    ],
+    "reference": [
+      3,
+      1,
+      1
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1530.0979999999981,
+    "captureClockOffsetMs": 20.542000023822766,
+    "trace": {
+      "result": {
+        "text": "立位纪第一章第一节",
+        "reference": [
+          3,
+          1,
+          1
+        ],
+        "asrMs": 595.9336670348421,
+        "locateMs": 0.8677080040797591
+      },
+      "lastSampleAt": 210292.54399992846,
+      "requestAt": 210564.59999990463,
+      "responseAt": 211166.19999992847,
+      "stableAt": 211773.79999995232,
+      "manual": false,
+      "paintedAt": 211802.09999990463,
+      "scrollCorrected": false,
+      "totalMs": 1509.5559999761754,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0007",
+    "kind": "reference",
+    "target": [
+      3,
+      13,
+      3
+    ],
+    "reference": [
+      3,
+      13,
+      3
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1530.31850002383,
+    "captureClockOffsetMs": 17.700000047654612,
+    "trace": {
+      "result": {
+        "text": "请翻到日味记第十三章第三节",
+        "reference": [
+          3,
+          13,
+          3
+        ],
+        "asrMs": 615.5155000742525,
+        "locateMs": 1.933624967932701
+      },
+      "lastSampleAt": 215459.0814999523,
+      "requestAt": 215733.89999997616,
+      "responseAt": 216356.39999997616,
+      "stableAt": 216933.69999992847,
+      "manual": false,
+      "paintedAt": 216971.69999992847,
+      "scrollCorrected": false,
+      "totalMs": 1512.6184999761754,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0008",
+    "kind": "reference",
+    "target": [
+      3,
+      27,
+      5
+    ],
+    "reference": [
+      3,
+      27,
+      5
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1519.960000023828,
+    "captureClockOffsetMs": 16.154000047652517,
+    "trace": {
+      "result": {
+        "text": "立位纪第27章第5节",
+        "reference": [
+          3,
+          27,
+          5
+        ],
+        "asrMs": 603.6597079364583,
+        "locateMs": 1.2932500103488564
+      },
+      "lastSampleAt": 220300.3939999523,
+      "requestAt": 220572.39999997616,
+      "responseAt": 221182.19999992847,
+      "stableAt": 221772.29999995232,
+      "manual": false,
+      "paintedAt": 221804.19999992847,
+      "scrollCorrected": false,
+      "totalMs": 1503.8059999761754,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0011",
+    "kind": "reference",
+    "target": [
+      4,
+      36,
+      5
+    ],
+    "reference": [
+      4,
+      36,
+      5
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1500.073999904649,
+    "captureClockOffsetMs": 19.64299992850283,
+    "trace": {
+      "result": {
+        "text": "民数记第36章第5节",
+        "reference": [
+          4,
+          36,
+          5
+        ],
+        "asrMs": 614.1573750646785,
+        "locateMs": 1.5472079394385219
+      },
+      "lastSampleAt": 224667.1689999285,
+      "requestAt": 224933.29999995232,
+      "responseAt": 225555,
+      "stableAt": 226132,
+      "manual": false,
+      "paintedAt": 226147.59999990463,
+      "scrollCorrected": false,
+      "totalMs": 1480.4309999761463,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0012",
+    "kind": "reference",
+    "target": [
+      5,
+      1,
+      1
+    ],
+    "reference": [
+      5,
+      1,
+      1
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1517.4594999523251,
+    "captureClockOffsetMs": 12.240999952337006,
+    "trace": {
+      "result": {
+        "text": "生命纪第一章第一节",
+        "reference": [
+          5,
+          1,
+          1
+        ],
+        "asrMs": 595.3305000439286,
+        "locateMs": 0.470832921564579
+      },
+      "lastSampleAt": 230088.9814999285,
+      "requestAt": 230357,
+      "responseAt": 230957.29999995232,
+      "stableAt": 231556.89999997616,
+      "manual": false,
+      "paintedAt": 231594.19999992847,
+      "scrollCorrected": false,
+      "totalMs": 1505.2184999999881,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0013",
+    "kind": "reference",
+    "target": [
+      5,
+      17,
+      3
+    ],
+    "reference": [
+      5,
+      17,
+      3
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1510.2214999761782,
+    "captureClockOffsetMs": 12.37799997619004,
+    "trace": {
+      "result": {
+        "text": "请翻到生命纪第十七章第三节",
+        "reference": [
+          5,
+          17,
+          3
+        ],
+        "asrMs": 577.7974590891972,
+        "locateMs": 0.5310829728841782
+      },
+      "lastSampleAt": 235365.95649995233,
+      "requestAt": 235637.39999997616,
+      "responseAt": 236221.59999990463,
+      "stableAt": 236836.89999997616,
+      "manual": false,
+      "paintedAt": 236863.79999995232,
+      "scrollCorrected": false,
+      "totalMs": 1497.8434999999881,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0014",
+    "kind": "reference",
+    "target": [
+      5,
+      34,
+      5
+    ],
+    "reference": [
+      5,
+      34,
+      5
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1510.463000000018,
+    "captureClockOffsetMs": 13.21950002387166,
+    "trace": {
+      "result": {
+        "text": "生命纪第34章第5节",
+        "reference": [
+          5,
+          34,
+          5
+        ],
+        "asrMs": 605.7322919368744,
+        "locateMs": 1.9765000324696302
+      },
+      "lastSampleAt": 240100.1565,
+      "requestAt": 240372.39999997616,
+      "responseAt": 240987,
+      "stableAt": 241572.19999992847,
+      "manual": false,
+      "paintedAt": 241597.39999997616,
+      "scrollCorrected": false,
+      "totalMs": 1497.2434999761463,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0016",
+    "kind": "reference",
+    "target": [
+      6,
+      12,
+      3
+    ],
+    "reference": [
+      6,
+      12,
+      3
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1525.0065000238537,
+    "captureClockOffsetMs": 18.737999952340033,
+    "trace": {
+      "result": {
+        "text": "请翻到约书雅记第十二章第三节",
+        "reference": [
+          6,
+          12,
+          3
+        ],
+        "asrMs": 720.254166983068,
+        "locateMs": 2.0762080093845725
+      },
+      "lastSampleAt": 245850.7314999285,
+      "requestAt": 246131.79999995232,
+      "responseAt": 246862.29999995232,
+      "stableAt": 247333,
+      "manual": false,
+      "paintedAt": 247357,
+      "scrollCorrected": false,
+      "totalMs": 1506.2685000715137,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0018",
+    "kind": "reference",
+    "target": [
+      7,
+      1,
+      1
+    ],
+    "reference": [
+      7,
+      1,
+      1
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1519.6805000000168,
+    "captureClockOffsetMs": 16.761999952344922,
+    "trace": {
+      "result": {
+        "text": "是诗纪第一章第一节。",
+        "reference": [
+          7,
+          1,
+          1
+        ],
+        "asrMs": 623.8560830242932,
+        "locateMs": 2.0138329127803445
+      },
+      "lastSampleAt": 250804.88149990464,
+      "requestAt": 251077.89999997616,
+      "responseAt": 251709.39999997616,
+      "stableAt": 252277.19999992847,
+      "manual": false,
+      "paintedAt": 252307.79999995232,
+      "scrollCorrected": false,
+      "totalMs": 1502.9185000476718,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0291",
+    "kind": "quotation",
+    "target": [
+      5,
+      20,
+      5
+    ],
+    "reference": [
+      5,
+      20,
+      5
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1937.1159999761148,
+    "captureClockOffsetMs": 23.735000071465038,
+    "trace": {
+      "result": {
+        "text": "官长也要对百姓宣告说,谁建造房屋,尚未奉献,他可以回家去,恐怕他阵亡,别人去奉献。谁种葡萄园,尚未用所结的果子,他可以回家去,恐怕他阵亡,别人去用。",
+        "reference": [
+          5,
+          20,
+          5
+        ],
+        "asrMs": 1309.7990000387654,
+        "locateMs": 3.7843328900635242
+      },
+      "lastSampleAt": 271233.219,
+      "requestAt": 271809.5,
+      "responseAt": 273131.59999990463,
+      "stableAt": 273131.59999990463,
+      "manual": false,
+      "paintedAt": 273146.59999990463,
+      "scrollCorrected": false,
+      "totalMs": 1913.3809999046498,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0292",
+    "kind": "quotation",
+    "target": [
+      26,
+      44,
+      24
+    ],
+    "reference": [
+      26,
+      44,
+      24
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1765.091999976139,
+    "captureClockOffsetMs": 22.31099997612182,
+    "trace": {
+      "result": {
+        "text": "有征颂的是,他们应当战利判断,要按我的典章判断,在我一切的节旗必守我的律法、条例,也必以我的安息日为圣日,他们不可挨尽死尸沾染自己,只可为父亲、母亲、儿子、女儿、弟兄、捍卫嫁人的姐妹沾染自己。",
+        "reference": [
+          26,
+          44,
+          24
+        ],
+        "asrMs": 1414.067666977644,
+        "locateMs": 8.512416039593518
+      },
+      "lastSampleAt": 296220.11899997614,
+      "requestAt": 296493.1999999285,
+      "responseAt": 297939.5,
+      "stableAt": 297939.5,
+      "manual": false,
+      "paintedAt": 297962.89999997616,
+      "scrollCorrected": false,
+      "totalMs": 1742.7810000000172,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0297",
+    "kind": "quotation",
+    "target": [
+      7,
+      2,
+      15
+    ],
+    "reference": [
+      7,
+      2,
+      15
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1819.427000023832,
+    "captureClockOffsetMs": 13.220999952347483,
+    "trace": {
+      "result": {
+        "text": "他们无论往何处去,耶和华都已在或攻击他们,正如耶和华所说的话,又如耶和华向他们所起的事,他们便极其困苦。耶和华兴起事实,事实就证救他们脱离抢罗他们人的手。",
+        "reference": [
+          7,
+          2,
+          15
+        ],
+        "asrMs": 1485.045582987368,
+        "locateMs": 13.199707958847284
+      },
+      "lastSampleAt": 315323.1939999047,
+      "requestAt": 315590.7999999523,
+      "responseAt": 317110.39999997616,
+      "stableAt": 317110.39999997616,
+      "manual": false,
+      "paintedAt": 317129.39999997616,
+      "scrollCorrected": false,
+      "totalMs": 1806.2060000714846,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0298",
+    "kind": "quotation",
+    "target": [
+      9,
+      26,
+      8
+    ],
+    "reference": [
+      9,
+      26,
+      8
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1807.264000071562,
+    "captureClockOffsetMs": 14.033000023919158,
+    "trace": {
+      "result": {
+        "text": "雅比塞对大魏说,现在神将你的仇敌交在你手里,求你容我拿枪将他刺透在地,一次就成,不用再刺。大魏对雅比塞说,不可害死他,有谁伸手害耶和华的受高者而无罪呢?",
+        "reference": [
+          9,
+          26,
+          8
+        ],
+        "asrMs": 1468.2658750098199,
+        "locateMs": 8.898000000044703
+      },
+      "lastSampleAt": 335952.6689999285,
+      "requestAt": 336230.89999997616,
+      "responseAt": 337731.09999990463,
+      "stableAt": 337731.09999990463,
+      "manual": false,
+      "paintedAt": 337745.89999997616,
+      "scrollCorrected": false,
+      "totalMs": 1793.2310000476427,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0003",
+    "kind": "reference",
+    "target": [
+      2,
+      1,
+      1
+    ],
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1502.1984999761335,
+    "captureClockOffsetMs": 13.754999952274375,
+    "trace": {
+      "result": {
+        "text": "我记得第一章第一节",
+        "reference": null,
+        "asrMs": 562.6727089984342,
+        "locateMs": 1.1180409928783774
+      },
+      "lastSampleAt": 340705.4564999523,
+      "requestAt": 340973.7999999523,
+      "responseAt": 341543.7999999523,
+      "stableAt": 342172.5,
+      "manual": false,
+      "paintedAt": 342193.89999997616,
+      "scrollCorrected": false,
+      "totalMs": 1488.443500023859,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "0009",
+    "kind": "reference",
+    "target": [
+      4,
+      1,
+      1
+    ],
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1523.0634999761241,
+    "captureClockOffsetMs": 19.445000000006985,
+    "trace": {
+      "result": {
+        "text": "民宿记记扎记一节",
+        "reference": null,
+        "asrMs": 566.0309999948367,
+        "locateMs": 0.3012500237673521
+      },
+      "lastSampleAt": 345507.1814999762,
+      "requestAt": 345789.5,
+      "responseAt": 346358.09999990463,
+      "stableAt": 346989.7999999523,
+      "manual": false,
+      "paintedAt": 347010.7999999523,
+      "scrollCorrected": false,
+      "totalMs": 1503.6184999761172,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "0017",
+    "kind": "reference",
+    "target": [
+      6,
+      24,
+      5
+    ],
+    "reference": [
+      6,
+      24,
+      5
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1521.3789999762084,
+    "captureClockOffsetMs": 20.147999928507488,
+    "trace": {
+      "result": {
+        "text": "约书要记第24章第五节",
+        "reference": [
+          6,
+          24,
+          5
+        ],
+        "asrMs": 616.8369579827413,
+        "locateMs": 1.1836669873446226
+      },
+      "lastSampleAt": 349482.0689999046,
+      "requestAt": 349750.09999990463,
+      "responseAt": 350373,
+      "stableAt": 350950,
+      "manual": false,
+      "paintedAt": 350983.2999999523,
+      "scrollCorrected": false,
+      "totalMs": 1501.231000047701,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0021",
+    "kind": "reference",
+    "target": [
+      8,
+      1,
+      1
+    ],
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1514.4810000237776,
+    "captureClockOffsetMs": 16.774999952234793,
+    "trace": {
+      "result": {
+        "text": "路在气地扎地一切",
+        "reference": null,
+        "asrMs": 600.0874999444932,
+        "locateMs": 5.814458010718226
+      },
+      "lastSampleAt": 354231.29399992846,
+      "requestAt": 354509.39999997616,
+      "responseAt": 355119.7999999523,
+      "stableAt": 355708.6999999285,
+      "manual": false,
+      "paintedAt": 355729,
+      "scrollCorrected": false,
+      "totalMs": 1497.7060000715428,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "0023",
+    "kind": "reference",
+    "target": [
+      8,
+      4,
+      5
+    ],
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1503.0035000238568,
+    "captureClockOffsetMs": 20.035000023897737,
+    "trace": {
+      "result": {
+        "text": "陆在记第四扎第五节",
+        "reference": null,
+        "asrMs": 592.8390000481158,
+        "locateMs": 0.642542028799653
+      },
+      "lastSampleAt": 357879.4314999762,
+      "requestAt": 358147.7999999523,
+      "responseAt": 358745.1999999285,
+      "stableAt": 359350,
+      "manual": false,
+      "paintedAt": 359362.39999997616,
+      "scrollCorrected": false,
+      "totalMs": 1482.968499999959,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "0027",
+    "kind": "reference",
+    "target": [
+      10,
+      1,
+      1
+    ],
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1502.2114999522455,
+    "captureClockOffsetMs": 19.342999976070132,
+    "trace": {
+      "result": {
+        "text": "三五二七下集一招集一节",
+        "reference": null,
+        "asrMs": 616.4114999119192,
+        "locateMs": 0.6407920736819506
+      },
+      "lastSampleAt": 362546.23149992846,
+      "requestAt": 362813.39999997616,
+      "responseAt": 363435,
+      "stableAt": 364013.6999999285,
+      "manual": false,
+      "paintedAt": 364029.09999990463,
+      "scrollCorrected": false,
+      "totalMs": 1482.8684999761754,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "0029",
+    "kind": "reference",
+    "target": [
+      10,
+      24,
+      5
+    ],
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1527.9730000238633,
+    "captureClockOffsetMs": 19.667000047687907,
+    "trace": {
+      "result": {
+        "text": "352记下第24章第5节",
+        "reference": null,
+        "asrMs": 639.4930829992518,
+        "locateMs": 1.0332090314477682
+      },
+      "lastSampleAt": 367369.594,
+      "requestAt": 367652.5,
+      "responseAt": 368299.09999990463,
+      "stableAt": 368852.39999997616,
+      "manual": false,
+      "paintedAt": 368877.89999997616,
+      "scrollCorrected": false,
+      "totalMs": 1508.3059999761754,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "0033",
+    "kind": "reference",
+    "target": [
+      12,
+      1,
+      1
+    ],
+    "reference": [
+      12,
+      1,
+      1
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1506.9625000715605,
+    "captureClockOffsetMs": 13.343999976175837,
+    "trace": {
+      "result": {
+        "text": "列王记下第一章第一节",
+        "reference": [
+          12,
+          1,
+          1
+        ],
+        "asrMs": 605.3282909560949,
+        "locateMs": 2.238958957605064
+      },
+      "lastSampleAt": 372124.3814999046,
+      "requestAt": 372389.89999997616,
+      "responseAt": 373003.1999999285,
+      "stableAt": 373590.09999990463,
+      "manual": false,
+      "paintedAt": 373618,
+      "scrollCorrected": false,
+      "totalMs": 1493.6185000953847,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "ref3-106",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1525.4575000714976,
+    "captureClockOffsetMs": 20.03900002379669,
+    "trace": {
+      "result": {
+        "text": "请不要读约翰福音第三章第十六节。",
+        "reference": null,
+        "asrMs": 642.9780829930678,
+        "locateMs": 1.2495419941842556
+      },
+      "lastSampleAt": 378789.98149992846,
+      "requestAt": 379068.7999999523,
+      "responseAt": 379718.89999997616,
+      "stableAt": 380268.89999997616,
+      "manual": false,
+      "paintedAt": 380295.39999997616,
+      "scrollCorrected": false,
+      "totalMs": 1505.418500047701,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "ref3-107",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1514.6640000476618,
+    "captureClockOffsetMs": 17.833000095328316,
+    "trace": {
+      "result": {
+        "text": "请不要读约翰福音第三章第十六节。",
+        "reference": null,
+        "asrMs": 620.4901250312105,
+        "locateMs": 1.7515000654384494
+      },
+      "lastSampleAt": 383931.969,
+      "requestAt": 384212.89999997616,
+      "responseAt": 384842,
+      "stableAt": 385412.89999997616,
+      "manual": false,
+      "paintedAt": 385428.7999999523,
+      "scrollCorrected": false,
+      "totalMs": 1496.8309999523335,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "ref3-108",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1496.4869999999646,
+    "captureClockOffsetMs": 18.656000047631096,
+    "trace": {
+      "result": {
+        "text": "请翻到课本第八章第十二节",
+        "reference": null,
+        "asrMs": 649.9307500198483,
+        "locateMs": 2.4904999881982803
+      },
+      "lastSampleAt": 388899.2689999523,
+      "requestAt": 389164.6999999285,
+      "responseAt": 389822.5,
+      "stableAt": 390365.59999990463,
+      "manual": false,
+      "paintedAt": 390377.09999990463,
+      "scrollCorrected": false,
+      "totalMs": 1477.8309999523335,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "ref3-109",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1506.98049997614,
+    "captureClockOffsetMs": 18.186999928439036,
+    "trace": {
+      "result": {
+        "text": "请翻到课本第八章第十二节。",
+        "reference": null,
+        "asrMs": 635.3600419824943,
+        "locateMs": 1.097041997127235
+      },
+      "lastSampleAt": 393273.10649992846,
+      "requestAt": 393549.6999999285,
+      "responseAt": 394191.7999999523,
+      "stableAt": 394750,
+      "manual": false,
+      "paintedAt": 394761.89999997616,
+      "scrollCorrected": false,
+      "totalMs": 1488.793500047701,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "ref3-110",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1510.4990000000107,
+    "captureClockOffsetMs": 14.46799999999348,
+    "trace": {
+      "result": {
+        "text": "马太福音第一章第一节,不是现在。",
+        "reference": null,
+        "asrMs": 704.0280000073835,
+        "locateMs": 0.9611669229343534
+      },
+      "lastSampleAt": 399349.969,
+      "requestAt": 399629.59999990463,
+      "responseAt": 400341.39999997616,
+      "stableAt": 400830.1999999285,
+      "manual": false,
+      "paintedAt": 400846,
+      "scrollCorrected": false,
+      "totalMs": 1496.0310000000172,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "ref3-111",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1519.9054999999935,
+    "captureClockOffsetMs": 13.336999976134393,
+    "trace": {
+      "result": {
+        "text": "马太胡音第一章第一节,不是现在。",
+        "reference": null,
+        "asrMs": 586.4099160535261,
+        "locateMs": 0.794125022366643
+      },
+      "lastSampleAt": 404705.3314999523,
+      "requestAt": 404989.59999990463,
+      "responseAt": 405582.39999997616,
+      "stableAt": 406189.59999990463,
+      "manual": false,
+      "paintedAt": 406211.89999997616,
+      "scrollCorrected": false,
+      "totalMs": 1506.568500023859,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "ref3-112",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1520.0840000238968,
+    "captureClockOffsetMs": 21.752999952354003,
+    "trace": {
+      "result": {
+        "text": "约翰福音第三章第十六节只是练习例子",
+        "reference": null,
+        "asrMs": 723.8153329817578,
+        "locateMs": 1.1414170730859041
+      },
+      "lastSampleAt": 411928.16899992846,
+      "requestAt": 412205.5,
+      "responseAt": 412939.5,
+      "stableAt": 413405.09999990463,
+      "manual": false,
+      "paintedAt": 413426.5,
+      "scrollCorrected": false,
+      "totalMs": 1498.3310000715428,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "ref3-113",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1508.3484999523498,
+    "captureClockOffsetMs": 13.155000047700014,
+    "trace": {
+      "result": {
+        "text": "约翰福音第三章第十六截止是练习练子",
+        "reference": null,
+        "asrMs": 679.8529169755057,
+        "locateMs": 2.5436660507693887
+      },
+      "lastSampleAt": 417632.4065,
+      "requestAt": 417909.89999997616,
+      "responseAt": 418600.09999990463,
+      "stableAt": 419109.59999990463,
+      "manual": false,
+      "paintedAt": 419127.59999990463,
+      "scrollCorrected": false,
+      "totalMs": 1495.1934999046498,
+      "outcome": "rejected"
+    }
+  }
+]

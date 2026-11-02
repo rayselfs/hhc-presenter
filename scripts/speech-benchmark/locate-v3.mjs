@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { pinyin } from 'pinyin-pro'
 import assert from 'node:assert/strict'
 import { performance } from 'node:perf_hooks'
+import { createInterface } from 'node:readline'
 
 const [root, input, output] = process.argv.slice(2)
 const books = JSON.parse(readFileSync(`${root}/books.json`, 'utf8'))
@@ -122,7 +123,19 @@ for (const [text, expected] of [
 ])
   assert.deepEqual(locate(text), expected, text)
 assert.equal(inhibited('不要怕，只要信！'), false)
-if (input === '--phonetic-corpus') {
+if (input === '--stdio') {
+  console.log(JSON.stringify({ ready: true }))
+  for await (const line of createInterface({ input: process.stdin })) {
+    const row = JSON.parse(line)
+    console.log(
+      JSON.stringify({
+        reference: locate(row.reference_normalized),
+        inhibited: inhibited(row.reference_normalized),
+        phonetic: phonetic(row.transcript)
+      })
+    )
+  }
+} else if (input === '--phonetic-corpus') {
   writeFileSync(
     output,
     JSON.stringify(scripture.map((b) => ({ chapters: b.chapters.map((c) => c.map(phonetic)) })))
