@@ -1,0 +1,2178 @@
+[
+  {
+    "id": "ref3-000",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到創世記第十九章第三節",
+    "target": [
+      1,
+      19,
+      3
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "14eee65eb394750a1e009fc3fea7d76b954e41ee9357d446af25be5a25e82d78",
+    "duration_s": 3.1898125
+  },
+  {
+    "id": "ref3-001",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開出埃及記第十二章第七節",
+    "target": [
+      2,
+      12,
+      7
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "9d71cdc15dfedc8043d8cef1672b67c32b291bd9cd39475e97a88ed9737ac3dd",
+    "duration_s": 3.206875
+  },
+  {
+    "id": "ref3-002",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看利未記第二章第十三節",
+    "target": [
+      3,
+      2,
+      13
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "ab25f053a2aaee2b051549162fbb86c3950d5a0b575a79297df05ccde25cb51d",
+    "duration_s": 2.86475
+  },
+  {
+    "id": "ref3-003",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到民數記第二章第八節",
+    "target": [
+      4,
+      2,
+      8
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "687ba7f6bec062b9f91d7ba2f0a574b054ab6e516d48e60cde80ab93b2933fd0",
+    "duration_s": 2.7790625
+  },
+  {
+    "id": "ref3-004",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開申命記第三十一章第二十九節",
+    "target": [
+      5,
+      31,
+      29
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "202f50385fcc16dd48a2e4527d86f0dd89919ac933a6eac93d00d983837e1254",
+    "duration_s": 3.898
+  },
+  {
+    "id": "ref3-005",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看約書亞記第二章第十九節",
+    "target": [
+      6,
+      2,
+      19
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "c52d17d077927ea574709721b9d76848332ef59cc003105b8572c10381874c88",
+    "duration_s": 2.975625
+  },
+  {
+    "id": "ref3-006",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到士師記第十四章第七節",
+    "target": [
+      7,
+      14,
+      7
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "6b55341e271aa10d3a987a401d851970e92128b66f4ca0cfa729fb44f59de7e3",
+    "duration_s": 3.0969375
+  },
+  {
+    "id": "ref3-007",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開路得記第二章第五節",
+    "target": [
+      8,
+      2,
+      5
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "84362912347e05e8d924653618994a6fb03bec5cf19494f47411d21bb551b48c",
+    "duration_s": 2.744375
+  },
+  {
+    "id": "ref3-008",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看撒母耳記上第八章第十八節",
+    "target": [
+      9,
+      8,
+      18
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "cc201d2333dc6a0f19655ba8f7bae3dce10d53328a7e2dfef199e2d199df2b4b",
+    "duration_s": 3.2826875
+  },
+  {
+    "id": "ref3-009",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到撒母耳記下第四章第三節",
+    "target": [
+      10,
+      4,
+      3
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "1bb4f6a64917c781ac4a7c01500c6f98c8b24702e8a6334a6982b93b469316e4",
+    "duration_s": 3.2184375
+  },
+  {
+    "id": "ref3-010",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開列王紀上第十七章第二十二節",
+    "target": [
+      11,
+      17,
+      22
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "cfae308aac11a2bff4d211dcca4c1f9491855ea03f6cf5c4e0120b94d75a255b",
+    "duration_s": 3.7935
+  },
+  {
+    "id": "ref3-011",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看列王紀下第九章第二節",
+    "target": [
+      12,
+      9,
+      2
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "dc17215f35e13ca9bf9fe026c353130f0cb0dae0f81ffe82a263a7c195f70936",
+    "duration_s": 2.7328125
+  },
+  {
+    "id": "ref3-012",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到歷代志上第七章第三十八節",
+    "target": [
+      13,
+      7,
+      38
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "4d4de266a220cd394e87f2c666648a8e5c5b95c10041c903f13f462745ba2f1d",
+    "duration_s": 3.50325
+  },
+  {
+    "id": "ref3-013",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開歷代志下第二十五章第二十七節",
+    "target": [
+      14,
+      25,
+      27
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "69ed0ee7824d8a516869b705bb185767bd9ba2d2c0caf809209568551e8eb9b9",
+    "duration_s": 3.4959375
+  },
+  {
+    "id": "ref3-014",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看以斯拉記第八章第二十五節",
+    "target": [
+      15,
+      8,
+      25
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "d9acb8471011d336b328bccda929ca2a5e70e05fad7f11268b30c50b738f8c2f",
+    "duration_s": 3.3639375
+  },
+  {
+    "id": "ref3-015",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到尼希米記第三章第二十三節",
+    "target": [
+      16,
+      3,
+      23
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "aa14221b538224c2da581143138b751875c257f73fb2def9903b301f153cfbfe",
+    "duration_s": 3.4034375
+  },
+  {
+    "id": "ref3-016",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開以斯帖記第九章第二十節",
+    "target": [
+      17,
+      9,
+      20
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "83bb998614f3d9d071cbc78a38753cbc17a391b47a90424deec1d3f50202dc8b",
+    "duration_s": 3.410375
+  },
+  {
+    "id": "ref3-017",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看約伯記第二十三章第十五節",
+    "target": [
+      18,
+      23,
+      15
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "4967346749615b088c23e411403cb6a16616acd00e0e5a0467ee11bef4057941",
+    "duration_s": 3.1028125
+  },
+  {
+    "id": "ref3-018",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到詩篇第三十三章第三節",
+    "target": [
+      19,
+      33,
+      3
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "8fcac2b7a13228b74e79d891e3fdf7985cd45089874dfff3178ec7041fd56308",
+    "duration_s": 3.329125
+  },
+  {
+    "id": "ref3-019",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開箴言第二十五章第九節",
+    "target": [
+      20,
+      25,
+      9
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "e9996239c37fbe39157005ec619aead499f78807bb9dc6df2751d0f719362522",
+    "duration_s": 3.021875
+  },
+  {
+    "id": "ref3-020",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看傳道書第二章第九節",
+    "target": [
+      21,
+      2,
+      9
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "fb0df7adb1003858eaf03c60872b2e98fb8930975256e39841cb26e74f5f2b42",
+    "duration_s": 2.737
+  },
+  {
+    "id": "ref3-021",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到雅歌第四章第十節",
+    "target": [
+      22,
+      4,
+      10
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "9433162f247f9f3b5442fc16cc69814802b517366c853873912853cfb1389779",
+    "duration_s": 2.5478125
+  },
+  {
+    "id": "ref3-022",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開以賽亞書第三十章第二十四節",
+    "target": [
+      23,
+      30,
+      24
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "8f8985e634e78423e0b71a4698b71ebf5fb0ddd695960e14e763210c97f9adbf",
+    "duration_s": 3.932875
+  },
+  {
+    "id": "ref3-023",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看耶利米書第十章第七節",
+    "target": [
+      24,
+      10,
+      7
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "a0f26dc910e469299c646fef320c3b99f34b14333f4559070cf5874e5c54a508",
+    "duration_s": 2.7675
+  },
+  {
+    "id": "ref3-024",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到耶利米哀歌第三章第十五節",
+    "target": [
+      25,
+      3,
+      15
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "9913614a6120c45285aed658cfcb699ab81399a11af4e4d823ab5ae0d9a404f8",
+    "duration_s": 3.631
+  },
+  {
+    "id": "ref3-025",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開以西結書第四十一章第二十一節",
+    "target": [
+      26,
+      41,
+      21
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "2a4a1c4a78d1eaa729f12a45196755ee5049cda59cb41ea413b31340315504dc",
+    "duration_s": 3.6346875
+  },
+  {
+    "id": "ref3-026",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看但以理書第六章第十五節",
+    "target": [
+      27,
+      6,
+      15
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "2ac859c550d76bee9c7cb535c3a8efda6e60045e26274ceef6b23a166dfb0bb6",
+    "duration_s": 3.1781875
+  },
+  {
+    "id": "ref3-027",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到何西阿書第六章第十一節",
+    "target": [
+      28,
+      6,
+      11
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "1c403570e1d9930a9d436c7ad2c145cabe2df1409e932b1a7c3b7a37d517982d",
+    "duration_s": 3.1259375
+  },
+  {
+    "id": "ref3-028",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開約珥書第二章第二十九節",
+    "target": [
+      29,
+      2,
+      29
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "2382bb14d7d9f6b85a084994693b0729fdb16197663d81f359af653812213eba",
+    "duration_s": 3.352375
+  },
+  {
+    "id": "ref3-029",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看阿摩司書第一章第五節",
+    "target": [
+      30,
+      1,
+      5
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "66f320e6a300a888d199ad05cfce2f03736c95193df502fe4aef921fde0d4b8e",
+    "duration_s": 2.698125
+  },
+  {
+    "id": "ref3-030",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到俄巴底亞書第一章第十八節",
+    "target": [
+      31,
+      1,
+      18
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "2c246bc34b956d3a40ac38e83ea55b97c564a23786a89c2b21b1616f59a0b219",
+    "duration_s": 3.410375
+  },
+  {
+    "id": "ref3-031",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開約拿書第一章第九節",
+    "target": [
+      32,
+      1,
+      9
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "17cc40a28d9045bea38cd7854df561f7aeca26f6ef0c19ac7c4d4753d3e38991",
+    "duration_s": 2.86
+  },
+  {
+    "id": "ref3-032",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看彌迦書第六章第十一節",
+    "target": [
+      33,
+      6,
+      11
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "7a1ec7c022efeee7ca19cd30e79c2ae47fac4aa6b1ea35757133eb06844aee16",
+    "duration_s": 2.8995625
+  },
+  {
+    "id": "ref3-033",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到那鴻書第二章第十三節",
+    "target": [
+      34,
+      2,
+      13
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "e7e25134062aec1435eab9c99027d99483a50588ec7f4c65d682256ca4b73d15",
+    "duration_s": 3.0103125
+  },
+  {
+    "id": "ref3-034",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開哈巴谷書第三章第十九節",
+    "target": [
+      35,
+      3,
+      19
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "b60cd6df576ed114d068f91bcecb5726c66dce4a7509beda16ff6d19dd76f0d8",
+    "duration_s": 3.4916875
+  },
+  {
+    "id": "ref3-035",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看西番雅書第一章第十二節",
+    "target": [
+      36,
+      1,
+      12
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "d11ce95cca2a23e42054d6de5011a12b7a61a077ee741fc9961007954480a534",
+    "duration_s": 3.068125
+  },
+  {
+    "id": "ref3-036",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到哈該書第一章第五節",
+    "target": [
+      37,
+      1,
+      5
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "dd6af262f2042d7551cee32077b5e3e406ffe6c15e403402a9ee7f2ad14a1e76",
+    "duration_s": 2.946
+  },
+  {
+    "id": "ref3-037",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開撒迦利亞書第五章第八節",
+    "target": [
+      38,
+      5,
+      8
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "e372aad44bde4b41aaf2b0d48191de8b01fbbae26cc3123efec6760427bf22bf",
+    "duration_s": 3.2184375
+  },
+  {
+    "id": "ref3-038",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看瑪拉基書第一章第八節",
+    "target": [
+      39,
+      1,
+      8
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "7080cfe12461f2ac6dfe18ea02fbe436bc94133623e24b32f9088beee597c89c",
+    "duration_s": 2.8415
+  },
+  {
+    "id": "ref3-039",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到馬太福音第十九章第二十六節",
+    "target": [
+      40,
+      19,
+      26
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "21847c591b37e5f26a2e32bc01cc1698c341411e41ba12bbd2dc703d4d89cb9e",
+    "duration_s": 3.3571875
+  },
+  {
+    "id": "ref3-040",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開馬可福音第十四章第三十九節",
+    "target": [
+      41,
+      14,
+      39
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "132f26ec8801b6882b421a8997a13dc3331aae836ea0e71932318c1297a251ac",
+    "duration_s": 3.9560625
+  },
+  {
+    "id": "ref3-041",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看路加福音第九章第四十九節",
+    "target": [
+      42,
+      9,
+      49
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "b7536e36f87494c97d9013f0d24e40e6c770f781047ac9eb6629b94541012b0f",
+    "duration_s": 3.1953125
+  },
+  {
+    "id": "ref3-042",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到約翰福音第四章第四節",
+    "target": [
+      43,
+      4,
+      4
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "5b778a7d20075c7ac8fc24ed4111f2d48dcd26b77171d0883203593234b32c79",
+    "duration_s": 3.2595
+  },
+  {
+    "id": "ref3-043",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開使徒行傳第二十二章第二十五節",
+    "target": [
+      44,
+      22,
+      25
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "dfd6d57c054b61c5c51e757fd406d47ccdecc89f8acc72b091411a0c716e22f6",
+    "duration_s": 3.73875
+  },
+  {
+    "id": "ref3-044",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看羅馬書第三章第二十一節",
+    "target": [
+      45,
+      3,
+      21
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "3e39a5c4a38958dddbe9c519930e8bf9bab19d5c6c72c20fd3190b2bf39579f2",
+    "duration_s": 3.143375
+  },
+  {
+    "id": "ref3-045",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到哥林多前書第五章第八節",
+    "target": [
+      46,
+      5,
+      8
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "98ae7a52dcb531fcb1dccde202cc5084941439208ead0e5bb542c4466d1accd7",
+    "duration_s": 3.206875
+  },
+  {
+    "id": "ref3-046",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開哥林多後書第八章第十六節",
+    "target": [
+      47,
+      8,
+      16
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "7f7a14f36adc0432c73d70bd6d3fa6acd9ec0bb30d690716c5ae086af89ae1ae",
+    "duration_s": 3.7586875
+  },
+  {
+    "id": "ref3-047",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看加拉太書第四章第八節",
+    "target": [
+      48,
+      4,
+      8
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "59d0647b4049847a6b9bdc6bc50f03f7a87f451b789a4436b44827ba1a80226e",
+    "duration_s": 2.8946875
+  },
+  {
+    "id": "ref3-048",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到以弗所書第四章第三節",
+    "target": [
+      49,
+      4,
+      3
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "2771de56ed7945446c951a471e83f244caf1cbafe2429836bdef1dd718ec56a9",
+    "duration_s": 3.224625
+  },
+  {
+    "id": "ref3-049",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開腓立比書第三章第十六節",
+    "target": [
+      50,
+      3,
+      16
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "23dfc21ac91160d611e2224814eaae4a264065b5ffdcd8d3d54c049d7bc802b5",
+    "duration_s": 3.3225
+  },
+  {
+    "id": "ref3-050",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看歌羅西書第四章第七節",
+    "target": [
+      51,
+      4,
+      7
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "5bc0c2f72f9c77943e703e3d83087ca4b128e7b83bcd5471550a44536ecfe2e2",
+    "duration_s": 2.9924375
+  },
+  {
+    "id": "ref3-051",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到帖撒羅尼迦前書第五章第十三節",
+    "target": [
+      52,
+      5,
+      13
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "d6f851c31436d757af4eae51ffeaf36b1a239f6e6b4fa10e8a947993420a85d4",
+    "duration_s": 3.8428125
+  },
+  {
+    "id": "ref3-052",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開帖撒羅尼迦後書第一章第三節",
+    "target": [
+      53,
+      1,
+      3
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "a8e975d2317be55ec697b9611a5826f8483b92530a8211ef8408902d4c5a0ef9",
+    "duration_s": 4.0489375
+  },
+  {
+    "id": "ref3-053",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看提摩太前書第二章第六節",
+    "target": [
+      54,
+      2,
+      6
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "b56df5f338e8b0cc440eb082b915b15f881792b63cc34299376a22afa5e441d1",
+    "duration_s": 3.0565625
+  },
+  {
+    "id": "ref3-054",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到提摩太後書第一章第十四節",
+    "target": [
+      55,
+      1,
+      14
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "f6a2c062c218c12c0f28db96371ef7597164ef03351bfc4905deaf9a5ccd6655",
+    "duration_s": 3.60775
+  },
+  {
+    "id": "ref3-055",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開提多書第三章第十二節",
+    "target": [
+      56,
+      3,
+      12
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "68856b09a27a775b4e9614c258f524938331f9fb2a05a3b0bf4a0637815a5f00",
+    "duration_s": 3.160625
+  },
+  {
+    "id": "ref3-056",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看腓利門書第一章第二十五節",
+    "target": [
+      57,
+      1,
+      25
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "008806383c60819cc1dd923026a0b01e3caae3129060eafcfc18b6219c327b30",
+    "duration_s": 3.3059375
+  },
+  {
+    "id": "ref3-057",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到希伯來書第十三章第十三節",
+    "target": [
+      58,
+      13,
+      13
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "808db6008db63ac5ba59f7ab686ce69642ce1af413355e752566eac0be7304ca",
+    "duration_s": 3.55375
+  },
+  {
+    "id": "ref3-058",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開雅各書第一章第二十節",
+    "target": [
+      59,
+      1,
+      20
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "077f898609f48c62fb977e476e5009945210d4d4580b1ddeb3bf1c1e02f094b8",
+    "duration_s": 3.0969375
+  },
+  {
+    "id": "ref3-059",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看彼得前書第二章第九節",
+    "target": [
+      60,
+      2,
+      9
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "63e3d53d835852a758f724ef72a3d853ca0f98d4131fcc1ae122f3fdd47f21f4",
+    "duration_s": 2.8715625
+  },
+  {
+    "id": "ref3-060",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到彼得後書第三章第十節",
+    "target": [
+      61,
+      3,
+      10
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "1c39b0ef8f75c4f126b9ffa38cde1719666aa0fbb348b0a5af1cea17dda64a10",
+    "duration_s": 3.13175
+  },
+  {
+    "id": "ref3-061",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開約翰一書第一章第一節",
+    "target": [
+      62,
+      1,
+      1
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "8bea437e6435bc3628729ae338f0fa1a2dec0588952ebac97dff000fa0d9e963",
+    "duration_s": 2.975625
+  },
+  {
+    "id": "ref3-062",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看約翰二書第一章第一節",
+    "target": [
+      63,
+      1,
+      1
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "e924f9113c7dbe086dc694900c18cfa16b0ff1be6f1ccbaef04f27a0fa0048d4",
+    "duration_s": 2.8995625
+  },
+  {
+    "id": "ref3-063",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到約翰三書第一章第十五節",
+    "target": [
+      64,
+      1,
+      15
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "6b530ffd0a8e131d42fff976cf60d0e04d9b12c3fdf8b4dedf0546f55005d745",
+    "duration_s": 3.1721875
+  },
+  {
+    "id": "ref3-064",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開猶大書第一章第十節",
+    "target": [
+      65,
+      1,
+      10
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "72b57566ca7d1548ff740dbd70f261cf8765fb12aea9ced9ce9259b6df907200",
+    "duration_s": 2.8995625
+  },
+  {
+    "id": "ref3-065",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看啟示錄第十九章第三節",
+    "target": [
+      66,
+      19,
+      3
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "a45b9726007b0131921b10658883c0665f3c36b223dfff7c43b1195e207f6d93",
+    "duration_s": 2.8484375
+  },
+  {
+    "id": "ref3-066",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Obadiah one verse two",
+    "target": [
+      31,
+      1,
+      2
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "1b429f9b77b7cba876c213258bfca538ba07bfd39a8d32a391b2ba6911aa7c2e",
+    "duration_s": 2.0995
+  },
+  {
+    "id": "ref3-067",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read 1 John chapter four verse fifteen",
+    "target": [
+      62,
+      4,
+      15
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "5dfa782caad33ddd4d12fe1f6546d8a712d96199931aa7a2edb2ca3e303627da",
+    "duration_s": 3.0534375
+  },
+  {
+    "id": "ref3-068",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Ezekiel nine verse ten",
+    "target": [
+      26,
+      9,
+      10
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "98f4fa259c19be1ca5a3f7350ec183fb3d025483f527a96667337b6048617dac",
+    "duration_s": 2.2039375
+  },
+  {
+    "id": "ref3-069",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Esther chapter seven verse four",
+    "target": [
+      17,
+      7,
+      4
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "d9d6f3626feb85401da25c8d86045a82c3379861cdcc63bb36aaa0350e551bb1",
+    "duration_s": 2.705125
+  },
+  {
+    "id": "ref3-070",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read 3 John one verse three",
+    "target": [
+      64,
+      1,
+      3
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "f22aa692d6aeea3107d2967b08bd470b075700af6d94ca69a41b19e3592e21e3",
+    "duration_s": 2.169125
+  },
+  {
+    "id": "ref3-071",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read 2 John chapter one verse eleven",
+    "target": [
+      63,
+      1,
+      11
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "e84961f14577aa5c05596a75a99112ee4718d1308e86c83e525c0127b21049fe",
+    "duration_s": 2.8676875
+  },
+  {
+    "id": "ref3-072",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read John thirteen verse twenty-eight",
+    "target": [
+      43,
+      13,
+      28
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "4586f8da90fa26ba1c839c71c8b8b199c5e2a54adff3975bb2caeb31847d997a",
+    "duration_s": 2.262
+  },
+  {
+    "id": "ref3-073",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Revelation chapter three verse fourteen",
+    "target": [
+      66,
+      3,
+      14
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "83415e8f694a4a559a99782f034101f1df2bcec0bde67f927097bb7ea800534c",
+    "duration_s": 3.1579375
+  },
+  {
+    "id": "ref3-074",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Psalms seventy-seven verse twenty",
+    "target": [
+      19,
+      77,
+      20
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "445a49dce5b45a5fa739f90bfe6f13f55074cc99a757edf7a1462632a3d0084a",
+    "duration_s": 2.563875
+  },
+  {
+    "id": "ref3-075",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read 2 Timothy chapter four verse twenty",
+    "target": [
+      55,
+      4,
+      20
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "d0caa0e45f4a28cf0129d73070cebf23c6cfc4c0e0a121889c2dd74fa07735bc",
+    "duration_s": 3.099875
+  },
+  {
+    "id": "ref3-076",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Hosea twelve verse one",
+    "target": [
+      28,
+      12,
+      1
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "b35836c0c4b3e17d15806ae702e890e0e64c56c6d1576c3cd9ced3458497b65d",
+    "duration_s": 2.2039375
+  },
+  {
+    "id": "ref3-077",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Isaiah chapter sixty-five verse sixteen",
+    "target": [
+      23,
+      65,
+      16
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "d12f96c7086343462376a1ca87b2650663cd04cd4baf363400f90ba9d3e93f99",
+    "duration_s": 3.5294375
+  },
+  {
+    "id": "ref3-078",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Jeremiah fifty-one verse twelve",
+    "target": [
+      24,
+      51,
+      12
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "b1237d4a04d953fceb029d80d8913e2b342adbc967773b3e34a8b482d8b09a14",
+    "duration_s": 2.6335
+  },
+  {
+    "id": "ref3-079",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read 1 Chronicles chapter twenty-four verse four",
+    "target": [
+      13,
+      24,
+      4
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "4650e25791390d2b67dac9934e0ffa9a4d4ddf722320446d49f67e6eb0473648",
+    "duration_s": 3.471375
+  },
+  {
+    "id": "ref3-080",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read 1 Thessalonians one verse one",
+    "target": [
+      52,
+      1,
+      1
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "9bff1a38e453900123896d05328b621d02440341c9606134686844ad3ecd6779",
+    "duration_s": 2.65675
+  },
+  {
+    "id": "ref3-081",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Joel chapter one verse seventeen",
+    "target": [
+      29,
+      1,
+      17
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "c6857783914e0d5d5c4183dffc03716a80c5072376a19060a3eff1ab55d4e0f3",
+    "duration_s": 2.914125
+  },
+  {
+    "id": "ref3-082",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read 2 Chronicles twenty-seven verse two",
+    "target": [
+      14,
+      27,
+      2
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "7cf3719b07fb032085f5f20409e8116a07199959ba90d517c5dc732094897bd0",
+    "duration_s": 2.830875
+  },
+  {
+    "id": "ref3-083",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Luke chapter two verse fifty",
+    "target": [
+      42,
+      2,
+      50
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "f6f13efa9608cb3c71872a30c501f71f128c1f50006fa19f5c286356f6174c58",
+    "duration_s": 2.5890625
+  },
+  {
+    "id": "ref3-084",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read 1 Timothy two verse two",
+    "target": [
+      54,
+      2,
+      2
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "a8a741ec1bcc9f2bac6f566d8428afdb54512177002ab83cd4786eb8c8e8159d",
+    "duration_s": 2.3084375
+  },
+  {
+    "id": "ref3-085",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Nehemiah chapter four verse seventeen",
+    "target": [
+      16,
+      4,
+      17
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "4427d37eb49d3a552ddf2fa0664595c0ed06cdaa547f40c5b3bedaf13fc88272",
+    "duration_s": 3.1346875
+  },
+  {
+    "id": "ref3-086",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Joshua twenty verse five",
+    "target": [
+      6,
+      20,
+      5
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "02eecd308361077df6f3d8e7b3167eeb3d8156e098555acb2711d7d5825a8e68",
+    "duration_s": 2.18075
+  },
+  {
+    "id": "ref3-087",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Song of Solomon chapter six verse six",
+    "target": [
+      22,
+      6,
+      6
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "ab0dd4f21cda35f2a8234864884b94a8b9c1323283e623d3989479cfa56a8b01",
+    "duration_s": 3.308875
+  },
+  {
+    "id": "ref3-088",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Genesis thirty-five verse one",
+    "target": [
+      1,
+      35,
+      1
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "d1cf2496a56bb06e3a4526f5afcd58c46c53d9bc0816652fd8b42f939ca92961",
+    "duration_s": 2.5290625
+  },
+  {
+    "id": "ref3-089",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Malachi chapter three verse eight",
+    "target": [
+      39,
+      3,
+      8
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "343d73f587198d02f0309c651d0a66baa487d24c10c4913e2b84013e19bcf1b7",
+    "duration_s": 2.6355
+  },
+  {
+    "id": "ref3-090",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Ruth four verse eight",
+    "target": [
+      8,
+      4,
+      8
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "9b76bd1844654deab6f31c0736b2b2bf52a0d49f571fb3c9107c2349b745ae6b",
+    "duration_s": 1.8324375
+  },
+  {
+    "id": "ref3-091",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Ephesians chapter six verse seventeen",
+    "target": [
+      49,
+      6,
+      17
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "74a420a6c415fbc453d54689be26a3fa392460cb9426d5609763b6d4da196a16",
+    "duration_s": 3.2391875
+  },
+  {
+    "id": "ref3-092",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Romans fifteen verse eight",
+    "target": [
+      45,
+      15,
+      8
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "8b8926ac1a9ca87bc7f812cf3be3012e9e71226f9c5888a02d6f6b84641f44e4",
+    "duration_s": 2.192375
+  },
+  {
+    "id": "ref3-093",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Job chapter twenty-five verse three",
+    "target": [
+      18,
+      25,
+      3
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "bf285fa2aee9b3725f3f6198ba2179382d401c80d28aebb8074788d0895c2014",
+    "duration_s": 2.98375
+  },
+  {
+    "id": "ref3-094",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Exodus sixteen verse fourteen",
+    "target": [
+      2,
+      16,
+      14
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "c710be061f0712edb018f1723b0022098bf1808dc034e8fbfdeedd1b756019eb",
+    "duration_s": 2.5986875
+  },
+  {
+    "id": "ref3-095",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Jude chapter one verse fourteen",
+    "target": [
+      65,
+      1,
+      14
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "83cf55df6733f4a99dc8b2b5c10966a0bbd34155269c5de414345573f3e4b255",
+    "duration_s": 2.728375
+  },
+  {
+    "id": "ref3-096",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Ecclesiastes ten verse eleven",
+    "target": [
+      21,
+      10,
+      11
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "03989b46a88a1283b9c2dc42872be705227453865ab35ae7fcd2c05b17141d16",
+    "duration_s": 2.55225
+  },
+  {
+    "id": "ref3-097",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Judges chapter twelve verse one",
+    "target": [
+      7,
+      12,
+      1
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "e1e42f717535d77615ccfdc70fd29dbcf948de4683982a37d84b9b336392006c",
+    "duration_s": 2.71675
+  },
+  {
+    "id": "ref3-098",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Zephaniah one verse five",
+    "target": [
+      36,
+      1,
+      5
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "e5e018bf294980c2ca74ac10f182b2f1a0d2268216fcc27d900cbbea4b7fc76e",
+    "duration_s": 2.2388125
+  },
+  {
+    "id": "ref3-099",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Acts chapter six verse thirteen",
+    "target": [
+      44,
+      6,
+      13
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "e5bd5c896721a5e08ef80900205ab1b73a66d3d778bce4bd759f4366a9899181",
+    "duration_s": 2.82125
+  },
+  {
+    "id": "ref3-100",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Nahum two verse nine",
+    "target": [
+      34,
+      2,
+      9
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "d161e513d50a0597767112c0c3b40e3c6f9f36c0298f71d084da09097783e480",
+    "duration_s": 2.0181875
+  },
+  {
+    "id": "ref3-101",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read 2 Peter chapter three verse seven",
+    "target": [
+      61,
+      3,
+      7
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "c64dc98b518a14783f83fd8d20547b0b78e28f99a6c2a5179f682dde50a45a86",
+    "duration_s": 2.8676875
+  },
+  {
+    "id": "ref3-102",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Colossians one verse thirteen",
+    "target": [
+      51,
+      1,
+      13
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "931d68b901787a7a9b2622efd04b60d0ebe3179a693be2116111c70defb7b0ff",
+    "duration_s": 2.378125
+  },
+  {
+    "id": "ref3-103",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read 1 Samuel chapter eight verse four",
+    "target": [
+      9,
+      8,
+      4
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "25ab44cb34d4cc640126a16b297173d9239ee87da5d04bee19dc27b21f5fb0c5",
+    "duration_s": 2.995375
+  },
+  {
+    "id": "ref3-104",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Philippians one verse nine",
+    "target": [
+      50,
+      1,
+      9
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "e645ef8b7e1c4de0e3183f77c9a5d4f8c79f2fecebaf26b3985f20b47a5127d0",
+    "duration_s": 2.3084375
+  },
+  {
+    "id": "ref3-105",
+    "language": "en",
+    "kind": "reference",
+    "text": "Please read Leviticus chapter nine verse sixteen",
+    "target": [
+      3,
+      9,
+      16
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "6c3cfcef0b7a555f4a166c6e83e25f1df28ccabf3f110f825eacb5b92ff75aa2",
+    "duration_s": 3.216
+  },
+  {
+    "id": "ref3-106",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請不要讀約翰福音第三章第十六節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "4b192b75d17d8836a3af82f31de4c5ef9068715c09dd119fbdb16029df6bb53d",
+    "duration_s": 3.60775
+  },
+  {
+    "id": "ref3-107",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請不要讀約翰福音第三章第十六節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "1baa66815acfd949831a4ed332c85deee9810791ffb8cf74ead49667e8fe8561",
+    "duration_s": 3.299375
+  },
+  {
+    "id": "ref3-108",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請翻到課本第八章第十二節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "96e08998da83e09d77819481fd1c3e667e155f80c1daf9532df4618b16a0dad3",
+    "duration_s": 2.853125
+  },
+  {
+    "id": "ref3-109",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請翻到課本第八章第十二節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "168dfb595ed4481cd8b4ea639ea90654463df0ad414b597235bf4bc24912bdf2",
+    "duration_s": 2.7790625
+  },
+  {
+    "id": "ref3-110",
+    "language": "zh",
+    "kind": "negative",
+    "text": "馬太福音第一章第一節。不是現在。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "939d98c522cf0c93860f2485b9d0de82f2adfe5d315936773f0bbf5a73fccd17",
+    "duration_s": 3.4329375
+  },
+  {
+    "id": "ref3-111",
+    "language": "zh",
+    "kind": "negative",
+    "text": "馬太福音第一章第一節。不是現在。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "43a9e9e3e410fd790cf1c3a6b6c697c402ada73626286054f35ec041ee9c8940",
+    "duration_s": 3.339875
+  },
+  {
+    "id": "ref3-112",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰福音第三章第十六節只是練習例子。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "b5fba81c5ee6c3acad24fff43c3df0da465973e5b066859fd65b81bfc333175b",
+    "duration_s": 4.1175
+  },
+  {
+    "id": "ref3-113",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰福音第三章第十六節只是練習例子。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "012a32c5296dd1c030900d4d22e0ea497dc001d1185dd3b553f9c787ec540883",
+    "duration_s": 3.363125
+  },
+  {
+    "id": "ref3-114",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請看約翰福音第三章第十六節這個例子，不要跳轉。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "e36a3aa167ad6ceae3fbd4f15903ceebeb67636712b868c5dcdd08bfe0dd60b4",
+    "duration_s": 5.1286875
+  },
+  {
+    "id": "ref3-115",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請看約翰福音第三章第十六節這個例子，不要跳轉。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "3091a2677dc6f7f4aa451672579682844deb5519ab8071d8eec6becc6c2ca98a",
+    "duration_s": 4.640625
+  },
+  {
+    "id": "ref3-116",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請翻到約翰福音第九十九章第三節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "042e25a0d800fc7ddf1e399eb90b8b59da307f5e26d634a4cb9d19f1ccb98d45",
+    "duration_s": 3.6774375
+  },
+  {
+    "id": "ref3-117",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請翻到約翰福音第九十九章第三節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "dea275d446b5a338799cc7e39c88a255ef3749adcb5e9f9512dc77df1fb96af7",
+    "duration_s": 3.391875
+  },
+  {
+    "id": "ref3-118",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請翻到馬太福音第二章。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "f951f56ebd18c0efda58c4da9b0e55aacf8378af231a4b52d21db366a4bfd826",
+    "duration_s": 2.44675
+  },
+  {
+    "id": "ref3-119",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請翻到馬太福音第二章。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "dd5b3ed24012dbf73fb0d4c1e0634efd253d0312ee2a301149ad2cd37ca2e288",
+    "duration_s": 2.3859375
+  },
+  {
+    "id": "ref3-120",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰住三樓十六號房。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "c2cdd2518b042c3d211a72f6a9ad3525a0dd36f71c18011567cd6b79e18e1046",
+    "duration_s": 2.283125
+  },
+  {
+    "id": "ref3-121",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰住三樓十六號房。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "10e293afdf1a8c466a8e721600665e05a611bf82eb5b611188deb8437e8f3a59",
+    "duration_s": 2.206875
+  },
+  {
+    "id": "ref3-122",
+    "language": "zh",
+    "kind": "negative",
+    "text": "不要翻到詩篇第二十三篇第四節，也不要跳轉。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "c2cc81617c893f1936003e3cba18af3fe63a6f3c7e693a01d26431044e1012a6",
+    "duration_s": 4.7649375
+  },
+  {
+    "id": "ref3-123",
+    "language": "zh",
+    "kind": "negative",
+    "text": "不要翻到詩篇第二十三篇第四節，也不要跳轉。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "13a88eabee32e824f0e52b4108cef1f5d56ab38c55539376e03eec5dda266b1d",
+    "duration_s": 4.4096875
+  },
+  {
+    "id": "ref3-124",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請讀第三章第八節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "6a799a5e82a0cd6d31ee6c87b1a73e453a1458da08333fb890a74632dbae9a03",
+    "duration_s": 2.0288125
+  },
+  {
+    "id": "ref3-125",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請讀第三章第八節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "56f5dc50614ca35e28027ce37a552472afd51b76e507b6e609fd77a4fc18a712",
+    "duration_s": 2.050625
+  },
+  {
+    "id": "ref3-126",
+    "language": "en",
+    "kind": "negative",
+    "text": "Do not read Mark eight verse three.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "36dbc19d2116f212bea5f16ee094cbd9aa76a91ddc95e3649a9045fd92e8bcdb",
+    "duration_s": 1.953875
+  },
+  {
+    "id": "ref3-127",
+    "language": "en",
+    "kind": "negative",
+    "text": "Do not read Mark eight verse three.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "d3fd55428e1a641a93173cdf022e552b56bb5228641a544bc1ebb191a2293eb5",
+    "duration_s": 2.2431875
+  },
+  {
+    "id": "ref3-128",
+    "language": "en",
+    "kind": "negative",
+    "text": "Please read John three sixteen dollars.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "26bd0187c9fb8a53de1f4537ec20de67c553b7fe3bbf573d14f7d232c43f83b6",
+    "duration_s": 2.378125
+  },
+  {
+    "id": "ref3-129",
+    "language": "en",
+    "kind": "negative",
+    "text": "Please read John three sixteen dollars.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "6bf1179c0db14f8a97d06cf2d75a6ff234a13e0426537ba2f4cb4a40b9759d76",
+    "duration_s": 2.4729375
+  },
+  {
+    "id": "ref3-130",
+    "language": "en",
+    "kind": "negative",
+    "text": "Mark eight verse three, not now.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "79579fd4ac856858aa84b81a57efd953b473c044a1684d51b15758ca82bb2a03",
+    "duration_s": 2.2100625
+  },
+  {
+    "id": "ref3-131",
+    "language": "en",
+    "kind": "negative",
+    "text": "Mark eight verse three, not now.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "88dd42ac0b823c858c68b3f7b34693fc8d715791507f0215fd49c8c3741e269b",
+    "duration_s": 2.4059375
+  },
+  {
+    "id": "ref3-132",
+    "language": "en",
+    "kind": "negative",
+    "text": "Please read Mark eight verse three as an example.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "38c56e5aa7426ad6049e1d81cfc514a8df6555b98e65324d5747ce884ae3a1b6",
+    "duration_s": 2.5986875
+  },
+  {
+    "id": "ref3-133",
+    "language": "en",
+    "kind": "negative",
+    "text": "Please read Mark eight verse three as an example.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "43d5d93295054cdce0764ace34ffbb250add34708aa59cc2dac110ec97ce7512",
+    "duration_s": 2.832875
+  },
+  {
+    "id": "ref3-134",
+    "language": "en",
+    "kind": "negative",
+    "text": "John is in room eight on floor three.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "d962569c5fdfa3a8bd1158d58d95122ecc1e4a299749cb0de361083a7f59e15f",
+    "duration_s": 2.072
+  },
+  {
+    "id": "ref3-135",
+    "language": "en",
+    "kind": "negative",
+    "text": "John is in room eight on floor three.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "0a6092b2412b5b80b9c19ae47cf2e6a1558d0c8944d08e6bb43216e50e523895",
+    "duration_s": 2.151125
+  },
+  {
+    "id": "ref3-136",
+    "language": "en",
+    "kind": "negative",
+    "text": "Please read John ninety nine verse three.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "2432a26aa7254239161e5854267bc700b316b3170c5deeccd1615d2a726b9445",
+    "duration_s": 2.273625
+  },
+  {
+    "id": "ref3-137",
+    "language": "en",
+    "kind": "negative",
+    "text": "Please read John ninety nine verse three.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "6e1884c3da21960e11ddcf90d96515017956ab63a15b4c908fa64a339bc3f4a1",
+    "duration_s": 2.519375
+  },
+  {
+    "id": "ref3-138",
+    "language": "en",
+    "kind": "negative",
+    "text": "Please read Mark chapter eight.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "0b4488e0bbd5d2657e3eafde50c27ca113f14b7ad1401fd538b88fb06df6307a",
+    "duration_s": 1.774375
+  },
+  {
+    "id": "ref3-139",
+    "language": "en",
+    "kind": "negative",
+    "text": "Please read Mark chapter eight.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "726d0d2ea7add1d1ba332e4736044adc7440907652ccb509533ff9d5c0d1da82",
+    "duration_s": 1.857625
+  },
+  {
+    "id": "ref3-140",
+    "language": "en",
+    "kind": "negative",
+    "text": "Please read chapter eight verse three.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "04b2fb9848ccc015461a1dd08c0a01813dbbf75cbed2b327fcc8e1fe11c33cf8",
+    "duration_s": 2.0298125
+  },
+  {
+    "id": "ref3-141",
+    "language": "en",
+    "kind": "negative",
+    "text": "Please read chapter eight verse three.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "b3c65ab86e56bf050ef9ad1186d277fa294ea61d10064a2d7424487270e7a183",
+    "duration_s": 2.24075
+  },
+  {
+    "id": "ref3-142",
+    "language": "en",
+    "kind": "negative",
+    "text": "Do not turn to Second John one verse five.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "874d327f74188165e1a4693574be53664f532d44f02b681bd51acc1c8c5c5f17",
+    "duration_s": 2.56925
+  },
+  {
+    "id": "ref3-143",
+    "language": "en",
+    "kind": "negative",
+    "text": "Do not turn to Second John one verse five.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "9a539721202c5a15fa8c005c67e203ae1d522fb326b1388d479d746c8c1021e9",
+    "duration_s": 2.7888125
+  },
+  {
+    "id": "ref3-144",
+    "language": "en",
+    "kind": "negative",
+    "text": "John three point sixteen dollars.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Samantha",
+    "rate": 175,
+    "sha256": "02643bef94597ac9be9a9764277fcb28cb2108926f1f7204b8a76b019b4e1c11",
+    "duration_s": 2.1301875
+  },
+  {
+    "id": "ref3-145",
+    "language": "en",
+    "kind": "negative",
+    "text": "John three point sixteen dollars.",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Daniel",
+    "rate": 175,
+    "sha256": "d7ad23affc0adcf1618c057decf8bf993969b0b9792baf1fc4d144f8a1ac96fc",
+    "duration_s": 2.2208125
+  }
+]

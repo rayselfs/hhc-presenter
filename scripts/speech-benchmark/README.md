@@ -27,6 +27,33 @@ edit counts, which must not be reported as accuracy.
 
 ## Synthetic comparison
 
+### Reference-format v3 candidate
+
+Keep `locate-v2.mjs` frozen. `evaluate_v2.py ... --reference-v3` selects the
+candidate `locate-v3.mjs` grammar while retaining the same quotation policy and
+measured ASR output. Existing `v2_reference` transport fields are reused; the
+protocol and file names identify the grammar revision. Timing includes measured
+new normalization/localization plus recorded ASR, not another inference run.
+
+The candidate preserves Chinese book text before the chapter number, repairs
+structural markers only with exact canonical book names, collapses only identical
+repeated citations, accepts explicit English verse markers without `chapter`, and
+supports the standard `Psalm` alias. Dot/space numeric references require an
+explicit navigation command and exact book name. Chapter/verse fields cannot be
+reinterpreted as book names. Fuzzy thresholds and quotation gates are unchanged.
+
+`reference_v3_fixtures.py DATA` generates 66 Chinese and 40 English new references
+plus 20 negatives per language (10 texts, two voices each). Positive source text
+is checked against earlier corpora. Run Chinese Turbo with fitted context and
+English Small with the fixed prompt sequentially, then replay both v2 and v3 on
+each output. Use `compare_turbo.py ... --language zh --labels v2 v3` (or `en`) for
+policy comparisons; never label a parser-only comparison as a different model.
+
+The initial policy was frozen before this new audio run. Follow-up fixes for the
+field-in-book guard and `Psalm` alias used its outputs, so final results are
+regression/challenge evidence, not blind acceptance. Preserve initial and final
+policy/results. No private recordings or AI transcripts are used in this corpus.
+
 ### Turbo context validation
 
 `--audio-ctx 768` reproduces the fixed reduced-context experiment. It can miss

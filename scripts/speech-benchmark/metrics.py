@@ -34,6 +34,17 @@ def normalize(text):
     return text
 
 
+def normalize_reference(text, language):
+    if language != 'zh':
+        return normalize(text)
+    text = CONVERTER.convert(unicodedata.normalize('NFKC', text)).lower()
+    chapter = re.search(r'[零〇一二兩三四五六七八九十百\d]+\s*[章張篇扎紮抓]', text)
+    if chapter is None:
+        return normalize(text)
+    # Keep phonetic book spelling intact; only citation numbers are numeric fields.
+    return text[:chapter.start()] + normalize(text[chapter.start():])
+
+
 def reference(text, books):
     text = re.sub(r'\s+', '', normalize(text))
     matches = []

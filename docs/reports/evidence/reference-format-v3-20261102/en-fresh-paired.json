@@ -1,0 +1,117 @@
+{
+  "groups": {
+    "reference": {
+      "n": 40,
+      "v2": {
+        "correct": 18,
+        "wrong": 0,
+        "rejected": 22,
+        "correct_within_3s": 18,
+        "p95_s": 0.34740687605608367,
+        "max_s": 0.41762449899416304,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 39,
+        "wrong": 0,
+        "rejected": 1,
+        "correct_within_3s": 39,
+        "p95_s": 0.34747116703546793,
+        "max_s": 0.41792045700561886,
+        "over_3s": 0
+      }
+    },
+    "all": {
+      "n": 60,
+      "v2": {
+        "correct": 18,
+        "wrong": 0,
+        "rejected": 42,
+        "correct_within_3s": 18,
+        "p95_s": 0.3699929170090482,
+        "max_s": 0.41762449899416304,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 39,
+        "wrong": 0,
+        "rejected": 21,
+        "correct_within_3s": 39,
+        "p95_s": 0.3700520409589261,
+        "max_s": 0.41792045700561886,
+        "over_3s": 0
+      }
+    },
+    "positive": {
+      "n": 40,
+      "v2": {
+        "correct": 18,
+        "wrong": 0,
+        "rejected": 22,
+        "correct_within_3s": 18,
+        "p95_s": 0.34740687605608367,
+        "max_s": 0.41762449899416304,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 39,
+        "wrong": 0,
+        "rejected": 1,
+        "correct_within_3s": 39,
+        "p95_s": 0.34747116703546793,
+        "max_s": 0.41792045700561886,
+        "over_3s": 0
+      }
+    },
+    "negative": {
+      "n": 20,
+      "v2": {
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 20,
+        "correct_within_3s": 0,
+        "p95_s": 0.38305979197983014,
+        "max_s": 0.4002495819826605,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 20,
+        "correct_within_3s": 0,
+        "p95_s": 0.38309841693118646,
+        "max_s": 0.40025008289598357,
+        "over_3s": 0
+      }
+    }
+  },
+  "changes": {
+    "gained": [
+      "ref3-066",
+      "ref3-068",
+      "ref3-070",
+      "ref3-072",
+      "ref3-074",
+      "ref3-076",
+      "ref3-077",
+      "ref3-078",
+      "ref3-080",
+      "ref3-082",
+      "ref3-084",
+      "ref3-086",
+      "ref3-088",
+      "ref3-090",
+      "ref3-091",
+      "ref3-092",
+      "ref3-094",
+      "ref3-096",
+      "ref3-098",
+      "ref3-102",
+      "ref3-104"
+    ],
+    "lost": [],
+    "new_wrong": [],
+    "over_3s": [],
+    "long_audio": []
+  }
+}

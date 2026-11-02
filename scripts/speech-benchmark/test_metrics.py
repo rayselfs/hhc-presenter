@@ -3,7 +3,7 @@ import hashlib
 from pathlib import Path
 import tempfile
 import wave
-from metrics import edit_distance, reference, normalize, score
+from metrics import edit_distance, reference, normalize, score, normalize_reference
 from corpus import chinese_number
 from evaluate import Retrieval, percentile
 from run import read_audio, fitted_audio_context
@@ -11,6 +11,11 @@ from evaluate_v2 import evaluate as evaluate_v2
 
 
 class MetricsTests(unittest.TestCase):
+    def test_reference_normalization_preserves_book_phonetics(self):
+        self.assertEqual(normalize_reference('請翻開俄八底亞書第一章第十六節', 'zh'), '請翻開俄八底亞書第1章第16節')
+        self.assertEqual(normalize_reference('個零多前書第十六章第三節', 'zh'), '個零多前書第16章第3節')
+        self.assertEqual(normalize_reference('First Corinthians sixteen verse five', 'en'), '1 corinthians 16 verse 5')
+
     def test_context_covers_complete_waveform(self):
         self.assertEqual(fitted_audio_context(768, 768 * 320), 768)
         self.assertEqual(fitted_audio_context(768, 768 * 320 + 1), 0)

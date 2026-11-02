@@ -1,0 +1,28 @@
+{
+  "models": {
+    "zh": "Turbo Q5_0, Chinese hint, no prompt, context 768 fitted to waveform",
+    "en": "Small, English hint, fixed short prompt"
+  },
+  "grammar_changes": [
+    "preserve Chinese book text before chapter number",
+    "collapse only identical complete repeated citation",
+    "repair structural Chinese homophones only for exact canonical book names",
+    "accept exact English book + chapter number + verse marker + verse number",
+    "accept dot/space citation only with explicit navigation command and exact book",
+    "reject chapter/verse field labels inside a purported book name"
+  ],
+  "unchanged": [
+    "book fuzzy score and margin",
+    "bounds checks",
+    "negation guards",
+    "quotation thresholds"
+  ],
+  "prompt_rejected": "Chinese Turbo short prompt reduced calibration references 28 to 27 and quotations 15 to 13",
+  "frozen_before_fresh_inference": true,
+  "sha256": {
+    "scripts/speech-benchmark/locate-v3.mjs": "26852f7001a67fd6069e1b5ef9d246f8f46d623c93e5e1a0f0c1e7d61b37fff7",
+    "scripts/speech-benchmark/metrics.py": "b094c939b41af99df5df7e2a16d17fda0544f5619f46b077f0bf9753f6e15c8f",
+    "scripts/speech-benchmark/evaluate_v2.py": "e646a8b9bcf159a2171dc7b9ece96061c77058bb3f08dda01b964928ba783813",
+    "scripts/speech-benchmark/reference_v3_fixtures.py": "03277e6fe7e76ec3f1458f81ba0e69a3d9bf027a011cc53ebf13f7541c71a43d"
+  }
+}

@@ -10,7 +10,7 @@ from evaluate import percentile
 POLICY = 'phonetic-0.85'
 
 
-def compare(baseline, candidate, excluded=(), language='zh'):
+def compare(baseline, candidate, excluded=(), language='zh', labels=('small', 'turbo')):
     baseline = [row for row in baseline if row['language'] == language and row['id'] not in excluded]
     candidate = [row for row in candidate if row['language'] == language and row['id'] not in excluded]
     before = {row['id']: row for row in baseline}
@@ -38,7 +38,7 @@ def compare(baseline, candidate, excluded=(), language='zh'):
     summary = {}
     for kind, pairs in groups.items():
         summary[kind] = {'n': len(pairs)}
-        for index, name in enumerate(['small', 'turbo']):
+        for index, name in enumerate(labels):
             decisions = [pair[index] for pair in pairs]
             times = [decision['total_s'] for decision in decisions]
             summary[kind][name] = {
@@ -56,7 +56,8 @@ if __name__ == '__main__':
     parser.add_argument('output', type=Path)
     parser.add_argument('--exclude', nargs='*', default=[])
     parser.add_argument('--language', choices=['zh', 'en'], default='zh')
+    parser.add_argument('--labels', nargs=2, default=['small', 'turbo'])
     args = parser.parse_args()
     read = lambda path: [json.loads(line) for line in path.read_text().splitlines()]
-    result = compare(read(args.baseline), read(args.candidate), args.exclude, args.language)
+    result = compare(read(args.baseline), read(args.candidate), args.exclude, args.language, args.labels)
     args.output.write_text(json.dumps(result, indent=2))

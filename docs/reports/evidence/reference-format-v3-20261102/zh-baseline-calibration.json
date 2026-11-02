@@ -1,0 +1,254 @@
+{
+  "baseline/calibration/zh/reference": {
+    "n": 40,
+    "correct": 29,
+    "wrong": 0,
+    "rejected": 11,
+    "correct_within_3s": 29,
+    "p95_s": 1.7321039999532775,
+    "over_3s": 0
+  },
+  "optimized/calibration/zh/reference": {
+    "n": 40,
+    "correct": 27,
+    "wrong": 0,
+    "rejected": 13,
+    "correct_within_3s": 27,
+    "p95_s": 1.7321130829532774,
+    "over_3s": 0
+  },
+  "strict/calibration/zh/reference": {
+    "n": 40,
+    "correct": 28,
+    "wrong": 0,
+    "rejected": 12,
+    "correct_within_3s": 28,
+    "p95_s": 1.7316879169843538,
+    "over_3s": 0
+  },
+  "phonetic-0.85/calibration/zh/reference": {
+    "n": 40,
+    "correct": 28,
+    "wrong": 0,
+    "rejected": 12,
+    "correct_within_3s": 28,
+    "p95_s": 1.7316879169843538,
+    "over_3s": 0
+  },
+  "phonetic-0.88/calibration/zh/reference": {
+    "n": 40,
+    "correct": 28,
+    "wrong": 0,
+    "rejected": 12,
+    "correct_within_3s": 28,
+    "p95_s": 1.7316879169843538,
+    "over_3s": 0
+  },
+  "phonetic-0.90/calibration/zh/reference": {
+    "n": 40,
+    "correct": 28,
+    "wrong": 0,
+    "rejected": 12,
+    "correct_within_3s": 28,
+    "p95_s": 1.7316879169843538,
+    "over_3s": 0
+  },
+  "phonetic-0.92/calibration/zh/reference": {
+    "n": 40,
+    "correct": 28,
+    "wrong": 0,
+    "rejected": 12,
+    "correct_within_3s": 28,
+    "p95_s": 1.7316879169843538,
+    "over_3s": 0
+  },
+  "baseline/calibration/zh/quotation": {
+    "n": 20,
+    "correct": 11,
+    "wrong": 0,
+    "rejected": 9,
+    "correct_within_3s": 11,
+    "p95_s": 1.2306794571549105,
+    "over_3s": 0
+  },
+  "optimized/calibration/zh/quotation": {
+    "n": 20,
+    "correct": 11,
+    "wrong": 0,
+    "rejected": 9,
+    "correct_within_3s": 11,
+    "p95_s": 1.2306824151549105,
+    "over_3s": 0
+  },
+  "strict/calibration/zh/quotation": {
+    "n": 20,
+    "correct": 11,
+    "wrong": 0,
+    "rejected": 9,
+    "correct_within_3s": 11,
+    "p95_s": 1.2415220831166207,
+    "over_3s": 0
+  },
+  "phonetic-0.85/calibration/zh/quotation": {
+    "n": 20,
+    "correct": 15,
+    "wrong": 0,
+    "rejected": 5,
+    "correct_within_3s": 15,
+    "p95_s": 1.2415220831166207,
+    "over_3s": 0
+  },
+  "phonetic-0.88/calibration/zh/quotation": {
+    "n": 20,
+    "correct": 15,
+    "wrong": 0,
+    "rejected": 5,
+    "correct_within_3s": 15,
+    "p95_s": 1.2415220831166207,
+    "over_3s": 0
+  },
+  "phonetic-0.90/calibration/zh/quotation": {
+    "n": 20,
+    "correct": 14,
+    "wrong": 0,
+    "rejected": 6,
+    "correct_within_3s": 14,
+    "p95_s": 1.2415220831166207,
+    "over_3s": 0
+  },
+  "phonetic-0.92/calibration/zh/quotation": {
+    "n": 20,
+    "correct": 14,
+    "wrong": 0,
+    "rejected": 6,
+    "correct_within_3s": 14,
+    "p95_s": 1.2415220831166207,
+    "over_3s": 0
+  },
+  "baseline/calibration/zh/mixed": {
+    "n": 10,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 10,
+    "correct_within_3s": 0,
+    "p95_s": 1.2355564159898598,
+    "over_3s": 0
+  },
+  "optimized/calibration/zh/mixed": {
+    "n": 10,
+    "correct": 5,
+    "wrong": 0,
+    "rejected": 5,
+    "correct_within_3s": 5,
+    "p95_s": 1.2355472919898598,
+    "over_3s": 0
+  },
+  "strict/calibration/zh/mixed": {
+    "n": 10,
+    "correct": 5,
+    "wrong": 0,
+    "rejected": 5,
+    "correct_within_3s": 5,
+    "p95_s": 1.2356045429827167,
+    "over_3s": 0
+  },
+  "phonetic-0.85/calibration/zh/mixed": {
+    "n": 10,
+    "correct": 5,
+    "wrong": 0,
+    "rejected": 5,
+    "correct_within_3s": 5,
+    "p95_s": 1.2356045429827167,
+    "over_3s": 0
+  },
+  "phonetic-0.88/calibration/zh/mixed": {
+    "n": 10,
+    "correct": 5,
+    "wrong": 0,
+    "rejected": 5,
+    "correct_within_3s": 5,
+    "p95_s": 1.2356045429827167,
+    "over_3s": 0
+  },
+  "phonetic-0.90/calibration/zh/mixed": {
+    "n": 10,
+    "correct": 5,
+    "wrong": 0,
+    "rejected": 5,
+    "correct_within_3s": 5,
+    "p95_s": 1.2356045429827167,
+    "over_3s": 0
+  },
+  "phonetic-0.92/calibration/zh/mixed": {
+    "n": 10,
+    "correct": 5,
+    "wrong": 0,
+    "rejected": 5,
+    "correct_within_3s": 5,
+    "p95_s": 1.2356045429827167,
+    "over_3s": 0
+  },
+  "baseline/calibration/zh/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 1.06495608302768,
+    "over_3s": 0
+  },
+  "optimized/calibration/zh/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 1.06494654102768,
+    "over_3s": 0
+  },
+  "strict/calibration/zh/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 1.075037372790805,
+    "over_3s": 0
+  },
+  "phonetic-0.85/calibration/zh/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 1.075037372790805,
+    "over_3s": 0
+  },
+  "phonetic-0.88/calibration/zh/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 1.075037372790805,
+    "over_3s": 0
+  },
+  "phonetic-0.90/calibration/zh/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 1.075037372790805,
+    "over_3s": 0
+  },
+  "phonetic-0.92/calibration/zh/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 1.075037372790805,
+    "over_3s": 0
+  }
+}

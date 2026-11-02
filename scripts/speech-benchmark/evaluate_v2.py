@@ -9,18 +9,24 @@ import subprocess
 import time
 
 from evaluate import Retrieval, percentile
-from metrics import tokens
+from metrics import tokens, normalize_reference
 from optimization_evaluate import quote_decision
 
 
-def evaluate(root, file, output):
+def evaluate(root, file, output, reference_v3=False):
     original = [json.loads(x) for x in file.read_text().splitlines()]
     if any(row.get('kind') == 'unlabeled' for row in original):
         raise ValueError('Unlabeled audio requires human verification before accuracy evaluation')
+    if reference_v3:
+        for row in original:
+            start = time.perf_counter()
+            row['reference_normalized'] = normalize_reference(row['transcript'], row['language'])
+            row['normalization_s'] += time.perf_counter() - start
     prepared = output.with_suffix('.prepared.json')
     input_file = output.with_suffix('.input.json')
     input_file.write_text(json.dumps(original, ensure_ascii=False))
-    subprocess.run(['node', 'scripts/speech-benchmark/locate-v2.mjs', str(root), str(input_file), str(prepared)], check=True)
+    locator = 'locate-v3.mjs' if reference_v3 else 'locate-v2.mjs'
+    subprocess.run(['node', 'scripts/speech-benchmark/' + locator, str(root), str(input_file), str(prepared)], check=True)
     rows = json.loads(prepared.read_text())
     phonetic = Retrieval(json.loads((root / 'optimization-v2/phonetic-corpus.json').read_text()), 'en')
     scripture = json.loads((root / 'sources/zh_cuv.json').read_text(encoding='utf-8-sig'))
@@ -78,5 +84,6 @@ if __name__ == '__main__':
     parser.add_argument('root', type=Path)
     parser.add_argument('file', type=Path)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--reference-v3', action='store_true')
     args = parser.parse_args()
-    evaluate(args.root, args.file, args.output)
+    evaluate(args.root, args.file, args.output, args.reference_v3)

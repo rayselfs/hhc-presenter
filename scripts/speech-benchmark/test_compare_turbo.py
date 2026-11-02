@@ -5,6 +5,11 @@ from compare_turbo import compare, POLICY
 
 
 class PairedComparisonTests(unittest.TestCase):
+    def test_policy_comparison_does_not_mislabel_the_model(self):
+        result = compare([self.row('a')], [self.row('a', True)], labels=('v2', 'v3'))
+        self.assertEqual(result['groups']['all']['v3']['correct'], 1)
+        self.assertNotIn('turbo', result['groups']['all'])
+
     def test_languages_are_not_pooled_and_empty_selection_fails(self):
         chinese = self.row('zh')
         english = {**self.row('en'), 'language': 'en'}

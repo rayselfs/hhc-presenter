@@ -1,0 +1,882 @@
+[
+  {
+    "id": "0003",
+    "text": "出埃及記第一章第一節",
+    "transcript": "我愛及基地一章第一節",
+    "target": [
+      2,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0009",
+    "text": "民數記第一章第一節",
+    "transcript": "民宿记记扎记一节",
+    "target": [
+      4,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0017",
+    "text": "約書亞記第二十四章第五節",
+    "transcript": "约书压纪第24扎第5节",
+    "target": [
+      6,
+      24,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0021",
+    "text": "路得記第一章第一節",
+    "transcript": "路在GD 抓GD姐",
+    "target": [
+      8,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0023",
+    "text": "路得記第四章第五節",
+    "transcript": "在基地四扎第五节",
+    "target": [
+      8,
+      4,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0027",
+    "text": "撒母耳記下第一章第一節",
+    "transcript": "撒姆尔记下记者第一节",
+    "target": [
+      10,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0029",
+    "text": "撒母耳記下第二十四章第五節",
+    "transcript": "352记下第24章第5节",
+    "target": [
+      10,
+      24,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0033",
+    "text": "列王紀下第一章第一節",
+    "transcript": "我记下第一章第一节",
+    "target": [
+      12,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0037",
+    "text": "請翻到歷代志上第十四章第三節",
+    "transcript": "请翻到预在镇上第十四章第三节。",
+    "target": [
+      13,
+      14,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0039",
+    "text": "歷代志下第一章第一節",
+    "transcript": "注意在这小机上 抓第一节",
+    "target": [
+      14,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0041",
+    "text": "歷代志下第三十六章第五節",
+    "transcript": "注意在这下第36章第5节",
+    "target": [
+      14,
+      36,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0043",
+    "text": "請翻到以斯拉記第五章第三節",
+    "transcript": "请翻到以色列记第五章第三节。",
+    "target": [
+      15,
+      5,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0047",
+    "text": "尼希米記第十三章第五節",
+    "transcript": "明西里进地十三章第五节",
+    "target": [
+      16,
+      13,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0049",
+    "text": "請翻到以斯帖記第五章第三節",
+    "transcript": "请翻到以衰天记第五章第三节。",
+    "target": [
+      17,
+      5,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0051",
+    "text": "約伯記第一章第一節",
+    "transcript": "原播系织上的一节",
+    "target": [
+      18,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0053",
+    "text": "約伯記第四十二章第五節",
+    "transcript": "《约约伯记》第42扎第5节",
+    "target": [
+      18,
+      42,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0057",
+    "text": "箴言第一章第一節",
+    "transcript": "真言及一章及一節",
+    "target": [
+      20,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0063",
+    "text": "雅歌第一章第一節",
+    "transcript": "我可以再一次",
+    "target": [
+      22,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0067",
+    "text": "請翻到以賽亞書第三十三章第三節",
+    "transcript": "请翻到以下要书第33章第3节。",
+    "target": [
+      23,
+      33,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0069",
+    "text": "耶利米書第一章第一節",
+    "transcript": "接力與書記者記者記者",
+    "target": [
+      24,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0071",
+    "text": "耶利米書第五十二章第五節",
+    "transcript": "写立立书记52扎记5节",
+    "target": [
+      24,
+      52,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0073",
+    "text": "請翻到耶利米哀歌第二章第三節",
+    "transcript": "请翻到眼里以来歌第二章第三节。",
+    "target": [
+      25,
+      2,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0077",
+    "text": "以西結書第四十八章第五節",
+    "transcript": "第七节书第四十八章第五节",
+    "target": [
+      26,
+      48,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0079",
+    "text": "請翻到但以理書第六章第三節",
+    "transcript": "请翻到《简单》里里书第六章第三节。",
+    "target": [
+      27,
+      6,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0081",
+    "text": "何西阿書第一章第一節",
+    "transcript": "和西亚书记者的一节。",
+    "target": [
+      28,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0083",
+    "text": "何西阿書第十四章第五節",
+    "transcript": "和西阿书第十四扎第五节。",
+    "target": [
+      28,
+      14,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0084",
+    "text": "約珥書第一章第一節",
+    "transcript": "冤儿书第一章第一节",
+    "target": [
+      29,
+      1,
+      1
+    ],
+    "voice": "Meijia"
+  },
+  {
+    "id": "0086",
+    "text": "約珥書第三章第五節",
+    "transcript": "《愿耳书》第三章第五节。",
+    "target": [
+      29,
+      3,
+      5
+    ],
+    "voice": "Meijia"
+  },
+  {
+    "id": "0087",
+    "text": "阿摩司書第一章第一節",
+    "transcript": "我司书记扎记姐",
+    "target": [
+      30,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0089",
+    "text": "阿摩司書第九章第五節",
+    "transcript": "莫斯书第九扎第五节",
+    "target": [
+      30,
+      9,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0093",
+    "text": "約拿書第一章第一節",
+    "transcript": "原来书记上记一剪",
+    "target": [
+      32,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0099",
+    "text": "那鴻書第一章第一節",
+    "transcript": "纳红书记 扎记 以前",
+    "target": [
+      34,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0101",
+    "text": "那鴻書第三章第五節",
+    "transcript": "然后书第三章第五节",
+    "target": [
+      34,
+      3,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0109",
+    "text": "請翻到哈該書第一章第三節",
+    "transcript": "请翻到《好根书》第一章第三节。",
+    "target": [
+      37,
+      1,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0111",
+    "text": "撒迦利亞書第一章第一節",
+    "transcript": "在家里要书记着你姐",
+    "target": [
+      38,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0123",
+    "text": "路加福音第一章第一節",
+    "transcript": "入教乎音机上机一节",
+    "target": [
+      42,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0129",
+    "text": "使徒行傳第一章第一節",
+    "transcript": "是图形传记扎记一节。",
+    "target": [
+      44,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0131",
+    "text": "使徒行傳第二十八章第五節",
+    "transcript": "使图形传第28扎第5节",
+    "target": [
+      44,
+      28,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0141",
+    "text": "加拉太書第一章第一節",
+    "transcript": "加拉太书记着记一些",
+    "target": [
+      48,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0147",
+    "text": "腓立比書第一章第一節",
+    "transcript": "菲林比书记一扎记一节",
+    "target": [
+      50,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0149",
+    "text": "腓立比書第四章第五節",
+    "transcript": "菲林秉书记是扎记五节",
+    "target": [
+      50,
+      4,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0153",
+    "text": "帖撒羅尼迦前書第一章第一節",
+    "transcript": "帖萨罗尼加钱书记扎记姐",
+    "target": [
+      52,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0159",
+    "text": "提摩太前書第一章第一節",
+    "transcript": "提我太前书记一扎记一节",
+    "target": [
+      54,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0169",
+    "text": "請翻到腓利門書第一章第三節",
+    "transcript": "请翻到腓力能书记一章第三节。",
+    "target": [
+      57,
+      1,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0171",
+    "text": "希伯來書第一章第一節",
+    "transcript": "西伯来书记扎记姐",
+    "target": [
+      58,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0173",
+    "text": "希伯來書第十三章第五節",
+    "transcript": "西伯来书第十三扎第五节。",
+    "target": [
+      58,
+      13,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0177",
+    "text": "彼得前書第一章第一節",
+    "transcript": "你的前书记者记者记者",
+    "target": [
+      60,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0179",
+    "text": "彼得前書第五章第五節",
+    "transcript": "你的前書第五抓第五結",
+    "target": [
+      60,
+      5,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0181",
+    "text": "請翻到彼得後書第一章第三節",
+    "transcript": "请翻到笔团后书记一章第三节。",
+    "target": [
+      61,
+      1,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0183",
+    "text": "約翰一書第一章第一節",
+    "transcript": "学汉的书籍着记一切",
+    "target": [
+      62,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0189",
+    "text": "約翰三書第一章第一節",
+    "transcript": "汉香书记 张记一节",
+    "target": [
+      64,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "0197",
+    "text": "啟示錄第二十二章第五節",
+    "transcript": "启示录第22扎第五节。",
+    "target": [
+      66,
+      22,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "v2-001",
+    "text": "出埃及記第二十五章第十一節",
+    "transcript": "书外集记第25抓第11节",
+    "target": [
+      2,
+      25,
+      11
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "v2-007",
+    "text": "路得記第二章第二十三節",
+    "transcript": "路阶级第二扎第23节",
+    "target": [
+      8,
+      2,
+      23
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "v2-009",
+    "text": "請翻開撒母耳記下第十九章第二十九節",
+    "transcript": "请翻开三五二纪象第十九章第二十九节。",
+    "target": [
+      10,
+      19,
+      29
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "v2-013",
+    "text": "歷代志下第四章第二十一節",
+    "transcript": "注意在这下第四章第21节",
+    "target": [
+      14,
+      4,
+      21
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "v2-021",
+    "text": "請翻開雅歌第二章第八節",
+    "transcript": "请翻开雅各地二张地八节。",
+    "target": [
+      22,
+      2,
+      8
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "v2-023",
+    "text": "請看耶利米書第七章第十九節",
+    "transcript": "请看见历史书第七章第十九节。",
+    "target": [
+      24,
+      7,
+      19
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "v2-025",
+    "text": "以西結書第三十五章第七節",
+    "transcript": "第七节书第35抓第七节",
+    "target": [
+      26,
+      35,
+      7
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "v2-029",
+    "text": "請看阿摩司書第五章第十一節",
+    "transcript": "请看阿摩斯书记五抓记十一节。",
+    "target": [
+      30,
+      5,
+      11
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "v2-037",
+    "text": "撒迦利亞書第四章第八節",
+    "transcript": "在家里要书第四张的班节",
+    "target": [
+      38,
+      4,
+      8
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "v2-039",
+    "text": "請翻開馬太福音第九章第一節",
+    "transcript": "请翻开《菜福音》第九章第一节。",
+    "target": [
+      40,
+      9,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "v2-043",
+    "text": "使徒行傳第二十五章第九節",
+    "transcript": "使图形传第25抓第9节",
+    "target": [
+      44,
+      25,
+      9
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "v2-061",
+    "text": "約翰一書第五章第十六節",
+    "transcript": "约翰迪书纪五庄纪十六节",
+    "target": [
+      62,
+      5,
+      16
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "v2-063",
+    "text": "請翻開約翰三書第一章第十二節",
+    "transcript": "请三开约汉山书记一章第十二节。",
+    "target": [
+      64,
+      1,
+      12
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-001",
+    "text": "請翻開出埃及記第十二章第七節",
+    "transcript": "请三开出外集记第十二章第七节。",
+    "target": [
+      2,
+      12,
+      7
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-007",
+    "text": "請翻開路得記第二章第五節",
+    "transcript": "请翻开路贼系第二招第五鞋。",
+    "target": [
+      8,
+      2,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-013",
+    "text": "請翻開歷代志下第二十五章第二十七節",
+    "transcript": "请翻开立带至小第25双第27节。",
+    "target": [
+      14,
+      25,
+      27
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-015",
+    "text": "請翻到尼希米記第三章第二十三節",
+    "transcript": "请翻到迷信里进第三章第23节。",
+    "target": [
+      16,
+      3,
+      23
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-017",
+    "text": "請看約伯記第二十三章第十五節",
+    "transcript": "请看略博记第23章第15节。",
+    "target": [
+      18,
+      23,
+      15
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-019",
+    "text": "請翻開箴言第二十五章第九節",
+    "transcript": "请三开真言第25刀第九节。",
+    "target": [
+      20,
+      25,
+      9
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-023",
+    "text": "請看耶利米書第十章第七節",
+    "transcript": "请看见利率书记十章记期节。",
+    "target": [
+      24,
+      10,
+      7
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-029",
+    "text": "請看阿摩司書第一章第五節",
+    "transcript": "请看阿摩斯书记扎记五节。",
+    "target": [
+      30,
+      1,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-031",
+    "text": "請翻開約拿書第一章第九節",
+    "transcript": "请三开阅拿书记一张记九节。",
+    "target": [
+      32,
+      1,
+      9
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-033",
+    "text": "請翻到那鴻書第二章第十三節",
+    "transcript": "请翻段纳红书第二章第十三节。",
+    "target": [
+      34,
+      2,
+      13
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-035",
+    "text": "請看西番雅書第一章第十二節",
+    "transcript": "请看西三雅书第一章第十二节。",
+    "target": [
+      36,
+      1,
+      12
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-043",
+    "text": "請翻開使徒行傳第二十二章第二十五節",
+    "transcript": "请三开始图形传第22章第25节。",
+    "target": [
+      44,
+      22,
+      25
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-045",
+    "text": "請翻到哥林多前書第五章第八節",
+    "transcript": "请翻到哥林多前书记五双记白节。",
+    "target": [
+      46,
+      5,
+      8
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-049",
+    "text": "請翻開腓立比書第三章第十六節",
+    "transcript": "请翻开斐林毕书记三章记十六节。",
+    "target": [
+      50,
+      3,
+      16
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  },
+  {
+    "id": "ref3-061",
+    "text": "請翻開約翰一書第一章第一節",
+    "transcript": "请三开月汉地书记 找集一姐。",
+    "target": [
+      62,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))"
+  }
+]
