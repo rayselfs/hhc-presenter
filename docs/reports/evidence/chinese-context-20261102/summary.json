@@ -1,0 +1,30 @@
+{
+  "fitted": {
+    "n": 71,
+    "max_s": 4.018200500933055,
+    "over_3s": 2,
+    "wrong": 0,
+    "references_correct": 28,
+    "quotations_correct": 15
+  },
+  "full": {
+    "n": 71,
+    "max_s": 2.915650290842779,
+    "over_3s": 0,
+    "wrong": 0,
+    "references_correct": 24,
+    "quotations_correct": 14,
+    "gained": 2,
+    "lost": 7
+  },
+  "vocabulary": {
+    "n": 71,
+    "max_s": 2.3145767090489313,
+    "over_3s": 0,
+    "wrong": 0,
+    "references_correct": 25,
+    "quotations_correct": 12,
+    "gained": 1,
+    "lost": 9
+  }
+}

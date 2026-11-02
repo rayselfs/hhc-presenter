@@ -12,11 +12,12 @@ originals. Run each engine sequentially against PRIVATE. These fixed windows are
 for review, not a live endpointing or microphone latency benchmark.
 
 `real_audio_review.py PRIVATE` builds a local listening page and an unlabeled
-candidate worksheet from `whisper-small.jsonl`, optional `sensevoice.jsonl`, and
-optional `recording-XX-reference-context.json` paragraph pairs. Pair transcripts
+candidate worksheet from any available `whisper-large-v3-turbo-q5_0.jsonl`,
+`whisper-small.jsonl`, or `sensevoice.jsonl`, plus optional `recording-XX-reference-context.json` paragraph pairs. Pair transcripts
 to source recordings by filename, not directory ordering. The page includes
 private text and file links: do not upload it. Matching paragraphs and model
-agreement never set `human_verified` or `expected_reference`.
+agreement never set `human_verified` or `expected_reference`. Turbo is shown
+first; each row shows only completed profiles, whose corpus coverage may differ.
 
 The worksheet selects reference-like windows only. Full-session false-jump
 evaluation also requires labeling ordinary speech, silence and ambiguous

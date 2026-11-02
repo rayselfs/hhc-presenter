@@ -1,0 +1,10 @@
+{
+  "scope": "Chinese only; English accepted for this phase and kept unchanged",
+  "policy": "reference v3 with frozen quotation thresholds",
+  "selection": "Calibration comparison before any regression inference; no target-dependent prompt",
+  "variants": [
+    "768 with length guard",
+    "full context"
+  ],
+  "hardware": "M4 24 GiB Metal 4 threads"
+}

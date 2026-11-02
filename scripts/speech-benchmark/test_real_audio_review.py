@@ -7,6 +7,18 @@ from real_audio_review import build, match_paragraph
 
 
 class PrivateReviewTests(unittest.TestCase):
+    def test_turbo_only_review_stays_unlabeled(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            row = {'id': 'recording-01-000', 'recording': 'recording-01', 'offset_s': 0, 'duration_s': 20}
+            (root / 'corpus.json').write_text(json.dumps([row]))
+            (root / 'whisper-large-v3-turbo-q5_0.jsonl').write_text(json.dumps({**row, 'transcript': '約翰福音三章十六節', 'decode_s': 1.2}))
+            build(root)
+            self.assertIn('目前中文方案（Turbo）', (root / 'review.html').read_text())
+            item = json.loads((root / 'review-candidates.json').read_text())[0]
+            self.assertFalse(item['human_verified'])
+            self.assertIsNone(item['expected_reference'])
+
     def test_match_is_a_hint_not_a_target(self):
         match = match_paragraph('請大家讀約翰福音三章十六節', [(2, '請大家讀約翰福音三章十六節')])
         self.assertEqual(match['paragraph'], 2)

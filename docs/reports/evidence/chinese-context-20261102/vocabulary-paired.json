@@ -1,0 +1,149 @@
+{
+  "groups": {
+    "reference": {
+      "n": 40,
+      "fitted": {
+        "correct": 28,
+        "wrong": 0,
+        "rejected": 12,
+        "correct_within_3s": 28,
+        "p95_s": 0.8318983350875421,
+        "max_s": 0.9601501659763573,
+        "over_3s": 0
+      },
+      "vocabulary": {
+        "correct": 25,
+        "wrong": 0,
+        "rejected": 15,
+        "correct_within_3s": 25,
+        "p95_s": 2.031786000028595,
+        "max_s": 2.3145767090489313,
+        "over_3s": 0
+      }
+    },
+    "all": {
+      "n": 71,
+      "fitted": {
+        "correct": 48,
+        "wrong": 0,
+        "rejected": 23,
+        "correct_within_3s": 46,
+        "p95_s": 2.2479197087795226,
+        "max_s": 4.018200500933055,
+        "over_3s": 2
+      },
+      "vocabulary": {
+        "correct": 40,
+        "wrong": 0,
+        "rejected": 31,
+        "correct_within_3s": 40,
+        "p95_s": 1.8301442500825227,
+        "max_s": 2.3145767090489313,
+        "over_3s": 0
+      }
+    },
+    "positive": {
+      "n": 70,
+      "fitted": {
+        "correct": 48,
+        "wrong": 0,
+        "rejected": 22,
+        "correct_within_3s": 46,
+        "p95_s": 2.2479197087795226,
+        "max_s": 4.018200500933055,
+        "over_3s": 2
+      },
+      "vocabulary": {
+        "correct": 40,
+        "wrong": 0,
+        "rejected": 30,
+        "correct_within_3s": 40,
+        "p95_s": 1.8301442500825227,
+        "max_s": 2.3145767090489313,
+        "over_3s": 0
+      }
+    },
+    "quotation": {
+      "n": 20,
+      "fitted": {
+        "correct": 15,
+        "wrong": 0,
+        "rejected": 5,
+        "correct_within_3s": 13,
+        "p95_s": 3.3049357489863156,
+        "max_s": 4.018200500933055,
+        "over_3s": 2
+      },
+      "vocabulary": {
+        "correct": 12,
+        "wrong": 0,
+        "rejected": 8,
+        "correct_within_3s": 12,
+        "p95_s": 1.3000787071125581,
+        "max_s": 1.6703516670507055,
+        "over_3s": 0
+      }
+    },
+    "mixed": {
+      "n": 10,
+      "fitted": {
+        "correct": 5,
+        "wrong": 0,
+        "rejected": 5,
+        "correct_within_3s": 5,
+        "p95_s": 1.9392860829041016,
+        "max_s": 1.9392860829041016,
+        "over_3s": 0
+      },
+      "vocabulary": {
+        "correct": 3,
+        "wrong": 0,
+        "rejected": 7,
+        "correct_within_3s": 3,
+        "p95_s": 1.7951246240398127,
+        "max_s": 1.7951246240398127,
+        "over_3s": 0
+      }
+    },
+    "negative": {
+      "n": 1,
+      "fitted": {
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 1,
+        "correct_within_3s": 0,
+        "p95_s": 2.0146937500318662,
+        "max_s": 2.0146937500318662,
+        "over_3s": 0
+      },
+      "vocabulary": {
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 1,
+        "correct_within_3s": 0,
+        "p95_s": 0.9348918339889838,
+        "max_s": 0.9348918339889838,
+        "over_3s": 0
+      }
+    }
+  },
+  "changes": {
+    "gained": [
+      "0175"
+    ],
+    "lost": [
+      "0085",
+      "0095",
+      "0155",
+      "0160",
+      "0255",
+      "0265",
+      "0290",
+      "0600",
+      "0630"
+    ],
+    "new_wrong": [],
+    "over_3s": [],
+    "long_audio": []
+  }
+}

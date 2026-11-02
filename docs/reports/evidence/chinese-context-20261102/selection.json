@@ -1,0 +1,10 @@
+{
+  "retain": "fitted 768 with length guard, no prompt",
+  "reject": [
+    "full context for every utterance",
+    "all-book vocabulary prompt"
+  ],
+  "reason": "Both alternatives reduce calibration localization accuracy; no complete-regression promotion",
+  "timing": "Shared system load; fitted profile had two quotation results over 3 s. A single load snapshot cannot prove causation.",
+  "english": "User accepted for this phase; configuration and code unchanged."
+}

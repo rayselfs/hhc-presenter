@@ -36,7 +36,9 @@ def read_rows(path):
 
 def build(root):
     corpus = json.loads((root / 'corpus.json').read_text())
-    models = {name: read_rows(root / f'{name}.jsonl') for name in ['whisper-small', 'sensevoice']}
+    profiles = {'whisper-large-v3-turbo-q5_0': '目前中文方案（Turbo）',
+                'whisper-small': 'Small（先前比較）', 'sensevoice': 'SenseVoice（對照）'}
+    models = {name: read_rows(root / f'{name}.jsonl') for name in profiles}
     paragraphs = {path.name.removesuffix('-reference-context.json'): json.loads(path.read_text())
                   for path in root.glob('recording-*-reference-context.json')}
     items, cards = [], []
@@ -59,7 +61,7 @@ def build(root):
         minute, second = divmod(int(row['offset_s']), 60)
         title = f"{row['recording']} · {minute:02d}:{second:02d}"
         audio = (root / 'audio' / f"{row['id']}.wav").resolve().as_uri()
-        content = ''.join(f'<h3>{escape(name)} · {output["decode_s"]:.2f}s</h3>'
+        content = ''.join(f'<h3>{escape(profiles[name])} · {output["decode_s"]:.2f}s</h3>'
                           f'<p>{escape(output["transcript"])}</p>' for name, output in outputs.items())
         if match:
             content += (f'<details><summary>AI 逐字稿相關段落（未核實）· 段落 {match["paragraph"]}</summary>'
@@ -73,10 +75,11 @@ def build(root):
             'color:#18212b;background:#f6f7f9}article{background:white;padding:24px;margin:24px 0;border:1px solid #ddd;'
             'border-radius:12px}h2{font-size:22px}h3{font-size:17px}audio{width:100%}summary{cursor:pointer}'
             'p{white-space:pre-wrap}</style><h1>私人錄音核對</h1>'
-            '<p>所有項目尚未人工核聽。AI 逐字稿僅提供線索，兩個模型一致也不代表正確。'
+            '<p>所有項目尚未人工核聽。AI 逐字稿僅提供線索，多個模型一致也不代表正確。'
             '下列為經文候選片段，未包含所有一般談話，不能用來計算整場誤跳率。</p>'
             '<p>每段最多 20 秒，相鄰片段重疊 2 秒。顯示的秒數只是模型處理時間，'
             '不代表說完到畫面定位的延遲。請核對書卷、章節，以及當下是否真的要跳轉。</p>'
+            '<p>每列僅顯示已處理的模型，各模型的整體測試範圍可能不同。</p>'
             f'<p>共 {len(items)} 個候選片段；檔案與音訊只保留在本機。</p>' + ''.join(cards) + '</html>')
     (root / 'review.html').write_text(page)
     print(json.dumps({'candidate_windows': len(items), 'human_verified': 0,

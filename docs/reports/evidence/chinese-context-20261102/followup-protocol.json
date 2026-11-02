@@ -1,0 +1,5 @@
+{
+  "additional_variant": "fitted context plus all 66 canonical book names in a fixed prompt",
+  "chronology": "Vocabulary follow-up selected after fitted and full-context calibration results; no blind-test claim",
+  "excluded_artifacts": "Private audio, transcripts, review outputs and process paths remain outside Git"
+}
