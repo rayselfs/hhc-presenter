@@ -1,0 +1,11 @@
+{
+  "n": 1,
+  "readyMs": 6039,
+  "lostCorrect": [],
+  "correct": 1,
+  "wrong": 0,
+  "over3s": [],
+  "tracksEnded": true,
+  "projectionWindows": 0,
+  "cancelLateResultIgnored": true
+}

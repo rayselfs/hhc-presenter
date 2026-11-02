@@ -18,7 +18,7 @@ beforeEach(() => {
   useBibleSettingsStore.setState({
     fontSize: 90,
     selectedVersionId: 0,
-    speechMaxSessionSec: 3600,
+    speechMaxSessionSec: 0,
     scriptureTemplateId: 'dark-stage'
   })
 })
@@ -32,8 +32,8 @@ describe('initial state', () => {
     expect(useBibleSettingsStore.getState().selectedVersionId).toBe(0)
   })
 
-  it('starts with speechMaxSessionSec of 3600', () => {
-    expect(useBibleSettingsStore.getState().speechMaxSessionSec).toBe(3600)
+  it('starts without an implicit cloud-cost deadline', () => {
+    expect(useBibleSettingsStore.getState().speechMaxSessionSec).toBe(0)
   })
 
   it('starts with default scripture template', () => {
@@ -93,7 +93,7 @@ describe('persistence round-trip', () => {
     useBibleSettingsStore.setState({
       fontSize: 90,
       selectedVersionId: 0,
-      speechMaxSessionSec: 3600,
+      speechMaxSessionSec: 0,
       scriptureTemplateId: 'dark-stage'
     })
   })
@@ -107,7 +107,7 @@ describe('persistence round-trip', () => {
     const raw = localStorage.getItem('hhc-bible-settings')
     expect(raw).toBeTruthy()
     const parsed = JSON.parse(raw!)
-    expect(parsed.version).toBe(4)
+    expect(parsed.version).toBe(5)
     expect(parsed.state.fontSize).toBe(110)
   })
 
@@ -175,7 +175,7 @@ describe('migration', () => {
     useBibleSettingsStore.setState({
       fontSize: 90,
       selectedVersionId: 0,
-      speechMaxSessionSec: 3600,
+      speechMaxSessionSec: 0,
       scriptureTemplateId: 'dark-stage'
     })
   })
@@ -195,13 +195,19 @@ describe('migration', () => {
     expect(s.fontSize).toBe(100)
   })
 
-  it('migrates from version 0 (no speechMaxSession field) to v2 with default 3600', () => {
+  it('migrates from version 0 (no speechMaxSession field) without the retired default one-hour limit', () => {
     localStorageMock['hhc-bible-settings'] = JSON.stringify({
       state: { fontSize: 110, selectedVersionId: 1 },
       version: 0
     })
     useBibleSettingsStore.persist.rehydrate()
     const s = useBibleSettingsStore.getState()
-    expect(s.speechMaxSessionSec).toBe(3600)
+    expect(s.speechMaxSessionSec).toBe(0)
   })
+})
+it('rejects invalid optional stop durations', () => {
+  useBibleSettingsStore.getState().setSpeechMaxSessionSec(NaN)
+  expect(useBibleSettingsStore.getState().speechMaxSessionSec).toBe(0)
+  useBibleSettingsStore.getState().setSpeechMaxSessionSec(-1)
+  expect(useBibleSettingsStore.getState().speechMaxSessionSec).toBe(0)
 })

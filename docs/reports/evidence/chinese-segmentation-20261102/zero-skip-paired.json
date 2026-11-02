@@ -1,0 +1,98 @@
+{
+  "groups": {
+    "reference": {
+      "n": 1,
+      "whole": {
+        "correct": 1,
+        "wrong": 0,
+        "rejected": 0,
+        "correct_within_3s": 1,
+        "p95_s": 0.8897813750816179,
+        "max_s": 0.8897813750816179,
+        "over_3s": 0
+      },
+      "zero_skip": {
+        "correct": 1,
+        "wrong": 0,
+        "rejected": 0,
+        "correct_within_3s": 1,
+        "p95_s": 0.7304550010112109,
+        "max_s": 0.7304550010112109,
+        "over_3s": 0
+      }
+    },
+    "all": {
+      "n": 8,
+      "whole": {
+        "correct": 1,
+        "wrong": 0,
+        "rejected": 7,
+        "correct_within_3s": 1,
+        "p95_s": 1.9697354980864525,
+        "max_s": 1.9697354980864525,
+        "over_3s": 0
+      },
+      "zero_skip": {
+        "correct": 1,
+        "wrong": 0,
+        "rejected": 7,
+        "correct_within_3s": 1,
+        "p95_s": 0.8615371670069546,
+        "max_s": 0.8615371670069546,
+        "over_3s": 0
+      }
+    },
+    "positive": {
+      "n": 1,
+      "whole": {
+        "correct": 1,
+        "wrong": 0,
+        "rejected": 0,
+        "correct_within_3s": 1,
+        "p95_s": 0.8897813750816179,
+        "max_s": 0.8897813750816179,
+        "over_3s": 0
+      },
+      "zero_skip": {
+        "correct": 1,
+        "wrong": 0,
+        "rejected": 0,
+        "correct_within_3s": 1,
+        "p95_s": 0.7304550010112109,
+        "max_s": 0.7304550010112109,
+        "over_3s": 0
+      }
+    },
+    "negative": {
+      "n": 7,
+      "whole": {
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 7,
+        "correct_within_3s": 0,
+        "p95_s": 1.9697354980864525,
+        "max_s": 1.9697354980864525,
+        "over_3s": 0
+      },
+      "zero_skip": {
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 7,
+        "correct_within_3s": 0,
+        "p95_s": 0.8615371670069546,
+        "max_s": 0.8615371670069546,
+        "over_3s": 0
+      }
+    }
+  },
+  "changes": {
+    "gained": [],
+    "lost": [],
+    "new_wrong": [],
+    "over_3s": [],
+    "long_audio": [
+      "turbo-boundary-silence-16",
+      "turbo-boundary-silence-22"
+    ]
+  }
+}

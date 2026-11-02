@@ -67,7 +67,7 @@ interface BibleDBSchema extends DBSchema {
   }
 }
 
-const FLEXSEARCH_CACHE_FORMAT_VERSION = 1
+const FLEXSEARCH_CACHE_FORMAT_VERSION = 2
 const DB_NAME = 'hhc-bible'
 const DB_VERSION = 3
 

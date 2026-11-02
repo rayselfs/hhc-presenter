@@ -1,0 +1,21 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "cpu": "Apple M4",
+  "memory_bytes": 25769803776,
+  "logical_cpus": 10,
+  "python": "3.13.14",
+  "windows_target": {
+    "os": "Windows 11",
+    "cpu": "Intel i7 (generation unspecified)",
+    "memory_gib": 32,
+    "tested": false
+  },
+  "source_commit": "5c3ca4f40947371402b597b2059c868b45633ebc",
+  "audio_source": "Local macOS say TTS; no human recordings",
+  "initial_metal_library_compile_observation": {
+    "seconds": 27.554,
+    "source": "initial whisper_print_system_info stderr; single observation before model runs",
+    "caveat": "later new-process timings reuse OS/Metal caches; not disk-cold benchmarks"
+  }
+}

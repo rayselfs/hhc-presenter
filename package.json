@@ -20,8 +20,8 @@
     "check:bundle": "node scripts/check-bundle-budget.mjs",
     "check:desktop-native": "node scripts/check-desktop-native.mjs",
     "postinstall": "electron-builder install-app-deps && npm run rebuild:vlc",
-    "build:unpack": "npm run build && npm run check:desktop-native && npm run prepare:video-engine:strict && electron-builder --dir && npm run check:packaged-runtime -- --unpacked-only",
-    "package:desktop": "npm run build && npm run check:desktop-native && npm run prepare:video-engine:strict && electron-builder",
+    "build:unpack": "npm run prepare:speech-runtime && npm run check:speech-runtime && npm run build && npm run check:desktop-native && npm run prepare:video-engine:strict && electron-builder --dir && npm run check:packaged-runtime -- --unpacked-only",
+    "package:desktop": "npm run prepare:speech-runtime && npm run check:speech-runtime && npm run build && npm run check:desktop-native && npm run prepare:video-engine:strict && electron-builder",
     "build:win": "npm run package:desktop -- --win",
     "build:mac": "npm run package:desktop -- --mac",
     "build:linux": "electron-vite build && electron-builder --linux",
@@ -38,7 +38,9 @@
     "test:e2e:packaged": "playwright test --config playwright.electron.config.ts",
     "rebuild:vlc": "node scripts/patch-vlc-projection-runtime.mjs && electron-rebuild -f -w electron-vlc-player --build-from-source",
     "typecheck:e2e": "tsc --noEmit -p tsconfig.e2e.json",
-    "prepare:lyrics-runtime": "node scripts/prepare-lyrics-runtime.mjs"
+    "prepare:lyrics-runtime": "node scripts/prepare-lyrics-runtime.mjs",
+    "prepare:speech-runtime": "node scripts/build-speech-runtime.mjs",
+    "check:speech-runtime": "node scripts/check-speech-runtime.mjs"
   },
   "dependencies": {
     "@aiden0z/pptx-renderer": "^1.2.4",
@@ -53,7 +55,6 @@
     "@hallelujahhomechurch/account-client": "1.0.27",
     "@heroui/react": "^3.0.2",
     "@heroui/styles": "^3.0.2",
-    "@huggingface/transformers": "^3.8.1",
     "@phosphor-icons/react": "^2.1.10",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-virtual": "^3.13.26",
@@ -65,7 +66,7 @@
     "i18next": "^26.0.3",
     "idb": "^8.0.3",
     "lucide-react": "^1.7.0",
-    "microsoft-cognitiveservices-speech-sdk": "^1.51.0",
+    "opencc-js": "1.4.2",
     "parse-duration-ms": "^0.1.0",
     "pdfjs-dist": "^6.2.108",
     "pinyin-pro": "^3.28.1",

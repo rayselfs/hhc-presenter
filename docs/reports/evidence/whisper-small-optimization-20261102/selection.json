@@ -1,0 +1,16 @@
+{
+  "zh": {
+    "name": "baseline",
+    "flags": [],
+    "reason": "Beam3 has no net accepted-localization gain (35/70 versus 35/70), identical wrong count, and higher latency; both prompt variants regress."
+  },
+  "en": {
+    "name": "short-prompt",
+    "flags": [
+      "--short-prompt"
+    ],
+    "reason": "With frozen optimized parser, calibration positive correct 53/60 versus 45/60, wrong 2 versus 9; quotation alone slightly regresses 17 versus 18/20. P95 meets compute budget."
+  },
+  "zh_results_reused": "Optimized ASR for Chinese is exactly baseline; reuse its final transcripts and timings to isolate parser effect.",
+  "fixed_before_final": true
+}

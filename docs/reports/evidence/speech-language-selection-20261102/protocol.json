@@ -1,0 +1,9 @@
+{
+  "scope": "English-only acceptance; mixed speech nonblocking compatibility, wrong-navigation guard retained",
+  "selection": "Choose Turbo prompt on English calibration only; freeze before regression",
+  "policy": "Frozen v2 phonetic-0.85; no parser threshold changes",
+  "small": "small greedy, English, fixed short Bible prompt",
+  "turbo": "large-v3-turbo-q5_0, English, 768 fitted to waveform length; compare no prompt vs fixed short prompt",
+  "hardware": "M4 24 GiB Metal, 4 threads",
+  "baseline_head": "98903e745568c08d0ce2af9055392d085c9b277b"
+}

@@ -1,0 +1,128 @@
+{
+  "baseline/fresh-reference-v3/en/reference": {
+    "n": 40,
+    "correct": 3,
+    "wrong": 26,
+    "rejected": 11,
+    "correct_within_3s": 3,
+    "p95_s": 0.34915254104556775,
+    "over_3s": 0
+  },
+  "optimized/fresh-reference-v3/en/reference": {
+    "n": 40,
+    "correct": 18,
+    "wrong": 16,
+    "rejected": 6,
+    "correct_within_3s": 18,
+    "p95_s": 0.34845783304556777,
+    "over_3s": 0
+  },
+  "strict/fresh-reference-v3/en/reference": {
+    "n": 40,
+    "correct": 38,
+    "wrong": 0,
+    "rejected": 2,
+    "correct_within_3s": 38,
+    "p95_s": 0.3474514170451952,
+    "over_3s": 0
+  },
+  "phonetic-0.85/fresh-reference-v3/en/reference": {
+    "n": 40,
+    "correct": 38,
+    "wrong": 0,
+    "rejected": 2,
+    "correct_within_3s": 38,
+    "p95_s": 0.3474514170451952,
+    "over_3s": 0
+  },
+  "phonetic-0.88/fresh-reference-v3/en/reference": {
+    "n": 40,
+    "correct": 38,
+    "wrong": 0,
+    "rejected": 2,
+    "correct_within_3s": 38,
+    "p95_s": 0.3474514170451952,
+    "over_3s": 0
+  },
+  "phonetic-0.90/fresh-reference-v3/en/reference": {
+    "n": 40,
+    "correct": 38,
+    "wrong": 0,
+    "rejected": 2,
+    "correct_within_3s": 38,
+    "p95_s": 0.3474514170451952,
+    "over_3s": 0
+  },
+  "phonetic-0.92/fresh-reference-v3/en/reference": {
+    "n": 40,
+    "correct": 38,
+    "wrong": 0,
+    "rejected": 2,
+    "correct_within_3s": 38,
+    "p95_s": 0.3474514170451952,
+    "over_3s": 0
+  },
+  "baseline/fresh-reference-v3/en/negative": {
+    "n": 20,
+    "correct": 0,
+    "wrong": 16,
+    "rejected": 4,
+    "correct_within_3s": 0,
+    "p95_s": 0.3838189179918405,
+    "over_3s": 0
+  },
+  "optimized/fresh-reference-v3/en/negative": {
+    "n": 20,
+    "correct": 0,
+    "wrong": 14,
+    "rejected": 6,
+    "correct_within_3s": 0,
+    "p95_s": 0.3833479169918405,
+    "over_3s": 0
+  },
+  "strict/fresh-reference-v3/en/negative": {
+    "n": 20,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 20,
+    "correct_within_3s": 0,
+    "p95_s": 0.3830851670080902,
+    "over_3s": 0
+  },
+  "phonetic-0.85/fresh-reference-v3/en/negative": {
+    "n": 20,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 20,
+    "correct_within_3s": 0,
+    "p95_s": 0.3830851670080902,
+    "over_3s": 0
+  },
+  "phonetic-0.88/fresh-reference-v3/en/negative": {
+    "n": 20,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 20,
+    "correct_within_3s": 0,
+    "p95_s": 0.3830851670080902,
+    "over_3s": 0
+  },
+  "phonetic-0.90/fresh-reference-v3/en/negative": {
+    "n": 20,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 20,
+    "correct_within_3s": 0,
+    "p95_s": 0.3830851670080902,
+    "over_3s": 0
+  },
+  "phonetic-0.92/fresh-reference-v3/en/negative": {
+    "n": 20,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 20,
+    "correct_within_3s": 0,
+    "p95_s": 0.3830851670080902,
+    "over_3s": 0
+  }
+}

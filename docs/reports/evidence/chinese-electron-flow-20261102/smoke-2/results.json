@@ -1,0 +1,134 @@
+[
+  {
+    "id": "0000",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "reference": [
+      1,
+      1,
+      1
+    ],
+    "correct": true,
+    "wrong": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1536.7095000476838,
+    "captureClockOffsetMs": 17.936999999999898,
+    "trace": {
+      "result": {
+        "text": "创世纪第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 647.4981670035049,
+        "locateMs": 1.2062080204486847
+      },
+      "lastSampleAt": 9267.9275,
+      "requestAt": 9542,
+      "responseAt": 10197.899999976158,
+      "stableAt": 10742,
+      "manual": false,
+      "paintedAt": 10786.700000047684,
+      "totalMs": 1518.772500047684,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "segment-007",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1509.7485000000015,
+    "captureClockOffsetMs": 11.888000000002648,
+    "trace": {
+      "result": {
+        "text": "请不要切换到创世纪第一章第一节",
+        "reference": null,
+        "asrMs": 601.5132500324398,
+        "locateMs": 0.918291974812746
+      },
+      "lastSampleAt": 17591.1395,
+      "requestAt": 17862,
+      "responseAt": 18475,
+      "stableAt": 19062,
+      "manual": false,
+      "paintedAt": 19089,
+      "totalMs": 1497.8604999999989,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-002",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1494.4050000476855,
+    "captureClockOffsetMs": 9.92600002384279,
+    "trace": {
+      "result": {
+        "text": "创世纪第一章第一节,只是举例,请不要切换。",
+        "reference": null,
+        "asrMs": 686.1049579456449,
+        "locateMs": 1.051457948051393
+      },
+      "lastSampleAt": 25853.121,
+      "requestAt": 26126.299999952316,
+      "responseAt": 26824.399999976158,
+      "stableAt": 27325.700000047684,
+      "manual": false,
+      "paintedAt": 27337.600000023842,
+      "totalMs": 1484.4790000238427,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "0291",
+    "kind": "quotation",
+    "target": [
+      5,
+      20,
+      5
+    ],
+    "reference": [
+      5,
+      20,
+      5
+    ],
+    "correct": true,
+    "wrong": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1857.9100000476828,
+    "captureClockOffsetMs": 22.58600004768232,
+    "trace": {
+      "result": {
+        "text": "官长也要对百姓宣告说,谁建造房屋,尚未奉献,他可以回家去,恐怕他阵亡,别人去奉献。谁种葡萄园,尚未用所结的果子,他可以回家去,恐怕他阵亡,别人去用。",
+        "reference": [
+          5,
+          20,
+          5
+        ],
+        "asrMs": 1258.9988339459524,
+        "locateMs": 4.268083022907376
+      },
+      "lastSampleAt": 45820.676,
+      "requestAt": 46355.89999997616,
+      "responseAt": 47632.200000047684,
+      "stableAt": 47632.200000047684,
+      "manual": false,
+      "paintedAt": 47656,
+      "totalMs": 1835.3240000000005,
+      "outcome": "located"
+    }
+  }
+]

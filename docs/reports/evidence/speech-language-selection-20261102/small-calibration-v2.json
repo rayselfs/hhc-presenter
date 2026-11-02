@@ -1,0 +1,191 @@
+{
+  "baseline/calibration/en/reference": {
+    "n": 40,
+    "correct": 13,
+    "wrong": 23,
+    "rejected": 4,
+    "correct_within_3s": 13,
+    "p95_s": 0.25958458403025253,
+    "over_3s": 0
+  },
+  "optimized/calibration/en/reference": {
+    "n": 40,
+    "correct": 36,
+    "wrong": 2,
+    "rejected": 2,
+    "correct_within_3s": 36,
+    "p95_s": 0.2585877090302525,
+    "over_3s": 0
+  },
+  "strict/calibration/en/reference": {
+    "n": 40,
+    "correct": 37,
+    "wrong": 0,
+    "rejected": 3,
+    "correct_within_3s": 37,
+    "p95_s": 0.2586077510666145,
+    "over_3s": 0
+  },
+  "phonetic-0.85/calibration/en/reference": {
+    "n": 40,
+    "correct": 37,
+    "wrong": 0,
+    "rejected": 3,
+    "correct_within_3s": 37,
+    "p95_s": 0.2586077510666145,
+    "over_3s": 0
+  },
+  "phonetic-0.88/calibration/en/reference": {
+    "n": 40,
+    "correct": 37,
+    "wrong": 0,
+    "rejected": 3,
+    "correct_within_3s": 37,
+    "p95_s": 0.2586077510666145,
+    "over_3s": 0
+  },
+  "phonetic-0.90/calibration/en/reference": {
+    "n": 40,
+    "correct": 37,
+    "wrong": 0,
+    "rejected": 3,
+    "correct_within_3s": 37,
+    "p95_s": 0.2586077510666145,
+    "over_3s": 0
+  },
+  "phonetic-0.92/calibration/en/reference": {
+    "n": 40,
+    "correct": 37,
+    "wrong": 0,
+    "rejected": 3,
+    "correct_within_3s": 37,
+    "p95_s": 0.2586077510666145,
+    "over_3s": 0
+  },
+  "baseline/calibration/en/quotation": {
+    "n": 20,
+    "correct": 17,
+    "wrong": 0,
+    "rejected": 3,
+    "correct_within_3s": 17,
+    "p95_s": 0.41592591603304446,
+    "over_3s": 0
+  },
+  "optimized/calibration/en/quotation": {
+    "n": 20,
+    "correct": 17,
+    "wrong": 0,
+    "rejected": 3,
+    "correct_within_3s": 17,
+    "p95_s": 0.4159137500330445,
+    "over_3s": 0
+  },
+  "strict/calibration/en/quotation": {
+    "n": 20,
+    "correct": 17,
+    "wrong": 0,
+    "rejected": 3,
+    "correct_within_3s": 17,
+    "p95_s": 0.41593349895483256,
+    "over_3s": 0
+  },
+  "phonetic-0.85/calibration/en/quotation": {
+    "n": 20,
+    "correct": 17,
+    "wrong": 0,
+    "rejected": 3,
+    "correct_within_3s": 17,
+    "p95_s": 0.41593349895483256,
+    "over_3s": 0
+  },
+  "phonetic-0.88/calibration/en/quotation": {
+    "n": 20,
+    "correct": 17,
+    "wrong": 0,
+    "rejected": 3,
+    "correct_within_3s": 17,
+    "p95_s": 0.41593349895483256,
+    "over_3s": 0
+  },
+  "phonetic-0.90/calibration/en/quotation": {
+    "n": 20,
+    "correct": 17,
+    "wrong": 0,
+    "rejected": 3,
+    "correct_within_3s": 17,
+    "p95_s": 0.41593349895483256,
+    "over_3s": 0
+  },
+  "phonetic-0.92/calibration/en/quotation": {
+    "n": 20,
+    "correct": 17,
+    "wrong": 0,
+    "rejected": 3,
+    "correct_within_3s": 17,
+    "p95_s": 0.41593349895483256,
+    "over_3s": 0
+  },
+  "baseline/calibration/en/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 0.26004495789271165,
+    "over_3s": 0
+  },
+  "optimized/calibration/en/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 0.26005274989271165,
+    "over_3s": 0
+  },
+  "strict/calibration/en/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 0.2600282078507468,
+    "over_3s": 0
+  },
+  "phonetic-0.85/calibration/en/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 0.2600282078507468,
+    "over_3s": 0
+  },
+  "phonetic-0.88/calibration/en/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 0.2600282078507468,
+    "over_3s": 0
+  },
+  "phonetic-0.90/calibration/en/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 0.2600282078507468,
+    "over_3s": 0
+  },
+  "phonetic-0.92/calibration/en/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 0.2600282078507468,
+    "over_3s": 0
+  }
+}

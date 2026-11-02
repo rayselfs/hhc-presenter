@@ -8,7 +8,7 @@ import { hhcPersistStorage, createKey } from '@renderer/lib/persist-storage'
 import { clearAllSiteData } from '@renderer/lib/site-data'
 import { isElectron } from '@renderer/lib/env'
 import { ThemePreference } from '@renderer/types/theme'
-import type { WhisperModel } from '@shared/ipc-channels'
+import type { RecognitionLanguage } from '@shared/local-speech'
 import type { SyncOfflinePolicy } from '@shared/types/folder'
 import { APP_CONFIG } from '@shared/app-config'
 
@@ -21,43 +21,6 @@ export const TIMEZONE_OPTIONS = [
   { value: 'Europe/Athens', labelKey: 'timezones.athens' },
   { value: 'Australia/Melbourne', labelKey: 'timezones.melbourne' },
   { value: 'Europe/London', labelKey: 'timezones.london' }
-] as const
-
-export const AZURE_REGION_OPTIONS = [
-  { value: 'eastasia', label: 'East Asia' },
-  { value: 'southeastasia', label: 'Southeast Asia' },
-  { value: 'eastus', label: 'East US' },
-  { value: 'eastus2', label: 'East US 2' },
-  { value: 'westus', label: 'West US' },
-  { value: 'westus2', label: 'West US 2' },
-  { value: 'westus3', label: 'West US 3' },
-  { value: 'centralus', label: 'Central US' },
-  { value: 'southcentralus', label: 'South Central US' },
-  { value: 'northcentralus', label: 'North Central US' },
-  { value: 'westcentralus', label: 'West Central US' },
-  { value: 'canadacentral', label: 'Canada Central' },
-  { value: 'canadaeast', label: 'Canada East' },
-  { value: 'brazilsouth', label: 'Brazil South' },
-  { value: 'northeurope', label: 'North Europe' },
-  { value: 'westeurope', label: 'West Europe' },
-  { value: 'uksouth', label: 'UK South' },
-  { value: 'ukwest', label: 'UK West' },
-  { value: 'francecentral', label: 'France Central' },
-  { value: 'germanywestcentral', label: 'Germany West Central' },
-  { value: 'norwayeast', label: 'Norway East' },
-  { value: 'switzerlandnorth', label: 'Switzerland North' },
-  { value: 'swedencentral', label: 'Sweden Central' },
-  { value: 'polandcentral', label: 'Poland Central' },
-  { value: 'italynorth', label: 'Italy North' },
-  { value: 'spaincentral', label: 'Spain Central' },
-  { value: 'uaenorth', label: 'UAE North' },
-  { value: 'southafricanorth', label: 'South Africa North' },
-  { value: 'centralindia', label: 'Central India' },
-  { value: 'japaneast', label: 'Japan East' },
-  { value: 'japanwest', label: 'Japan West' },
-  { value: 'koreacentral', label: 'Korea Central' },
-  { value: 'australiaeast', label: 'Australia East' },
-  { value: 'australiasoutheast', label: 'Australia Southeast' }
 ] as const
 
 const DEFAULT_TIMEZONE = 'Asia/Taipei'
@@ -75,38 +38,17 @@ const OFFLINE_POLICIES: SyncOfflinePolicy[] = ['online-only', 'on-demand', 'alwa
 type ReminderMode = 'subtract' | 'add'
 const REMINDER_MODES: ReminderMode[] = ['subtract', 'add']
 
-export type SpeechProvider = 'azure' | 'gcp' | 'webSpeech' | 'whisper'
-
-export interface AzureSpeechConfig {
-  region: string
-  language: 'zh-TW' | 'zh-CN'
-}
-
-export interface GcpSpeechConfig {
-  language: 'cmn-Hant-TW' | 'cmn-Hans-CN'
-}
-
-export interface WhisperSpeechConfig {
-  modelDir: string
-  installedModel: WhisperModel | null
-}
+export type SpeechProvider = 'local' | 'webSpeech'
 
 export interface SpeechSettings {
-  activeProvider: SpeechProvider
-  azure: AzureSpeechConfig
-  gcp: GcpSpeechConfig
-  whisper: WhisperSpeechConfig
+  recognitionLanguage: RecognitionLanguage
+  microphoneId: string
 }
 
-export const DEFAULT_SPEECH: SpeechSettings = {
-  activeProvider: 'azure',
-  azure: { region: 'eastasia', language: 'zh-TW' },
-  gcp: { language: 'cmn-Hant-TW' },
-  whisper: { modelDir: '', installedModel: null }
-}
+export const DEFAULT_SPEECH: SpeechSettings = { recognitionLanguage: 'zh', microphoneId: '' }
 
 export function getDefaultSpeechSettings(): SpeechSettings {
-  return isElectron() ? DEFAULT_SPEECH : { ...DEFAULT_SPEECH, activeProvider: 'webSpeech' }
+  return { ...DEFAULT_SPEECH }
 }
 
 export const DEFAULT_SYNC_OFFLINE_POLICY: SyncOfflinePolicy = 'always-offline'
@@ -157,49 +99,18 @@ function normalizeLanRemoteSettings(value: unknown): LanRemoteSettings {
   }
 }
 
-function normalizeSpeechSettings(value: unknown): SpeechSettings {
-  const defaultSpeech = getDefaultSpeechSettings()
-  if (!isRecord(value)) return defaultSpeech
-
-  const activeProvider =
-    value.activeProvider === 'azure' ||
-    value.activeProvider === 'gcp' ||
-    value.activeProvider === 'webSpeech' ||
-    value.activeProvider === 'whisper'
-      ? value.activeProvider
-      : defaultSpeech.activeProvider
-  const azure = isRecord(value.azure) ? value.azure : {}
-  const gcp = isRecord(value.gcp) ? value.gcp : {}
-  const whisper = isRecord(value.whisper) ? value.whisper : {}
-
+export function normalizeSpeechSettings(value: unknown): SpeechSettings {
+  if (!isRecord(value)) return getDefaultSpeechSettings()
+  const legacy =
+    value.provider === 'gcp' && isRecord(value.gcp)
+      ? value.gcp
+      : isRecord(value.azure)
+        ? value.azure
+        : value
+  const language = value.recognitionLanguage ?? legacy.language
   return {
-    activeProvider,
-    azure: {
-      region:
-        typeof azure.region === 'string' &&
-        AZURE_REGION_OPTIONS.some((option) => option.value === azure.region)
-          ? azure.region
-          : defaultSpeech.azure.region,
-      language:
-        azure.language === 'zh-TW' || azure.language === 'zh-CN'
-          ? azure.language
-          : defaultSpeech.azure.language
-    },
-    gcp: {
-      language:
-        gcp.language === 'cmn-Hant-TW' || gcp.language === 'cmn-Hans-CN'
-          ? gcp.language
-          : defaultSpeech.gcp.language
-    },
-    whisper: {
-      modelDir: typeof whisper.modelDir === 'string' ? whisper.modelDir : '',
-      installedModel:
-        whisper.installedModel === 'whisper-base' ||
-        whisper.installedModel === 'whisper-small' ||
-        whisper.installedModel === 'whisper-medium'
-          ? whisper.installedModel
-          : null
-    }
+    recognitionLanguage: typeof language === 'string' && /^en(?:-|$)/i.test(language) ? 'en' : 'zh',
+    microphoneId: typeof value.microphoneId === 'string' ? value.microphoneId : ''
   }
 }
 
@@ -392,9 +303,10 @@ export const useSettingsStore = create<SettingsStore>()(
     {
       name: createKey('settings'),
       storage: hhcPersistStorage,
-      version: 13,
+      version: 14,
       migrate: (persistedState, version) => {
         const state = persistedState as Record<string, unknown>
+        if (version < 14) state.speech = normalizeSpeechSettings(state.speech ?? state.azureSpeech)
         if (version < 1) {
           let themePreference: ThemePreference = 'system'
           try {
@@ -421,7 +333,7 @@ export const useSettingsStore = create<SettingsStore>()(
           state.azureSpeech = null
         }
         if (version < 4) {
-          state.speech = getDefaultSpeechSettings()
+          state.speech = normalizeSpeechSettings(state.speech)
         }
         if (version < 5) {
           const speech = state.speech as Record<string, unknown> | undefined

@@ -1,0 +1,98 @@
+[
+  {
+    "language": "zh",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "text": "創世記第一章第一節",
+    "voice": "Meijia",
+    "rate": 150,
+    "id": "turbo-boundary-reference-0",
+    "source_id": "0000",
+    "split": "boundary-probe",
+    "leading_silence_s": 0,
+    "duration_s": 22,
+    "sha256": "42af6f249ea8c0ad1d87c465482d285fd9cf0c74e75284e26ff40e5de74b23d1"
+  },
+  {
+    "language": "zh",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "text": "創世記第一章第一節",
+    "voice": "Meijia",
+    "rate": 150,
+    "id": "turbo-boundary-reference-16",
+    "source_id": "0000",
+    "split": "boundary-probe",
+    "leading_silence_s": 16,
+    "duration_s": 22,
+    "sha256": "a5d678578d61dd6a1526518bac1c2a2cec84df0e36a733e9ed6263ad9517c590"
+  },
+  {
+    "language": "zh",
+    "kind": "mixed",
+    "target": [
+      40,
+      3,
+      1
+    ],
+    "text": "馬太福音第三章 verse one",
+    "voice": "Meijia",
+    "rate": 150,
+    "id": "turbo-boundary-mixed-0",
+    "source_id": "0600",
+    "split": "boundary-probe",
+    "leading_silence_s": 0,
+    "duration_s": 22,
+    "sha256": "03f414bfb37d14fd569888db67be0362818dc7bb389b2a5430f4ae7c587226cc"
+  },
+  {
+    "language": "zh",
+    "kind": "mixed",
+    "target": [
+      40,
+      3,
+      1
+    ],
+    "text": "馬太福音第三章 verse one",
+    "voice": "Meijia",
+    "rate": 150,
+    "id": "turbo-boundary-mixed-16",
+    "source_id": "0600",
+    "split": "boundary-probe",
+    "leading_silence_s": 16,
+    "duration_s": 22,
+    "sha256": "7ded19db775293ed9cf747ff5ebaed6043a82985053b372eeb9725363ed27464"
+  },
+  {
+    "id": "turbo-boundary-silence-16",
+    "language": "zh",
+    "kind": "negative",
+    "target": null,
+    "text": "",
+    "voice": "silence",
+    "rate": 0,
+    "split": "boundary-probe",
+    "duration_s": 16,
+    "sha256": "0f01d6201b16ebf5ad80113a7b0d3039e1b780d69e9a30ceecd8d52f6591d1ef"
+  },
+  {
+    "id": "turbo-boundary-silence-22",
+    "language": "zh",
+    "kind": "negative",
+    "target": null,
+    "text": "",
+    "voice": "silence",
+    "rate": 0,
+    "split": "boundary-probe",
+    "duration_s": 22,
+    "sha256": "b52738d5e2a0de74ba9d69a73f1f0dc3b5b6b0de6cf3437f44cf5296ed9a3ae1"
+  }
+]

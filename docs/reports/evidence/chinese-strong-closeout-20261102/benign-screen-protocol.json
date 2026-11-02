@@ -1,0 +1,390 @@
+{
+  "cases": [
+    {
+      "id": "benign-0-0-0.02",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-0-0-0.02.wav",
+      "text": "我們一起來看，創世記第一章第一節",
+      "voice": "Meijia",
+      "prefix_gain": 0.02,
+      "sha256": "efe8909cbeaee6a13b3655a478aeda2e046c8b30713690668ceff2599dfb11ca",
+      "profile": "fan-20db",
+      "seed": 20261120,
+      "baseline": null
+    },
+    {
+      "id": "benign-0-0-0.02",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-0-0-0.02.wav",
+      "text": "我們一起來看，創世記第一章第一節",
+      "voice": "Meijia",
+      "prefix_gain": 0.02,
+      "sha256": "efe8909cbeaee6a13b3655a478aeda2e046c8b30713690668ceff2599dfb11ca",
+      "profile": "hum-10db",
+      "seed": 20261120,
+      "baseline": null
+    },
+    {
+      "id": "benign-0-0-0.1",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-0-0-0.1.wav",
+      "text": "我們一起來看，創世記第一章第一節",
+      "voice": "Meijia",
+      "prefix_gain": 0.1,
+      "sha256": "65d61006bc61f195dbaade508a2712d55ff8067c0da544d85f7d0aa558df70dc",
+      "profile": "fan-20db",
+      "seed": 20261121,
+      "baseline": null
+    },
+    {
+      "id": "benign-0-0-0.1",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-0-0-0.1.wav",
+      "text": "我們一起來看，創世記第一章第一節",
+      "voice": "Meijia",
+      "prefix_gain": 0.1,
+      "sha256": "65d61006bc61f195dbaade508a2712d55ff8067c0da544d85f7d0aa558df70dc",
+      "profile": "hum-10db",
+      "seed": 20261121,
+      "baseline": null
+    },
+    {
+      "id": "benign-0-1-0.02",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-0-1-0.02.wav",
+      "text": "接下來，創世記第一章第一節",
+      "voice": "Meijia",
+      "prefix_gain": 0.02,
+      "sha256": "91f71edfb0dca563d91cbfd825aeb0b5641ff95105dd94b1dd870e25e34be5cf",
+      "profile": "fan-20db",
+      "seed": 20261122,
+      "baseline": null
+    },
+    {
+      "id": "benign-0-1-0.02",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-0-1-0.02.wav",
+      "text": "接下來，創世記第一章第一節",
+      "voice": "Meijia",
+      "prefix_gain": 0.02,
+      "sha256": "91f71edfb0dca563d91cbfd825aeb0b5641ff95105dd94b1dd870e25e34be5cf",
+      "profile": "hum-10db",
+      "seed": 20261122,
+      "baseline": null
+    },
+    {
+      "id": "benign-0-1-0.1",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-0-1-0.1.wav",
+      "text": "接下來，創世記第一章第一節",
+      "voice": "Meijia",
+      "prefix_gain": 0.1,
+      "sha256": "f647f1f7464c638201abf1ac88494a196f93531be1d8cd0d465023c2d2398478",
+      "profile": "fan-20db",
+      "seed": 20261123,
+      "baseline": null
+    },
+    {
+      "id": "benign-0-1-0.1",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-0-1-0.1.wav",
+      "text": "接下來，創世記第一章第一節",
+      "voice": "Meijia",
+      "prefix_gain": 0.1,
+      "sha256": "f647f1f7464c638201abf1ac88494a196f93531be1d8cd0d465023c2d2398478",
+      "profile": "hum-10db",
+      "seed": 20261123,
+      "baseline": null
+    },
+    {
+      "id": "benign-0-2-0.02",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-0-2-0.02.wav",
+      "text": "弟兄姊妹，創世記第一章第一節",
+      "voice": "Meijia",
+      "prefix_gain": 0.02,
+      "sha256": "41a5abd1cbcd36ad1814be29f776a6796af4f46b40456a8b03780169e2c2c895",
+      "profile": "fan-20db",
+      "seed": 20261124,
+      "baseline": null
+    },
+    {
+      "id": "benign-0-2-0.02",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-0-2-0.02.wav",
+      "text": "弟兄姊妹，創世記第一章第一節",
+      "voice": "Meijia",
+      "prefix_gain": 0.02,
+      "sha256": "41a5abd1cbcd36ad1814be29f776a6796af4f46b40456a8b03780169e2c2c895",
+      "profile": "hum-10db",
+      "seed": 20261124,
+      "baseline": null
+    },
+    {
+      "id": "benign-0-2-0.1",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-0-2-0.1.wav",
+      "text": "弟兄姊妹，創世記第一章第一節",
+      "voice": "Meijia",
+      "prefix_gain": 0.1,
+      "sha256": "d5c4c4a25909572a4ea5393cd6c1ba66949deb4ac00416661b4611563f5b8004",
+      "profile": "fan-20db",
+      "seed": 20261125,
+      "baseline": null
+    },
+    {
+      "id": "benign-0-2-0.1",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-0-2-0.1.wav",
+      "text": "弟兄姊妹，創世記第一章第一節",
+      "voice": "Meijia",
+      "prefix_gain": 0.1,
+      "sha256": "d5c4c4a25909572a4ea5393cd6c1ba66949deb4ac00416661b4611563f5b8004",
+      "profile": "hum-10db",
+      "seed": 20261125,
+      "baseline": null
+    },
+    {
+      "id": "benign-1-0-0.02",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-1-0-0.02.wav",
+      "text": "我們一起來看，創世記第一章第一節",
+      "voice": "Eddy (Chinese (Taiwan))",
+      "prefix_gain": 0.02,
+      "sha256": "0afeb3ef9b14ff10131019f4bd78d85bcceaf9637ef0adb1791e16f47c461262",
+      "profile": "fan-20db",
+      "seed": 20261126,
+      "baseline": null
+    },
+    {
+      "id": "benign-1-0-0.02",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-1-0-0.02.wav",
+      "text": "我們一起來看，創世記第一章第一節",
+      "voice": "Eddy (Chinese (Taiwan))",
+      "prefix_gain": 0.02,
+      "sha256": "0afeb3ef9b14ff10131019f4bd78d85bcceaf9637ef0adb1791e16f47c461262",
+      "profile": "hum-10db",
+      "seed": 20261126,
+      "baseline": null
+    },
+    {
+      "id": "benign-1-0-0.1",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-1-0-0.1.wav",
+      "text": "我們一起來看，創世記第一章第一節",
+      "voice": "Eddy (Chinese (Taiwan))",
+      "prefix_gain": 0.1,
+      "sha256": "020cd87c0cbb1439f09297cd24cd4d13c5bbbc1ad66090acaabb50a68dcfbbc9",
+      "profile": "fan-20db",
+      "seed": 20261127,
+      "baseline": null
+    },
+    {
+      "id": "benign-1-0-0.1",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-1-0-0.1.wav",
+      "text": "我們一起來看，創世記第一章第一節",
+      "voice": "Eddy (Chinese (Taiwan))",
+      "prefix_gain": 0.1,
+      "sha256": "020cd87c0cbb1439f09297cd24cd4d13c5bbbc1ad66090acaabb50a68dcfbbc9",
+      "profile": "hum-10db",
+      "seed": 20261127,
+      "baseline": null
+    },
+    {
+      "id": "benign-1-1-0.02",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-1-1-0.02.wav",
+      "text": "接下來，創世記第一章第一節",
+      "voice": "Eddy (Chinese (Taiwan))",
+      "prefix_gain": 0.02,
+      "sha256": "3a6bdbbecfd7e252218d57a6b7882ad1488691d51f4332ea09dcd90b6c86013a",
+      "profile": "fan-20db",
+      "seed": 20261128,
+      "baseline": null
+    },
+    {
+      "id": "benign-1-1-0.02",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-1-1-0.02.wav",
+      "text": "接下來，創世記第一章第一節",
+      "voice": "Eddy (Chinese (Taiwan))",
+      "prefix_gain": 0.02,
+      "sha256": "3a6bdbbecfd7e252218d57a6b7882ad1488691d51f4332ea09dcd90b6c86013a",
+      "profile": "hum-10db",
+      "seed": 20261128,
+      "baseline": null
+    },
+    {
+      "id": "benign-1-1-0.1",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-1-1-0.1.wav",
+      "text": "接下來，創世記第一章第一節",
+      "voice": "Eddy (Chinese (Taiwan))",
+      "prefix_gain": 0.1,
+      "sha256": "c3efe3d33565db4deda6461ac0851aea49558c84bd4d75ca48387e007e81cec2",
+      "profile": "fan-20db",
+      "seed": 20261129,
+      "baseline": null
+    },
+    {
+      "id": "benign-1-1-0.1",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-1-1-0.1.wav",
+      "text": "接下來，創世記第一章第一節",
+      "voice": "Eddy (Chinese (Taiwan))",
+      "prefix_gain": 0.1,
+      "sha256": "c3efe3d33565db4deda6461ac0851aea49558c84bd4d75ca48387e007e81cec2",
+      "profile": "hum-10db",
+      "seed": 20261129,
+      "baseline": null
+    },
+    {
+      "id": "benign-1-2-0.02",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-1-2-0.02.wav",
+      "text": "弟兄姊妹，創世記第一章第一節",
+      "voice": "Eddy (Chinese (Taiwan))",
+      "prefix_gain": 0.02,
+      "sha256": "b4155ba6daf2d7ebba61caabdd2fd3e4a036585f7b057fe8ed73e1fa3426a1d4",
+      "profile": "fan-20db",
+      "seed": 20261130,
+      "baseline": null
+    },
+    {
+      "id": "benign-1-2-0.02",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-1-2-0.02.wav",
+      "text": "弟兄姊妹，創世記第一章第一節",
+      "voice": "Eddy (Chinese (Taiwan))",
+      "prefix_gain": 0.02,
+      "sha256": "b4155ba6daf2d7ebba61caabdd2fd3e4a036585f7b057fe8ed73e1fa3426a1d4",
+      "profile": "hum-10db",
+      "seed": 20261130,
+      "baseline": null
+    },
+    {
+      "id": "benign-1-2-0.1",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-1-2-0.1.wav",
+      "text": "弟兄姊妹，創世記第一章第一節",
+      "voice": "Eddy (Chinese (Taiwan))",
+      "prefix_gain": 0.1,
+      "sha256": "ea56550085fca88095691418924c7d1b5665f09390d354448d1cc10768b714b1",
+      "profile": "fan-20db",
+      "seed": 20261131,
+      "baseline": null
+    },
+    {
+      "id": "benign-1-2-0.1",
+      "target": [
+        1,
+        1,
+        1
+      ],
+      "path": "benign-1-2-0.1.wav",
+      "text": "弟兄姊妹，創世記第一章第一節",
+      "voice": "Eddy (Chinese (Taiwan))",
+      "prefix_gain": 0.1,
+      "sha256": "ea56550085fca88095691418924c7d1b5665f09390d354448d1cc10768b714b1",
+      "profile": "hum-10db",
+      "seed": 20261131,
+      "baseline": null
+    }
+  ],
+  "guard": "frozen previous threshold",
+  "measurement": "Offline estimate; known one-second calibration. No display timing."
+}

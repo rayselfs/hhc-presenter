@@ -169,6 +169,7 @@ export default defineConfig(({ mode }) => {
             globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
             globIgnores: [
               '**/lyrics-runtime/**',
+              '**/assets/ChineseSpeechPilot-*.js',
               '**/assets/pdf-*.js',
               '**/assets/pdf.worker-*.js',
               '**/assets/transformers*.js',

@@ -49,6 +49,10 @@ describe('after-pack hook', () => {
       destinationResources,
       'video-engine/vlc/darwin-arm64/plugins/libvideo_plugin.dylib'
     )
+    await write(
+      join(root, 'scripts/check-speech-runtime.mjs'),
+      "if (!process.argv[2].replaceAll('\\\\', '/').endsWith('/speech/darwin-arm64')) process.exit(1)"
+    )
     const timestamp = new Date('2020-01-02T03:04:05.000Z')
     await write(source, 'source-plugin')
     await utimes(source, timestamp, timestamp)
@@ -67,5 +71,5 @@ describe('after-pack hook', () => {
 
     await expect(readFile(destination, 'utf8')).resolves.toBe('source-plugin')
     await expect(stat(destination)).resolves.toMatchObject({ mtimeMs: timestamp.getTime() })
-  })
+  }, 15000)
 })

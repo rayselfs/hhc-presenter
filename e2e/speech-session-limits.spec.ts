@@ -1,30 +1,11 @@
 import { expect, test } from '@playwright/test'
 import { build } from 'esbuild'
 
-type SpeechHarness =
-  typeof import('../src/renderer/src/lib/speech-adapter/providers/gcp-speech-adapter') &
-    Pick<typeof import('../src/renderer/src/lib/speech-key-storage'), 'saveSpeechKey'>
-declare global {
-  interface Window {
-    SpeechHarness: SpeechHarness
-    speechStream: MediaStream
-    speechAdapter: InstanceType<SpeechHarness['GcpSpeechAdapter']>
-    speechEvents: string[]
-  }
-}
-
-test.use({
-  permissions: ['microphone'],
-  launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] }
-})
-
-test('real MediaRecorder stops its synthetic microphone at the GCP session limit', async ({
-  page
-}) => {
+test('browser speech refuses a remote-only implementation', async ({ page }) => {
   const bundle = await build({
     stdin: {
       contents:
-        "export { GcpSpeechAdapter } from './src/renderer/src/lib/speech-adapter/providers/gcp-speech-adapter'; export { saveSpeechKey } from './src/renderer/src/lib/speech-key-storage'",
+        "export { WebSpeechAdapter } from './src/renderer/src/lib/speech-adapter/providers/web-speech-adapter'",
       resolveDir: process.cwd()
     },
     tsconfig: 'tsconfig.web.json',
@@ -32,63 +13,43 @@ test('real MediaRecorder stops its synthetic microphone at the GCP session limit
     write: false,
     platform: 'browser',
     format: 'iife',
-    globalName: 'SpeechHarness'
+    globalName: 'LocalSpeechPrivacy'
   })
   await page.route('**/__test-speech.js', (route) =>
     route.fulfill({ contentType: 'text/javascript', body: bundle.outputFiles[0].text })
   )
-  await page.route('**/api/account/v1/session', (route) =>
-    route.fulfill({ json: { authenticated: false } })
-  )
-  await page.route('**/api/bible/v2/versions', (route) => route.fulfill({ json: [] }))
-  let requests = 0
-  await page.route('https://speech.googleapis.com/**', (route) => {
-    if (route.request().method() === 'POST') requests++
-    return route.fulfill({
-      headers: {
-        'access-control-allow-origin': '*',
-        'access-control-allow-headers': 'content-type'
-      },
-      json: {}
-    })
-  })
   await page.goto('/')
   await page.addScriptTag({ url: '/__test-speech.js' })
-  await page.evaluate(async () => {
-    const target = window
-    const getUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
-    navigator.mediaDevices.getUserMedia = async (constraints) => {
-      target.speechStream = await getUserMedia(constraints)
-      return target.speechStream
-    }
-    await target.SpeechHarness.saveSpeechKey('gcp', 'synthetic-smoke-key')
-    const adapter = new target.SpeechHarness.GcpSpeechAdapter({
-      language: 'cmn-Hant-TW',
-      maxSessionMs: 2500
+  const outcome = await page.evaluate(async () => {
+    let started = false
+    Object.defineProperty(window, 'SpeechRecognition', {
+      configurable: true,
+      value: class {
+        start(): void {
+          started = true
+        }
+      }
     })
-    target.speechAdapter = adapter
-    target.speechEvents = []
-    for (const event of [
-      'sessionStarted',
-      'sessionStopped',
-      'maxDurationReached',
-      'error'
-    ] as const) {
-      adapter.on(event, () => target.speechEvents.push(event))
+    const harness = (
+      window as unknown as {
+        LocalSpeechPrivacy: {
+          WebSpeechAdapter: new (config: { language: string }) => {
+            start(): Promise<void>
+            dispose(): void
+          }
+        }
+      }
+    ).LocalSpeechPrivacy
+    const adapter = new harness.WebSpeechAdapter({ language: 'zh-TW' })
+    let rejected = false
+    try {
+      await adapter.start()
+    } catch {
+      rejected = true
+    } finally {
+      adapter.dispose()
     }
-    await adapter.start()
+    return { started, rejected }
   })
-  await expect
-    .poll(() => page.evaluate(() => window.speechEvents))
-    .toEqual(['sessionStarted', 'sessionStopped', 'maxDurationReached'])
-  expect(requests).toBe(1)
-  expect(
-    await page.evaluate(() =>
-      window.speechStream.getTracks().every((track) => track.readyState === 'ended')
-    )
-  ).toBe(true)
-  await page.waitForTimeout(2200)
-  expect(requests).toBe(1)
-  expect(await page.evaluate(() => window.speechAdapter.isRecognizing())).toBe(false)
-  await page.evaluate(() => window.speechAdapter.dispose())
+  expect(outcome).toEqual({ started: false, rejected: true })
 })

@@ -1,0 +1,44 @@
+[
+  {
+    "hum": false,
+    "context": 768,
+    "text": "请三个创世纪第25桩第三节",
+    "reference": null,
+    "processing_ms": 699.4549999944866
+  },
+  {
+    "hum": false,
+    "context": 512,
+    "text": "请三个创世纪第25装第三节",
+    "reference": null,
+    "processing_ms": 356.22974997386336
+  },
+  {
+    "hum": false,
+    "context": 0,
+    "text": "请三个创世纪第25双第三节",
+    "reference": null,
+    "processing_ms": 1173.5537090571597
+  },
+  {
+    "hum": true,
+    "context": 768,
+    "text": "请三个创世纪第25章第三节",
+    "reference": null,
+    "processing_ms": 657.1741249645129
+  },
+  {
+    "hum": true,
+    "context": 512,
+    "text": "请三个创世纪第25章第3节",
+    "reference": null,
+    "processing_ms": 492.5752079579979
+  },
+  {
+    "hum": true,
+    "context": 0,
+    "text": "请三个创世纪第25双第三节",
+    "reference": null,
+    "processing_ms": 2244.787500007078
+  }
+]

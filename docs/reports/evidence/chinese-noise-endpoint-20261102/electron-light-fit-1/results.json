@@ -1,0 +1,282 @@
+[
+  {
+    "id": "segment-003",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 2225.162500023842,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "请不要切换到《创世纪》第一章第一节",
+        "reference": null,
+        "asrMs": 757.9310419969261,
+        "locateMs": 3.8407499669119716
+      },
+      "lastSampleAt": 13553.161499928474,
+      "requestAt": 13343.100000023842,
+      "responseAt": 14133.600000023842,
+      "stableAt": 14133.699999928474,
+      "manual": true,
+      "paintedAt": 14151,
+      "scrollCorrected": false,
+      "totalMs": 597.8385000715261,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-007",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 2241.003500023842,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "请不要切换到《创世纪》第一章第一节",
+        "reference": null,
+        "asrMs": 781.663166009821,
+        "locateMs": 3.6339169600978494
+      },
+      "lastSampleAt": 28099.119499928478,
+      "requestAt": 27887.100000023842,
+      "responseAt": 28695.100000023842,
+      "stableAt": 28695.100000023842,
+      "manual": true,
+      "paintedAt": 28717.5,
+      "scrollCorrected": false,
+      "totalMs": 618.380500071522,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "0001",
+    "kind": "reference",
+    "target": [
+      1,
+      25,
+      3
+    ],
+    "reference": [
+      1,
+      25,
+      3
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 2418.142000095366,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "请翻到创世纪第25章第三节",
+        "reference": [
+          1,
+          25,
+          3
+        ],
+        "asrMs": 780.2363330265507,
+        "locateMs": 2.7452920330688357
+      },
+      "lastSampleAt": 39973.86949997616,
+      "requestAt": 39755.89999997616,
+      "responseAt": 40548.60000002384,
+      "stableAt": 40548.60000002384,
+      "manual": true,
+      "paintedAt": 40578.60000002384,
+      "scrollCorrected": false,
+      "totalMs": 604.7305000476845,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0013",
+    "kind": "reference",
+    "target": [
+      5,
+      17,
+      3
+    ],
+    "reference": [
+      5,
+      17,
+      3
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 2365.8334999761573,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "请翻到生命记第十七章第三节",
+        "reference": [
+          5,
+          17,
+          3
+        ],
+        "asrMs": 752.3781670024619,
+        "locateMs": 2.8822500025853515
+      },
+      "lastSampleAt": 51836.4115,
+      "requestAt": 51620.199999928474,
+      "responseAt": 52385.5,
+      "stableAt": 52385.5,
+      "manual": true,
+      "paintedAt": 52400.5,
+      "scrollCorrected": false,
+      "totalMs": 564.088499999998,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0291",
+    "kind": "quotation",
+    "target": [
+      5,
+      20,
+      5
+    ],
+    "reference": [
+      5,
+      20,
+      5
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 2834.451000023837,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "官场也要对百姓宣告说,谁建造房屋,尚未奉献,他可以回家吃,恐怕他阵亡,别人吃奉献。谁种葡萄园,尚未用所结的果子,他可以回家吃,恐怕他阵亡,别人吃用。",
+        "reference": [
+          5,
+          20,
+          5
+        ],
+        "asrMs": 1194.7297500446439,
+        "locateMs": 12.884167023003101
+      },
+      "lastSampleAt": 78791.91449997616,
+      "requestAt": 78585.10000002384,
+      "responseAt": 79819,
+      "stableAt": 79819,
+      "manual": true,
+      "paintedAt": 79835,
+      "scrollCorrected": false,
+      "totalMs": 1043.085500023837,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0298",
+    "kind": "quotation",
+    "target": [
+      9,
+      26,
+      8
+    ],
+    "reference": [
+      9,
+      26,
+      8
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 2701.811000047688,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "雅比塞对大魏说,现在神将你的仇敌交在你手里,求你容我拿枪将他刺透在地,一次就成,不用再刺,大魏对雅比塞说,不可害死他,有谁伸手害耶和华的受高者而无罪呢?",
+        "reference": [
+          9,
+          26,
+          8
+        ],
+        "asrMs": 1190.6516249291599,
+        "locateMs": 27.65058306977153
+      },
+      "lastSampleAt": 106053.50950002384,
+      "requestAt": 105837.19999992847,
+      "responseAt": 107087.60000002384,
+      "stableAt": 107087.60000002384,
+      "manual": true,
+      "paintedAt": 107108.10000002384,
+      "scrollCorrected": false,
+      "totalMs": 1054.5905000000057,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "ref3-106",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 2270.6774999761546,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "请不要读约翰福音第三章第十六节。",
+        "reference": null,
+        "asrMs": 812.6273329835385,
+        "locateMs": 2.8308749897405505
+      },
+      "lastSampleAt": 119626.90549997616,
+      "requestAt": 119419,
+      "responseAt": 120262.89999997616,
+      "stableAt": 120262.89999997616,
+      "manual": true,
+      "paintedAt": 120283.19999992847,
+      "scrollCorrected": false,
+      "totalMs": 656.294499952317,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "ref3-109",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 2434.6505000000034,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "请翻到课本第八章第十二节。",
+        "reference": null,
+        "asrMs": 779.7447090269998,
+        "locateMs": 3.8436659378930926
+      },
+      "lastSampleAt": 132067.7764999523,
+      "requestAt": 131853.79999995232,
+      "responseAt": 132646.29999995232,
+      "stableAt": 132646.29999995232,
+      "manual": true,
+      "paintedAt": 132666.69999992847,
+      "scrollCorrected": false,
+      "totalMs": 598.9234999761684,
+      "outcome": "rejected"
+    }
+  }
+]

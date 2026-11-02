@@ -1,0 +1,14 @@
+{
+  "python_tests": 16,
+  "node_assertions": 34,
+  "paired_checks": "858 unique cases, no new wrong candidates, no lost correct cases, 123 negatives rejected, max offline 2.007554 s",
+  "javascript_lint": "passed",
+  "scope": "Benchmark only; no private audio",
+  "not_run": [
+    "human gold labels",
+    "Windows",
+    "live end-to-end latency",
+    "full application build/CI",
+    "release"
+  ]
+}

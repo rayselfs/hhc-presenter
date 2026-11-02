@@ -1,0 +1,22 @@
+{
+  "running": null,
+  "results": [
+    {
+      "name": "small-cpu-screen",
+      "exit_code": 0,
+      "wall_s": 317.281317459
+    },
+    {
+      "name": "deny-network-sherpa-fp32",
+      "exit_code": 0
+    },
+    {
+      "name": "deny-network-whisper-small",
+      "exit_code": 0
+    },
+    {
+      "name": "deny-network-transformers",
+      "exit_code": 0
+    }
+  ]
+}

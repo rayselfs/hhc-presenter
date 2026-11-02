@@ -1,4 +1,6 @@
+import type { RecognitionLanguage, SpeechModelStatus, LocalTranscript } from './local-speech'
 import type { CameraSource } from './camera'
+import type { ChineseSpeechResult } from './chinese-speech'
 /**
  * Typed IPC channel contract.
  *
@@ -39,20 +41,6 @@ import type {
   HhcAssetNativeLease,
   HhcAssetSyncReceipt
 } from './hhc-assets'
-
-export type WhisperModel = 'whisper-base' | 'whisper-small' | 'whisper-medium'
-
-export interface WhisperDownloadProgress {
-  model: WhisperModel
-  percent: number
-  currentFile: string
-  done: boolean
-  error?: string
-}
-
-export interface WhisperDirInfo {
-  hasFiles: boolean
-}
 
 export interface VideoPosterRequest {
   sourceFileId: string
@@ -289,13 +277,18 @@ export interface IpcInvokeMap {
   'app:clear-user-data': { args: []; result: void }
   'update:install-downloaded': { args: []; result: void }
   'update:download-mac-installer': { args: []; result: void }
-  'speech:saveKey': { args: [string, string]; result: void }
-  'speech:loadKey': { args: [string]; result: string }
-  'speech:deleteKey': { args: [string]; result: void }
+  'speech:model-status': { args: [RecognitionLanguage]; result: SpeechModelStatus }
+  'speech:model-install': { args: [RecognitionLanguage]; result: void }
+  'speech:model-cancel': { args: []; result: void }
+  'speech:model-remove': { args: [RecognitionLanguage]; result: void }
+  'speech:local-prepare': { args: [string, RecognitionLanguage]; result: void }
+  'speech:local-transcribe': { args: [string, Float32Array]; result: LocalTranscript }
+  'speech:local-stop': { args: [string]; result: void }
+  'speech:chinese-available': { args: []; result: boolean }
+  'speech:chinese-prepare': { args: [string]; result: void }
+  'speech:chinese-transcribe': { args: [string, Float32Array]; result: ChineseSpeechResult }
+  'speech:chinese-stop': { args: [string]; result: void }
   'app:select-directory': { args: []; result: string | null }
-  'app:set-model-dir': { args: [string]; result: void }
-  'app:check-whisper-dir': { args: [string]; result: WhisperDirInfo }
-  'app:download-whisper-model': { args: [WhisperModel, string]; result: void }
   'native-fs:import-file': { args: [string, string | Uint8Array]; result: { size: number } }
   'native-fs:file-exists': { args: [string]; result: boolean }
   'native-fs:delete-file': { args: [string]; result: void }
@@ -472,7 +465,7 @@ export interface IpcMainToRendererMap {
   'update:status-changed': [
     { status: UpdateStatus; version?: string; error?: string; percent?: number }
   ]
-  'app:download-progress': [WhisperDownloadProgress]
+  'speech:interrupted': []
   'app:close-requested': []
   'onedrive:download-progress': [OneDriveNativeDownloadProgress]
   'hhc-auth:session-changed': [session: HhcSession | null]

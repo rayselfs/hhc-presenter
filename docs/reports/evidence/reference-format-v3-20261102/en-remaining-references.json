@@ -1,0 +1,57 @@
+[
+  {
+    "id": "0361",
+    "text": "Please turn to Ecclesiastes chapter six verse three",
+    "transcript": "Please turn to Ecclesiast's chapter 6 verse 3.",
+    "target": [
+      21,
+      6,
+      3
+    ],
+    "voice": "Daniel"
+  },
+  {
+    "id": "0399",
+    "text": "Nahum chapter one verse one",
+    "transcript": "Natham chapter 1 verse 1.",
+    "target": [
+      34,
+      1,
+      1
+    ],
+    "voice": "Daniel"
+  },
+  {
+    "id": "0401",
+    "text": "Nahum chapter three verse five",
+    "transcript": "Natham chapter 3 verse 5.",
+    "target": [
+      34,
+      3,
+      5
+    ],
+    "voice": "Daniel"
+  },
+  {
+    "id": "0469",
+    "text": "Please turn to Philemon chapter one verse three",
+    "transcript": "Please turn to Philippan chapter 1 verse 3.",
+    "target": [
+      57,
+      1,
+      3
+    ],
+    "voice": "Daniel"
+  },
+  {
+    "id": "ref3-100",
+    "text": "Please read Nahum two verse nine",
+    "transcript": "Please read Naom 2 verse 9.",
+    "target": [
+      34,
+      2,
+      9
+    ],
+    "voice": "Samantha"
+  }
+]

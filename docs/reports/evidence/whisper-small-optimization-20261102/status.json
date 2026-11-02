@@ -1,0 +1,1 @@
+{"running": null, "results": [{"name": "baseline", "exit_code": 0, "wall_s": 49.98175162507687}, {"name": "short-prompt", "exit_code": 0, "wall_s": 106.65907904098276}, {"name": "beam3", "exit_code": 0, "wall_s": 92.67119462497067}, {"name": "beam3-short", "exit_code": 0, "wall_s": 106.63382583297789}]}

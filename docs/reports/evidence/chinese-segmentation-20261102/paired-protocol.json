@@ -1,0 +1,7 @@
+{
+  "n": 167,
+  "candidate": "exact-zero exterior crop with 300 ms padding; retain every nonzero sample",
+  "order": "alternate whole-first and candidate-first per row using one resident model",
+  "chronology": "added after energy screen; expanded negatives and new pause fixtures, not an independent blind population sample",
+  "gate": "zero lost correct cases, zero new wrong candidates; all negative outputs inspected; report maximum and over-3s, not just averages"
+}

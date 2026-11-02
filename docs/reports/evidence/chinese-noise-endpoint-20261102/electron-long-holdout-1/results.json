@@ -1,0 +1,84 @@
+[
+  {
+    "id": "0292",
+    "kind": "quotation",
+    "target": [
+      26,
+      44,
+      24
+    ],
+    "reference": [
+      26,
+      44,
+      24
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 2797.9590000238422,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "有征颂的是,他们应当战利判断,要按我的典章判断,在我一切的节旗必守我的律法、条例,也必以我的安息日为圣日,他们不可挨尽死尸染自己,只可为父亲、母亲、儿子、女儿、弟兄、捍卫嫁人的姐妹沾染自己。",
+        "reference": [
+          26,
+          44,
+          24
+        ],
+        "asrMs": 1317.299082991667,
+        "locateMs": 11.815666919574142
+      },
+      "lastSampleAt": 31484.31149997616,
+      "requestAt": 31270.5,
+      "responseAt": 32633.200000047684,
+      "stableAt": 32633.299999952316,
+      "manual": true,
+      "paintedAt": 32655.899999976158,
+      "scrollCorrected": false,
+      "totalMs": 1171.588499999998,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0297",
+    "kind": "quotation",
+    "target": [
+      7,
+      2,
+      15
+    ],
+    "reference": [
+      7,
+      2,
+      15
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 2677.7869999523173,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "他们无论往何处去,耶和华都已在或攻击他们,正如耶和华所说的话,又如耶和华向他们所起的事,他们便极其困苦。耶和华兴起事师,事师就拯救他们脱离抢责他们人的手。",
+        "reference": [
+          7,
+          2,
+          15
+        ],
+        "asrMs": 1058.0075420439243,
+        "locateMs": 9.792624972760677
+      },
+      "lastSampleAt": 58439.69150004769,
+      "requestAt": 58235,
+      "responseAt": 59322.60000002384,
+      "stableAt": 59322.60000002384,
+      "manual": true,
+      "paintedAt": 59336.299999952316,
+      "scrollCorrected": false,
+      "totalMs": 896.6084999046288,
+      "outcome": "located"
+    }
+  }
+]

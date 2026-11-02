@@ -1,0 +1,25 @@
+{
+  "running": null,
+  "completed": [
+    {
+      "engine": "sherpa-diagnostic",
+      "exit_code": 0,
+      "wall_s": 5.670505958999996
+    },
+    {
+      "engine": "sherpa-fp32-screen",
+      "exit_code": 0,
+      "wall_s": 22.740389082999982
+    },
+    {
+      "engine": "whisper-base",
+      "exit_code": 0,
+      "wall_s": 131.46825766700002
+    },
+    {
+      "engine": "whisper-small",
+      "exit_code": 0,
+      "wall_s": 412.06527341599997
+    }
+  ]
+}

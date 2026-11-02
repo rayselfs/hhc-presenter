@@ -1,3 +1,4 @@
+import { clearRetiredSpeechKeys } from './speech-key-storage'
 import { listenForCatalogDeletions } from './file-catalog-events'
 import { useBibleStore } from '@renderer/stores/bible'
 import { useBibleFolderStore } from '@renderer/stores/folder'
@@ -77,21 +78,6 @@ export function prefetchRouteChunks(): void {
   }
 }
 
-async function initWhisperModelDir(): Promise<void> {
-  if (!isElectron()) return
-  const { speech, setSpeech } = useSettingsStore.getState()
-  const modelDir = speech.whisper.modelDir
-  if (!modelDir) return
-
-  const info = await window.api.app.checkWhisperDir(modelDir)
-  if (!info.hasFiles) {
-    setSpeech({ ...speech, whisper: { ...speech.whisper, modelDir: '', installedModel: null } })
-    toast.warning(i18n.t('toast.whisperDirReset' as never))
-  } else {
-    await window.api.app.setModelDir(modelDir)
-  }
-}
-
 /**
  * Set up app-level subscriptions and side-effects. Called from Layout.useEffect.
  * Calls startEarlyInit() internally as a fallback so this function remains safe
@@ -104,7 +90,7 @@ export function initializeApp(options: SyncRuntimeOptions = {}): () => void {
   subscriptionsInitialized = true
   const stopCatalogEvents = listenForCatalogDeletions(removeCleanedEntriesFromStore)
 
-  void initWhisperModelDir()
+  clearRetiredSpeechKeys()
   let disposed = false
   let stopSyncRuntime = (): void => undefined
   void (earlyRecoveryPromise ?? Promise.resolve())
@@ -112,17 +98,6 @@ export function initializeApp(options: SyncRuntimeOptions = {}): () => void {
       if (!disposed) stopSyncRuntime = startSyncRuntime(options)
     })
     .catch(() => undefined)
-
-  let prevModelDir = useSettingsStore.getState().speech.whisper.modelDir
-  const unsubWhisper = useSettingsStore.subscribe((state) => {
-    const modelDir = state.speech.whisper.modelDir
-    if (modelDir !== prevModelDir) {
-      prevModelDir = modelDir
-      if (isElectron() && modelDir) {
-        window.api.app.setModelDir(modelDir).catch(() => {})
-      }
-    }
-  })
 
   const tryInitSearch = (state: ReturnType<typeof useBibleStore.getState>): void => {
     if (!state.isInitialized || state.versions.length === 0) return
@@ -190,7 +165,7 @@ export function initializeApp(options: SyncRuntimeOptions = {}): () => void {
 
   return () => {
     unsubscribe()
-    unsubWhisper()
+
     unsubBibleFolders()
     unsubFileExplorer()
     stopCatalogEvents()

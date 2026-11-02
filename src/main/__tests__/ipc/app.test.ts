@@ -75,7 +75,7 @@ vi.mock('@electron-toolkit/utils', () => ({
 import { BrowserWindow } from 'electron'
 import type { WindowManager } from '../../windowManager'
 import type { HhcAuthService } from '../../ipc/hhc-auth'
-import { registerAppIpc, registerLocalModelProtocol } from '../../ipc/app'
+import { registerAppIpc } from '../../ipc/app'
 
 const wm = mockWindowManager as unknown as WindowManager
 const hhcAuthService = { clearLocalData: mockClearHhcLocalData } as unknown as HhcAuthService
@@ -92,7 +92,6 @@ beforeEach(() => {
   ipcHandlers.clear()
   protocolHandlers.clear()
   registerAppIpc(wm, hhcAuthService, { clearCredentials: mockClearOneDriveCredentials })
-  registerLocalModelProtocol()
 })
 
 describe('model IPC security', () => {
@@ -168,36 +167,6 @@ describe('model IPC security', () => {
     expect(mockClearHhcLocalData).not.toHaveBeenCalled()
     expect(mockRmSync).not.toHaveBeenCalled()
     expect(mockClearData).not.toHaveBeenCalled()
-  })
-
-  it('rejects relative model directories', () => {
-    vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockMainWindow as never)
-
-    expect(() => ipcHandlers.get('app:set-model-dir')!(makeEvent(), '../models')).toThrow(
-      'Invalid model directory'
-    )
-  })
-
-  it('rejects model directory updates from non-main windows', () => {
-    vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockProjectionWindow as never)
-
-    expect(ipcHandlers.get('app:set-model-dir')!(makeEvent(), '/models')).toBeUndefined()
-  })
-
-  it('serves only files contained by the authorized model directory', async () => {
-    vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(mockMainWindow as never)
-    await ipcHandlers.get('app:set-model-dir')!(makeEvent(), '/models')
-    mockReadFileSync.mockReturnValue(Buffer.from('model'))
-    const handler = protocolHandlers.get('local-model')!
-
-    const valid = handler(new Request('local-model://model/whisper/config.json'))
-    expect(valid.status).toBe(200)
-    expect(mockReadFileSync).toHaveBeenCalledWith(path.resolve('/models/whisper/config.json'))
-
-    mockReadFileSync.mockClear()
-    const traversal = handler(new Request('local-model://model/..%2Fsecret.txt'))
-    expect(traversal.status).toBe(400)
-    expect(mockReadFileSync).not.toHaveBeenCalled()
   })
 })
 

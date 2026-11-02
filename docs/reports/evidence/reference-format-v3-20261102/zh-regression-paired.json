@@ -1,0 +1,150 @@
+{
+  "groups": {
+    "reference": {
+      "n": 226,
+      "v2": {
+        "correct": 154,
+        "wrong": 0,
+        "rejected": 72,
+        "correct_within_3s": 154,
+        "p95_s": 0.9577975829155732,
+        "max_s": 1.6895375410907971,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 161,
+        "wrong": 0,
+        "rejected": 65,
+        "correct_within_3s": 161,
+        "p95_s": 0.9577889180080071,
+        "max_s": 1.6895679140947972,
+        "over_3s": 0
+      }
+    },
+    "all": {
+      "n": 419,
+      "v2": {
+        "correct": 257,
+        "wrong": 0,
+        "rejected": 162,
+        "correct_within_3s": 257,
+        "p95_s": 1.0794709591814429,
+        "max_s": 2.0060174581541608,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 264,
+        "wrong": 0,
+        "rejected": 155,
+        "correct_within_3s": 264,
+        "p95_s": 1.0799179591028765,
+        "max_s": 2.0075534571555065,
+        "over_3s": 0
+      }
+    },
+    "positive": {
+      "n": 377,
+      "v2": {
+        "correct": 257,
+        "wrong": 0,
+        "rejected": 120,
+        "correct_within_3s": 257,
+        "p95_s": 1.0794709591814429,
+        "max_s": 2.0060174581541608,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 264,
+        "wrong": 0,
+        "rejected": 113,
+        "correct_within_3s": 264,
+        "p95_s": 1.0799179591028765,
+        "max_s": 2.0075534571555065,
+        "over_3s": 0
+      }
+    },
+    "quotation": {
+      "n": 100,
+      "v2": {
+        "correct": 89,
+        "wrong": 0,
+        "rejected": 11,
+        "correct_within_3s": 89,
+        "p95_s": 1.2436644999484165,
+        "max_s": 2.0060174581541608,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 89,
+        "wrong": 0,
+        "rejected": 11,
+        "correct_within_3s": 89,
+        "p95_s": 1.2449186669989047,
+        "max_s": 2.0075534571555065,
+        "over_3s": 0
+      }
+    },
+    "mixed": {
+      "n": 51,
+      "v2": {
+        "correct": 14,
+        "wrong": 0,
+        "rejected": 37,
+        "correct_within_3s": 14,
+        "p95_s": 0.8039158751035897,
+        "max_s": 0.8148946670069886,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 14,
+        "wrong": 0,
+        "rejected": 37,
+        "correct_within_3s": 14,
+        "p95_s": 0.8039390401553277,
+        "max_s": 0.8149276259155986,
+        "over_3s": 0
+      }
+    },
+    "negative": {
+      "n": 42,
+      "v2": {
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 42,
+        "correct_within_3s": 0,
+        "p95_s": 0.8873813738699778,
+        "max_s": 1.2952950840078485,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 42,
+        "correct_within_3s": 0,
+        "p95_s": 0.8878126668981389,
+        "max_s": 1.295325209017962,
+        "over_3s": 0
+      }
+    }
+  },
+  "changes": {
+    "gained": [
+      "0098",
+      "0108",
+      "0117",
+      "0199",
+      "v2-030",
+      "v2-045",
+      "v2-049"
+    ],
+    "lost": [],
+    "new_wrong": [],
+    "over_3s": [],
+    "long_audio": [
+      "0291",
+      "0292",
+      "0297",
+      "0298"
+    ]
+  }
+}

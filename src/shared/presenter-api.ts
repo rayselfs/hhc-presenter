@@ -7,7 +7,6 @@ import type {
 } from './projection-messages'
 import type {
   IpcMainToRendererMap,
-  WhisperDownloadProgress,
   ProjectionVlcFailure,
   OneDriveNativeDownloadProgress
 } from './ipc-channels'
@@ -73,10 +72,6 @@ interface AppAPI {
   onCloseRequested: (callback: () => void) => () => void
   clearUserData: Invoke<'app:clear-user-data'>
   selectDirectory: Invoke<'app:select-directory'>
-  setModelDir: Invoke<'app:set-model-dir'>
-  checkWhisperDir: Invoke<'app:check-whisper-dir'>
-  downloadWhisperModel: Invoke<'app:download-whisper-model'>
-  onDownloadProgress: (callback: (data: WhisperDownloadProgress) => void) => () => void
 }
 
 interface UpdateAPI {
@@ -88,9 +83,18 @@ interface UpdateAPI {
 }
 
 interface SpeechAPI {
-  saveKey: Invoke<'speech:saveKey'>
-  loadKey: Invoke<'speech:loadKey'>
-  deleteKey: Invoke<'speech:deleteKey'>
+  onInterrupted: (callback: () => void) => () => void
+  modelStatus: Invoke<'speech:model-status'>
+  installModel: Invoke<'speech:model-install'>
+  cancelInstall: Invoke<'speech:model-cancel'>
+  removeModel: Invoke<'speech:model-remove'>
+  prepare: Invoke<'speech:local-prepare'>
+  transcribe: Invoke<'speech:local-transcribe'>
+  stop: Invoke<'speech:local-stop'>
+  chineseAvailable: Invoke<'speech:chinese-available'>
+  chinesePrepare: Invoke<'speech:chinese-prepare'>
+  chineseTranscribe: Invoke<'speech:chinese-transcribe'>
+  chineseStop: Invoke<'speech:chinese-stop'>
 }
 
 interface NativeFsAPI {

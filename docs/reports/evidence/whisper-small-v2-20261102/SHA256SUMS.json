@@ -1,0 +1,20 @@
+{
+  "README.md": "cc865860bd353b4b71b39b5de6ec978f4565675f90d4b74bd8616d30f096a92e",
+  "calibration.decisions.jsonl": "377c54b1be57d21780ea026b69c8d3c30e9357eedf08617cad61e728c6656fb3",
+  "calibration.json": "f129af7097ede3a5e205194d51eecfe876613cbc588879b5ea2c17c84cebd2df",
+  "environment.json": "60856d413bf02a4f1b9ec0534736198b44500a00ac741a4f1c5081434e600aa7",
+  "experiment-source-sha256.json": "19503b95ca0b07749570f0a9f96ed35ea4dafa81729c62e63b77b3b284f6ea4d",
+  "fresh-en.jsonl": "7063dc1cc2cf7313117a644bdc6d3d1ebdbbf2ed85f050f13a09f49a49d657d7",
+  "fresh-v1.json": "18108ecda13bf6e0eefe03b6f8b7ba7513a0a70d3b101b404e68a29e8e3857e7",
+  "fresh-v2.decisions.jsonl": "4867c711c0892ddc214e66fa61ee6f9d7f6da5a3bbfc66029c7d9542dbd293c8",
+  "fresh-v2.json": "c1f6e989d65e6c9dcec96d99332f94b72871fbf698f4ea75f81acec8d49b0db1",
+  "fresh-zh.jsonl": "cdae0b8a7b8309fe8378a71932525f0189426672103c0f4c440d2f79b7067c5a",
+  "fresh.jsonl": "3dfd6a9f4527c80d3a71ac38b0f27cbb4cc237a05627daef0706fbcacc10d852",
+  "frozen-policy.json": "785760753f322dffbcebd8dcb8b35b8a22ce67675ffca23fed9930dd813a348f",
+  "paired-summary.json": "9c1ba1b5817e01322d9477895a616a14aa3507cf959db87f52cf8ad68659a2bd",
+  "phonetic-index-manifest.json": "7470d64f4d02db8fa3b430c281b5043b92ffd96a7402ae39d6c3babcc8d1dbc3",
+  "regression.decisions.jsonl": "661dbe9e26a3a631fcd20b194831873a0e08fa95a5e07c20373980f2c895b2b5",
+  "regression.json": "5dde642664a525063b1722f6bf69e209c698bfe51e4b86d91378c571b836cb5e",
+  "status.json": "5a030aa34b3de6752731b2c2dc612390d43837238fe572308e9e525230a04278",
+  "v2-fresh-corpus.json": "ba3a1c265f9cfabea11d989335536db29ba46e05a38b539ef1e14ffc8736b169"
+}

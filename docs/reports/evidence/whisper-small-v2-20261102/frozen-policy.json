@@ -1,0 +1,7 @@
+{
+  "reference": "Full book match, complete explicit chapter+verse grammar, 1st/2nd/3rd normalization, navigation negation/example rejection, canonical bounds; whole-book pinyin similarity >=.75 with runner-up margin >=.12; never infer missing chapter/verse or book ordinal",
+  "quotation": "Original char gate first. Chinese fallback phonetic similarity >=.85, runner-up gap >=.10, character similarity >=.55, length >=12 units. Selected from .85/.88/.90/.92 on calibration only.",
+  "selection_reason": "Chinese calibration accepted positives 34->38 and wrong 1->0 across references/quotes/mixed; reference alone falls 26->22. No universal accuracy claim.",
+  "asr": "Unchanged prior selected Small: Chinese greedy without prompt; English greedy with short prompt. Prior transcript replay isolates localization improvements; fresh fixtures get new inference.",
+  "known_limitation": "Prior holdout and challenge now regression data, not blind validation. Fresh corpus generated after policy freeze, not used to retune."
+}

@@ -1,0 +1,1 @@
+{"running": null, "results": [{"name": "regression-asr", "exit_code": 0}, {"name": "regression-v1", "exit_code": 0}, {"name": "regression-v2", "exit_code": 0}, {"name": "fresh-asr", "exit_code": 0}, {"name": "fresh-v1", "exit_code": 0}, {"name": "fresh-v2", "exit_code": 0}]}

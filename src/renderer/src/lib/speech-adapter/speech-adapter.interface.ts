@@ -6,16 +6,6 @@ export interface SpeechRecognizedResult {
   confidence: 'exact' | 'pinyin' | 'fuzzy'
 }
 
-export interface SpeechAdapterConfig {
-  subscriptionKey: string
-  region: string
-  language?: string
-  /** Idle timeout in ms — auto-stop when no speech activity. Default 5 min. */
-  idleTimeoutMs?: number
-  /** Max session duration in ms — hard cap per start/stop cycle. Default 60 min. */
-  maxSessionMs?: number
-}
-
 export type SpeechAdapterEventType =
   | 'recognizing'
   | 'recognized'

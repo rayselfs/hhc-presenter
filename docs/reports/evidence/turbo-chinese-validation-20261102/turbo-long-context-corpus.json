@@ -1,0 +1,166 @@
+[
+  {
+    "language": "zh",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "text": "創世記第一章第一節",
+    "voice": "Meijia",
+    "rate": 150,
+    "id": "turbo-boundary-reference-0",
+    "source_id": "0000",
+    "split": "boundary-probe",
+    "leading_silence_s": 0,
+    "duration_s": 22,
+    "sha256": "42af6f249ea8c0ad1d87c465482d285fd9cf0c74e75284e26ff40e5de74b23d1"
+  },
+  {
+    "language": "zh",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "text": "創世記第一章第一節",
+    "voice": "Meijia",
+    "rate": 150,
+    "id": "turbo-boundary-reference-16",
+    "source_id": "0000",
+    "split": "boundary-probe",
+    "leading_silence_s": 16,
+    "duration_s": 22,
+    "sha256": "a5d678578d61dd6a1526518bac1c2a2cec84df0e36a733e9ed6263ad9517c590"
+  },
+  {
+    "language": "zh",
+    "kind": "mixed",
+    "target": [
+      40,
+      3,
+      1
+    ],
+    "text": "馬太福音第三章 verse one",
+    "voice": "Meijia",
+    "rate": 150,
+    "id": "turbo-boundary-mixed-0",
+    "source_id": "0600",
+    "split": "boundary-probe",
+    "leading_silence_s": 0,
+    "duration_s": 22,
+    "sha256": "03f414bfb37d14fd569888db67be0362818dc7bb389b2a5430f4ae7c587226cc"
+  },
+  {
+    "language": "zh",
+    "kind": "mixed",
+    "target": [
+      40,
+      3,
+      1
+    ],
+    "text": "馬太福音第三章 verse one",
+    "voice": "Meijia",
+    "rate": 150,
+    "id": "turbo-boundary-mixed-16",
+    "source_id": "0600",
+    "split": "boundary-probe",
+    "leading_silence_s": 16,
+    "duration_s": 22,
+    "sha256": "7ded19db775293ed9cf747ff5ebaed6043a82985053b372eeb9725363ed27464"
+  },
+  {
+    "id": "turbo-boundary-silence-16",
+    "language": "zh",
+    "kind": "negative",
+    "target": null,
+    "text": "",
+    "voice": "silence",
+    "rate": 0,
+    "split": "boundary-probe",
+    "duration_s": 16,
+    "sha256": "0f01d6201b16ebf5ad80113a7b0d3039e1b780d69e9a30ceecd8d52f6591d1ef"
+  },
+  {
+    "id": "turbo-boundary-silence-22",
+    "language": "zh",
+    "kind": "negative",
+    "target": null,
+    "text": "",
+    "voice": "silence",
+    "rate": 0,
+    "split": "boundary-probe",
+    "duration_s": 22,
+    "sha256": "b52738d5e2a0de74ba9d69a73f1f0dc3b5b6b0de6cf3437f44cf5296ed9a3ae1"
+  },
+  {
+    "id": "0291",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "官長也要對百姓宣告說：『誰建造房屋，尚未奉獻，他可以回家去，恐怕他陣亡，別人去奉獻。 誰種葡萄園，尚未用所結的果子，他可以回家去，恐怕他陣亡，別人去用。",
+    "target": [
+      5,
+      20,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": true,
+    "duration_s": 18.2834375,
+    "sha256": "8f8dfc66a57f04a0c5637a92a1a2f84950a6e97673126702aabab2104496d23d"
+  },
+  {
+    "id": "0292",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "有爭訟的事，他們應當站立判斷，要按我的典章判斷。在我一切的節期必守我的律法、條例，也必以我的安息日爲聖日。 他們不可挨近死屍沾染自己，只可爲父親、母親、兒子、女兒、弟兄，和未嫁人的姊妹沾染自己。",
+    "target": [
+      26,
+      44,
+      24
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": true,
+    "duration_s": 21.61375,
+    "sha256": "3142baff758744edfbf7b9fc8ea46a3ed2b05a20d6a83ff71a06ddaf56547297"
+  },
+  {
+    "id": "0297",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "他們無論往何處去，耶和華都以災禍攻擊他們，正如耶和華所說的話，又如耶和華向他們所起的誓；他們便極其困苦。 耶和華興起士師，士師就拯救他們脫離搶奪他們人的手。",
+    "target": [
+      7,
+      2,
+      15
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": true,
+    "duration_s": 17.18525,
+    "sha256": "1197242553eaa0e8468e08dac0a9041cc3ac3761cca157f2104d72861671c2ee"
+  },
+  {
+    "id": "0298",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "亞比篩對大衛說：「現在 神將你的仇敵交在你手裏，求你容我拿槍將他刺透在地，一刺就成，不用再刺。」 大衛對亞比篩說：「不可害死他。有誰伸手害耶和華的受膏者而無罪呢？」",
+    "target": [
+      9,
+      26,
+      8
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": true,
+    "duration_s": 17.178875,
+    "sha256": "ebc491f93c007869f221e35ab130851e0b8b13fdabaf1e4696bcda816d7d134b"
+  }
+]

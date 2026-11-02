@@ -1,3 +1,4 @@
+import { normalizeScripture } from '../lib/scripture-normalize'
 import { Index } from 'flexsearch'
 
 export type WorkerIncomingMessage = { id: number } & (
@@ -9,7 +10,7 @@ export type WorkerIncomingMessage = { id: number } & (
     }
   | { type: 'LOAD_INDEX'; chunks: { key: string; data: string }[] }
   | { type: 'EXPORT_INDEX' }
-  | { type: 'SEARCH'; query: string; limit?: number; id: number }
+  | { type: 'SEARCH'; query: string; limit?: number; suggest?: boolean; id: number }
   | { type: 'GET_PROGRESS'; id: number }
 )
 
@@ -44,7 +45,7 @@ function cjkCharEncode(text: string): string[] {
   const tokens: string[] = []
   let latinBuf = ''
 
-  for (const ch of text) {
+  for (const ch of normalizeScripture(text)) {
     if (CJK_RE.test(ch)) {
       if (latinBuf) {
         tokens.push(latinBuf)
@@ -162,7 +163,7 @@ async function handleExportIndex(id: number): Promise<void> {
   self.postMessage({ type: 'INDEX_EXPORTED', chunks, id } satisfies WorkerOutgoingMessage)
 }
 
-function handleSearch(query: string, limit: number, id: number): void {
+function handleSearch(query: string, limit: number, id: number, suggest = false): void {
   if (!flexIndex) {
     self.postMessage({
       type: 'ERROR',
@@ -174,7 +175,7 @@ function handleSearch(query: string, limit: number, id: number): void {
 
   const tokens = cjkCharEncode(query)
   const joined = tokens.join(' ')
-  const raw = flexIndex.search(joined, { limit })
+  const raw = flexIndex.search(joined, { limit, suggest })
   const results = raw.map((r) => (typeof r === 'number' ? r : Number(r)))
   self.postMessage({ type: 'SEARCH_RESULT', id, results } satisfies WorkerOutgoingMessage)
 }
@@ -232,7 +233,7 @@ self.onmessage = (event: MessageEvent<WorkerIncomingMessage>) => {
       break
     case 'SEARCH':
       try {
-        handleSearch(data.query, data.limit ?? 20, data.id)
+        handleSearch(data.query, data.limit ?? 20, data.id, data.suggest)
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         self.postMessage({ type: 'ERROR', message, id: data.id } satisfies WorkerOutgoingMessage)

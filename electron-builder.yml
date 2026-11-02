@@ -16,6 +16,13 @@ files:
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 extraResources:
+  - from: resources/speech
+    to: speech
+    filter:
+      - '**/hhc-speech'
+      - '**/hhc-speech.exe'
+      - '**/manifest.json'
+      - '**/whisper-LICENSE'
   - from: resources/video-engine
     to: video-engine
     filter:

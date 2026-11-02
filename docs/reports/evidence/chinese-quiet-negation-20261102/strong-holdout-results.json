@@ -1,0 +1,930 @@
+[
+  {
+    "id": "segment-008",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "floor": 0.017052970826625824,
+    "full": {
+      "text": "请翻到创世纪第一章第一节",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 601.6518749529496,
+      "locateMs": 1.637500012293458
+    },
+    "decisions": [
+      {
+        "text": "请翻到创世纪第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 531.0968750854954,
+        "locateMs": 0.6129170069471002,
+        "estimated_ms": 1887.9052090905607,
+        "endpoint_sample": 122240
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-009",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.0174668300896883,
+    "full": {
+      "text": "请不要切换到创世纪第一章第一节",
+      "reference": null,
+      "asrMs": 553.7111249286681,
+      "locateMs": 0.9344160789623857
+    },
+    "decisions": [
+      {
+        "text": "请不要切换到创世纪第一章第一节",
+        "reference": null,
+        "asrMs": 560.190915944986,
+        "locateMs": 1.0234169894829392,
+        "estimated_ms": 1918.0517079848796,
+        "endpoint_sample": 131840
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-010",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.01653580740094185,
+    "full": {
+      "text": "创世纪第一章第一节只是举例,请不要切换",
+      "reference": null,
+      "asrMs": 572.555624996312,
+      "locateMs": 1.6380000161007047
+    },
+    "decisions": [
+      {
+        "text": "创世纪第一章第一节只是举例,请不要切换",
+        "reference": null,
+        "asrMs": 573.086875025183,
+        "locateMs": 0.49216696061193943,
+        "estimated_ms": 1903.5752089899033,
+        "endpoint_sample": 145600
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-011",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.013907878659665585,
+    "full": {
+      "text": "创世纪第一章第一节",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 557.9416250111535,
+      "locateMs": 0.738792004995048
+    },
+    "decisions": [
+      {
+        "text": "创世纪第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 551.4289579587057,
+        "locateMs": 0.8571670623496175,
+        "estimated_ms": 1909.4796670442447,
+        "endpoint_sample": 131840
+      }
+    ],
+    "correct": false,
+    "wrong": true,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-012",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "floor": 0.008444518782198429,
+    "full": {
+      "text": "請三道創世紀第一章第一節",
+      "reference": null,
+      "asrMs": 568.1998339714482,
+      "locateMs": 1.890040934085846
+    },
+    "decisions": [
+      {
+        "text": "请三道创世纪第一章第一节",
+        "reference": null,
+        "asrMs": 564.3177919555455,
+        "locateMs": 1.101000001654029,
+        "estimated_ms": 2088.371624940075,
+        "endpoint_sample": 96960
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": true
+  },
+  {
+    "id": "segment-013",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.008935205638408661,
+    "full": {
+      "text": "請不要切換造,創世紀第一章第一節。",
+      "reference": null,
+      "asrMs": 549.1767500061542,
+      "locateMs": 0.506040989421308
+    },
+    "decisions": [
+      {
+        "text": "請不要切換造,上世紀第一章第一節。",
+        "reference": null,
+        "asrMs": 560.8315420104191,
+        "locateMs": 0.6953749107196927,
+        "estimated_ms": 2069.524832870811,
+        "endpoint_sample": 105600
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-014",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.008942726068198681,
+    "full": {
+      "text": "法式GGG1节只是举例,请不要切换",
+      "reference": null,
+      "asrMs": 555.4324589902535,
+      "locateMs": 3.1912499107420444
+    },
+    "decisions": [
+      {
+        "text": "法式機機扎第一節只是舉例請不要切換",
+        "reference": null,
+        "asrMs": 574.4261250365525,
+        "locateMs": 0.7584589766338468,
+        "estimated_ms": 2090.80504206568,
+        "endpoint_sample": 117760
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-015",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.006934924516826868,
+    "full": {
+      "text": "刷射器第一招第一解",
+      "reference": null,
+      "asrMs": 613.5150840273127,
+      "locateMs": 3.618041053414345
+    },
+    "decisions": [
+      {
+        "text": "刷射器第一招第一解",
+        "reference": null,
+        "asrMs": 565.9410409862176,
+        "locateMs": 1.9338750280439854,
+        "estimated_ms": 2096.8254569126293,
+        "endpoint_sample": 105920
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-016",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "floor": 0.00852157175540924,
+    "full": {
+      "text": "請翻到刷世紀 第一章第一節",
+      "reference": null,
+      "asrMs": 589.6519590169191,
+      "locateMs": 1.4263750053942204
+    },
+    "decisions": [
+      {
+        "text": "請翻到刷世紀 第一章第一節",
+        "reference": null,
+        "asrMs": 573.2120000757277,
+        "locateMs": 0.8037500083446503,
+        "estimated_ms": 2097.4017090657726,
+        "endpoint_sample": 106560
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": true
+  },
+  {
+    "id": "segment-017",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.008951487950980663,
+    "full": {
+      "text": "請不要切換造!創世紀第一章第一節",
+      "reference": null,
+      "asrMs": 603.4749579848722,
+      "locateMs": 0.7114170584827662
+    },
+    "decisions": [
+      {
+        "text": "請不要切換造,創世紀第一章第一節。",
+        "reference": null,
+        "asrMs": 616.6204160545021,
+        "locateMs": 0.5132920341566205,
+        "estimated_ms": 2125.835500061512,
+        "endpoint_sample": 115200
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-018",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.008908870629966259,
+    "full": {
+      "text": "刷世纪第一扎第一节只是举例,请不要切换",
+      "reference": null,
+      "asrMs": 628.0623329803348,
+      "locateMs": 0.9642500663176179
+    },
+    "decisions": [
+      {
+        "text": "刷世纪第一扎第一节只是举例,请不要切换",
+        "reference": null,
+        "asrMs": 614.1880000941455,
+        "locateMs": 0.4727909108623862,
+        "estimated_ms": 2131.227041008882,
+        "endpoint_sample": 127360
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-019",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.006967436522245407,
+    "full": {
+      "text": "刷設計第一章第一節",
+      "reference": null,
+      "asrMs": 569.4040829548612,
+      "locateMs": 0.456416979432106
+    },
+    "decisions": [
+      {
+        "text": "刷射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射",
+        "reference": null,
+        "asrMs": 1052.0119169959798,
+        "locateMs": 4.024374997243285,
+        "estimated_ms": 2583.8977499771863,
+        "endpoint_sample": 115520
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-020",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "floor": 0.008420377969741821,
+    "full": {
+      "text": "請翻到創世紀第一章第一節",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 562.7622080501169,
+      "locateMs": 0.47370896209031343
+    },
+    "decisions": [
+      {
+        "text": "請翻到創世紀第一章第一節",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 569.4213749375194,
+        "locateMs": 0.4913330776616931,
+        "estimated_ms": 2092.5981249921024,
+        "endpoint_sample": 112960
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-021",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.008936351165175438,
+    "full": {
+      "text": "請不要切換造!創世紀第一章第一節",
+      "reference": null,
+      "asrMs": 587.2340420028195,
+      "locateMs": 0.477125053294003
+    },
+    "decisions": [
+      {
+        "text": "請不要切換造!創世紀第一章第一節",
+        "reference": null,
+        "asrMs": 576.1848340043798,
+        "locateMs": 0.35266601480543613,
+        "estimated_ms": 2085.6376250600442,
+        "endpoint_sample": 121600
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-022",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.008924474008381367,
+    "full": {
+      "text": "法式技技一扎第一節只是舉例,請不要切換",
+      "reference": null,
+      "asrMs": 565.8878750400618,
+      "locateMs": 0.5742909852415323
+    },
+    "decisions": [
+      {
+        "text": "法式技術第一扎第一節只是舉例,請不要切換",
+        "reference": null,
+        "asrMs": 592.804417014122,
+        "locateMs": 0.4005830269306898,
+        "estimated_ms": 2108.866958060302,
+        "endpoint_sample": 133760
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-023",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.006929126568138599,
+    "full": {
+      "text": "刷是寄激烈的一切",
+      "reference": null,
+      "asrMs": 604.5707910088822,
+      "locateMs": 5.257708951830864
+    },
+    "decisions": [
+      {
+        "text": "刷射射击一张的一节",
+        "reference": null,
+        "asrMs": 586.5412499988452,
+        "locateMs": 0.6256250198930502,
+        "estimated_ms": 2115.8418330270797,
+        "endpoint_sample": 121920
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-008",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "floor": 0.05365600809454918,
+    "full": {
+      "text": "请翻到创世纪第一章第一节",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 621.8979579862207,
+      "locateMs": 0.762667041271925
+    },
+    "decisions": [
+      {
+        "text": "请翻到创世纪第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 629.0961670456454,
+        "locateMs": 0.8602499729022384,
+        "estimated_ms": 1966.4058339716867,
+        "endpoint_sample": 121920
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-009",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.05512595176696777,
+    "full": {
+      "text": "请不要切换到创世纪第一章第一节",
+      "reference": null,
+      "asrMs": 613.619500072673,
+      "locateMs": 0.8132079383358359
+    },
+    "decisions": [
+      {
+        "text": "请不要切换到创世纪第一章第一节",
+        "reference": null,
+        "asrMs": 591.9410840142518,
+        "locateMs": 0.39008306339383125,
+        "estimated_ms": 1930.0399170983583,
+        "endpoint_sample": 131520
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-010",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.05209064483642578,
+    "full": {
+      "text": "创世纪第一章第一节只是举例,请不要切换",
+      "reference": null,
+      "asrMs": 628.0499580316246,
+      "locateMs": 0.37929206155240536
+    },
+    "decisions": [
+      {
+        "text": "创世纪第一章第一节只是举例,请不要切换",
+        "reference": null,
+        "asrMs": 607.8736250055954,
+        "locateMs": 0.332667026668787,
+        "estimated_ms": 1917.1372499940917,
+        "endpoint_sample": 145280
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-011",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.043782442808151245,
+    "full": {
+      "text": "创世纪第一章第一节",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 598.5589579213411,
+      "locateMs": 0.5154170794412494
+    },
+    "decisions": [
+      {
+        "text": "创世纪第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 646.7984169721603,
+        "locateMs": 1.4903750270605087,
+        "estimated_ms": 1985.1485000485554,
+        "endpoint_sample": 131520
+      }
+    ],
+    "correct": false,
+    "wrong": true,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-012",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "floor": 0.02680382691323757,
+    "full": {
+      "text": "請翻到《創設計》第一章第一節",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 657.5448330258951,
+      "locateMs": 1.2348330346867442
+    },
+    "decisions": [
+      {
+        "text": "請翻到創設計第一章第一節。",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 648.1869999552146,
+        "locateMs": 1.1575421085581183,
+        "estimated_ms": 2152.673417141661,
+        "endpoint_sample": 96640
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-013",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.0282338485121727,
+    "full": {
+      "text": "請不要切換造《創世紀》第一章第一節",
+      "reference": null,
+      "asrMs": 642.4737919587642,
+      "locateMs": 0.6037920247763395
+    },
+    "decisions": [
+      {
+        "text": "請不要切換到《創世紀》第一章第一節。",
+        "reference": null,
+        "asrMs": 622.7517079096287,
+        "locateMs": 1.379417022690177,
+        "estimated_ms": 2112.7637089276686,
+        "endpoint_sample": 105280
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-014",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.028152573853731155,
+    "full": {
+      "text": "法式GD-D一節,只是舉例,請不要切換。",
+      "reference": null,
+      "asrMs": 602.6931670494378,
+      "locateMs": 0.4429159453138709
+    },
+    "decisions": [
+      {
+        "text": "法式GD-D1姐,只是舉例,請不要切換。",
+        "reference": null,
+        "asrMs": 609.21625001356,
+        "locateMs": 0.5399590590968728,
+        "estimated_ms": 2125.5109170414507,
+        "endpoint_sample": 117760
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-015",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.021899722516536713,
+    "full": {
+      "text": "刷設計第一章第一節",
+      "reference": null,
+      "asrMs": 625.4975841147825,
+      "locateMs": 0.6262499373406172
+    },
+    "decisions": [
+      {
+        "text": "刷設計第一章第一節",
+        "reference": null,
+        "asrMs": 587.3788750031963,
+        "locateMs": 0.5989999044686556,
+        "estimated_ms": 2096.080583971925,
+        "endpoint_sample": 105600
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-016",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "floor": 0.02672303467988968,
+    "full": {
+      "text": "請翻到《創世紀》 第一章第一節",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 602.8376669855788,
+      "locateMs": 0.8942499989643693
+    },
+    "decisions": [
+      {
+        "text": "請翻到創世紀 第一章第一節",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 610.1745830383152,
+        "locateMs": 1.5435829991474748,
+        "estimated_ms": 2114.7201250055805,
+        "endpoint_sample": 106240
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-017",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.028275441378355026,
+    "full": {
+      "text": "請不要切換造,創世紀第一章第一節。",
+      "reference": null,
+      "asrMs": 624.0530420327559,
+      "locateMs": 1.4663749607279897
+    },
+    "decisions": [
+      {
+        "text": "請不要切換造,創世紀第一章第一節。",
+        "reference": null,
+        "asrMs": 659.3756249640137,
+        "locateMs": 0.7787080248817801,
+        "estimated_ms": 2149.7975409775972,
+        "endpoint_sample": 114880
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-018",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.02814563922584057,
+    "full": {
+      "text": "刷世纪第一扎第一节。只是举例,请不要切换。",
+      "reference": null,
+      "asrMs": 650.5173749756068,
+      "locateMs": 1.0125420521944761
+    },
+    "decisions": [
+      {
+        "text": "刷世纪第一扎第一节,只是举例,请不要切换。",
+        "reference": null,
+        "asrMs": 646.5099169872701,
+        "locateMs": 0.8888749871402979,
+        "estimated_ms": 2163.6688339021057,
+        "endpoint_sample": 127360
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-019",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.02192648872733116,
+    "full": {
+      "text": "刷設計第一章第一節",
+      "reference": null,
+      "asrMs": 606.7727089393884,
+      "locateMs": 0.8696659933775663
+    },
+    "decisions": [
+      {
+        "text": "刷事件第一章第一節",
+        "reference": null,
+        "asrMs": 609.9170829402283,
+        "locateMs": 0.7645830046385527,
+        "estimated_ms": 2119.699707007967,
+        "endpoint_sample": 115200
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-020",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "floor": 0.02676761895418167,
+    "full": {
+      "text": "請翻到創世紀第一章第一節",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 673.7649999558926,
+      "locateMs": 1.3485000235959888
+    },
+    "decisions": [
+      {
+        "text": "請翻到創世紀 第一章第一節",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 622.2631660057232,
+        "locateMs": 0.7305839098989964,
+        "estimated_ms": 2126.5685409521684,
+        "endpoint_sample": 112640
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-021",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.028170328587293625,
+    "full": {
+      "text": "請不要切換造!創世紀第一章第一節",
+      "reference": null,
+      "asrMs": 622.2407919121906,
+      "locateMs": 1.3811250682920218
+    },
+    "decisions": [
+      {
+        "text": "請不要切換造,創世紀第一章第一節。",
+        "reference": null,
+        "asrMs": 616.840083966963,
+        "locateMs": 0.45425002463161945,
+        "estimated_ms": 2106.009542015381,
+        "endpoint_sample": 121280
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-022",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.02821001224219799,
+    "full": {
+      "text": "刷世紀第一扎第一節。只是舉例,請不要切換。",
+      "reference": null,
+      "asrMs": 627.4309580912814,
+      "locateMs": 0.7313749520108104
+    },
+    "decisions": [
+      {
+        "text": "刷世紀第一扎第一節。只是舉例,請不要切換。",
+        "reference": null,
+        "asrMs": 632.4210830498487,
+        "locateMs": 0.661624944768846,
+        "estimated_ms": 2149.3543330542743,
+        "endpoint_sample": 133760
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-023",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.02186516299843788,
+    "full": {
+      "text": "刷是記第一章第一節",
+      "reference": null,
+      "asrMs": 597.0849589211866,
+      "locateMs": 0.6929580122232437
+    },
+    "decisions": [
+      {
+        "text": "刷是記第一章第一節。",
+        "reference": null,
+        "asrMs": 626.8336659995839,
+        "locateMs": 1.236666925251484,
+        "estimated_ms": 2136.574582881294,
+        "endpoint_sample": 121600
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  }
+]

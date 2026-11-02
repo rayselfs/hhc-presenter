@@ -1,0 +1,22 @@
+{
+  "python_tests": {
+    "passed": 9
+  },
+  "speech_vitest": {
+    "files": 5,
+    "passed": 119
+  },
+  "benchmark_javascript_eslint": "passed",
+  "report_prettier": "passed",
+  "private_source_pairing": "11/11 verified by filename and extracted DOCX content",
+  "private_asr_completeness": "393/393 unique windows for each engine",
+  "privacy_scan": "No private source filenames or complete reference-context paragraphs in report/tool files",
+  "not_run": [
+    "full application build",
+    "full CI",
+    "browser/Electron E2E",
+    "Windows hardware",
+    "human gold-label acceptance",
+    "release"
+  ]
+}

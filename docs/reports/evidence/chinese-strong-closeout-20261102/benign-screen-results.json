@@ -1,0 +1,729 @@
+[
+  {
+    "id": "benign-0-0-0.02",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "创世纪第一章第一节",
+          "reference": [
+            1,
+            1,
+            1
+          ],
+          "asrMs": 722.2358339931816,
+          "locateMs": 2.360458020120859
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 123520,
+        "estimated_ms": 2081.6944999983534
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-0-0-0.02",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "创世纪第一章第一节",
+          "reference": [
+            1,
+            1,
+            1
+          ],
+          "asrMs": 890.7342499587685,
+          "locateMs": 0.7584170671179891
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 123520,
+        "estimated_ms": 2246.5963749578223
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-0-0-0.1",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "我们一起来看!《创世纪》第一章第一节",
+          "reference": null,
+          "asrMs": 877.1186249796301,
+          "locateMs": 1.1573750525712967
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 123520,
+        "estimated_ms": 2231.7280000438914
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-0-0-0.1",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": false,
+        "initial": {
+          "text": "我们一起来看",
+          "reference": null,
+          "asrMs": 762.022125069052,
+          "locateMs": 4.001791938208044
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 63040,
+        "estimated_ms": -1664.2539999736473
+      },
+      {
+        "guarded": true,
+        "initial": {
+          "text": "我们一起来看《创世纪》第一章第一节",
+          "reference": null,
+          "asrMs": 1098.7104170490056,
+          "locateMs": 1.6683749854564667
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 123520,
+        "estimated_ms": 2454.60975001473
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-0-1-0.02",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": false,
+        "initial": {
+          "text": "创世界第一章第一节",
+          "reference": [
+            1,
+            1,
+            1
+          ],
+          "asrMs": 935.5997499078512,
+          "locateMs": 0.6073750555515289
+        },
+        "retry": null,
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "endpoint_sample": 115200,
+        "estimated_ms": 2296.964750001207
+      }
+    ],
+    "correct": true,
+    "wrong": false
+  },
+  {
+    "id": "benign-0-1-0.02",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "《创世界》第一章第一节",
+          "reference": [
+            1,
+            1,
+            1
+          ],
+          "asrMs": 852.489750017412,
+          "locateMs": 0.6592919817194343
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 115200,
+        "estimated_ms": 2208.6538329767063
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-0-1-0.1",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "接下來,創世紀第一章第一節",
+          "reference": null,
+          "asrMs": 878.5807080566883,
+          "locateMs": 0.5370419239625335
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 115200,
+        "estimated_ms": 2235.318583045155
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-0-1-0.1",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": false,
+        "initial": {
+          "text": "接上來",
+          "reference": null,
+          "asrMs": 823.1866669375449,
+          "locateMs": 1.33966701105237
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 57920,
+        "estimated_ms": -1403.6787079786882
+      },
+      {
+        "guarded": true,
+        "initial": {
+          "text": "接下来创世纪第一章第一节",
+          "reference": null,
+          "asrMs": 862.2359590372071,
+          "locateMs": 1.2981250183656812
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 114880,
+        "estimated_ms": 2197.9973750188947
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-0-2-0.02",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "创世纪第一章第一节",
+          "reference": [
+            1,
+            1,
+            1
+          ],
+          "asrMs": 830.1082500256598,
+          "locateMs": 1.2772090267390013
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 117440,
+        "estimated_ms": 2184.4757920419797
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-0-2-0.02",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "创世纪第一章第一节",
+          "reference": [
+            1,
+            1,
+            1
+          ],
+          "asrMs": 761.7530409479514,
+          "locateMs": 0.773416948504746
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 117440,
+        "estimated_ms": 2118.5184999424964
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-0-2-0.1",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "弟兄姊妹,创世纪第一章第一节",
+          "reference": null,
+          "asrMs": 921.4489579899237,
+          "locateMs": 14.810999971814454
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 117440,
+        "estimated_ms": 2292.1719579547644
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-0-2-0.1",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": false,
+        "initial": {
+          "text": "弟兄姐妹",
+          "reference": null,
+          "asrMs": 1230.892457999289,
+          "locateMs": 25.504541932605207
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 57920,
+        "estimated_ms": -1083.3079579509795
+      },
+      {
+        "guarded": true,
+        "initial": {
+          "text": "创世纪第一章第一节",
+          "reference": [
+            1,
+            1,
+            1
+          ],
+          "asrMs": 790.8610830781981,
+          "locateMs": 2.664624946191907
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 117440,
+        "estimated_ms": 2504.867291945033
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-1-0-0.02",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": false,
+        "initial": {
+          "text": "SPA 設計第一章第一節",
+          "reference": null,
+          "asrMs": 1002.4910420179367,
+          "locateMs": 4.474417073652148
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 111680,
+        "estimated_ms": 2558.277666995302
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-1-0-0.02",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "刷世紀第一章第一節",
+          "reference": null,
+          "asrMs": 889.1414589015767,
+          "locateMs": 3.215125063434243
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 111360,
+        "estimated_ms": 2448.581541984342
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-1-0-0.1",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "我們一起來看看,刷世紀ZJDJ",
+          "reference": null,
+          "asrMs": 863.2942079566419,
+          "locateMs": 90.51216708030552
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 111680,
+        "estimated_ms": 2491.6991249965504
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-1-0-0.1",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "我們一起來看,創世紀的一章第一節。",
+          "reference": null,
+          "asrMs": 772.5317908916622,
+          "locateMs": 7.712584105320275
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 111360,
+        "estimated_ms": 2311.703958062455
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-1-1-0.02",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": false,
+        "initial": {
+          "text": "十八世紀一章第一節",
+          "reference": [
+            7,
+            1,
+            1
+          ],
+          "asrMs": 814.9958750000224,
+          "locateMs": 7.0145000936463475
+        },
+        "retry": null,
+        "reference": [
+          7,
+          1,
+          1
+        ],
+        "endpoint_sample": 104320,
+        "estimated_ms": 2381.7852089591324
+      }
+    ],
+    "correct": false,
+    "wrong": true
+  },
+  {
+    "id": "benign-1-1-0.02",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": false,
+        "initial": {
+          "text": "刷射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射射",
+          "reference": null,
+          "asrMs": 2235.8550830977038,
+          "locateMs": 15.034041949547827
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 104000,
+        "estimated_ms": 3838.2223339648917
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-1-1-0.1",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "接下来18世纪第一章第一节",
+          "reference": null,
+          "asrMs": 743.2295830221847,
+          "locateMs": 4.616166930645704
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 104320,
+        "estimated_ms": 2288.670707977377
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-1-1-0.1",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "接下來, 斯法世紀第一章第一節。",
+          "reference": null,
+          "asrMs": 1044.2317499546334,
+          "locateMs": 4.328040988184512
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 104000,
+        "estimated_ms": 2581.2138329856098
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-1-2-0.02",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": false,
+        "initial": {
+          "text": "換設計第一章第一節",
+          "reference": null,
+          "asrMs": 1039.6638340316713,
+          "locateMs": 2.5787079939618707
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 106880,
+        "estimated_ms": 2585.6962079750374
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-1-2-0.02",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": false,
+        "initial": {
+          "text": "換設計第一章第一節",
+          "reference": null,
+          "asrMs": 1001.9149169092998,
+          "locateMs": 1.3057910837233067
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 106240,
+        "estimated_ms": 2506.115999958478
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-1-2-0.1",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "一兄姐妹, 刷射器第一章第一节。",
+          "reference": null,
+          "asrMs": 990.8170839771628,
+          "locateMs": 1.7146659083664417
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 106880,
+        "estimated_ms": 2532.8983749831095
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  },
+  {
+    "id": "benign-1-2-0.1",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "baseline": null,
+    "decisions": [
+      {
+        "guarded": true,
+        "initial": {
+          "text": "一兄姊妹,刷設計第一章第一節",
+          "reference": null,
+          "asrMs": 955.4833330912516,
+          "locateMs": 1.3346249470487237
+        },
+        "retry": null,
+        "reference": null,
+        "endpoint_sample": 106240,
+        "estimated_ms": 2458.0938339475542
+      }
+    ],
+    "correct": false,
+    "wrong": false
+  }
+]

@@ -1,0 +1,210 @@
+{
+  "_id": "63f363e30bdc4e0839f42173",
+  "id": "csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20",
+  "private": false,
+  "tags": [
+    "onnx",
+    "license:apache-2.0",
+    "region:us"
+  ],
+  "downloads": 0,
+  "likes": 1,
+  "modelId": "csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20",
+  "author": "csukuangfj",
+  "sha": "98590b7ed6443e77b714204da2757d75e1a642f4",
+  "lastModified": "2024-05-28T03:46:56.000Z",
+  "gated": false,
+  "disabled": false,
+  "model-index": null,
+  "config": {},
+  "cardData": {
+    "license": "apache-2.0"
+  },
+  "siblings": [
+    {
+      "rfilename": ".gitattributes",
+      "blobId": "c7d9f3332a950355d5a77d85000f05e6f45435ea",
+      "size": 1477
+    },
+    {
+      "rfilename": "README.md",
+      "blobId": "81530df8c89dc7f7e5238112a2c3a5855af43f8d",
+      "size": 296
+    },
+    {
+      "rfilename": "bpe.model",
+      "blobId": "e967f050079837ddf23e41b12c9b40cc02bb7d2a",
+      "size": 244836,
+      "lfs": {
+        "sha256": "bcae393dbc5611be5ffa4c7ae0841558978a5a4f484008cb9dff3a2cc97ebe01",
+        "size": 244836,
+        "pointerSize": 131
+      }
+    },
+    {
+      "rfilename": "bpe.vocab",
+      "blobId": "e294b6f31228a7662fa1ddf2edf79d87e3f22c99",
+      "size": 12564
+    },
+    {
+      "rfilename": "decoder-epoch-99-avg-1.int8.onnx",
+      "blobId": "9d415b974179f5b9bb2b6af20e71ade515268686",
+      "size": 13091040,
+      "lfs": {
+        "sha256": "1a70c593d71e53f023f5f55b0b4cfff5055abb786ee3992e5f63dc2e273cc4fa",
+        "size": 13091040,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "decoder-epoch-99-avg-1.onnx",
+      "blobId": "ac9909ad95c0f25160f97943d808b3806e9444b5",
+      "size": 13876452,
+      "lfs": {
+        "sha256": "2e3b5ec371f8899ee6acd829fd753ba45772df57a91bdf37cde3136354e7db7d",
+        "size": 13876452,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "encoder-epoch-99-avg-1.int8.onnx",
+      "blobId": "2be64b8812623c4974bf6224b1491027d7863083",
+      "size": 181895032,
+      "lfs": {
+        "sha256": "8fa764187a261844f859d7143ebaa563af5d10adfece4c18a8f414c88cba2a9b",
+        "size": 181895032,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "encoder-epoch-99-avg-1.onnx",
+      "blobId": "fa2c32423a5ca993863bc3d2cbc932031f5c04d0",
+      "size": 330083505,
+      "lfs": {
+        "sha256": "709f0ed53a734b7942f170127e7547b566cb29c4afc5e67719f314c3d63ccb10",
+        "size": 330083505,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "export-onnx-stateless7-streaming-zh.sh",
+      "blobId": "cbebc9f3796b05f5344e05c9f003e43d9223dc41",
+      "size": 713
+    },
+    {
+      "rfilename": "joiner-epoch-99-avg-1.int8.onnx",
+      "blobId": "3a445a3b38b4e8768474168e41a75b2a7dbfc8eb",
+      "size": 3228404,
+      "lfs": {
+        "sha256": "1ed689c5ed19dbaa725d9d191bb4822b5f4855a39e1ffd28cbc1f340d25b2ee0",
+        "size": 3228404,
+        "pointerSize": 132
+      }
+    },
+    {
+      "rfilename": "joiner-epoch-99-avg-1.onnx",
+      "blobId": "abee08e21c27d43e86178f4fa025db80013a9938",
+      "size": 12833618,
+      "lfs": {
+        "sha256": "5f2adc585dd1bec6421c8bb8660d2a73fc8b9ceb24491ef51399ba2a2f0fc31b",
+        "size": 12833618,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "no-state-epoch-99-avg-1.int8.onnx",
+      "blobId": "40a618f04a0b1900f9b35acff1af6cd4696e8cd3",
+      "size": 6451206,
+      "lfs": {
+        "sha256": "b6775a8e596b02ce33acf607b14e09e9e220039daf1ae06d2f1432e4cedfc86e",
+        "size": 6451206,
+        "pointerSize": 132
+      }
+    },
+    {
+      "rfilename": "no-state-epoch-99-avg-1.onnx",
+      "blobId": "02558df5ff070a77ca4fdd8282417ad8028d40b6",
+      "size": 25487624,
+      "lfs": {
+        "sha256": "207592f0be5592ea421420e219e93c43f6ac47f67de6ebff7985850a2e2f3c13",
+        "size": 25487624,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "test_wavs/0.wav",
+      "blobId": "6ef8fc2940e6b87d14ccd80274a50465ad978b35",
+      "size": 321744
+    },
+    {
+      "rfilename": "test_wavs/1.wav",
+      "blobId": "22d84d23a4c3b7d4589aac0198e156becbda9f0e",
+      "size": 163244
+    },
+    {
+      "rfilename": "test_wavs/2.wav",
+      "blobId": "1d4872e920721d5a4b46f12b2fe5b1f05e85e369",
+      "size": 150124
+    },
+    {
+      "rfilename": "test_wavs/3.wav",
+      "blobId": "1ff8ff91ee07500aa5966687c5cdd041d3f9c785",
+      "size": 282604
+    },
+    {
+      "rfilename": "test_wavs/8k.wav",
+      "blobId": "8e96f5081f0360b7372a5e156d3cdd6f766a76fe",
+      "size": 282284
+    },
+    {
+      "rfilename": "tokens.txt",
+      "blobId": "980dd6cd2d71532898b1eac4a4ac9a91302083b6",
+      "size": 56317
+    },
+    {
+      "rfilename": "with-state-epoch-999-avg-1.int8.onnx",
+      "blobId": "725ecf891d7da87f1e4f2f6d5333dedbcb281b3e",
+      "size": 6434917,
+      "lfs": {
+        "sha256": "3caf2d7f3af4fa2b8c19b45b69cf797d095f60759ca378a1b9f8ccbb44625120",
+        "size": 6434917,
+        "pointerSize": 132
+      }
+    },
+    {
+      "rfilename": "with-state-epoch-999-avg-1.onnx",
+      "blobId": "d727b0345cadd31b350531eaff1a305d23429458",
+      "size": 25474644,
+      "lfs": {
+        "sha256": "961413c7df6a9c99d543f7dbe6eea05a2734a9a5910cfb1c44103870dcd56ccf",
+        "size": 25474644,
+        "pointerSize": 133
+      }
+    }
+  ],
+  "spaces": [
+    "k2-fsa/automatic-speech-recognition",
+    "hynt/k2-automatic-speech-recognition-demo",
+    "RO-Rtechs/Am-Srt-v1",
+    "waysolong/speech-recognition",
+    "intelli-zen/asr",
+    "jguerrisi/automatic-speech-recognition",
+    "danhtran8989/k2-automatic-speech-recognition-demo",
+    "phamhapa101/hoanglinhn0",
+    "Achilles13/automatic-speech-recognition",
+    "Audrey178/automatic-speech-recognition",
+    "hoanglinhn0/CUT-DATA",
+    "hoanglinhn0/K2_STT",
+    "hoanglinhn0/SUB-CN-01",
+    "skvsmdarman/automatic-speech-recognition",
+    "phamhapa101/CUTPRO",
+    "hoanglinhn0/CUTDATA",
+    "hoanglinhn0/CUTDATA01",
+    "hoanglinhn0/MOI-DATA",
+    "Raju2024/automatic-speech-recognition",
+    "zliyk/automatic-speech-recognition",
+    "bhhoang/k2-automatic-speech-recognition-demo"
+  ],
+  "createdAt": "2023-02-20T12:13:23.000Z",
+  "usedStorage": 651016122
+}

@@ -1,0 +1,11 @@
+{
+  "small": "English hint and fixed short prompt",
+  "turbo": "English hint, no prompt, audio_ctx=768 with length guard",
+  "reason": "Turbo prompt/no-prompt both 38/40 references and 20/20 quotations, zero wrong; no-prompt has no prompt dependency and slightly lower calibration latency",
+  "policy": "phonetic-0.85",
+  "selection_before_final": true,
+  "excluded_second_dataset": [
+    "v2-097",
+    "v2-129"
+  ]
+}

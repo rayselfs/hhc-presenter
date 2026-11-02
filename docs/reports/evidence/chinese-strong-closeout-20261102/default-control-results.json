@@ -1,0 +1,84 @@
+[
+  {
+    "id": "0297",
+    "kind": "quotation",
+    "target": [
+      7,
+      2,
+      15
+    ],
+    "reference": [
+      7,
+      2,
+      15
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1538.1250000000036,
+    "captureClockOffsetMs": 102.17900002385068,
+    "trace": {
+      "result": {
+        "text": "他们无论往何处去,耶和华都已在或攻击他们,正如耶和华所说的话,又如耶和华向他们所起的事,他们便极其困苦。耶和华兴起事实,事实就证救他们脱离抢罗他们人的手。",
+        "reference": [
+          7,
+          2,
+          15
+        ],
+        "asrMs": 1292.132166097872,
+        "locateMs": 6.875166902318597
+      },
+      "lastSampleAt": 23876.454000000005,
+      "requestAt": 23968.100000023842,
+      "responseAt": 25291.399999976158,
+      "stableAt": 25291.5,
+      "manual": false,
+      "paintedAt": 25312.399999976158,
+      "scrollCorrected": false,
+      "totalMs": 1435.945999976153,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "0298",
+    "kind": "quotation",
+    "target": [
+      9,
+      26,
+      8
+    ],
+    "reference": [
+      9,
+      26,
+      8
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1555.604999999996,
+    "captureClockOffsetMs": 19.11200004768034,
+    "trace": {
+      "result": {
+        "text": "雅比塞对大魏说,现在神将你的仇敌交在你手里,求你容我拿枪将他刺透在地,一次就成,不用再刺。大魏对雅比塞说,不可害死他,有谁伸手害耶和华的受高者而无罪呢?",
+        "reference": [
+          9,
+          26,
+          8
+        ],
+        "asrMs": 1409.5920000690967,
+        "locateMs": 7.796040968969464
+      },
+      "lastSampleAt": 43542.007000047684,
+      "requestAt": 43620.800000071526,
+      "responseAt": 45061.89999997616,
+      "stableAt": 45061.89999997616,
+      "manual": false,
+      "paintedAt": 45078.5,
+      "scrollCorrected": false,
+      "totalMs": 1536.4929999523156,
+      "outcome": "located"
+    }
+  }
+]

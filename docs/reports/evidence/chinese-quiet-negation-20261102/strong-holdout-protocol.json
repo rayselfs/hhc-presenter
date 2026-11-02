@@ -1,0 +1,51 @@
+{
+  "ids": [
+    "segment-008",
+    "segment-009",
+    "segment-010",
+    "segment-011",
+    "segment-012",
+    "segment-013",
+    "segment-014",
+    "segment-015",
+    "segment-016",
+    "segment-017",
+    "segment-018",
+    "segment-019",
+    "segment-020",
+    "segment-021",
+    "segment-022",
+    "segment-023"
+  ],
+  "source_sha256": {
+    "segment-008": "c4e0d49ca17c304380f180a6c856a749378601385e98d59759e3f5d4275a04a4",
+    "segment-009": "5b8464e2ba93f01f6f65e7fe94a7ec68d26ed4d77baff8ed0b88570a08c71f43",
+    "segment-010": "26d26337bc0817926ca303fb586f26ee95d072706fbd7efe1b2e0905a6eeb338",
+    "segment-011": "3cfc83cd074b550fdede72914c29ff164637bc3be6486d9ee42c9bd1f375ed10",
+    "segment-012": "fda08f5e1fa881babda7a17d1089fc50fc5c09b4e2d4466a2651ba7f80696398",
+    "segment-013": "102d971fadc64857820ef0982ad4c5e1b2afc2ce528350a0e6281652838bd90a",
+    "segment-014": "c6a8e86cdbc331b10b67a27e10ab2fe2be5f37ac5ef4b3273fc55a0e45659850",
+    "segment-015": "5b881ad01ad0aca1879e745b1170a4c55912756f18c1c08a5e8afc3c6ba1f12d",
+    "segment-016": "c9c933e74434429e79e6cff69eef0c005776a08a2c04e3fc9804288eb40c582e",
+    "segment-017": "4821b622aa1eaaa8736c75b3ec4240e93a001533581365cf52f720f2b73bb634",
+    "segment-018": "516f71f2a99ee168ca824651c5ab9de2f77b9833bf07fed45a64f9b2c0bb57ab",
+    "segment-019": "7e50c804fe2d63ec983179609fddd8f0ea9c08dbf904aa0efb94db5fa4b9d3e4",
+    "segment-020": "9c44d7ffe35397f0c9fd4cd2433571aa0c0eb879025e79f4fb335f68fa32b215",
+    "segment-021": "da4e89f708d17fd79b90397e140bbc3149a3d84455708ffa73626c452d6470ff",
+    "segment-022": "8fb529641b965c65948ca98d1236b49dfdc684ba823e66fac1a715842dd2b069",
+    "segment-023": "197b0247530c7f1daa89f48d80cdfdb5d5ee9c6970e5c556295899e06a122b2a"
+  },
+  "profiles": [
+    "fan-20db",
+    "hum-10db"
+  ],
+  "seed": 20261102,
+  "holdout": true,
+  "quiet_suffix": false,
+  "agc": true,
+  "calibration_s": 1,
+  "endpoint_s": 1.5,
+  "threshold_ratio": 1.15,
+  "denoise": "none",
+  "measurement": "Offline screening: estimated last clean source sample to endpoint plus native processing. Not screen latency."
+}

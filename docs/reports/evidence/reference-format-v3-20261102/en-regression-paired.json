@@ -1,0 +1,125 @@
+{
+  "groups": {
+    "reference": {
+      "n": 172,
+      "v2": {
+        "correct": 164,
+        "wrong": 0,
+        "rejected": 8,
+        "correct_within_3s": 164,
+        "p95_s": 0.28507387602437717,
+        "max_s": 0.40037258311740626,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 168,
+        "wrong": 0,
+        "rejected": 4,
+        "correct_within_3s": 168,
+        "p95_s": 0.2851119171249749,
+        "max_s": 0.40056504107222707,
+        "over_3s": 0
+      }
+    },
+    "all": {
+      "n": 293,
+      "v2": {
+        "correct": 236,
+        "wrong": 0,
+        "rejected": 57,
+        "correct_within_3s": 236,
+        "p95_s": 0.4547869579027338,
+        "max_s": 0.7716499170693947,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 240,
+        "wrong": 0,
+        "rejected": 53,
+        "correct_within_3s": 240,
+        "p95_s": 0.4554648749351544,
+        "max_s": 0.7728570418570128,
+        "over_3s": 0
+      }
+    },
+    "positive": {
+      "n": 252,
+      "v2": {
+        "correct": 236,
+        "wrong": 0,
+        "rejected": 16,
+        "correct_within_3s": 236,
+        "p95_s": 0.4577191680405226,
+        "max_s": 0.7716499170693947,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 240,
+        "wrong": 0,
+        "rejected": 12,
+        "correct_within_3s": 240,
+        "p95_s": 0.46017533411145956,
+        "max_s": 0.7728570418570128,
+        "over_3s": 0
+      }
+    },
+    "quotation": {
+      "n": 80,
+      "v2": {
+        "correct": 72,
+        "wrong": 0,
+        "rejected": 8,
+        "correct_within_3s": 72,
+        "p95_s": 0.5494195829488635,
+        "max_s": 0.7716499170693947,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 72,
+        "wrong": 0,
+        "rejected": 8,
+        "correct_within_3s": 72,
+        "p95_s": 0.5513887897714078,
+        "max_s": 0.7728570418570128,
+        "over_3s": 0
+      }
+    },
+    "negative": {
+      "n": 41,
+      "v2": {
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 41,
+        "correct_within_3s": 0,
+        "p95_s": 0.340864500083372,
+        "max_s": 0.386102834036264,
+        "over_3s": 0
+      },
+      "v3": {
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 41,
+        "correct_within_3s": 0,
+        "p95_s": 0.3417952089685904,
+        "max_s": 0.38608754200459905,
+        "over_3s": 0
+      }
+    }
+  },
+  "changes": {
+    "gained": [
+      "0421",
+      "0422",
+      "0433",
+      "0437"
+    ],
+    "lost": [],
+    "new_wrong": [],
+    "over_3s": [],
+    "long_audio": [
+      "0591",
+      "0594",
+      "0596"
+    ]
+  }
+}

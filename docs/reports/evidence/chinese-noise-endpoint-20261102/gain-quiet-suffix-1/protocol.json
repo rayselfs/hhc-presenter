@@ -1,0 +1,31 @@
+{
+  "ids": [
+    "segment-002",
+    "segment-006",
+    "segment-010",
+    "segment-014",
+    "segment-018",
+    "segment-022"
+  ],
+  "source_sha256": {
+    "segment-002": "f4eee04adde8a336210aa8c930668a48c714094f802f953575d53dc25019e597",
+    "segment-006": "809c11aed96a9c2f18644e187236f9b701c2e7acf0eb3494fbe160b656a15406",
+    "segment-010": "26d26337bc0817926ca303fb586f26ee95d072706fbd7efe1b2e0905a6eeb338",
+    "segment-014": "c6a8e86cdbc331b10b67a27e10ab2fe2be5f37ac5ef4b3273fc55a0e45659850",
+    "segment-018": "516f71f2a99ee168ca824651c5ab9de2f77b9833bf07fed45a64f9b2c0bb57ab",
+    "segment-022": "8fb529641b965c65948ca98d1236b49dfdc684ba823e66fac1a715842dd2b069"
+  },
+  "profiles": [
+    "fan-40db",
+    "hum-40db"
+  ],
+  "seed": 20261102,
+  "holdout": false,
+  "quiet_suffix": true,
+  "agc": true,
+  "calibration_s": 1,
+  "endpoint_s": 1.5,
+  "threshold_ratio": 1.15,
+  "denoise": "none",
+  "measurement": "Offline screening: estimated last clean source sample to endpoint plus native processing. Not screen latency."
+}

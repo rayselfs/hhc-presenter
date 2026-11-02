@@ -1,0 +1,13 @@
+{
+  "n": 505,
+  "baseline": [
+    "zh-regression.decisions.jsonl",
+    "zh-previous.decisions.jsonl",
+    "zh-fresh-v3.decisions.jsonl"
+  ],
+  "excluded": "v2-097 previously documented duplicate",
+  "candidate": "exact-zero exterior crop, 300 ms padding, exact-zero-only silence bypass, unchanged Chinese Turbo and v3 matching thresholds",
+  "chronology": "expanded after 167-case paired screen; candidate fixed before inspecting these new cropped outputs",
+  "timing": "fresh candidate inference; archived baseline ASR timing is not a simultaneous speed comparison",
+  "gate": "no lost correct or new wrong; candidate offline P95 <=3s, disclose max/over3; not UI acceptance"
+}

@@ -1,0 +1,317 @@
+{
+  "baseline/holdout/zh/reference": {
+    "n": 160,
+    "correct": 107,
+    "wrong": 10,
+    "rejected": 43,
+    "correct_within_3s": 107,
+    "p95_s": 0.7623837510334966,
+    "over_3s": 0
+  },
+  "optimized/holdout/zh/reference": {
+    "n": 160,
+    "correct": 99,
+    "wrong": 5,
+    "rejected": 56,
+    "correct_within_3s": 99,
+    "p95_s": 0.7623819590334967,
+    "over_3s": 0
+  },
+  "strict/holdout/zh/reference": {
+    "n": 160,
+    "correct": 108,
+    "wrong": 0,
+    "rejected": 52,
+    "correct_within_3s": 108,
+    "p95_s": 0.7624341251130072,
+    "over_3s": 0
+  },
+  "phonetic-0.85/holdout/zh/reference": {
+    "n": 160,
+    "correct": 108,
+    "wrong": 0,
+    "rejected": 52,
+    "correct_within_3s": 108,
+    "p95_s": 0.7624341251130072,
+    "over_3s": 0
+  },
+  "phonetic-0.88/holdout/zh/reference": {
+    "n": 160,
+    "correct": 108,
+    "wrong": 0,
+    "rejected": 52,
+    "correct_within_3s": 108,
+    "p95_s": 0.7624341251130072,
+    "over_3s": 0
+  },
+  "phonetic-0.90/holdout/zh/reference": {
+    "n": 160,
+    "correct": 108,
+    "wrong": 0,
+    "rejected": 52,
+    "correct_within_3s": 108,
+    "p95_s": 0.7624341251130072,
+    "over_3s": 0
+  },
+  "phonetic-0.92/holdout/zh/reference": {
+    "n": 160,
+    "correct": 108,
+    "wrong": 0,
+    "rejected": 52,
+    "correct_within_3s": 108,
+    "p95_s": 0.7624341251130072,
+    "over_3s": 0
+  },
+  "baseline/holdout/zh/quotation": {
+    "n": 80,
+    "correct": 56,
+    "wrong": 0,
+    "rejected": 24,
+    "correct_within_3s": 56,
+    "p95_s": 1.3034962908624783,
+    "over_3s": 0
+  },
+  "optimized/holdout/zh/quotation": {
+    "n": 80,
+    "correct": 56,
+    "wrong": 0,
+    "rejected": 24,
+    "correct_within_3s": 56,
+    "p95_s": 1.3034825408624784,
+    "over_3s": 0
+  },
+  "strict/holdout/zh/quotation": {
+    "n": 80,
+    "correct": 56,
+    "wrong": 0,
+    "rejected": 24,
+    "correct_within_3s": 56,
+    "p95_s": 1.30387154084243,
+    "over_3s": 0
+  },
+  "phonetic-0.85/holdout/zh/quotation": {
+    "n": 80,
+    "correct": 71,
+    "wrong": 0,
+    "rejected": 9,
+    "correct_within_3s": 71,
+    "p95_s": 1.30387154084243,
+    "over_3s": 0
+  },
+  "phonetic-0.88/holdout/zh/quotation": {
+    "n": 80,
+    "correct": 66,
+    "wrong": 0,
+    "rejected": 14,
+    "correct_within_3s": 66,
+    "p95_s": 1.30387154084243,
+    "over_3s": 0
+  },
+  "phonetic-0.90/holdout/zh/quotation": {
+    "n": 80,
+    "correct": 65,
+    "wrong": 0,
+    "rejected": 15,
+    "correct_within_3s": 65,
+    "p95_s": 1.30387154084243,
+    "over_3s": 0
+  },
+  "phonetic-0.92/holdout/zh/quotation": {
+    "n": 80,
+    "correct": 64,
+    "wrong": 0,
+    "rejected": 16,
+    "correct_within_3s": 64,
+    "p95_s": 1.30387154084243,
+    "over_3s": 0
+  },
+  "baseline/holdout/zh/mixed": {
+    "n": 40,
+    "correct": 6,
+    "wrong": 4,
+    "rejected": 30,
+    "correct_within_3s": 6,
+    "p95_s": 0.7986439590132683,
+    "over_3s": 0
+  },
+  "optimized/holdout/zh/mixed": {
+    "n": 40,
+    "correct": 10,
+    "wrong": 4,
+    "rejected": 26,
+    "correct_within_3s": 10,
+    "p95_s": 0.7986233340132683,
+    "over_3s": 0
+  },
+  "strict/holdout/zh/mixed": {
+    "n": 40,
+    "correct": 10,
+    "wrong": 0,
+    "rejected": 30,
+    "correct_within_3s": 10,
+    "p95_s": 0.7985852919962896,
+    "over_3s": 0
+  },
+  "phonetic-0.85/holdout/zh/mixed": {
+    "n": 40,
+    "correct": 10,
+    "wrong": 0,
+    "rejected": 30,
+    "correct_within_3s": 10,
+    "p95_s": 0.7985852919962896,
+    "over_3s": 0
+  },
+  "phonetic-0.88/holdout/zh/mixed": {
+    "n": 40,
+    "correct": 10,
+    "wrong": 0,
+    "rejected": 30,
+    "correct_within_3s": 10,
+    "p95_s": 0.7985852919962896,
+    "over_3s": 0
+  },
+  "phonetic-0.90/holdout/zh/mixed": {
+    "n": 40,
+    "correct": 10,
+    "wrong": 0,
+    "rejected": 30,
+    "correct_within_3s": 10,
+    "p95_s": 0.7985852919962896,
+    "over_3s": 0
+  },
+  "phonetic-0.92/holdout/zh/mixed": {
+    "n": 40,
+    "correct": 10,
+    "wrong": 0,
+    "rejected": 30,
+    "correct_within_3s": 10,
+    "p95_s": 0.7985852919962896,
+    "over_3s": 0
+  },
+  "baseline/holdout/zh/negative": {
+    "n": 4,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 4,
+    "correct_within_3s": 0,
+    "p95_s": 0.8065051258341159,
+    "over_3s": 0
+  },
+  "optimized/holdout/zh/negative": {
+    "n": 4,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 4,
+    "correct_within_3s": 0,
+    "p95_s": 0.806500291834116,
+    "over_3s": 0
+  },
+  "strict/holdout/zh/negative": {
+    "n": 4,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 4,
+    "correct_within_3s": 0,
+    "p95_s": 0.8154547498542176,
+    "over_3s": 0
+  },
+  "phonetic-0.85/holdout/zh/negative": {
+    "n": 4,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 4,
+    "correct_within_3s": 0,
+    "p95_s": 0.8154547498542176,
+    "over_3s": 0
+  },
+  "phonetic-0.88/holdout/zh/negative": {
+    "n": 4,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 4,
+    "correct_within_3s": 0,
+    "p95_s": 0.8154547498542176,
+    "over_3s": 0
+  },
+  "phonetic-0.90/holdout/zh/negative": {
+    "n": 4,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 4,
+    "correct_within_3s": 0,
+    "p95_s": 0.8154547498542176,
+    "over_3s": 0
+  },
+  "phonetic-0.92/holdout/zh/negative": {
+    "n": 4,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 4,
+    "correct_within_3s": 0,
+    "p95_s": 0.8154547498542176,
+    "over_3s": 0
+  },
+  "baseline/challenge/zh/negative": {
+    "n": 28,
+    "correct": 0,
+    "wrong": 7,
+    "rejected": 21,
+    "correct_within_3s": 0,
+    "p95_s": 1.2747024168903125,
+    "over_3s": 0
+  },
+  "optimized/challenge/zh/negative": {
+    "n": 28,
+    "correct": 0,
+    "wrong": 4,
+    "rejected": 24,
+    "correct_within_3s": 0,
+    "p95_s": 1.2746996248903126,
+    "over_3s": 0
+  },
+  "strict/challenge/zh/negative": {
+    "n": 28,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 28,
+    "correct_within_3s": 0,
+    "p95_s": 1.2749325420293436,
+    "over_3s": 0
+  },
+  "phonetic-0.85/challenge/zh/negative": {
+    "n": 28,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 28,
+    "correct_within_3s": 0,
+    "p95_s": 1.2749325420293436,
+    "over_3s": 0
+  },
+  "phonetic-0.88/challenge/zh/negative": {
+    "n": 28,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 28,
+    "correct_within_3s": 0,
+    "p95_s": 1.2749325420293436,
+    "over_3s": 0
+  },
+  "phonetic-0.90/challenge/zh/negative": {
+    "n": 28,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 28,
+    "correct_within_3s": 0,
+    "p95_s": 1.2749325420293436,
+    "over_3s": 0
+  },
+  "phonetic-0.92/challenge/zh/negative": {
+    "n": 28,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 28,
+    "correct_within_3s": 0,
+    "p95_s": 1.2749325420293436,
+    "over_3s": 0
+  }
+}

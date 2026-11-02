@@ -1,0 +1,8 @@
+{
+  "scripts/speech-benchmark/stationary_noise.py": "c7b7b221de28c75a51de36cd4613dbdc1599633096bfebf957946660731a43b2",
+  "scripts/speech-benchmark/noisy_endpoint.py": "0691572a1bf4ce3c6f03d634d4a1acc48d37fc37e189ba906037462da0cef963",
+  "scripts/speech-benchmark/noise_flow_fixtures.py": "6a2d4cd08de280954a88f599b186dc2d44db229a6e475e3209b694c406b089e2",
+  "scripts/speech-benchmark/test_stationary_noise.py": "a7974569d8f5949bb8b2d0c9f257fe6a73e6ea09764657766cc27ca593e3411f",
+  "scripts/speech-benchmark/live_runtime.py": "d89e18caeaed70f32dc015d4b71006a437585b14a91c4cd188ec6ce668b90fe6",
+  "scripts/speech-benchmark/electron-flow.mjs": "2ad7db2d4436cad43eda6dc9589908ca76c73e0c4aa88da07883e744c46cb750"
+}

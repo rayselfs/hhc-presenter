@@ -69,6 +69,14 @@ test('a real Bible Worker searches Chinese text and projects the selected and ne
   await expect(projection).toContainText(verses[0].text)
   const reference = projection.locator(':scope > div').first()
   await expect(reference).toContainText('3:16')
+  await search.locator('[data-bible-search]').fill('信他的人')
+  await search.locator('[data-bible-search]').press('Enter')
+  await page.getByRole('button', { name: /信他的人/ }).click()
+  await expect(page.locator('[data-bible-passage]')).toHaveAttribute(
+    'data-bible-passage',
+    '43:3:18'
+  )
+  await expect(reference).toContainText('3:16')
   await page.keyboard.press('ArrowDown')
   await expect(reference).toContainText('3:17')
   await expect(projection.locator('[data-verse="17"]')).toContainText(verses[1].text)

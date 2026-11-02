@@ -1,0 +1,32 @@
+{
+  "ids": [
+    "segment-008",
+    "segment-009",
+    "segment-010",
+    "segment-011",
+    "segment-012",
+    "segment-013",
+    "segment-014",
+    "segment-015",
+    "segment-016",
+    "segment-017",
+    "segment-018",
+    "segment-019",
+    "segment-020",
+    "segment-021",
+    "segment-022",
+    "segment-023"
+  ],
+  "profiles": [
+    "fan-40db",
+    "hum-40db"
+  ],
+  "seed": 20261102,
+  "holdout": true,
+  "agc": true,
+  "calibration_s": 1,
+  "endpoint_s": 1.5,
+  "threshold_ratio": 1.15,
+  "denoise": "none",
+  "measurement": "Offline screening: estimated last clean source sample to endpoint plus native processing. Not screen latency."
+}

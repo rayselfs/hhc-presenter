@@ -1,0 +1,7914 @@
+[
+  {
+    "id": "0001",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到創世記第二十五章第三節",
+    "target": [
+      1,
+      25,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.18375,
+    "sha256": "95fcb031bbac4f7df50772e33aaa4469a2e808b320fddd9dc107d57793319681"
+  },
+  {
+    "id": "0002",
+    "language": "zh",
+    "kind": "reference",
+    "text": "創世記第五十章第五節",
+    "target": [
+      1,
+      50,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.3035625,
+    "sha256": "3f6ac809585857e3bc910bebc8aa89f0e43cd0e59e614981de719288cb7eacc8"
+  },
+  {
+    "id": "0003",
+    "language": "zh",
+    "kind": "reference",
+    "text": "出埃及記第一章第一節",
+    "target": [
+      2,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.47775,
+    "sha256": "8d8686ca18fccb22e30d5405d5471f7ff18022f34de88455439002093e09546d"
+  },
+  {
+    "id": "0004",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到出埃及記第二十章第三節",
+    "target": [
+      2,
+      20,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.3871875,
+    "sha256": "b9cec7d37fb0d8806e2c9c6135903e428deb1427b8a0fd056d0be6db56c765a6"
+  },
+  {
+    "id": "0006",
+    "language": "zh",
+    "kind": "reference",
+    "text": "利未記第一章第一節",
+    "target": [
+      3,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.2701875,
+    "sha256": "c9cc7437ddbec45a980f6d115eeb4431c7687fb8e7be78ead03759ecd7fc7207"
+  },
+  {
+    "id": "0007",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到利未記第十三章第三節",
+    "target": [
+      3,
+      13,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.9871875,
+    "sha256": "5ad8f681a30bd6f5f75fb6d7d4c45d3002b7a0d14a5a0f71203e6a1839e58e4b"
+  },
+  {
+    "id": "0008",
+    "language": "zh",
+    "kind": "reference",
+    "text": "利未記第二十七章第五節",
+    "target": [
+      3,
+      27,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.4235625,
+    "sha256": "c39c898b4e29c6595c987c64d6c5cc4ef4521dd696d69fa34e62ab422e3b283a"
+  },
+  {
+    "id": "0009",
+    "language": "zh",
+    "kind": "reference",
+    "text": "民數記第一章第一節",
+    "target": [
+      4,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.357125,
+    "sha256": "85781efa70c438d41018ac28a87bdcc627553bf4e1dfd54a65a1f7c816959317"
+  },
+  {
+    "id": "0011",
+    "language": "zh",
+    "kind": "reference",
+    "text": "民數記第三十六章第五節",
+    "target": [
+      4,
+      36,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.2993125,
+    "sha256": "894d226e7c2dee5ff1b15da205ede657043b9a440467c02a59b6f29a389cba59"
+  },
+  {
+    "id": "0012",
+    "language": "zh",
+    "kind": "reference",
+    "text": "申命記第一章第一節",
+    "target": [
+      5,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.3515625,
+    "sha256": "75e68c9ad8ce9e1300ad219c3d4c4a0832a0e4f930a7c7e54a782dfe966bb5db"
+  },
+  {
+    "id": "0013",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到申命記第十七章第三節",
+    "target": [
+      5,
+      17,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.1721875,
+    "sha256": "071860a0b06e60ab31c84c75aef20a6874c6392259e1adbf2e94daa49dd3b4f0"
+  },
+  {
+    "id": "0014",
+    "language": "zh",
+    "kind": "reference",
+    "text": "申命記第三十四章第五節",
+    "target": [
+      5,
+      34,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.494125,
+    "sha256": "bf05287696d1f7d4d270841c605cd899f82ac270d9f9fbced3a394743f118eaa"
+  },
+  {
+    "id": "0016",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到約書亞記第十二章第三節",
+    "target": [
+      6,
+      12,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.3059375,
+    "sha256": "f7163966297ad6188131b435682567bbaadb31b067b28a3def2d7abe39dfcc54"
+  },
+  {
+    "id": "0017",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約書亞記第二十四章第五節",
+    "target": [
+      6,
+      24,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.3109375,
+    "sha256": "fb47f3a51d9476919b46edda43b0660bef8b2324c4ca35377bef1a09e7c3747f"
+  },
+  {
+    "id": "0018",
+    "language": "zh",
+    "kind": "reference",
+    "text": "士師記第一章第一節",
+    "target": [
+      7,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.3399375,
+    "sha256": "d995462fff89a3ca53a6970a78af178e6a7e5658ff1a74d239fad9c7d2662523"
+  },
+  {
+    "id": "0019",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到士師記第十章第三節",
+    "target": [
+      7,
+      10,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.81375,
+    "sha256": "e9885a5bbb988df76e29f403d370fa88a679815eb6a8acff3441c01c8f1fb3a8"
+  },
+  {
+    "id": "0021",
+    "language": "zh",
+    "kind": "reference",
+    "text": "路得記第一章第一節",
+    "target": [
+      8,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.2415625,
+    "sha256": "2c9669811c63db264d2bbe2c86f86f396fc36f854ff24b6fc4e47cc182f27c87"
+  },
+  {
+    "id": "0022",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到路得記第二章第三節",
+    "target": [
+      8,
+      2,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.8995625,
+    "sha256": "4d6300f45899035325c1ec5432cb516e56a9053dc6c530b0cef65aa736b69187"
+  },
+  {
+    "id": "0023",
+    "language": "zh",
+    "kind": "reference",
+    "text": "路得記第四章第五節",
+    "target": [
+      8,
+      4,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 1.8715625,
+    "sha256": "30503414899beb120d9f21e26519157726b19d0574ffc36640edff3952c52533"
+  },
+  {
+    "id": "0024",
+    "language": "zh",
+    "kind": "reference",
+    "text": "撒母耳記上第一章第一節",
+    "target": [
+      9,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.8614375,
+    "sha256": "c4d16b5f7675e19f5091bbd71dc52a2a23aee8489da6d3458c16cdebcb39f7d0"
+  },
+  {
+    "id": "0026",
+    "language": "zh",
+    "kind": "reference",
+    "text": "撒母耳記上第三十一章第五節",
+    "target": [
+      9,
+      31,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.9105,
+    "sha256": "fcea7695844c67b7f1949ce38eedf2ed93f471cf5a997479b4e52c3edcb148d2"
+  },
+  {
+    "id": "0027",
+    "language": "zh",
+    "kind": "reference",
+    "text": "撒母耳記下第一章第一節",
+    "target": [
+      10,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.704,
+    "sha256": "a7fc8b99944e2f55cec4e45b8d69cd9c934d1731e669b8cecdf6d732378477ed"
+  },
+  {
+    "id": "0028",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到撒母耳記下第十二章第三節",
+    "target": [
+      10,
+      12,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.619375,
+    "sha256": "bdbec00ef0774111aac85a8516364a042e0837b91be2f270e18f350ac29ab16d"
+  },
+  {
+    "id": "0029",
+    "language": "zh",
+    "kind": "reference",
+    "text": "撒母耳記下第二十四章第五節",
+    "target": [
+      10,
+      24,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.495875,
+    "sha256": "cda24c3e9ecb31efaa8f1797d0b56b6b31c6247f00b0bc7d961907f37264285f"
+  },
+  {
+    "id": "0031",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到列王紀上第十一章第三節",
+    "target": [
+      11,
+      11,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.09125,
+    "sha256": "fc6a0e65e687025e310eb58cb16066498082317dad0ccc294043837457f0b75a"
+  },
+  {
+    "id": "0032",
+    "language": "zh",
+    "kind": "reference",
+    "text": "列王紀上第二十二章第五節",
+    "target": [
+      11,
+      22,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.6325,
+    "sha256": "2c42e15491baa95a5c1becf4ec7af9c6f95f369823f649c1dd297a4c60a2036d"
+  },
+  {
+    "id": "0033",
+    "language": "zh",
+    "kind": "reference",
+    "text": "列王紀下第一章第一節",
+    "target": [
+      12,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.438125,
+    "sha256": "4e0f176c1bde114e05b7879bcd472105f2299e79e27d8d98124d37e42f2377a6"
+  },
+  {
+    "id": "0034",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到列王紀下第十二章第三節",
+    "target": [
+      12,
+      12,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.422,
+    "sha256": "f6e15142d6d292ab12434102db6b8018ef71de1e508f353cb9e75a9db313b72f"
+  },
+  {
+    "id": "0036",
+    "language": "zh",
+    "kind": "reference",
+    "text": "歷代志上第一章第一節",
+    "target": [
+      13,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.5953125,
+    "sha256": "e7e1aeab82afb8dacebc0874d6e75ce65bff274e06b9f7ec0f16599b9287e47e"
+  },
+  {
+    "id": "0037",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到歷代志上第十四章第三節",
+    "target": [
+      13,
+      14,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.045,
+    "sha256": "dfcc135ee2fbca2a1cea0ab9bb46d32f657152a1c8b09d7ebb36a76aabb4bedd"
+  },
+  {
+    "id": "0038",
+    "language": "zh",
+    "kind": "reference",
+    "text": "歷代志上第二十九章第五節",
+    "target": [
+      13,
+      29,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.6325,
+    "sha256": "36d51418d056dea5159845ea4a8e7eea09cc9498ee32fa37b3670a28610882ef"
+  },
+  {
+    "id": "0039",
+    "language": "zh",
+    "kind": "reference",
+    "text": "歷代志下第一章第一節",
+    "target": [
+      14,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.36875,
+    "sha256": "72b37f447fde1d675eeb61215ea06989dd6e55ced7fe7c1dd23c2c4615bf861f"
+  },
+  {
+    "id": "0041",
+    "language": "zh",
+    "kind": "reference",
+    "text": "歷代志下第三十六章第五節",
+    "target": [
+      14,
+      36,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.3109375,
+    "sha256": "10029a5674ceace30f5a572e2632d685bbe4446c08e5f92ac6003c3a605ea559"
+  },
+  {
+    "id": "0042",
+    "language": "zh",
+    "kind": "reference",
+    "text": "以斯拉記第一章第一節",
+    "target": [
+      15,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.5238125,
+    "sha256": "12c44b48b9dce454daf30b316d2cb502f180a1430a91c4847622e4deb216b1e0"
+  },
+  {
+    "id": "0043",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到以斯拉記第五章第三節",
+    "target": [
+      15,
+      5,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.9409375,
+    "sha256": "609a52ba6ffb04ce722b9c582791e95d6789a2c57dba193fec004fe40ff42c92"
+  },
+  {
+    "id": "0044",
+    "language": "zh",
+    "kind": "reference",
+    "text": "以斯拉記第十章第五節",
+    "target": [
+      15,
+      10,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.2021875,
+    "sha256": "9ac9a9438c50583653fc3d18934598dd69090ae8304fa655c60535f16f23c9a9"
+  },
+  {
+    "id": "0046",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到尼希米記第六章第三節",
+    "target": [
+      16,
+      6,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.1898125,
+    "sha256": "263e37d27fb38e01387bd329e3fea09d809c1d84be5668d473731178ccb0757d"
+  },
+  {
+    "id": "0047",
+    "language": "zh",
+    "kind": "reference",
+    "text": "尼希米記第十三章第五節",
+    "target": [
+      16,
+      13,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.28775,
+    "sha256": "35caee288b34dc2020779bdeb84de0566bf96ab7a730c91a7198ef94a111a991"
+  },
+  {
+    "id": "0048",
+    "language": "zh",
+    "kind": "reference",
+    "text": "以斯帖記第一章第一節",
+    "target": [
+      17,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.628375,
+    "sha256": "1c0f61117a1d3016eefb021f3ae515a1e3ef66775469329416e50d2c1f662ef5"
+  },
+  {
+    "id": "0049",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到以斯帖記第五章第三節",
+    "target": [
+      17,
+      5,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.9871875,
+    "sha256": "501107c9c91fdd6ad6199cbdc4f4516dabda3a55279812f161845b9b77efaa6b"
+  },
+  {
+    "id": "0051",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約伯記第一章第一節",
+    "target": [
+      18,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.2646875,
+    "sha256": "3a5305984bef388db7a6e0a5fa9d93eeaf7ec18396db0b5f13ec93bf04668e15"
+  },
+  {
+    "id": "0052",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到約伯記第二十一章第三節",
+    "target": [
+      18,
+      21,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.3871875,
+    "sha256": "d77c635fe12462c02818abd110ea2a5e05751d7644eaa6bfc74596a2f8387b09"
+  },
+  {
+    "id": "0053",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約伯記第四十二章第五節",
+    "target": [
+      18,
+      42,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.160625,
+    "sha256": "0a1ae71b799005456d44da259793a3b943eef774f36b8d7770b7f1b0a366c2d7"
+  },
+  {
+    "id": "0054",
+    "language": "zh",
+    "kind": "reference",
+    "text": "詩篇第一章第一節",
+    "target": [
+      19,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.177375,
+    "sha256": "f7a16946fc96fb857fdad6383bca63fdc781ea140fc16964f2af7e9f6922ecec"
+  },
+  {
+    "id": "0056",
+    "language": "zh",
+    "kind": "reference",
+    "text": "詩篇第一百五十章第五節",
+    "target": [
+      19,
+      150,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.4476875,
+    "sha256": "eb34271e640afa43014462fe09c76c06ed02de6369519cf55245360880d1dfda"
+  },
+  {
+    "id": "0057",
+    "language": "zh",
+    "kind": "reference",
+    "text": "箴言第一章第一節",
+    "target": [
+      20,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.1538125,
+    "sha256": "8f6b2fae7fd3a7659572af02aaabfad949777fc1820e1f74c74e260d819801af"
+  },
+  {
+    "id": "0058",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到箴言第十五章第三節",
+    "target": [
+      20,
+      15,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.946,
+    "sha256": "67123978231afe1ef424059a4a426848de4b038896b15a283c7f94850d46a06d"
+  },
+  {
+    "id": "0059",
+    "language": "zh",
+    "kind": "reference",
+    "text": "箴言第三十一章第五節",
+    "target": [
+      20,
+      31,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.120125,
+    "sha256": "d90e33b1483b7f924b0db9c21bdccf0aed0b6821da7422e4dd15d3aa122f7569"
+  },
+  {
+    "id": "0061",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到傳道書第六章第三節",
+    "target": [
+      21,
+      6,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.883125,
+    "sha256": "ff5c9eaebe7a0c6417f57be6dd9d7415c34124b32894d30a1eeed4e7ca22b0c4"
+  },
+  {
+    "id": "0062",
+    "language": "zh",
+    "kind": "reference",
+    "text": "傳道書第十二章第五節",
+    "target": [
+      21,
+      12,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.26875,
+    "sha256": "927f70fec4c93a928230071e26077d096b05c7eda5e88e9f2e778e3f28cefd4e"
+  },
+  {
+    "id": "0063",
+    "language": "zh",
+    "kind": "reference",
+    "text": "雅歌第一章第一節",
+    "target": [
+      22,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.045125,
+    "sha256": "be4a39f5a731bfa1c4b632251b21dd126150a9bd9b1c9ed9bfe4e47fc09360a6"
+  },
+  {
+    "id": "0064",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到雅歌第四章第三節",
+    "target": [
+      22,
+      4,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.76025,
+    "sha256": "d6f7460c238a27b596e19520da5303d69b25e8843daa32d37622aa54b288a53c"
+  },
+  {
+    "id": "0066",
+    "language": "zh",
+    "kind": "reference",
+    "text": "以賽亞書第一章第一節",
+    "target": [
+      23,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.5470625,
+    "sha256": "985598596a33de22e7ce6479521597d2cd29c3e64661f981ada14879c8f500f5"
+  },
+  {
+    "id": "0067",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到以賽亞書第三十三章第三節",
+    "target": [
+      23,
+      33,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.4496875,
+    "sha256": "c6922edbb1567c0c2a3fa9c37f1f91fe421059a9e07b9408c24c224b3a4447c1"
+  },
+  {
+    "id": "0068",
+    "language": "zh",
+    "kind": "reference",
+    "text": "以賽亞書第六十六章第五節",
+    "target": [
+      23,
+      66,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.6898125,
+    "sha256": "b743a3aadce337a4520040f5ee07e9e249d4ae306b42fa520dfa3a0f4b86a7eb"
+  },
+  {
+    "id": "0069",
+    "language": "zh",
+    "kind": "reference",
+    "text": "耶利米書第一章第一節",
+    "target": [
+      24,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.415125,
+    "sha256": "7a72a6512fbfec6febe69a5053700a44aa29dbcc9103f2c3495e10d5adb4d587"
+  },
+  {
+    "id": "0071",
+    "language": "zh",
+    "kind": "reference",
+    "text": "耶利米書第五十二章第五節",
+    "target": [
+      24,
+      52,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.2416875,
+    "sha256": "200b1a80ea1e3f261752017e9be71520e4e085253989993f79bcfbcfb1b7a8ff"
+  },
+  {
+    "id": "0072",
+    "language": "zh",
+    "kind": "reference",
+    "text": "耶利米哀歌第一章第一節",
+    "target": [
+      25,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.734125,
+    "sha256": "7eac44c8b777cbd30362869d95fc0b4de77eee167bf816534a5f26a9f5e29fad"
+  },
+  {
+    "id": "0073",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到耶利米哀歌第二章第三節",
+    "target": [
+      25,
+      2,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.9178125,
+    "sha256": "bd29fedebb04d3caf0388d82b3388a6f8ff644d5828570a7cb7cd7c11508840d"
+  },
+  {
+    "id": "0074",
+    "language": "zh",
+    "kind": "reference",
+    "text": "耶利米哀歌第五章第五節",
+    "target": [
+      25,
+      5,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.4238125,
+    "sha256": "4f0e91f8bf3a68ee296d09868ab5ef7787c36d62f3cd4f48330d4535eb54d5c7"
+  },
+  {
+    "id": "0076",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到以西結書第二十四章第三節",
+    "target": [
+      26,
+      24,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.5613125,
+    "sha256": "3278e662fadf598c88c781636886e4496b7289f56b932b12ca46302f964d3183"
+  },
+  {
+    "id": "0077",
+    "language": "zh",
+    "kind": "reference",
+    "text": "以西結書第四十八章第五節",
+    "target": [
+      26,
+      48,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.368875,
+    "sha256": "3862fc91e94e16261eae75445e5c8551107a50699fe05e9652d1dc697275f24d"
+  },
+  {
+    "id": "0078",
+    "language": "zh",
+    "kind": "reference",
+    "text": "但以理書第一章第一節",
+    "target": [
+      27,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.58425,
+    "sha256": "1dd176a5e05c976ce42ab8c7a5bf48c7ee185fe606e4c9c913c3e26ce42b4051"
+  },
+  {
+    "id": "0079",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到但以理書第六章第三節",
+    "target": [
+      27,
+      6,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.021875,
+    "sha256": "b8af8950e5d7a5d110ca7078e831db8e0d5a978d4acecb2d0696ab0b491077c1"
+  },
+  {
+    "id": "0081",
+    "language": "zh",
+    "kind": "reference",
+    "text": "何西阿書第一章第一節",
+    "target": [
+      28,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.5654375,
+    "sha256": "e97af7f75334386bdab23cd85904fe159d822e5e3ed2900d7294dfdfa0c0ef8a"
+  },
+  {
+    "id": "0082",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到何西阿書第七章第三節",
+    "target": [
+      28,
+      7,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.410375,
+    "sha256": "f88f713a3579e757674a08861cdd3669eb3f0f05d6baa137a162be5a03ddec7b"
+  },
+  {
+    "id": "0083",
+    "language": "zh",
+    "kind": "reference",
+    "text": "何西阿書第十四章第五節",
+    "target": [
+      28,
+      14,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.276375,
+    "sha256": "ad220d7501c0b520f1a0dad8b2c3206243431e06cfaea6129f973d96fce91921"
+  },
+  {
+    "id": "0084",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約珥書第一章第一節",
+    "target": [
+      29,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.3044375,
+    "sha256": "b0362b42496e3667bda64a476078d0ed43195be3ad7bc494455ebb42e96b6873"
+  },
+  {
+    "id": "0086",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約珥書第三章第五節",
+    "target": [
+      29,
+      3,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.086875,
+    "sha256": "15c6f28d708c4a88a54adaedcb4f9fa35581ed4680fffc0263708e0d3753d801"
+  },
+  {
+    "id": "0087",
+    "language": "zh",
+    "kind": "reference",
+    "text": "阿摩司書第一章第一節",
+    "target": [
+      30,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.4845,
+    "sha256": "57f1d59e6df295be82bd0cd93c8ec69df51fc4226417ecad7db698926c879185"
+  },
+  {
+    "id": "0088",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到阿摩司書第四章第三節",
+    "target": [
+      30,
+      4,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.224625,
+    "sha256": "b4e62b04bd5e7fd6b4f0db7b70c656aff0901363799ddf66c24885e1aa7c2a13"
+  },
+  {
+    "id": "0089",
+    "language": "zh",
+    "kind": "reference",
+    "text": "阿摩司書第九章第五節",
+    "target": [
+      30,
+      9,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.0798125,
+    "sha256": "c35f29a19462188c743feda07adccce9309d22f1b223c657eba109667baf061c"
+  },
+  {
+    "id": "0091",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到俄巴底亞書第一章第三節",
+    "target": [
+      31,
+      1,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.1375,
+    "sha256": "0c2fbcf58163e21d685e364cd87b30da836bebfe91cfcb0103ad056651933327"
+  },
+  {
+    "id": "0092",
+    "language": "zh",
+    "kind": "reference",
+    "text": "俄巴底亞書第一章第五節",
+    "target": [
+      31,
+      1,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.3081875,
+    "sha256": "74bc6332b6cf9c8d4546c204554851349c701f483f118fe764d3da3b75c8b818"
+  },
+  {
+    "id": "0093",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約拿書第一章第一節",
+    "target": [
+      32,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.2878125,
+    "sha256": "f47448fd3b22618e7171e7a80b9d82e3617cdaf3da6b6114e98237107f0e78b1"
+  },
+  {
+    "id": "0094",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到約拿書第二章第三節",
+    "target": [
+      32,
+      2,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.9111875,
+    "sha256": "4bb7833738aa1d5afc0f667828fa0539f444cd08a41443a5158f562caffc9be8"
+  },
+  {
+    "id": "0096",
+    "language": "zh",
+    "kind": "reference",
+    "text": "彌迦書第一章第一節",
+    "target": [
+      33,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.32925,
+    "sha256": "3a7937a0d221c0c02b921adf4f6fb820a3b96ba27d7890d2c706ca102a66e3e9"
+  },
+  {
+    "id": "0097",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到彌迦書第三章第三節",
+    "target": [
+      33,
+      3,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.9640625,
+    "sha256": "161ddd3185c30df2f6f89c57f6af57ce5f78b04af332ef54de07f2b171a38f55"
+  },
+  {
+    "id": "0098",
+    "language": "zh",
+    "kind": "reference",
+    "text": "彌迦書第七章第五節",
+    "target": [
+      33,
+      7,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.041125,
+    "sha256": "4ccb21833ebcadcd292e9cebbf477c5d22d0d248196ce9ad31f5b07cf0c272b0"
+  },
+  {
+    "id": "0099",
+    "language": "zh",
+    "kind": "reference",
+    "text": "那鴻書第一章第一節",
+    "target": [
+      34,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.345625,
+    "sha256": "ddafa9d8cdf2ccae6afdf453a721abc3772bf85a32b3868e0dcbd3f194cbc290"
+  },
+  {
+    "id": "0101",
+    "language": "zh",
+    "kind": "reference",
+    "text": "那鴻書第三章第五節",
+    "target": [
+      34,
+      3,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.0103125,
+    "sha256": "b227ed9ce4e5a04f5c936e2bf1a2016a7ac999ff54309bb92beb4fea736d69a8"
+  },
+  {
+    "id": "0102",
+    "language": "zh",
+    "kind": "reference",
+    "text": "哈巴谷書第一章第一節",
+    "target": [
+      35,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.6469375,
+    "sha256": "729c28c658523f5b8a807dde699aeb08788afd657e4445f06cf4352892a94f57"
+  },
+  {
+    "id": "0103",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到哈巴谷書第一章第三節",
+    "target": [
+      35,
+      1,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.0103125,
+    "sha256": "2aa8f5ba9c0d6d9e401b953e50349033ed44c9435c7b1aa92282d119aa8b8737"
+  },
+  {
+    "id": "0104",
+    "language": "zh",
+    "kind": "reference",
+    "text": "哈巴谷書第三章第五節",
+    "target": [
+      35,
+      3,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.3723125,
+    "sha256": "77ececfa8a019a9ca716b96db1ffd2148ec7a00895f769319da3671885eb7d10"
+  },
+  {
+    "id": "0106",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到西番雅書第一章第三節",
+    "target": [
+      36,
+      1,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.213,
+    "sha256": "a25f840a3d9fb2bed816f72206ce33106a222abaabbe9a66734bd3a732cd7a07"
+  },
+  {
+    "id": "0107",
+    "language": "zh",
+    "kind": "reference",
+    "text": "西番雅書第三章第五節",
+    "target": [
+      36,
+      3,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.2764375,
+    "sha256": "7f4abf446574b11254f14883c834919121d733513eec390025cf3eb5c37483f7"
+  },
+  {
+    "id": "0108",
+    "language": "zh",
+    "kind": "reference",
+    "text": "哈該書第一章第一節",
+    "target": [
+      37,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.3915625,
+    "sha256": "d69e4d997f822729f5b09e538a509adb1d5ce75359c02d60f46b278282e0b559"
+  },
+  {
+    "id": "0109",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到哈該書第一章第三節",
+    "target": [
+      37,
+      1,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.790625,
+    "sha256": "e5a054c8f14fb5e55e154c3f1f34a83a93938c732e92102e5d18fdfeb3015c72"
+  },
+  {
+    "id": "0111",
+    "language": "zh",
+    "kind": "reference",
+    "text": "撒迦利亞書第一章第一節",
+    "target": [
+      38,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.75025,
+    "sha256": "df0fc470cd2b3cb597fc6b1fff0862a7b584de15efcc6cb55a7cfd60e3e242ac"
+  },
+  {
+    "id": "0112",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到撒迦利亞書第七章第三節",
+    "target": [
+      38,
+      7,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.44525,
+    "sha256": "a9675af7986662fdd16d53a409a570d3438550c096ff808c05b92284d5844a7d"
+  },
+  {
+    "id": "0113",
+    "language": "zh",
+    "kind": "reference",
+    "text": "撒迦利亞書第十四章第五節",
+    "target": [
+      38,
+      14,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.4265,
+    "sha256": "2f44877455435789d2d5df67c678c66d5793a73ac813dc7e5a81e144ca09f8e0"
+  },
+  {
+    "id": "0114",
+    "language": "zh",
+    "kind": "reference",
+    "text": "瑪拉基書第一章第一節",
+    "target": [
+      39,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.53825,
+    "sha256": "cb01ecb289e9378d245ffbe9b41465d25ec79148a2c95d7bf03b5a639cac201e"
+  },
+  {
+    "id": "0116",
+    "language": "zh",
+    "kind": "reference",
+    "text": "瑪拉基書第四章第五節",
+    "target": [
+      39,
+      4,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.3081875,
+    "sha256": "eb565d2941d1a6be62a3e1b442567e50ad639d74060be5ba3be5b41c311f4990"
+  },
+  {
+    "id": "0117",
+    "language": "zh",
+    "kind": "reference",
+    "text": "馬太福音第一章第一節",
+    "target": [
+      40,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.4264375,
+    "sha256": "b3dd9aa57835280764525713952c1f3b5e78ce9c02030530bcc791337ba74793"
+  },
+  {
+    "id": "0118",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到馬太福音第十四章第三節",
+    "target": [
+      40,
+      14,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.410375,
+    "sha256": "ad923d68aab993ab2c839e1cdf1ea73440b81a5b986ef6399d966509f1f49bd7"
+  },
+  {
+    "id": "0119",
+    "language": "zh",
+    "kind": "reference",
+    "text": "馬太福音第二十八章第五節",
+    "target": [
+      40,
+      28,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.2414375,
+    "sha256": "a013964347db0baa2de1c7635197d244d19483d61290a0b7c1b46f71595c3c29"
+  },
+  {
+    "id": "0121",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到馬可福音第八章第三節",
+    "target": [
+      41,
+      8,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.9871875,
+    "sha256": "e450ed9aac13af7eb54febf7f12db497412615a364f0921d23eb1479570e7e89"
+  },
+  {
+    "id": "0122",
+    "language": "zh",
+    "kind": "reference",
+    "text": "馬可福音第十六章第五節",
+    "target": [
+      41,
+      16,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.5055625,
+    "sha256": "603c5b522746e33872e3ad14dead46344aa08f98a08a5a4ce23dba561ea3e887"
+  },
+  {
+    "id": "0123",
+    "language": "zh",
+    "kind": "reference",
+    "text": "路加福音第一章第一節",
+    "target": [
+      42,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.4728125,
+    "sha256": "c1a484a76faa6b7cc803d65997c3b505eaf2c35d0b9eda384d1ba6d2cb04085f"
+  },
+  {
+    "id": "0124",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到路加福音第十二章第三節",
+    "target": [
+      42,
+      12,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.3175,
+    "sha256": "9fec91880ffe0ebf48e1f437236097441a5cf12454c86aae0c3e8ace176d85f8"
+  },
+  {
+    "id": "0126",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約翰福音第一章第一節",
+    "target": [
+      43,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.6875,
+    "sha256": "1f2f17a823c3d3d36e17dc84b088396be6c4616dda1c8eb381e0ff37cbb94e52"
+  },
+  {
+    "id": "0127",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到約翰福音第十章第三節",
+    "target": [
+      43,
+      10,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.99875,
+    "sha256": "ed1650ede77d8ec4d139bf13fb4182ea9ac9781ea658c309d38f4888b8e37b32"
+  },
+  {
+    "id": "0128",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約翰福音第二十一章第五節",
+    "target": [
+      43,
+      21,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.748625,
+    "sha256": "fd5a7b79cb1499324a722a08cf6bb689badb213fe9fb2191489cb5d20e8864bf"
+  },
+  {
+    "id": "0129",
+    "language": "zh",
+    "kind": "reference",
+    "text": "使徒行傳第一章第一節",
+    "target": [
+      44,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.7156875,
+    "sha256": "57a5d531f94c28602c9fea611c743b71c8eba98b70c403a17775378589d4048f"
+  },
+  {
+    "id": "0131",
+    "language": "zh",
+    "kind": "reference",
+    "text": "使徒行傳第二十八章第五節",
+    "target": [
+      44,
+      28,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.4613125,
+    "sha256": "305d686de09a8c855a1d6f9192a9f28c2ab30383a57c53c949a458b800fb527a"
+  },
+  {
+    "id": "0132",
+    "language": "zh",
+    "kind": "reference",
+    "text": "羅馬書第一章第一節",
+    "target": [
+      45,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.3629375,
+    "sha256": "0c3f3f7e402e333df70ec9cbd7b5ac22edf2766fdf63bcf32417dc09bf95ef04"
+  },
+  {
+    "id": "0133",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到羅馬書第八章第三節",
+    "target": [
+      45,
+      8,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.7790625,
+    "sha256": "e0fa5bcdff5812ace884ccf7c9cf78e0b4629d7302c1a232bc1842d9f9c251dd"
+  },
+  {
+    "id": "0134",
+    "language": "zh",
+    "kind": "reference",
+    "text": "羅馬書第十六章第五節",
+    "target": [
+      45,
+      16,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.3310625,
+    "sha256": "55f18a9c84b8222af6aa22ef27b155a5b076f4ad5a8d013cc469d853c99710a1"
+  },
+  {
+    "id": "0136",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到哥林多前書第八章第三節",
+    "target": [
+      46,
+      8,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.410375,
+    "sha256": "d8c09cee017d1157fec1cce47d1192afe8639183f7a831a9b66df5ace378e9db"
+  },
+  {
+    "id": "0137",
+    "language": "zh",
+    "kind": "reference",
+    "text": "哥林多前書第十六章第五節",
+    "target": [
+      46,
+      16,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.4323125,
+    "sha256": "18c16f7e9bfd9191fd6d0e01bc4e339cf4d0694accd3c60d6343d1916256628d"
+  },
+  {
+    "id": "0138",
+    "language": "zh",
+    "kind": "reference",
+    "text": "哥林多後書第一章第一節",
+    "target": [
+      47,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.777375,
+    "sha256": "3cb20f58a3d3255710e5576921b1e5bbf08129b9ea6ff41da45974d4d50754ed"
+  },
+  {
+    "id": "0139",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到哥林多後書第六章第三節",
+    "target": [
+      47,
+      6,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.2415625,
+    "sha256": "27c6667c791543cfcea062073d6da7537aad06d05746cf143dc7fad99a89ce98"
+  },
+  {
+    "id": "0141",
+    "language": "zh",
+    "kind": "reference",
+    "text": "加拉太書第一章第一節",
+    "target": [
+      48,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.581625,
+    "sha256": "b68540ba7729a60c2bdea21dd22b32a9103c188f14f79dd24c108def5163f5c7"
+  },
+  {
+    "id": "0142",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到加拉太書第三章第三節",
+    "target": [
+      48,
+      3,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.2710625,
+    "sha256": "eccabe91e0f4445c08aa4922ffc2c2335dbce66388ff6a387324d2ffa1f72948"
+  },
+  {
+    "id": "0143",
+    "language": "zh",
+    "kind": "reference",
+    "text": "加拉太書第六章第五節",
+    "target": [
+      48,
+      6,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.120125,
+    "sha256": "8563983e54e215f247726d3fd3ee38ec00d55b40a7c122b5d6c66f45a876079d"
+  },
+  {
+    "id": "0144",
+    "language": "zh",
+    "kind": "reference",
+    "text": "以弗所書第一章第一節",
+    "target": [
+      49,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.6166875,
+    "sha256": "132b106cdb11744c69ec1c85d8379e21103fc1b3c884ac8f6af7eee04743cf19"
+  },
+  {
+    "id": "0146",
+    "language": "zh",
+    "kind": "reference",
+    "text": "以弗所書第六章第五節",
+    "target": [
+      49,
+      6,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.3183125,
+    "sha256": "37f7675cd960d77938e3540ea2f6532007870f5462afbf02251884a826922758"
+  },
+  {
+    "id": "0147",
+    "language": "zh",
+    "kind": "reference",
+    "text": "腓立比書第一章第一節",
+    "target": [
+      50,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.553875,
+    "sha256": "7c7b51c9ca3fc58e20d608bd0998462fe45a426802d8d6c6b717721347c53d60"
+  },
+  {
+    "id": "0148",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到腓立比書第二章第三節",
+    "target": [
+      50,
+      2,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.13175,
+    "sha256": "da1fa98d71a54fc687d85bc381804352be1a8cce5a7ee3f916a6acbaf2b20a54"
+  },
+  {
+    "id": "0149",
+    "language": "zh",
+    "kind": "reference",
+    "text": "腓立比書第四章第五節",
+    "target": [
+      50,
+      4,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.1260625,
+    "sha256": "c4e6a983044402836aef4a4d1ad7597e0df70f1a39b9adf97ba1df5c978b2930"
+  },
+  {
+    "id": "0151",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到歌羅西書第二章第三節",
+    "target": [
+      51,
+      2,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.021875,
+    "sha256": "921654dd7dda3a17b5a29ac81c7556d811ae2b2473e299909f1686a94300cb81"
+  },
+  {
+    "id": "0152",
+    "language": "zh",
+    "kind": "reference",
+    "text": "歌羅西書第四章第五節",
+    "target": [
+      51,
+      4,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.2833125,
+    "sha256": "f4da79abbd896bceee6509388ce92a8f204669092360933252c15e0da5d500c4"
+  },
+  {
+    "id": "0153",
+    "language": "zh",
+    "kind": "reference",
+    "text": "帖撒羅尼迦前書第一章第一節",
+    "target": [
+      52,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 3.21775,
+    "sha256": "81bce11a27532f9771670b36b41490252c1a9a2daf8e8a3011cdc57401714e4f"
+  },
+  {
+    "id": "0154",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到帖撒羅尼迦前書第二章第三節",
+    "target": [
+      52,
+      2,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 4.014125,
+    "sha256": "30ce9c51cd7d016f9d8ded26510ec6337bbec663bf0f15b7b77b9592dc0c6355"
+  },
+  {
+    "id": "0156",
+    "language": "zh",
+    "kind": "reference",
+    "text": "帖撒羅尼迦後書第一章第一節",
+    "target": [
+      53,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 3.3699375,
+    "sha256": "2096168dfb58490347bf5e517adb7b5c489be71358580deff17129f6e2cf3e35"
+  },
+  {
+    "id": "0157",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到帖撒羅尼迦後書第一章第三節",
+    "target": [
+      53,
+      1,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.623125,
+    "sha256": "dce4eba0a57919f988b47dff5bae3107837d12b96677ecbc2ec3d86f33886e42"
+  },
+  {
+    "id": "0158",
+    "language": "zh",
+    "kind": "reference",
+    "text": "帖撒羅尼迦後書第三章第五節",
+    "target": [
+      53,
+      3,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.99025,
+    "sha256": "447cfa71e300b83d6e6ffc3d9ec96d1c59af6981bd4852169f37777431153f65"
+  },
+  {
+    "id": "0159",
+    "language": "zh",
+    "kind": "reference",
+    "text": "提摩太前書第一章第一節",
+    "target": [
+      54,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.8130625,
+    "sha256": "8459e1283c426f9677bbb3317ab35573ad3852d16e240918148013178d45300d"
+  },
+  {
+    "id": "0161",
+    "language": "zh",
+    "kind": "reference",
+    "text": "提摩太前書第六章第五節",
+    "target": [
+      54,
+      6,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.3053125,
+    "sha256": "1a3b8f8e57cdac3c615c531f3827b5a7fdd629465fb88bede6a587bf6b481e8b"
+  },
+  {
+    "id": "0162",
+    "language": "zh",
+    "kind": "reference",
+    "text": "提摩太後書第一章第一節",
+    "target": [
+      55,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.952,
+    "sha256": "667ec360e1734ead25def1d110c07e3367907ac70c38850f97d889536f6212fb"
+  },
+  {
+    "id": "0163",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到提摩太後書第二章第三節",
+    "target": [
+      55,
+      2,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.23,
+    "sha256": "d11a4845bd8b3a62369a3d88c27a5e95b9b57c9b2207d25e0d62c7e8e727e802"
+  },
+  {
+    "id": "0164",
+    "language": "zh",
+    "kind": "reference",
+    "text": "提摩太後書第四章第五節",
+    "target": [
+      55,
+      4,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.5955,
+    "sha256": "5a6c1167df676ea3d6e62337a20c5bc9e1194e978b3bba5593875d14d2cc8a41"
+  },
+  {
+    "id": "0166",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到提多書第一章第三節",
+    "target": [
+      56,
+      1,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.8995625,
+    "sha256": "e7efb72b54939a399fcc8bd5643055830bfc1d1be24f1c1f2389d7acceaf749b"
+  },
+  {
+    "id": "0167",
+    "language": "zh",
+    "kind": "reference",
+    "text": "提多書第三章第五節",
+    "target": [
+      56,
+      3,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.01625,
+    "sha256": "7b3f19bedf7a67572c4b67b6eede5d2745befd2df4a222336c2401842f8b0e27"
+  },
+  {
+    "id": "0168",
+    "language": "zh",
+    "kind": "reference",
+    "text": "腓利門書第一章第一節",
+    "target": [
+      57,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.693875,
+    "sha256": "ed8dbb67274ae350a695f5f128c03a34045a34712a408a9034abc575fb32bc84"
+  },
+  {
+    "id": "0169",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到腓利門書第一章第三節",
+    "target": [
+      57,
+      1,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.045,
+    "sha256": "5ca85e97a029da864027ae8d040048005080d4d2ed619753e30ded475f01c010"
+  },
+  {
+    "id": "0171",
+    "language": "zh",
+    "kind": "reference",
+    "text": "希伯來書第一章第一節",
+    "target": [
+      58,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.6233125,
+    "sha256": "4ea07c58b689c05f4e698d308cd04f0958e12ab25853423c93afbb9a95529104"
+  },
+  {
+    "id": "0172",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到希伯來書第六章第三節",
+    "target": [
+      58,
+      6,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.2595,
+    "sha256": "48a51c44804090b0c676763c93cd6a64d74426d6e53660e1dbeae2d2e148313b"
+  },
+  {
+    "id": "0173",
+    "language": "zh",
+    "kind": "reference",
+    "text": "希伯來書第十三章第五節",
+    "target": [
+      58,
+      13,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.3805,
+    "sha256": "e24c13b53cb5dc05eaf78638c401856840ce2a0e4bc5ac30bb7ad55778fe4942"
+  },
+  {
+    "id": "0174",
+    "language": "zh",
+    "kind": "reference",
+    "text": "雅各書第一章第一節",
+    "target": [
+      59,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.26975,
+    "sha256": "345db5dc084ad3b9e7375c99cefe0bef5bda54ccc3b8028eb5b4a109482ff692"
+  },
+  {
+    "id": "0176",
+    "language": "zh",
+    "kind": "reference",
+    "text": "雅各書第五章第五節",
+    "target": [
+      59,
+      5,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 1.994375,
+    "sha256": "570c07c5008ba3ad28a2885f7684565a4dde46a91764932406faf5f625f61438"
+  },
+  {
+    "id": "0177",
+    "language": "zh",
+    "kind": "reference",
+    "text": "彼得前書第一章第一節",
+    "target": [
+      60,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.5124375,
+    "sha256": "12d3e64e517c6a7dc7f92bc895032abe11ecc0c029539a6fc9f4856b1beffdfc"
+  },
+  {
+    "id": "0178",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到彼得前書第二章第三節",
+    "target": [
+      60,
+      2,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.13175,
+    "sha256": "4f51c6f144cbb472212c5ea55394b2beb6289f583db08486b5bcebd892ea309b"
+  },
+  {
+    "id": "0179",
+    "language": "zh",
+    "kind": "reference",
+    "text": "彼得前書第五章第五節",
+    "target": [
+      60,
+      5,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.039375,
+    "sha256": "56a6389e66ba319fd25db3f5a3d9bdd649f61ee3a1df26f049df8839aab4aca0"
+  },
+  {
+    "id": "0181",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到彼得後書第一章第三節",
+    "target": [
+      61,
+      1,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.975625,
+    "sha256": "79c1b50f6a07f3e1106c8864a9dc6ee1ca9e8a9f8e94487615b74bdaa9dd381b"
+  },
+  {
+    "id": "0182",
+    "language": "zh",
+    "kind": "reference",
+    "text": "彼得後書第三章第五節",
+    "target": [
+      61,
+      3,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.29475,
+    "sha256": "65c4953742e94260432205eebf22fc81c9e1a4804ae2e21a3dc4ca33b89fc242"
+  },
+  {
+    "id": "0183",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約翰一書第一章第一節",
+    "target": [
+      62,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.5190625,
+    "sha256": "10db0e7ada2b3bd7bab92f6f54364536f9533a4c263a3fbf0506ded0fe7fb13a"
+  },
+  {
+    "id": "0184",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到約翰一書第二章第三節",
+    "target": [
+      62,
+      2,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.143375,
+    "sha256": "f1520fcc21a2952290f9bbbe3533e9dbc7abce1a2885004f8643f497e1b01241"
+  },
+  {
+    "id": "0186",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約翰二書第一章第一節",
+    "target": [
+      63,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.583,
+    "sha256": "5f95747e27f641c5ca29457a3110c1dc536bbe9dc720f92865eb15308fd09cfd"
+  },
+  {
+    "id": "0187",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到約翰二書第一章第三節",
+    "target": [
+      63,
+      1,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.975625,
+    "sha256": "ec9dcf2bdc1747e64b160dad072934a78cf8ea856bf9920fcaf55869e6a32f5d"
+  },
+  {
+    "id": "0188",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約翰二書第一章第五節",
+    "target": [
+      63,
+      1,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.2958125,
+    "sha256": "d47172bb48301132f4665a1d2bd3a395258591bcf88deca1b6fbb6d70a71969c"
+  },
+  {
+    "id": "0189",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約翰三書第一章第一節",
+    "target": [
+      64,
+      1,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.64625,
+    "sha256": "e079335b6eb2d0b1e113e43a1f43fd6f4b385da0ed6ead669ac979172235042f"
+  },
+  {
+    "id": "0191",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約翰三書第一章第五節",
+    "target": [
+      64,
+      1,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.1721875,
+    "sha256": "6e764dc6b96c70951e3d479fe0ceaff74b4665c303d03d5fb2f4ddb7be74f750"
+  },
+  {
+    "id": "0192",
+    "language": "zh",
+    "kind": "reference",
+    "text": "猶大書第一章第一節",
+    "target": [
+      65,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.3161875,
+    "sha256": "1914c8ea4027a4326d0a5a5e7896e5a4170e07c54f6e28d420c1cfb721a6ea34"
+  },
+  {
+    "id": "0193",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到猶大書第一章第三節",
+    "target": [
+      65,
+      1,
+      3
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.8253125,
+    "sha256": "8b579b0c324ea651116e33c84180a3c1a845d9eb8afeef89bab0af7906da2704"
+  },
+  {
+    "id": "0194",
+    "language": "zh",
+    "kind": "reference",
+    "text": "猶大書第一章第五節",
+    "target": [
+      65,
+      1,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 1.9943125,
+    "sha256": "f864404984153537419bcd48de9523e42621311a3626146c24c8709700ac007e"
+  },
+  {
+    "id": "0196",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到啟示錄第十一章第三節",
+    "target": [
+      66,
+      11,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.213,
+    "sha256": "351e9a26ceae8651a425d1fe8ea6c8aa6290d55055c136fc13eac4a6f880871e"
+  },
+  {
+    "id": "0197",
+    "language": "zh",
+    "kind": "reference",
+    "text": "啟示錄第二十二章第五節",
+    "target": [
+      66,
+      22,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.0853125,
+    "sha256": "040aa213dd1d4052e011d2aca399ae51eb609c114a522de4985be6195db93156"
+  },
+  {
+    "id": "0198",
+    "language": "zh",
+    "kind": "reference",
+    "text": "詩篇第一百零一章第一節",
+    "target": [
+      19,
+      101,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.7695,
+    "sha256": "7b123a17770732026194339a05d5ae34d4987108f5dccdcce23d9dd8109b7edd"
+  },
+  {
+    "id": "0199",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約翰二書第一章第五節",
+    "target": [
+      63,
+      1,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.206875,
+    "sha256": "68a4ade48e048ea902a5bde34861948bf5420adf3968329a628272c89c8393a5"
+  },
+  {
+    "id": "0201",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "不可露你弟兄妻子的下體；這本是你弟兄的下體。",
+    "target": [
+      3,
+      18,
+      16
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 4.813375,
+    "sha256": "ae518de41b49fac8cc06910d3c7f2b4096f38832cbd063607fdb9c3d1c9c8237"
+  },
+  {
+    "id": "0202",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "耶和華又使你和你一切弟兄－利未的子孫－一同親近他，這豈爲小事？你們還要求祭司的職任嗎？",
+    "target": [
+      4,
+      16,
+      10
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 8.7960625,
+    "sha256": "1fb30c6343071b4b3a88ebbe59c4822a4f7584124b6733d3509291a27f9ef472"
+  },
+  {
+    "id": "0203",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "耶和華啊，求你不要向我止住你的慈悲！ 願你的慈愛和誠實常常保佑我！",
+    "target": [
+      19,
+      40,
+      11
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 5.86075,
+    "sha256": "7cc814f24a583a4f472440148a02480f35d7487b283574d0820f47996bd9d355"
+  },
+  {
+    "id": "0204",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "「人若引誘沒有受聘的處女，與她行淫，他總要交出聘禮，娶她爲妻。",
+    "target": [
+      2,
+      22,
+      16
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 7.552875,
+    "sha256": "ab8c19bf1f5df0e5a98ee562753a2f02b634ce9c5242e2ae410f54817791d61d"
+  },
+  {
+    "id": "0206",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "約瑟和他的弟兄，並那一代的人，都死了。",
+    "target": [
+      2,
+      1,
+      6
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 3.81675,
+    "sha256": "ec10e9bdb23bb66a2ab2e7da04b672b63dd572ba449ec4bc412c121d1723a1e7"
+  },
+  {
+    "id": "0207",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "不可都去！你們這壯年人去事奉耶和華吧，因爲這是你們所求的。」於是把他們從法老面前攆出去。",
+    "target": [
+      2,
+      10,
+      11
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 9.9586875,
+    "sha256": "566bfa22f98999a38cc0189ce1117e4f9df601791004cb2d724f18fc9672dc89"
+  },
+  {
+    "id": "0208",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "他們說：「主啊，要我們的眼睛能看見！」",
+    "target": [
+      40,
+      20,
+      33
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 3.869,
+    "sha256": "4e2cace255366aeee5f0e40e4f695ddca57f8b41acb81a861b0109344635737b"
+  },
+  {
+    "id": "0209",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "押尼珥對約押說：「讓少年人起來，在我們面前戲耍吧！」約押說：「可以。」",
+    "target": [
+      10,
+      2,
+      14
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 6.5429375,
+    "sha256": "70dd252da06de61e6d83e0f63c66c3e2759e3496b24762d54ca74c8a7ba9bdf9"
+  },
+  {
+    "id": "0211",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "王與七個謀士既然差你去，照你手中 神的律法書察問猶大和耶路撒冷的景況；",
+    "target": [
+      15,
+      7,
+      14
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 6.4386875,
+    "sha256": "63a97cce1fd00a5e6fd0ee156b58eafd97bc9df16f50bc842046b2d7f7572011"
+  },
+  {
+    "id": "0212",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "利未人，按着他們的各族被數的：屬革順的，有革順族；屬哥轄的，有哥轄族；屬米拉利的，有米拉利族。",
+    "target": [
+      4,
+      26,
+      57
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 9.923625,
+    "sha256": "4b6999db9e37181b9f5c085a3fad70a20bad25874d8f3066aa0859bdd8e90fe5"
+  },
+  {
+    "id": "0213",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "我上了山，要領受兩塊石版，就是耶和華與你們立約的版。那時我在山上住了四十晝夜，沒有喫飯，也沒有喝水。",
+    "target": [
+      5,
+      9,
+      9
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 11.16775,
+    "sha256": "b715f3a7e08535f62cf4f2b60655486deb178dcf2258392cb50bc0ef713d3446"
+  },
+  {
+    "id": "0214",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "我在他面前吐露我的苦情， 陳說我的患難。",
+    "target": [
+      19,
+      142,
+      2
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 4.30325,
+    "sha256": "606895fd6e7b94aceba2c95cd93d8a517bb7b0f5ba1a095b8a1bedbeb1004dce"
+  },
+  {
+    "id": "0216",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "照着天上樣式做的物件必須用這些祭物去潔淨；但那天上的本物自然當用更美的祭物去潔淨。",
+    "target": [
+      58,
+      9,
+      23
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 9.795375,
+    "sha256": "66ee89c7baf4f224b2434c3dfb0d28d24bd060489284fbdc23d208b1f7a14b88"
+  },
+  {
+    "id": "0217",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "你們蒙了重生，不是由於能壞的種子，乃是由於不能壞的種子，是藉着 神活潑常存的道。",
+    "target": [
+      60,
+      1,
+      23
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 7.4099375,
+    "sha256": "c0ece7be4bf38c267b723a79693e40cab51ec95f58f39141091cd1b96438310a"
+  },
+  {
+    "id": "0218",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "我親愛的弟兄們，這是你們所知道的。但你們各人要快快地聽，慢慢地說，慢慢地動怒，",
+    "target": [
+      59,
+      1,
+      19
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 7.623875,
+    "sha256": "b304407d5cb10e8c48da53200eca8aee653015b9863a5452e11447c769637aae"
+  },
+  {
+    "id": "0219",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "耶和華起來辯論， 站着審判衆民。",
+    "target": [
+      23,
+      3,
+      13
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 3.386375,
+    "sha256": "e4e1fdb3fc0077a4867b22914751c608c5d954d4f9c2401a37b8e3165d26f515"
+  },
+  {
+    "id": "0221",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "現在，起來過撒烈溪！於是我們過了撒烈溪。",
+    "target": [
+      5,
+      2,
+      13
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 3.9876875,
+    "sha256": "3d58fed61da2fff6c395f27378af647880aa60628255f949daaf3ac23cdb36dc"
+  },
+  {
+    "id": "0222",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "那時，我必罰辦一切苦待你的人， 又拯救你瘸腿的，聚集你被趕出的。 那些在全地受羞辱的， 我必使他們得稱讚，有名聲。",
+    "target": [
+      36,
+      3,
+      19
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 12.9285625,
+    "sha256": "38d6b3c7bccc11f38df82a25a3afc323513d64087456d772bc5ac4af27e269ae"
+  },
+  {
+    "id": "0223",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "耶和華 神就用那人身上所取的肋骨造成一個女人，領她到那人跟前。",
+    "target": [
+      1,
+      2,
+      22
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 5.9995,
+    "sha256": "b65c1dc77cea245ac7838aa77970f02d3fb8e8ed87d5a55f832b4124abb45ed3"
+  },
+  {
+    "id": "0224",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "這一切，我眼都見過； 我耳都聽過，而且明白。",
+    "target": [
+      18,
+      13,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 4.412625,
+    "sha256": "06140248340d22b42d60eff296103a80370f817d18d501aecdea90fe3272953f"
+  },
+  {
+    "id": "0226",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "磚牆塌了，我們卻要鑿石頭建築； 桑樹砍了，我們卻要換香柏樹。",
+    "target": [
+      23,
+      9,
+      10
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 6.70925,
+    "sha256": "a0b85c1c2c297f2795175f840feaf0bbb550d191101b57d77e2fd598cb7f2bb5"
+  },
+  {
+    "id": "0227",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "求你側耳而聽， 快快救我！ 作我堅固的磐石， 拯救我的保障！",
+    "target": [
+      19,
+      31,
+      2
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 5.473125,
+    "sha256": "7d3aae3e51c7e262d2b0083c4f1ba6a3f743a97fda2c8d9c975d71befe32672c"
+  },
+  {
+    "id": "0228",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "摩西就照耶和華所吩咐的把以色列人頭生的都數點了。",
+    "target": [
+      4,
+      3,
+      42
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 5.614625,
+    "sha256": "99aa404a973906b601b3c01217aecb3f1a96878c3ec35da97f3626b455d5ec4b"
+  },
+  {
+    "id": "0229",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "到那日，雅各的榮耀必至枵薄； 他肥胖的身體必漸瘦弱。",
+    "target": [
+      23,
+      17,
+      4
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 5.10325,
+    "sha256": "18de2c8fcae244007d312ad3f9e7670a2ff1a117f9851b8924636d55d177abe8"
+  },
+  {
+    "id": "0231",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "耶和華的靈降在耶弗他身上，他就經過基列和瑪拿西，來到基列的米斯巴，又從米斯巴來到亞捫人那裏。",
+    "target": [
+      7,
+      11,
+      29
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 9.83825,
+    "sha256": "82334ea9318ed7cbf1fe5e802aa277e56b7e38259d4d24ab363b1f9f77a7e2f4"
+  },
+  {
+    "id": "0232",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "正如主藉着從創世以來聖先知的口所說的話，",
+    "target": [
+      42,
+      1,
+      68
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 4.4454375,
+    "sha256": "54d759967d9e77380b0f108f64db6119c4fde839b3f22755e0fd5fd1fc60a860"
+  },
+  {
+    "id": "0233",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "若有人用金、銀、寶石、草木、禾秸在這根基上建造，",
+    "target": [
+      46,
+      3,
+      12
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 3.9991875,
+    "sha256": "fbda7f3d018ff644f8b3f882c49485079e15eb1c51e03039dec151128db2b85b"
+  },
+  {
+    "id": "0234",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "我揀選利未人代替以色列人中一切頭生的。",
+    "target": [
+      4,
+      8,
+      18
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 4.578625,
+    "sha256": "c40048d685fa92c2330fde43cc3ed0b22b954960001ecb18435800276c8d36a4"
+  },
+  {
+    "id": "0236",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "屬示法提雅的子孫有米迦勒的兒子西巴第雅，同着他有男丁八十；",
+    "target": [
+      15,
+      8,
+      8
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 5.663625,
+    "sha256": "810a2c80ddc5b777885e229abae3fc2b08d3f0d6afe4c5ee737f544c3f4d126c"
+  },
+  {
+    "id": "0237",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "我聽見掌管衆水的天使說： 昔在、今在的聖者啊， 你這樣判斷是公義的；",
+    "target": [
+      66,
+      16,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 7.2365,
+    "sha256": "3daf0c23a7aa0906e24f4e8d5a19fc0a56bd78e41ce0d67470ff2b2c5d0ec673"
+  },
+  {
+    "id": "0238",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "示巴女王一切所要所求的，所羅門王都送給她，另外照自己的厚意饋送她。於是女王和她臣僕轉回本國去了。",
+    "target": [
+      11,
+      10,
+      13
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 10.94475,
+    "sha256": "da7585acc588cb79a1bc68320081a3fa6996e111dedccdf491f9cc0066e5882a"
+  },
+  {
+    "id": "0239",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "於是捉住那城內的長老，用野地的荊條和枳棘責打 疏割人；",
+    "target": [
+      7,
+      8,
+      16
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 4.40375,
+    "sha256": "9274c9ee05f28941e4beaf8cedc3001ef3b3ee58b738c6593586dffc4126bdf1"
+  },
+  {
+    "id": "0241",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "他們四圍的人就拿銀器、金子、財物、牲畜、珍寶幫助他們 ，另外還有甘心獻的禮物。",
+    "target": [
+      15,
+      1,
+      6
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 7.173125,
+    "sha256": "51df0661cc89a5f7b83e3a7fd5d5971087c90b66e1747ad767f0e223a34971dc"
+  },
+  {
+    "id": "0242",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "亞基帕對保羅說：「你想少微一勸，便叫我作基督徒啊 ！」",
+    "target": [
+      44,
+      26,
+      28
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 4.89675,
+    "sha256": "31f114aab1d2580f203a54f58061cba5c2806c65adb0be540f5efe53772a9130"
+  },
+  {
+    "id": "0243",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "拉結的使女闢拉所生的是但、拿弗他利。",
+    "target": [
+      1,
+      35,
+      25
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 3.825625,
+    "sha256": "f4b22d0331f9f893e54e9bd05099bacda2efb46dec0aed498c0914f04fbaa418"
+  },
+  {
+    "id": "0244",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "凡與我們一同站在耶和華－我們 神面前的，並今日不在我們這裏的人，我也與他們立這約，起這誓。",
+    "target": [
+      5,
+      29,
+      13
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 9.232625,
+    "sha256": "d2328da63127c41a82fc039bce0697869ff00fe3660183b713b119faa98a5f07"
+  },
+  {
+    "id": "0246",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "所羅門王就指着耶和華起誓說：「亞多尼雅這話是自己送命，不然，願 神重重地降罰與我。",
+    "target": [
+      11,
+      2,
+      23
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 9.687875,
+    "sha256": "a8220a37130930d49189ed07b004931f625758e7ba0589f55e39ba020ecd5ec8"
+  },
+  {
+    "id": "0247",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "又把他們的牲畜交給冰雹， 把他們的羣畜交給閃電。",
+    "target": [
+      19,
+      78,
+      48
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 4.542625,
+    "sha256": "892fa500b10d87981c815ed6b96b8c89ce9f56053fe19f17f0363bdb4bc95057"
+  },
+  {
+    "id": "0248",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "但願耶和華賜你聰明智慧，好治理以色列國，遵行耶和華－你 神的律法。",
+    "target": [
+      13,
+      22,
+      12
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 6.315375,
+    "sha256": "b93422642b68e92ea6b53e8e2049fb0d400298b20848973f6b077cdace1b7bbb"
+  },
+  {
+    "id": "0249",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "大祭司以利亞實的孫子、耶何耶大的一個兒子是和倫人蔘巴拉的女婿，我就從我這裏把他趕出去。",
+    "target": [
+      16,
+      13,
+      28
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 8.8831875,
+    "sha256": "8d830c903df515f3cb8b2406a3b3798c6881497aaf1b4d20ced8feae2556065e"
+  },
+  {
+    "id": "0251",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "義人所結的果子就是生命樹； 有智慧的，必能得人。",
+    "target": [
+      20,
+      11,
+      30
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 4.10325,
+    "sha256": "c8ff2da40603d79202e7165ce0fc3a46422614961ab642eb6e0513e17f95c7b8"
+  },
+  {
+    "id": "0252",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "在地的山頂上，五穀必然茂盛 ； 所結的谷實要響動，如黎巴嫩的樹林； 城裏的人要發旺，如地上的草。",
+    "target": [
+      19,
+      72,
+      16
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 10.9536875,
+    "sha256": "b5c645e85522d51c26d00ea9361330fc41e55ee2ce4d87f0892c6979b8ed8f13"
+  },
+  {
+    "id": "0253",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "耶路撒冷的荒場啊， 要發起歡聲，一同歌唱； 因爲耶和華安慰了他的百姓， 救贖了耶路撒冷。",
+    "target": [
+      23,
+      52,
+      9
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 8.54325,
+    "sha256": "265b538e289f388ea6d46d13e8c7b1bc79756609efb7c32290a36dfcec3ea049"
+  },
+  {
+    "id": "0254",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "對他說：『耶和華－希伯來人的 神打發我來見你，說：容我的百姓去，好在曠野事奉我。到如今你還是不聽。",
+    "target": [
+      2,
+      7,
+      16
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 9.6829375,
+    "sha256": "98e52b4d49b2bc57d49e550001fbc0711fe84e2b1c705a00f5c954d35d193fa9"
+  },
+  {
+    "id": "0256",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "他們看見以色列的 神，他腳下彷彿有平鋪的藍寶石，如同天色明淨。",
+    "target": [
+      2,
+      24,
+      10
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 6.8875625,
+    "sha256": "cd54fd47946b554d99332a7302632f3c3debf2639e4f80549871b66d7650bf94"
+  },
+  {
+    "id": "0257",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "耶和華啊，求你使天下垂，親自降臨， 摸山，山就冒煙。",
+    "target": [
+      19,
+      144,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 5.2016875,
+    "sha256": "71abf3d3c6aab31ce13355c20e4a98382706a4dd0257015d81167e8a1b71d2ce"
+  },
+  {
+    "id": "0258",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "就是殺戮亞摩利王西宏， 因他的慈愛永遠長存；",
+    "target": [
+      19,
+      136,
+      19
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 5.3360625,
+    "sha256": "007938d9a689e2d0f4ae6be2453eb5336d4d8e393bb883d698084db58ce9f6d1"
+  },
+  {
+    "id": "0259",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "論利未說： 耶和華啊，你的土明和烏陵 都在你的虔誠人那裏。 你在瑪撒曾試驗他， 在米利巴水與他爭論。",
+    "target": [
+      5,
+      33,
+      8
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 9.4565,
+    "sha256": "f8b18c549ae5046650d58ea502354a5177c8f3bc2ea1738cf7a73bd55929b7df"
+  },
+  {
+    "id": "0261",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "有一個人來見耶穌，說：「夫子 ，我該做什麼善事才能得永生？」",
+    "target": [
+      40,
+      19,
+      16
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 6.670125,
+    "sha256": "d83480232a3644c940b32ccfe6d8cc0e628fb17c122548012445788ccf45a7e3"
+  },
+  {
+    "id": "0262",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "你們爲什麼屢次悖逆， 還要受責打嗎？ 你們已經滿頭疼痛， 全心發昏。",
+    "target": [
+      23,
+      1,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 6.6950625,
+    "sha256": "ff3246595fa9bc0dfd53f2721e33b4dc3c15ec88b847ecbcb0e53039aeec05e8"
+  },
+  {
+    "id": "0263",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "因爲我知道你們樂意的心，常對馬其頓人誇獎你們，說亞該亞人預備好了，已經有一年了；並且你們的熱心激動了許多人。",
+    "target": [
+      47,
+      9,
+      2
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 9.0173125,
+    "sha256": "5742340609b2cb53d5ae43e73a159f4dde5a06873917851de0f4cc056d3ef8e5"
+  },
+  {
+    "id": "0264",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "惟願這民歸我的手下，我就除掉亞比米勒。」迦勒又對亞比米勒說：「增添你的軍兵出來吧。」",
+    "target": [
+      7,
+      9,
+      29
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 9.2111875,
+    "sha256": "2b60da268f36f091440b9812c709a3959ddfa3cc8733d7ed944ef884869d446a"
+  },
+  {
+    "id": "0266",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "約翰所作的見證記在下面：猶太人從耶路撒冷差祭司和利未人到約翰那裏，問他說：「你是誰？」",
+    "target": [
+      43,
+      1,
+      19
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 9.029625,
+    "sha256": "7234565d56c2f71d75a7243927980aa9e6c432ab28d8054d6ff0bb5403b31198"
+  },
+  {
+    "id": "0267",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "所羅門的箴言： 智慧之子使父親歡樂； 愚昧之子叫母親擔憂。",
+    "target": [
+      20,
+      10,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 6.473375,
+    "sha256": "60c7c9d0a0e3dd0a37994c0a6dc3f7d201d7084dd496174353f53788b90ca769"
+  },
+  {
+    "id": "0268",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "一隻公牛犢，一隻公綿羊，一隻一歲的公羊羔作燔祭；",
+    "target": [
+      4,
+      7,
+      69
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 5.1156875,
+    "sha256": "5b1aedd25d10af56375d426a752c536fd263a44a7a013ce892fe3e3028e20c61"
+  },
+  {
+    "id": "0269",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "因此，當審判的時候、惡人必站立不住； 罪人在義人的會中也是如此。",
+    "target": [
+      19,
+      1,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 5.5023125,
+    "sha256": "025a8f3cfd48fb58090abf4d0eb54d951c45f46be039b61ec0f41a887775d3b5"
+  },
+  {
+    "id": "0271",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "其實他們是你的百姓，你的產業，是你用大能和伸出來的膀臂領出來的。』」",
+    "target": [
+      5,
+      9,
+      29
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 6.028125,
+    "sha256": "8065dc48cc28e3762b3dec28d3d6f9a4cfccb32f77b1502a8fb8a102d018566a"
+  },
+  {
+    "id": "0272",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "就跑遍那一帶地方，聽見他在何處，便將有病的人用褥子抬到那裏。",
+    "target": [
+      41,
+      6,
+      55
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 6.1169375,
+    "sha256": "47865e8ac5f35164043b45fed3452d47fed0807127692890fddc920d429a9757"
+  },
+  {
+    "id": "0273",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "他們必訪問錫安，又面向這裏，說：『來吧，你們要與耶和華聯合爲永遠不忘的約。』",
+    "target": [
+      24,
+      50,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 7.9815,
+    "sha256": "17949feab3bfdc1ee0826a5d9e4435f5c0057d3f2bef6831b41ce708f431b086"
+  },
+  {
+    "id": "0274",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "犯罪的人，當在衆人面前責備他，叫其餘的人也可以懼怕。",
+    "target": [
+      54,
+      5,
+      20
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 5.86575,
+    "sha256": "5354c6ad56ff3657f1ae4a2c1a8dcf2623fca3409d535ca3ced71f24f962223a"
+  },
+  {
+    "id": "0276",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "若不聽從，反倒悖逆， 必被刀劍吞滅。 這是耶和華親口說的。",
+    "target": [
+      23,
+      1,
+      20
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 6.8445625,
+    "sha256": "a22704ab0f4ab17043daa7271ea222486038efd6d6aa22d5d99000802fd083a9"
+  },
+  {
+    "id": "0277",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "邪惡像火焚燒， 燒滅荊棘和蒺藜， 在稠密的樹林中着起來， 就成爲煙柱，旋轉上騰。",
+    "target": [
+      23,
+      9,
+      18
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 8.2426875,
+    "sha256": "afd4c5e1624b2f4ef6cf13210472576debbe64950db118a33fa5d348c7cf06ad"
+  },
+  {
+    "id": "0278",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "所以你要發預言對他們說，主耶和華如此說：『我的民哪，我必開你們的墳墓，使你們從墳墓中出來，領你們進入以色列地。",
+    "target": [
+      26,
+      37,
+      12
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 10.933,
+    "sha256": "19cd2aea7d3340cb2d5c7a36bebeb7c0fec22990841607ebeafa8149e0425f4c"
+  },
+  {
+    "id": "0279",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "所以，不要憂慮說，喫什麼？喝什麼？穿什麼？",
+    "target": [
+      40,
+      6,
+      31
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 5.640875,
+    "sha256": "634107e48a80877a4668c5cd669fa398de56e605b3106f8e24174ae48d0a0a6f"
+  },
+  {
+    "id": "0281",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "他應允了，就找機會，要趁衆人不在跟前的時候把耶穌交給他們。",
+    "target": [
+      42,
+      22,
+      6
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 5.25375,
+    "sha256": "a10de5fc978078d655ed708beb851f640a26dc6525f33756fabd33f40266c4b7"
+  },
+  {
+    "id": "0282",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "就是天使犯了罪， 神也沒有寬容，曾把他們丟在地獄，交在黑暗坑中，等候審判。",
+    "target": [
+      61,
+      2,
+      4
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 9.353125,
+    "sha256": "ffe51e227e8ce3d345298778d7ebe8df701ca0022bc4de3dd334fc77b691eedd"
+  },
+  {
+    "id": "0283",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "你要用歌斐木造一隻方舟，分一間一間地造，裏外抹上松香。",
+    "target": [
+      1,
+      6,
+      14
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 5.294,
+    "sha256": "9c2a7c1abca6411466b86dc05b5f663907a6508f3900e0cb7caf5d403be070b2"
+  },
+  {
+    "id": "0284",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "「你們爲什麼稱呼我『主啊，主啊』卻不遵我的話行呢？",
+    "target": [
+      42,
+      6,
+      46
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 4.0841875,
+    "sha256": "90d2fbb159e773647c94295a9ccca36922d977c5f0374bf261416134ad8d17b3"
+  },
+  {
+    "id": "0286",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "約細是以利以謝的兒子；以利以謝是約令的兒子；約令是瑪塔的兒子；瑪塔是利未的兒子；",
+    "target": [
+      42,
+      3,
+      29
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 8.018,
+    "sha256": "8735ac0d546723ef1c938ad51c37b1987a97f2e73c2293b4c76da55e2662268a"
+  },
+  {
+    "id": "0287",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "但這些國民的城，耶和華－你 神既賜你爲業，其中凡有氣息的，一個不可存留；",
+    "target": [
+      5,
+      20,
+      16
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 6.4445,
+    "sha256": "e132dba6650d5455b740427d13a6a6d81bad387ad3aae1301bcf006a11c5932f"
+  },
+  {
+    "id": "0288",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "至於年輕的寡婦，就可以辭她；因爲她們的情慾發動，違背基督的時候就想要嫁人。",
+    "target": [
+      54,
+      5,
+      11
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 8.8085625,
+    "sha256": "ff1e8d112375d1e3f678aa96d8d3a22d0a6c9eedadf214640452c3ff95d84c87"
+  },
+  {
+    "id": "0289",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "說：「你這充滿各樣詭詐奸惡，魔鬼的兒子，衆善的仇敵，你混亂主的正道還不止住嗎？",
+    "target": [
+      44,
+      13,
+      10
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": false,
+    "duration_s": 7.780125,
+    "sha256": "a98bb862f5f0165e6ce37963089a40f08d05bad1b94406ef5f07501cd5ec2b3e"
+  },
+  {
+    "id": "0291",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "官長也要對百姓宣告說：『誰建造房屋，尚未奉獻，他可以回家去，恐怕他陣亡，別人去奉獻。 誰種葡萄園，尚未用所結的果子，他可以回家去，恐怕他陣亡，別人去用。",
+    "target": [
+      5,
+      20,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": true,
+    "duration_s": 18.2834375,
+    "sha256": "8f8dfc66a57f04a0c5637a92a1a2f84950a6e97673126702aabab2104496d23d"
+  },
+  {
+    "id": "0292",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "有爭訟的事，他們應當站立判斷，要按我的典章判斷。在我一切的節期必守我的律法、條例，也必以我的安息日爲聖日。 他們不可挨近死屍沾染自己，只可爲父親、母親、兒子、女兒、弟兄，和未嫁人的姊妹沾染自己。",
+    "target": [
+      26,
+      44,
+      24
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": true,
+    "duration_s": 21.61375,
+    "sha256": "3142baff758744edfbf7b9fc8ea46a3ed2b05a20d6a83ff71a06ddaf56547297"
+  },
+  {
+    "id": "0293",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "你不要嫉妒惡人， 也不要起意與他們相處； 因爲，他們的心圖謀強暴， 他們的口談論奸惡。",
+    "target": [
+      20,
+      24,
+      1
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": true,
+    "duration_s": 7.028375,
+    "sha256": "732a824502d336382fd77222d2d006223c47f6a354cbab991254f3437215ff9b"
+  },
+  {
+    "id": "0294",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "掃羅又打發人去看大衛，說：「當連牀將他抬來，我好殺他。」 使者進去，看見牀上有神像，頭枕在山羊毛裝的枕頭上。",
+    "target": [
+      9,
+      19,
+      15
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": true,
+    "duration_s": 13.5194375,
+    "sha256": "ce2007b01e961b09c655fe5d2479662a840aaf436ba167ddacd26290f36a280a"
+  },
+  {
+    "id": "0296",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "明哲人眼前有智慧； 愚昧人眼望地極。 愚昧子使父親愁煩， 使母親憂苦。",
+    "target": [
+      20,
+      17,
+      24
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": true,
+    "duration_s": 6.8126875,
+    "sha256": "01d5651271b3fd1bb425dc47cefe7aa8aa84e6ab7a0ecb83cdeced2b235e8511"
+  },
+  {
+    "id": "0297",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "他們無論往何處去，耶和華都以災禍攻擊他們，正如耶和華所說的話，又如耶和華向他們所起的誓；他們便極其困苦。 耶和華興起士師，士師就拯救他們脫離搶奪他們人的手。",
+    "target": [
+      7,
+      2,
+      15
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": true,
+    "duration_s": 17.18525,
+    "sha256": "1197242553eaa0e8468e08dac0a9041cc3ac3761cca157f2104d72861671c2ee"
+  },
+  {
+    "id": "0298",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "亞比篩對大衛說：「現在 神將你的仇敵交在你手裏，求你容我拿槍將他刺透在地，一刺就成，不用再刺。」 大衛對亞比篩說：「不可害死他。有誰伸手害耶和華的受膏者而無罪呢？」",
+    "target": [
+      9,
+      26,
+      8
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": true,
+    "duration_s": 17.178875,
+    "sha256": "ebc491f93c007869f221e35ab130851e0b8b13fdabaf1e4696bcda816d7d134b"
+  },
+  {
+    "id": "0299",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "我栽種了，亞波羅澆灌了，惟有 神叫他生長。 可見栽種的，算不得什麼，澆灌的，也算不得什麼；只在那叫他生長的 神。",
+    "target": [
+      46,
+      3,
+      6
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "cross_verse": true,
+    "duration_s": 10.0924375,
+    "sha256": "ca06360262b8337ca04310c24753d02afbf7f0429e9dcb10d6efc17e4a77f353"
+  },
+  {
+    "id": "0601",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "John第三章第二節",
+    "target": [
+      43,
+      3,
+      2
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 1.95825,
+    "sha256": "5ec43d6c27345f8d33e11692a006f89b614ff1b851c72a8d8afdf17d0ea9baa5"
+  },
+  {
+    "id": "0602",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "哥林多前書第三章 verse three",
+    "target": [
+      46,
+      3,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.840625,
+    "sha256": "8f57b80d62c58f458d02abf20a08d4d130a9e8e9f3c7f6b99e39e669739e707f"
+  },
+  {
+    "id": "0603",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "2 John第一章第五節",
+    "target": [
+      63,
+      1,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.3341875,
+    "sha256": "62e16c8684066eab8d0a4c064710b5cfecec20609e22ba95507c28d6df4211db"
+  },
+  {
+    "id": "0604",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "詩篇第三章 verse five",
+    "target": [
+      19,
+      3,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.4926875,
+    "sha256": "821ba244e51f1791c23b9c57660db2de8f1a7894280080c4994160f711e85318"
+  },
+  {
+    "id": "0606",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "約翰福音第三章 verse seven",
+    "target": [
+      43,
+      3,
+      7
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 3.1286875,
+    "sha256": "f2b4122052beb4fc97bcecf7ae75e3ee815d438739b520d5177ca3b4a1497c36"
+  },
+  {
+    "id": "0607",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "1 Corinthians第三章第八節",
+    "target": [
+      46,
+      3,
+      8
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.6579375,
+    "sha256": "b7e9a1f3ec5d6297d48b296ae71d4ac42f462cad44abc518bfa0f98dc73cd034"
+  },
+  {
+    "id": "0608",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "約翰二書第一章 verse five",
+    "target": [
+      63,
+      1,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.539625,
+    "sha256": "e692f9aa3c58cb9c9a01fac6c3745f0e526de649f7bd7e030fb6d266ab5e4048"
+  },
+  {
+    "id": "0609",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "Psalms第三章第八節",
+    "target": [
+      19,
+      3,
+      8
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.3276875,
+    "sha256": "b6de4d61b7ac6186ddd087a0f1affe6835d83d4de3538d9f6c918df9f9ea47c1"
+  },
+  {
+    "id": "0611",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "John第三章第二節",
+    "target": [
+      43,
+      3,
+      2
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 1.8048125,
+    "sha256": "647c81318beb2ad55cd618f2e5df7303649c6e9ad362fa417fd30ba377a4101d"
+  },
+  {
+    "id": "0612",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "哥林多前書第三章 verse three",
+    "target": [
+      46,
+      3,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 3.357875,
+    "sha256": "16bf75152d6e562ef8de6a016d16ade20478ca6826798eaa9f101aa949c29881"
+  },
+  {
+    "id": "0613",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "2 John第一章第五節",
+    "target": [
+      63,
+      1,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.06825,
+    "sha256": "f69201f05a964b09b30fc7e7c56fa228886d5580e916fc6972a38394fc4cdf7d"
+  },
+  {
+    "id": "0614",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "詩篇第三章 verse five",
+    "target": [
+      19,
+      3,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.308375,
+    "sha256": "0eede535e298cd2da2b66ba37ab82e8f578995a40277493b329fab5a88680d56"
+  },
+  {
+    "id": "0616",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "約翰福音第三章 verse seven",
+    "target": [
+      43,
+      3,
+      7
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.8404375,
+    "sha256": "6dc788a6153c3c6a7f8b7058618f9057d0765312e244ce6d284760d4fe8c1a23"
+  },
+  {
+    "id": "0617",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "1 Corinthians第三章第八節",
+    "target": [
+      46,
+      3,
+      8
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.4498125,
+    "sha256": "2217ed465c3c84c286e457b561e62d0ec0a3944dc2bbf56d28f0610a009f7d91"
+  },
+  {
+    "id": "0618",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "約翰二書第一章 verse five",
+    "target": [
+      63,
+      1,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 3.0125625,
+    "sha256": "ba0f2711382dcbdb23b7d29e05329a9fe35595ccd3ca512109bde44702e557b8"
+  },
+  {
+    "id": "0619",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "Psalms第三章第八節",
+    "target": [
+      19,
+      3,
+      8
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.062375,
+    "sha256": "6a41399b20e925942700f63a89528188e8e979c2a90019402ed4c9406f8e01bf"
+  },
+  {
+    "id": "0621",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "John第三章第二節",
+    "target": [
+      43,
+      3,
+      2
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.2120625,
+    "sha256": "eaa298619a38102bc9d7992e22bb3d8344b7fa960586b9bd572ef210d3674bba"
+  },
+  {
+    "id": "0622",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "哥林多前書第三章 verse three",
+    "target": [
+      46,
+      3,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 3.059,
+    "sha256": "02d8b81eb567f494131e5bd99557e271f078fe3291af227a40baf14932c5ea17"
+  },
+  {
+    "id": "0623",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "2 John第一章第五節",
+    "target": [
+      63,
+      1,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 1.8948125,
+    "sha256": "46e48e6e87fd241eaef253e4c4d841d54acfc0c9083749e40eaf950dfceb39cd"
+  },
+  {
+    "id": "0624",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "詩篇第三章 verse five",
+    "target": [
+      19,
+      3,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.7346875,
+    "sha256": "ba3156d4748926717e47e37f82464e1cdb0fc6ee89a18c2a5ad94ae938a99686"
+  },
+  {
+    "id": "0626",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "約翰福音第三章 verse seven",
+    "target": [
+      43,
+      3,
+      7
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.6325,
+    "sha256": "4684d8dafae0feaac531e16bc018c2e1ec40a0e2e16889893b2bee1dc271ec36"
+  },
+  {
+    "id": "0627",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "1 Corinthians第三章第八節",
+    "target": [
+      46,
+      3,
+      8
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 3.0048125,
+    "sha256": "da3b16caf13c109966113d5f76ea8c33c36279589b8821f17978a0cdacf9e4d5"
+  },
+  {
+    "id": "0628",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "約翰二書第一章 verse five",
+    "target": [
+      63,
+      1,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.7359375,
+    "sha256": "b3572d3d9bf72ec22bf4f24a4b0369184746693c6f73090dbdeac3b08c2d36ce"
+  },
+  {
+    "id": "0629",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "Psalms第三章第八節",
+    "target": [
+      19,
+      3,
+      8
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 1.8973125,
+    "sha256": "087755883edb6720059786d610f44af61c4593e0c0a51fd3db761fb5ed22334a"
+  },
+  {
+    "id": "0631",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "John第三章第二節",
+    "target": [
+      43,
+      3,
+      2
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 1.95825,
+    "sha256": "5ec43d6c27345f8d33e11692a006f89b614ff1b851c72a8d8afdf17d0ea9baa5"
+  },
+  {
+    "id": "0632",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "哥林多前書第三章 verse three",
+    "target": [
+      46,
+      3,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.840625,
+    "sha256": "8f57b80d62c58f458d02abf20a08d4d130a9e8e9f3c7f6b99e39e669739e707f"
+  },
+  {
+    "id": "0633",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "2 John第一章第五節",
+    "target": [
+      63,
+      1,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.3341875,
+    "sha256": "62e16c8684066eab8d0a4c064710b5cfecec20609e22ba95507c28d6df4211db"
+  },
+  {
+    "id": "0634",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "詩篇第三章 verse five",
+    "target": [
+      19,
+      3,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.4926875,
+    "sha256": "821ba244e51f1791c23b9c57660db2de8f1a7894280080c4994160f711e85318"
+  },
+  {
+    "id": "0636",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "約翰福音第三章 verse seven",
+    "target": [
+      43,
+      3,
+      7
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 3.1286875,
+    "sha256": "f2b4122052beb4fc97bcecf7ae75e3ee815d438739b520d5177ca3b4a1497c36"
+  },
+  {
+    "id": "0637",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "1 Corinthians第三章第八節",
+    "target": [
+      46,
+      3,
+      8
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.6579375,
+    "sha256": "b7e9a1f3ec5d6297d48b296ae71d4ac42f462cad44abc518bfa0f98dc73cd034"
+  },
+  {
+    "id": "0638",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "約翰二書第一章 verse five",
+    "target": [
+      63,
+      1,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.539625,
+    "sha256": "e692f9aa3c58cb9c9a01fac6c3745f0e526de649f7bd7e030fb6d266ab5e4048"
+  },
+  {
+    "id": "0639",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "Psalms第三章第八節",
+    "target": [
+      19,
+      3,
+      8
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 2.3276875,
+    "sha256": "b6de4d61b7ac6186ddd087a0f1affe6835d83d4de3538d9f6c918df9f9ea47c1"
+  },
+  {
+    "id": "0641",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "John第三章第二節",
+    "target": [
+      43,
+      3,
+      2
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 1.8048125,
+    "sha256": "647c81318beb2ad55cd618f2e5df7303649c6e9ad362fa417fd30ba377a4101d"
+  },
+  {
+    "id": "0642",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "哥林多前書第三章 verse three",
+    "target": [
+      46,
+      3,
+      3
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 3.357875,
+    "sha256": "16bf75152d6e562ef8de6a016d16ade20478ca6826798eaa9f101aa949c29881"
+  },
+  {
+    "id": "0643",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "2 John第一章第五節",
+    "target": [
+      63,
+      1,
+      5
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.06825,
+    "sha256": "f69201f05a964b09b30fc7e7c56fa228886d5580e916fc6972a38394fc4cdf7d"
+  },
+  {
+    "id": "0644",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "詩篇第三章 verse five",
+    "target": [
+      19,
+      3,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.308375,
+    "sha256": "0eede535e298cd2da2b66ba37ab82e8f578995a40277493b329fab5a88680d56"
+  },
+  {
+    "id": "0646",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "約翰福音第三章 verse seven",
+    "target": [
+      43,
+      3,
+      7
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.8404375,
+    "sha256": "6dc788a6153c3c6a7f8b7058618f9057d0765312e244ce6d284760d4fe8c1a23"
+  },
+  {
+    "id": "0647",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "1 Corinthians第三章第八節",
+    "target": [
+      46,
+      3,
+      8
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 2.4498125,
+    "sha256": "2217ed465c3c84c286e457b561e62d0ec0a3944dc2bbf56d28f0610a009f7d91"
+  },
+  {
+    "id": "0648",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "約翰二書第一章 verse five",
+    "target": [
+      63,
+      1,
+      5
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 3.0125625,
+    "sha256": "ba0f2711382dcbdb23b7d29e05329a9fe35595ccd3ca512109bde44702e557b8"
+  },
+  {
+    "id": "0649",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "Psalms第三章第八節",
+    "target": [
+      19,
+      3,
+      8
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 2.062375,
+    "sha256": "6a41399b20e925942700f63a89528188e8e979c2a90019402ed4c9406f8e01bf"
+  },
+  {
+    "id": "0651",
+    "language": "zh",
+    "kind": "negative",
+    "text": "我們需要關心身邊的朋友，這是今天分享的重點。",
+    "target": null,
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 5.2015,
+    "sha256": "c2f4eea59bf01b8154d978554212480ac4c6cd74fa29c922423ebb2993bac45c"
+  },
+  {
+    "id": "0652",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請檢查麥克風的音量，我們要準備開始了。",
+    "target": null,
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "duration_s": 4.0605625,
+    "sha256": "0b7b096a59bea468d21b3e76d0b936ec95f396d31a63589b9feddd2a4382ea12"
+  },
+  {
+    "id": "0653",
+    "language": "zh",
+    "kind": "negative",
+    "text": "週六下午三點到四點，我們在二樓開會。",
+    "target": null,
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 195,
+    "split": "holdout",
+    "duration_s": 3.4960625,
+    "sha256": "f9665317048992f016daee15fcc308483d58a586f8d4d68be8c63a70ef62f5cf"
+  },
+  {
+    "id": "0654",
+    "language": "zh",
+    "kind": "negative",
+    "text": "現在請安靜片刻，接著我們一起禱告。",
+    "target": null,
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "holdout",
+    "duration_s": 4.115875,
+    "sha256": "f306ac2ba7be000722e9a05d20df0f121b4ca0fbe4ada5a0745fc5f7868e5608"
+  },
+  {
+    "id": "opt-neg-000",
+    "language": "zh",
+    "kind": "negative",
+    "text": "今天下午三點十六分開始開會。",
+    "target": null,
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "6648fbc7230130b37733ed62ca7e7c69ca5e03bf4294f99b7e7a7b092586b925",
+    "duration_s": 3.4219375
+  },
+  {
+    "id": "opt-neg-001",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請閱讀講義第三章第十六節。",
+    "target": null,
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "8abf7ff61bbcfc6593a20af774b0b20e589b12b54292cbf78941d018612c64ae",
+    "duration_s": 2.8879375
+  },
+  {
+    "id": "opt-neg-002",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰今天沒有來，他在三樓十六號房間。",
+    "target": null,
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "b82adc29c0dc2d65a5cc530ddfd024efa4caa800e775641cd8c7b298c7170ec4",
+    "duration_s": 4.1059375
+  },
+  {
+    "id": "opt-neg-003",
+    "language": "zh",
+    "kind": "negative",
+    "text": "我們今天談一談創世記的背景。",
+    "target": null,
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "279d8a1c5cea8a7de6a1b00bd884ad032c41d1262e27bb935ccb2384caa1a22f",
+    "duration_s": 2.9680625
+  },
+  {
+    "id": "opt-neg-004",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰福音第九十九章第一節。",
+    "target": null,
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "6aff3b5e460682abd7aeca3bdf3e28acc773a2ea9d693ff94d4a4f707935d9f3",
+    "duration_s": 2.9216875
+  },
+  {
+    "id": "opt-neg-005",
+    "language": "zh",
+    "kind": "negative",
+    "text": "創世記第一章第九百節。",
+    "target": null,
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "69bb5bee87e961c447e8969b233e8ea4f69ca26a246ba0f1ba3a9a6fd6fe2e2b",
+    "duration_s": 2.4415625
+  },
+  {
+    "id": "opt-neg-006",
+    "language": "zh",
+    "kind": "negative",
+    "text": "不要翻到約翰福音第三章第十六節。",
+    "target": null,
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "8b0bff87d214b834e4ffca41ff6532bbac7520e2915a0e3700577a05b473b3ea",
+    "duration_s": 3.6155625
+  },
+  {
+    "id": "opt-neg-007",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請先不要跳轉，約翰福音第三章第十六節只是範例。",
+    "target": null,
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "28c0f1d5dce93be33dfdc947e34beebf165355328db846ba44b3b8fa1a5b6db5",
+    "duration_s": 5.3028125
+  },
+  {
+    "id": "opt-neg-008",
+    "language": "zh",
+    "kind": "negative",
+    "text": "神愛世人。",
+    "target": null,
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "e076691a298ee8e8a005efd7ad90eb0e2c7246b83c495e80c96f1ae277c2455a",
+    "duration_s": 1.262
+  },
+  {
+    "id": "opt-neg-009",
+    "language": "zh",
+    "kind": "negative",
+    "text": "我們要彼此相愛。",
+    "target": null,
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "ba08b779c0eef8ec694bdeb74ab9c8f44511a3f180884d4c6c3a341cc7b25aba",
+    "duration_s": 1.702625
+  },
+  {
+    "id": "opt-neg-010",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請把投影片換到第三頁。",
+    "target": null,
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "7b036c4d8879f1e8765503c01e9489ffc5c03f1a91841e54b35e9fe9f914af01",
+    "duration_s": 2.5745
+  },
+  {
+    "id": "opt-neg-011",
+    "language": "zh",
+    "kind": "negative",
+    "text": "現在播放下一首詩歌。",
+    "target": null,
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "688c1da2d70af3746c23deb5d84929b9fa157c9986770648dfb30003019967bb",
+    "duration_s": 2.3183125
+  },
+  {
+    "id": "opt-neg-012",
+    "language": "zh",
+    "kind": "negative",
+    "text": "今天下午三點十六分開始開會。",
+    "target": null,
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "a5c9708f446f53152ab14ae4332d484abc2e210cde16c1405fe7e0c5d16a8104",
+    "duration_s": 3.2185625
+  },
+  {
+    "id": "opt-neg-013",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請閱讀講義第三章第十六節。",
+    "target": null,
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "901106af838a71de77307028743d56704638b9effcf588b8ebd72a2b8b3785c4",
+    "duration_s": 2.72125
+  },
+  {
+    "id": "opt-neg-014",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰今天沒有來，他在三樓十六號房間。",
+    "target": null,
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "09d5ff18935850f578a95b5a8491dedf7d46223e6edd8ccc3b3105df29fb64cc",
+    "duration_s": 3.8371875
+  },
+  {
+    "id": "opt-neg-015",
+    "language": "zh",
+    "kind": "negative",
+    "text": "我們今天談一談創世記的背景。",
+    "target": null,
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "c7b5598d8b76a998db88c2617d7ed2e45d2c1df6847537662fc371e7cff24290",
+    "duration_s": 3.02775
+  },
+  {
+    "id": "opt-neg-016",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰福音第九十九章第一節。",
+    "target": null,
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "e7ec9a9506fc95fe3fd664552eafe334c7cb96f805ee0cec439ceac2df4026d3",
+    "duration_s": 2.6925
+  },
+  {
+    "id": "opt-neg-017",
+    "language": "zh",
+    "kind": "negative",
+    "text": "創世記第一章第九百節。",
+    "target": null,
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "1c1cf35b49e225967a0543047410d08903dbfca3d8d0efef50bc77f45f87ea36",
+    "duration_s": 2.363125
+  },
+  {
+    "id": "opt-neg-018",
+    "language": "zh",
+    "kind": "negative",
+    "text": "不要翻到約翰福音第三章第十六節。",
+    "target": null,
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "b433dbab5e48d26ffe11fc69a4b85fdeb797330857c0e1d338a0230549fcef47",
+    "duration_s": 3.149375
+  },
+  {
+    "id": "opt-neg-019",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請先不要跳轉，約翰福音第三章第十六節只是範例。",
+    "target": null,
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "6b29d15d686062d45c2ef5e716c9a2ba29f92a391fea5b0208bffda3caf7a942",
+    "duration_s": 4.8025
+  },
+  {
+    "id": "opt-neg-020",
+    "language": "zh",
+    "kind": "negative",
+    "text": "神愛世人。",
+    "target": null,
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "179ad635e66cded21acee45ff70dcbaf6ccbe2729305b131438f17b9e8073efd",
+    "duration_s": 1.2705625
+  },
+  {
+    "id": "opt-neg-021",
+    "language": "zh",
+    "kind": "negative",
+    "text": "我們要彼此相愛。",
+    "target": null,
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "5c6b2b4ede0df300f744c8d9409fcab7f39825937f032ba89dddea27062e1851",
+    "duration_s": 1.7211875
+  },
+  {
+    "id": "opt-neg-022",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請把投影片換到第三頁。",
+    "target": null,
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "2fb323cc6da21370391655182f100d6d67f96f5e6286b5e3bae708255d01d42a",
+    "duration_s": 2.605625
+  },
+  {
+    "id": "opt-neg-023",
+    "language": "zh",
+    "kind": "negative",
+    "text": "現在播放下一首詩歌。",
+    "target": null,
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "split": "challenge",
+    "sha256": "916358d55f3eeb2c16df75a20d2a29e7df444f496f54dc04622761d081f4fb02",
+    "duration_s": 2.2764375
+  },
+  {
+    "id": "opt-neg-048",
+    "language": "zh",
+    "kind": "negative",
+    "text": "",
+    "target": null,
+    "voice": "silence",
+    "rate": 0,
+    "split": "challenge",
+    "sha256": "643f8a8dc8bd9c19225afffad2becfec5426180b3749cb208abdf1a6c8354efc",
+    "duration_s": 1.0
+  },
+  {
+    "id": "opt-neg-049",
+    "language": "zh",
+    "kind": "negative",
+    "text": "",
+    "target": null,
+    "voice": "silence",
+    "rate": 0,
+    "split": "challenge",
+    "sha256": "d303811b8c84619667cd0501342f84ec6cbe69f7aa3856dcf52fabda374c92b8",
+    "duration_s": 3.0
+  },
+  {
+    "id": "opt-neg-050",
+    "language": "zh",
+    "kind": "negative",
+    "text": "",
+    "target": null,
+    "voice": "silence",
+    "rate": 0,
+    "split": "challenge",
+    "sha256": "262d1f34f300560a4c82ba8127ddea9e1d72946f187fdbd3e8f70ee096077aec",
+    "duration_s": 5.0
+  },
+  {
+    "id": "opt-neg-051",
+    "language": "zh",
+    "kind": "negative",
+    "text": "",
+    "target": null,
+    "voice": "silence",
+    "rate": 0,
+    "split": "challenge",
+    "sha256": "ee7bea4232762775f8fce9b3e27e4d3948c8ac6a45a87ca769f703d6eed0b448",
+    "duration_s": 10.0
+  },
+  {
+    "id": "v2-000",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開創世記第三十七章第五節",
+    "target": [
+      1,
+      37,
+      5
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "c5255808bfdbcd635c68615536e11697de599a470b0c14f2e797a5c456889ead",
+    "duration_s": 3.50325
+  },
+  {
+    "id": "v2-001",
+    "language": "zh",
+    "kind": "reference",
+    "text": "出埃及記第二十五章第十一節",
+    "target": [
+      2,
+      25,
+      11
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "2cf197057df40885376fad180504b1a39e99b435224f2b9f98607d6417bb709a",
+    "duration_s": 2.6521875
+  },
+  {
+    "id": "v2-002",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看利未記第四章第二十七節",
+    "target": [
+      3,
+      4,
+      27
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "e47862f73f75b2371d5fe7f3fbd57ff5b81727f79b76f583b48faf6e25b72822",
+    "duration_s": 3.1898125
+  },
+  {
+    "id": "v2-003",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開民數記第三章第四十九節",
+    "target": [
+      4,
+      3,
+      49
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "23557cd857a4afd2c8af93c3c8fc93e4e0e6dc1616e2e6ebfe7de0e6fb54e637",
+    "duration_s": 3.36875
+  },
+  {
+    "id": "v2-004",
+    "language": "zh",
+    "kind": "reference",
+    "text": "申命記第十三章第十三節",
+    "target": [
+      5,
+      13,
+      13
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "44109de4c1e7fcf104bed96d335ced6d30735605191dfdabb2c7c1bff1c35e4c",
+    "duration_s": 2.7480625
+  },
+  {
+    "id": "v2-005",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看約書亞記第十三章第三十節",
+    "target": [
+      6,
+      13,
+      30
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "6d9b1bbac64c5161e30f90f3c2c46dc8c193878dfbe5be2b2584637774a00360",
+    "duration_s": 3.27625
+  },
+  {
+    "id": "v2-006",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開士師記第七章第二十節",
+    "target": [
+      7,
+      7,
+      20
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "6d5dc6fa63be3e07997cefdc7556acf2b9d6a64975f840499c1d514d70e53bf5",
+    "duration_s": 3.13175
+  },
+  {
+    "id": "v2-007",
+    "language": "zh",
+    "kind": "reference",
+    "text": "路得記第二章第二十三節",
+    "target": [
+      8,
+      2,
+      23
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "dc62da18661da922c0ad216bd9fc1a1701fd675717ba864523ea62aa92fe1a88",
+    "duration_s": 2.415
+  },
+  {
+    "id": "v2-008",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看撒母耳記上第十八章第十四節",
+    "target": [
+      9,
+      18,
+      14
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "b5bdfbc2ba7a26f64db0fed7759fd5ba1c668bd22682129919cb0c23a25d0edf",
+    "duration_s": 3.5729375
+  },
+  {
+    "id": "v2-009",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開撒母耳記下第十九章第二十九節",
+    "target": [
+      10,
+      19,
+      29
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "5ab1330ac6012c136a0fe08e7baac35beffde68a4bbda06dcdd54c29e43d13b1",
+    "duration_s": 3.73875
+  },
+  {
+    "id": "v2-010",
+    "language": "zh",
+    "kind": "reference",
+    "text": "列王紀上第十九章第十一節",
+    "target": [
+      11,
+      19,
+      11
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "842c00d72249b88c03a5f603fb70d262992aae76a9de2cb8db5b43eba21ab2f5",
+    "duration_s": 2.9561875
+  },
+  {
+    "id": "v2-011",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看列王紀下第七章第十八節",
+    "target": [
+      12,
+      7,
+      18
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "e28915ff3f4a42bfd550aed84a3bb43363840614bd6c58fb976016118fa4bef2",
+    "duration_s": 2.9178125
+  },
+  {
+    "id": "v2-012",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開歷代志上第二十二章第十七節",
+    "target": [
+      13,
+      22,
+      17
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "d5550fd94368644e6269f501e7931a92524bdd54032212716f6c58fb3bb05730",
+    "duration_s": 3.6541875
+  },
+  {
+    "id": "v2-013",
+    "language": "zh",
+    "kind": "reference",
+    "text": "歷代志下第四章第二十一節",
+    "target": [
+      14,
+      4,
+      21
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "39377799044274cfc2ec9644aebc44cb42e532f36f0e69036cf13389034bd0b4",
+    "duration_s": 2.4496875
+  },
+  {
+    "id": "v2-014",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看以斯拉記第二章第十四節",
+    "target": [
+      15,
+      2,
+      14
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "f2cbdde566cf761d26a74c3c964d9be3d9ecd25d8184006e6fe7f5fef7663a4d",
+    "duration_s": 3.0969375
+  },
+  {
+    "id": "v2-015",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開尼希米記第十一章第五節",
+    "target": [
+      16,
+      11,
+      5
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "b99bbf5ca8afbad890b2435a9c2b35fb6f87841768899a1c30aeaed280d2b32e",
+    "duration_s": 3.1259375
+  },
+  {
+    "id": "v2-016",
+    "language": "zh",
+    "kind": "reference",
+    "text": "以斯帖記第九章第一節",
+    "target": [
+      17,
+      9,
+      1
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "72319d6f0e9ca225adf4cf3cf676c6a87a69077aaf47f41d8e849fb4137642d4",
+    "duration_s": 2.4329375
+  },
+  {
+    "id": "v2-017",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看約伯記第二章第八節",
+    "target": [
+      18,
+      2,
+      8
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "5692b6ffa4c4cdd6ed9784b3e4c6182fa4c37d5d9922092736529ef1babe946b",
+    "duration_s": 2.5825
+  },
+  {
+    "id": "v2-018",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開詩篇第九十二章第十節",
+    "target": [
+      19,
+      92,
+      10
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "efb874daf06b6282595e41351ff0717206abb526c06b6f5784c789811d057cbf",
+    "duration_s": 3.1665625
+  },
+  {
+    "id": "v2-019",
+    "language": "zh",
+    "kind": "reference",
+    "text": "箴言第十八章第三節",
+    "target": [
+      20,
+      18,
+      3
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "6d77b5187ac460296f3190e0fbc05918f5822dac98017d8577108990b9158f18",
+    "duration_s": 2.1895
+  },
+  {
+    "id": "v2-020",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看傳道書第七章第二十一節",
+    "target": [
+      21,
+      7,
+      21
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "483dfb51dc896c0f2577b8a4feabed29c7d020f2fb7ab0370059d46526789805",
+    "duration_s": 3.120125
+  },
+  {
+    "id": "v2-021",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開雅歌第二章第八節",
+    "target": [
+      22,
+      2,
+      8
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "9d82c159f92d1da75299067292cc70d1213eef1c09d869fcd65e0078f9640e09",
+    "duration_s": 2.605625
+  },
+  {
+    "id": "v2-022",
+    "language": "zh",
+    "kind": "reference",
+    "text": "以賽亞書第六十五章第二十節",
+    "target": [
+      23,
+      65,
+      20
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "9e86c21674be1a5e02f86acc57f1a9cef7cd8eb1b27159ece774e85ecba3e1eb",
+    "duration_s": 3.0250625
+  },
+  {
+    "id": "v2-023",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看耶利米書第七章第十九節",
+    "target": [
+      24,
+      7,
+      19
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "b6e2e5af2b154fef4c631e21ebe4b2ad1caeb04b9fbddd1270364c5cfb8c7401",
+    "duration_s": 2.975625
+  },
+  {
+    "id": "v2-024",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開耶利米哀歌第五章第十七節",
+    "target": [
+      25,
+      5,
+      17
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "a7cc144e6220065709f6d3a1746d5fc2a866c0335160911fa56ca40c0d9077db",
+    "duration_s": 3.50325
+  },
+  {
+    "id": "v2-025",
+    "language": "zh",
+    "kind": "reference",
+    "text": "以西結書第三十五章第七節",
+    "target": [
+      26,
+      35,
+      7
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "63668cf292b3646708d79cb51cc58190b228d1e2ddc8d674ae02cb6b3df93291",
+    "duration_s": 2.71575
+  },
+  {
+    "id": "v2-026",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看但以理書第二章第十九節",
+    "target": [
+      27,
+      2,
+      19
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "7a4c566d159b3e7ed46a7328345d3abaf10e605b9a464487c6c4afc93da32678",
+    "duration_s": 3.0969375
+  },
+  {
+    "id": "v2-027",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開何西阿書第十一章第十一節",
+    "target": [
+      28,
+      11,
+      11
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "504dd132068cb1fcfb647071507b09f346370494c0e1a727a2f0fc0058495e80",
+    "duration_s": 3.345625
+  },
+  {
+    "id": "v2-028",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約珥書第三章第六節",
+    "target": [
+      29,
+      3,
+      6
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "8d14b81a4fdc4e10c5d8499daed6963e4f149239c773781756cff19f07da1f4d",
+    "duration_s": 2.27125
+  },
+  {
+    "id": "v2-029",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看阿摩司書第五章第十一節",
+    "target": [
+      30,
+      5,
+      11
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "cfc017dc97632f2cc23f9da10cd83e967fd99b3680053167bb94491468e340de",
+    "duration_s": 2.86
+  },
+  {
+    "id": "v2-030",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開俄巴底亞書第一章第十六節",
+    "target": [
+      31,
+      1,
+      16
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "9e256974190c48062408846706aacf4ec0a0930fff82bdcff42ffc46d3d18dd1",
+    "duration_s": 3.5265
+  },
+  {
+    "id": "v2-031",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約拿書第一章第十六節",
+    "target": [
+      32,
+      1,
+      16
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "9e00ac5d2a989dd4c182f97d4d9230178b19eb31fcd6eaf59b5158a5ecd82060",
+    "duration_s": 2.23
+  },
+  {
+    "id": "v2-032",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看彌迦書第二章第十一節",
+    "target": [
+      33,
+      2,
+      11
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "2078388c7d31f65f7d73d5bfc38553e2318d7fb9526bfed3df242dcaa2286e2f",
+    "duration_s": 2.8415
+  },
+  {
+    "id": "v2-033",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開那鴻書第三章第十二節",
+    "target": [
+      34,
+      3,
+      12
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "79477a8dc4c2e26fc4a309e7acfd307e6d959a9e7926f5f067e6350dce463e80",
+    "duration_s": 3.114375
+  },
+  {
+    "id": "v2-034",
+    "language": "zh",
+    "kind": "reference",
+    "text": "哈巴谷書第二章第十七節",
+    "target": [
+      35,
+      2,
+      17
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "b72d3542a5d2214547332dd6ed0a66398d6e603e0b7ebd2efce46c4dfcc8d4ab",
+    "duration_s": 2.6725625
+  },
+  {
+    "id": "v2-035",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看西番雅書第二章第三節",
+    "target": [
+      36,
+      2,
+      3
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "29aea2dd45a73b66cfb2bc19d0853bb9c60f71db5c4137fede14d37b9f5543cc",
+    "duration_s": 2.99875
+  },
+  {
+    "id": "v2-036",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開哈該書第二章第三節",
+    "target": [
+      37,
+      2,
+      3
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "f850477ff4aeb83525baa5d15d66133680513a52dc40c84707a2f31d1f39efd5",
+    "duration_s": 3.0853125
+  },
+  {
+    "id": "v2-037",
+    "language": "zh",
+    "kind": "reference",
+    "text": "撒迦利亞書第四章第八節",
+    "target": [
+      38,
+      4,
+      8
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "0822e802c92830143e0f8ae2f35eb31a5e95599ec48af84f907da2854b202be9",
+    "duration_s": 2.519
+  },
+  {
+    "id": "v2-038",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看瑪拉基書第四章第三節",
+    "target": [
+      39,
+      4,
+      3
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "86e1424bfb955ada9050fe15bf6a4d14610a16f817d94a320922df63cd5a55d8",
+    "duration_s": 2.957625
+  },
+  {
+    "id": "v2-039",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開馬太福音第九章第一節",
+    "target": [
+      40,
+      9,
+      1
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "bc2e753f168be87485ac3a86c60cd92b315a4eb3d999bb8094725016c77217ad",
+    "duration_s": 3.021875
+  },
+  {
+    "id": "v2-040",
+    "language": "zh",
+    "kind": "reference",
+    "text": "馬可福音第九章第二十節",
+    "target": [
+      41,
+      9,
+      20
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "5c271d6a7d33c63f0a26c67fc75f615b0d95b0be13a18633fd2daec031c5f779",
+    "duration_s": 2.6666875
+  },
+  {
+    "id": "v2-041",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看路加福音第三章第十一節",
+    "target": [
+      42,
+      3,
+      11
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "a36bf3997d773d558f94b66331a6a40d1633b4b3ffc28d4f076c007833afaa9b",
+    "duration_s": 2.99875
+  },
+  {
+    "id": "v2-042",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開約翰福音第九章第十節",
+    "target": [
+      43,
+      9,
+      10
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "df34d67e66f25314ff2ad5eb14914ef004eee56283600ec2fc430437e192d43c",
+    "duration_s": 3.2710625
+  },
+  {
+    "id": "v2-043",
+    "language": "zh",
+    "kind": "reference",
+    "text": "使徒行傳第二十五章第九節",
+    "target": [
+      44,
+      25,
+      9
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "83b1d38a9c891569134d8664d04690ebac78c6a73c5a3b92a15b61ce98da0f5b",
+    "duration_s": 2.750375
+  },
+  {
+    "id": "v2-044",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看羅馬書第十五章第三十二節",
+    "target": [
+      45,
+      15,
+      32
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "a624b14a37e7e235866c841bc8df330fc42b89863c38979c67f2324a3304cf42",
+    "duration_s": 3.422
+  },
+  {
+    "id": "v2-045",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開哥林多前書第十六章第三節",
+    "target": [
+      46,
+      16,
+      3
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "6d58b808c62cb40829edbe8751e2a090d5b273836b046d1e1b64dd01d0619f51",
+    "duration_s": 3.55375
+  },
+  {
+    "id": "v2-046",
+    "language": "zh",
+    "kind": "reference",
+    "text": "哥林多後書第十三章第二節",
+    "target": [
+      47,
+      13,
+      2
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "7bdf6d469ab3f4258fb4c18d0ddf73f55ca32c96b901b980e2bf9a2eb1a89e83",
+    "duration_s": 2.8965
+  },
+  {
+    "id": "v2-047",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看加拉太書第一章第二十節",
+    "target": [
+      48,
+      1,
+      20
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "aa146b347327026290c2a9f003aef157bd60fd70947951ea778edee9d3899ab4",
+    "duration_s": 2.975625
+  },
+  {
+    "id": "v2-048",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開以弗所書第二章第八節",
+    "target": [
+      49,
+      2,
+      8
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "711dccdf4afbc28990126d55ed5fca81bb77c60f881f71a13d4e654f69912379",
+    "duration_s": 3.1781875
+  },
+  {
+    "id": "v2-049",
+    "language": "zh",
+    "kind": "reference",
+    "text": "腓立比書第二章第六節",
+    "target": [
+      50,
+      2,
+      6
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "e0423cb97819c9555a82cdddfc7f83433b8c54886b354d382725b03a73b30e72",
+    "duration_s": 2.2995
+  },
+  {
+    "id": "v2-050",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看歌羅西書第三章第二十五節",
+    "target": [
+      51,
+      3,
+      25
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "c31f34d919fa729ce2cf39d08f68a1159c917c80002939344d0b778bf16b1c57",
+    "duration_s": 3.4916875
+  },
+  {
+    "id": "v2-051",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開帖撒羅尼迦前書第二章第六節",
+    "target": [
+      52,
+      2,
+      6
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "0e1d1f9318cac2b7eb68eb9ff19483da7cb5f39a09b245e8527a0c7e63fc7b86",
+    "duration_s": 3.6809375
+  },
+  {
+    "id": "v2-052",
+    "language": "zh",
+    "kind": "reference",
+    "text": "帖撒羅尼迦後書第三章第十五節",
+    "target": [
+      53,
+      3,
+      15
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "e8dc80d6d9359b8093a276b1fbecc89ef2e80efe1ad07f2e71f398e927d07e32",
+    "duration_s": 3.40675
+  },
+  {
+    "id": "v2-053",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看提摩太前書第四章第二節",
+    "target": [
+      54,
+      4,
+      2
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "a10d17e42ec3d3ebd0cddaba0cdc92ab13228a497bb048e4c5a20dbea732cc38",
+    "duration_s": 3.0796875
+  },
+  {
+    "id": "v2-054",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開提摩太後書第三章第十一節",
+    "target": [
+      55,
+      3,
+      11
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "a7d791bf17be7b3128202b3be33ba769b34ed698d5a6d04ca4d2a48882828414",
+    "duration_s": 3.7703125
+  },
+  {
+    "id": "v2-055",
+    "language": "zh",
+    "kind": "reference",
+    "text": "提多書第三章第三節",
+    "target": [
+      56,
+      3,
+      3
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "d22ebd36f9a73a4510907045b1c78ee7510591e3aad390ec48dea8cdc5767b0e",
+    "duration_s": 2.3053125
+  },
+  {
+    "id": "v2-056",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看腓利門書第一章第十八節",
+    "target": [
+      57,
+      1,
+      18
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "6984bd0246b771a5a584103266fe599372dd330eb87299dc080347b7137114b4",
+    "duration_s": 3.120125
+  },
+  {
+    "id": "v2-057",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開希伯來書第十二章第十四節",
+    "target": [
+      58,
+      12,
+      14
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "3ce82126ce0118dc682b6e74795c508ca77c151e7da362f22149eac79bda3eab",
+    "duration_s": 3.46125
+  },
+  {
+    "id": "v2-058",
+    "language": "zh",
+    "kind": "reference",
+    "text": "雅各書第五章第十節",
+    "target": [
+      59,
+      5,
+      10
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "d707052cbf8a7efb84a554b2d871221a624945e7ec97ad150b7aee87785772f6",
+    "duration_s": 2.1321875
+  },
+  {
+    "id": "v2-059",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看彼得前書第四章第十四節",
+    "target": [
+      60,
+      4,
+      14
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "5c0f30aae5668634fc5ae5fb22acb0333d8ec18da61780751b2ed6c0977231e3",
+    "duration_s": 3.068125
+  },
+  {
+    "id": "v2-060",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開彼得後書第二章第十四節",
+    "target": [
+      61,
+      2,
+      14
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "c3a2e3cd2588a7fe45e747b39e86872c9eb87ebcc02bc6bed391b0f044563f62",
+    "duration_s": 3.34075
+  },
+  {
+    "id": "v2-061",
+    "language": "zh",
+    "kind": "reference",
+    "text": "約翰一書第五章第十六節",
+    "target": [
+      62,
+      5,
+      16
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "a48f10c22933f210b65e3258b8ae00c0ade5c07275f913110118850e9966266b",
+    "duration_s": 2.438125
+  },
+  {
+    "id": "v2-062",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看約翰二書第一章第八節",
+    "target": [
+      63,
+      1,
+      8
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "9fcd840dc7a12c8aff3c362da0d55adecfdd69bb871acb99e4d002995b2386b2",
+    "duration_s": 2.946
+  },
+  {
+    "id": "v2-063",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開約翰三書第一章第十二節",
+    "target": [
+      64,
+      1,
+      12
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "ffb1d783edfd20e2a4f33c1feb70afb3fdbe0115fc23ede616d94802a3d4d8c8",
+    "duration_s": 3.27625
+  },
+  {
+    "id": "v2-064",
+    "language": "zh",
+    "kind": "reference",
+    "text": "猶大書第一章第九節",
+    "target": [
+      65,
+      1,
+      9
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "c030281f9f446986568702f0766b6f42f2775f7a027db0284eb7a422a61fc36c",
+    "duration_s": 2.12075
+  },
+  {
+    "id": "v2-065",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看啟示錄第十三章第三節",
+    "target": [
+      66,
+      13,
+      3
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "8fb977379041074f76e37c76c2c8a374172fdd0cf41290221f1b0aaf2cf1e6d9",
+    "duration_s": 2.8946875
+  },
+  {
+    "id": "v2-066",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "衆民聽說王爲他兒子憂愁，他們得勝的歡樂卻變成悲哀。",
+    "target": [
+      10,
+      19,
+      2
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "dc68fc5d8be4eb165c73bcd5ab4fc73ef06722ee99b7438b74f0c4857f3843c6",
+    "duration_s": 5.525
+  },
+  {
+    "id": "v2-067",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "但現在的天地還是憑着那命存留，直留到不敬虔之人受審判遭沉淪的日子，用火焚燒。",
+    "target": [
+      61,
+      3,
+      7
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "206181b735552cf73063026779b30e43bcf97c24c14efbc6eb53d58a20d3aa47",
+    "duration_s": 7.7741875
+  },
+  {
+    "id": "v2-068",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "人子來了，也喫也喝，人又說他是貪食好酒的人，是稅吏和罪人的朋友。但智慧之子總以智慧爲是 。」",
+    "target": [
+      40,
+      11,
+      19
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "92696102722e72cfc2d9262c450f66cf7b9feb4e79eb1f8d95f105ddc8dd9da9",
+    "duration_s": 9.783625
+  },
+  {
+    "id": "v2-069",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "你們既聽見真理的道，就是那叫你們得救的福音，也信了基督，既然信他，就受了所應許的聖靈爲印記。",
+    "target": [
+      49,
+      1,
+      13
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "f83f60b99bcc5dcf9783675c4fe65ac87e7008bfdddf8b4b623870f6e99d1fad",
+    "duration_s": 8.8205625
+  },
+  {
+    "id": "v2-070",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "我還有末了的話：你們要靠着主，倚賴他的大能大力作剛強的人。",
+    "target": [
+      49,
+      6,
+      8
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "c45b41610d159aa954928b487da32cb3f930a6702bf07aae27998965b6b6fd9e",
+    "duration_s": 6.0911875
+  },
+  {
+    "id": "v2-071",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "在他離俗歸耶和華的一切日子，不可挨近死屍。",
+    "target": [
+      4,
+      6,
+      6
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "bea4ca2800b50984a762f5a228d14a741d9774ee43ef3ecf42bd2b5785b692c4",
+    "duration_s": 4.132
+  },
+  {
+    "id": "v2-072",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "呂便聽見了，要救他脫離他們的手，說：「我們不可害他的性命」；",
+    "target": [
+      1,
+      37,
+      21
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "e9cb5c346d0d441dab8544bf9f27e3d167e7d3d7f3153db87ea90b785a627313",
+    "duration_s": 6.1376875
+  },
+  {
+    "id": "v2-073",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "但如今，在這裏再沒有可傳的地方，而且這好幾年，我切心想望到西班牙去的時候，可以到你們那裏，",
+    "target": [
+      45,
+      15,
+      23
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "7d2c2d524f276338eea67f6649a2e7278c20f269e162e0a304ebcfcdbbd31263",
+    "duration_s": 8.1210625
+  },
+  {
+    "id": "v2-074",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "你向黎巴嫩行強暴與殘害 驚嚇野獸的事必遮蓋你； 因你殺人流血， 向國內的城並城中一切居民施行強暴。",
+    "target": [
+      35,
+      2,
+      17
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "88f564afccab3c79402a6760083533a9e1149b02f632414f88f05a0f8e2ff73d",
+    "duration_s": 10.4683125
+  },
+  {
+    "id": "v2-075",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "從除掉常獻的燔祭，並設立那行毀壞可憎之物的時候，必有一千二百九十日。",
+    "target": [
+      27,
+      12,
+      11
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "ffcd558fff59d08c6fbb8257ceaf2f8da554729d13ff13b5e0434351268b9cc6",
+    "duration_s": 6.8145
+  },
+  {
+    "id": "v2-076",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "到了每西亞的邊界，他們想要往庇推尼去，耶穌的靈卻不許。",
+    "target": [
+      44,
+      16,
+      7
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "aaf00a19c4a9e5d840a5e9026384c186f9450a42473b7f0e65a9101aefa1bedb",
+    "duration_s": 5.6983125
+  },
+  {
+    "id": "v2-077",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "你要趕緊給律師西納和亞波羅送行，叫他們沒有缺乏。",
+    "target": [
+      56,
+      3,
+      13
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "b74059094cbaf00333f6b0858c4f4b2c9dae22f243458d8893934b107dbbb141",
+    "duration_s": 4.8199375
+  },
+  {
+    "id": "v2-078",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "「你們這假冒爲善的文士和法利賽人有禍了！因爲你們走遍洋海陸地，勾引一個人入教，既入了教，卻使他作地獄之子，比你們還加倍。",
+    "target": [
+      40,
+      23,
+      14
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "e749d6b2c3eedd79c9b9d2eb5289ef680fc5c6ee2ac410bbb7daec6c3d4d6ee7",
+    "duration_s": 12.639375
+  },
+  {
+    "id": "v2-079",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "我必顯爲大，顯爲聖，在多國人的眼前顯現；他們就知道我是耶和華。」",
+    "target": [
+      26,
+      38,
+      23
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "15e7d02e28e28eca1b241403132b281e3fdf5542ff3d25358ca52d8b1a798cd5",
+    "duration_s": 6.034
+  },
+  {
+    "id": "v2-080",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "耶和華必伸手攻擊北方，毀滅亞述， 使尼尼微荒涼，又幹旱如曠野。",
+    "target": [
+      36,
+      2,
+      12
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "7327a596dd6365eb8d47d5932e364a74d28331aa800d3f9d649d4e3dd07ca0d2",
+    "duration_s": 7.1823125
+  },
+  {
+    "id": "v2-081",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "我命乾旱臨到地土、山岡、五穀、新酒，和油，並地上的出產、人民、牲畜，以及人手一切勞碌得來的。」",
+    "target": [
+      37,
+      1,
+      11
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "ffc7d32689415e9169f5ede347e4cccbbc9cf9e99e13f69b334b0097f2b3813d",
+    "duration_s": 8.924625
+  },
+  {
+    "id": "v2-082",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "出於 神的，必聽 神的話；你們不聽，因爲你們不是出於 神。」",
+    "target": [
+      43,
+      8,
+      47
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "f0a48cc0ec08c593af205ef988d5038427632282243326c92545b98b97e98ef8",
+    "duration_s": 5.68075
+  },
+  {
+    "id": "v2-083",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "在外有刀劍；在內有瘟疫、饑荒。在田野的，必遭刀劍而死；在城中的，必有饑荒、瘟疫吞滅他。",
+    "target": [
+      26,
+      7,
+      15
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "a516f81574131a18c71014d2087be252a22800925c5ac269bcec9af1f27b49db",
+    "duration_s": 8.5835625
+  },
+  {
+    "id": "v2-084",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "和妹子亞腓亞並與我們同當兵的亞基布，以及在你家的教會。",
+    "target": [
+      57,
+      1,
+      2
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "0df00b8ed641afca810326c9a086a00dc7c9f574ef9a47f924fa6357df497dd0",
+    "duration_s": 5.3776875
+  },
+  {
+    "id": "v2-085",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "如今就當辦成這事。既有願做的心，也當照你們所有的去辦成。",
+    "target": [
+      47,
+      8,
+      11
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "00979cfe52863c945728e652ee675ae15717dd826f3b73283f1db03ca147eb6c",
+    "duration_s": 5.9185625
+  },
+  {
+    "id": "v2-086",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "Matthew第一章 verse two",
+    "target": [
+      40,
+      1,
+      2
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "253df30fa1e9dea173ed165f1d6c2a31a18b2b971043f8d81766f7e69a3b3ac7",
+    "duration_s": 2.249375
+  },
+  {
+    "id": "v2-087",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "約翰福音第一章 verse three",
+    "target": [
+      43,
+      1,
+      3
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "7f465e3eda86512f83f264536c7038d2bc3fd8231fab9609cf7e829af5141ef6",
+    "duration_s": 2.6346875
+  },
+  {
+    "id": "v2-088",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "1 Corinthians第一章 verse four",
+    "target": [
+      46,
+      1,
+      4
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "1f618e460166690e1a5d878679b298625a0432980b5c5fb3ac61c81e7b70c498",
+    "duration_s": 3.0261875
+  },
+  {
+    "id": "v2-089",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "哥林多後書第一章 verse five",
+    "target": [
+      47,
+      1,
+      5
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "43fd46f9a916ea5b9a15e0d681aaaa2e568985eec70abe51eae984170b28a771",
+    "duration_s": 2.837
+  },
+  {
+    "id": "v2-090",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "1 John第一章 verse two",
+    "target": [
+      62,
+      1,
+      2
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "fef1a5d886bbc6991b420c9eaa5ed6dc4066d762eebc1378ad770a1a6eb19b5b",
+    "duration_s": 2.3528125
+  },
+  {
+    "id": "v2-091",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "約翰二書第一章 verse three",
+    "target": [
+      63,
+      1,
+      3
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "e23211c764b0651f667dee6464439dc3eea440fba6f90740b4a89c8eac5faf32",
+    "duration_s": 2.623125
+  },
+  {
+    "id": "v2-092",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "Matthew第一章 verse four",
+    "target": [
+      40,
+      1,
+      4
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "19f3bd73d6543ba7cdf3dbd0097f062597d1e1bc416a5a8eb7482279702d506b",
+    "duration_s": 2.3306875
+  },
+  {
+    "id": "v2-093",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "約翰福音第一章 verse five",
+    "target": [
+      43,
+      1,
+      5
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "d5454cdc27db04d817bd85ce976310d0d2b99e13259080b03c51e1da6809bf8c",
+    "duration_s": 2.6346875
+  },
+  {
+    "id": "v2-094",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "1 Corinthians第一章 verse two",
+    "target": [
+      46,
+      1,
+      2
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "94c33acd866975e25228673ae8ad310fa8afadfcfd0fff92f4cf9d79abd1975f",
+    "duration_s": 2.9449375
+  },
+  {
+    "id": "v2-095",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "哥林多後書第一章 verse three",
+    "target": [
+      47,
+      1,
+      3
+    ],
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "888275cf216c3bd151c110409ca8a19f5f33dfc6c71899fbe5f18af88aff825d",
+    "duration_s": 2.8485625
+  },
+  {
+    "id": "v2-096",
+    "language": "zh",
+    "kind": "mixed",
+    "text": "1 John第一章 verse four",
+    "target": [
+      62,
+      1,
+      4
+    ],
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "e086589740265c7763c083f8c9e6b069f29c64c9e7df454869da82d3d9725b67",
+    "duration_s": 2.4340625
+  },
+  {
+    "id": "v2-110",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請不要切換到創世記第一章第一節。",
+    "target": null,
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "7f5a1cb613598c476a4996e03324cd317565286eced06313b0c04e00357394bc",
+    "duration_s": 3.4568125
+  },
+  {
+    "id": "v2-111",
+    "language": "zh",
+    "kind": "negative",
+    "text": "不要定位到詩篇第二十三篇第一節。",
+    "target": null,
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "dd9384ee17a88b7e4e3b862f546bd4a5ba0634588114dfc8c70436b5ac1b41e4",
+    "duration_s": 3.2071875
+  },
+  {
+    "id": "v2-112",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰福音第三章第十六節只是範例。",
+    "target": null,
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "42f0b71f2f211273dade739196cfe19b38a2dab9b61fbec59fd7cc82d7b772b1",
+    "duration_s": 3.571875
+  },
+  {
+    "id": "v2-113",
+    "language": "zh",
+    "kind": "negative",
+    "text": "這不是約翰福音第三章第十六節。",
+    "target": null,
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "1719e51b00cb1dc85a16ec3d82d39eb884d662849a549bc4450939dec758a899",
+    "duration_s": 2.906375
+  },
+  {
+    "id": "v2-114",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰在二樓第三間教室。",
+    "target": null,
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "073fd5fb9e25c335e20d88343b41acb369224809864a07ed6087fd2d85381035",
+    "duration_s": 2.4573125
+  },
+  {
+    "id": "v2-115",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請翻開課本第三章第十六節。",
+    "target": null,
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "bb4552e8d26dcead39d73e2281220ad51c359cd7559571577bba561d4f4af7a3",
+    "duration_s": 2.9640625
+  },
+  {
+    "id": "v2-116",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰福音第三章。",
+    "target": null,
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "b52804ebd03df1c08b09d0a5bec14708dcd65451c2476fd040789394bb901ab1",
+    "duration_s": 1.8535625
+  },
+  {
+    "id": "v2-117",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰福音第三章第九百節。",
+    "target": null,
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "217d0ecee8742b97efce99515f15feef0a14531b8e1751372b37227b4fa860cb",
+    "duration_s": 2.5653125
+  },
+  {
+    "id": "v2-118",
+    "language": "zh",
+    "kind": "negative",
+    "text": "不是詩篇第二十三篇第一節，是約翰福音第三章第十六節。",
+    "target": null,
+    "split": "fresh",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "834db7e7e80e162ec3b677fd983cc03d0801991cef3f37d66c01a400de8bbf54",
+    "duration_s": 5.972375
+  },
+  {
+    "id": "v2-119",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請顯示第三張投影片。",
+    "target": null,
+    "split": "fresh",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "76b8f3bdf499a2019edf0dfb4cbef6f577b993c10f0aada34e9a44533ef956dd",
+    "duration_s": 2.513125
+  },
+  {
+    "id": "ref3-000",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到創世記第十九章第三節",
+    "target": [
+      1,
+      19,
+      3
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "14eee65eb394750a1e009fc3fea7d76b954e41ee9357d446af25be5a25e82d78",
+    "duration_s": 3.1898125
+  },
+  {
+    "id": "ref3-001",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開出埃及記第十二章第七節",
+    "target": [
+      2,
+      12,
+      7
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "9d71cdc15dfedc8043d8cef1672b67c32b291bd9cd39475e97a88ed9737ac3dd",
+    "duration_s": 3.206875
+  },
+  {
+    "id": "ref3-002",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看利未記第二章第十三節",
+    "target": [
+      3,
+      2,
+      13
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "ab25f053a2aaee2b051549162fbb86c3950d5a0b575a79297df05ccde25cb51d",
+    "duration_s": 2.86475
+  },
+  {
+    "id": "ref3-003",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到民數記第二章第八節",
+    "target": [
+      4,
+      2,
+      8
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "687ba7f6bec062b9f91d7ba2f0a574b054ab6e516d48e60cde80ab93b2933fd0",
+    "duration_s": 2.7790625
+  },
+  {
+    "id": "ref3-004",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開申命記第三十一章第二十九節",
+    "target": [
+      5,
+      31,
+      29
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "202f50385fcc16dd48a2e4527d86f0dd89919ac933a6eac93d00d983837e1254",
+    "duration_s": 3.898
+  },
+  {
+    "id": "ref3-005",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看約書亞記第二章第十九節",
+    "target": [
+      6,
+      2,
+      19
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "c52d17d077927ea574709721b9d76848332ef59cc003105b8572c10381874c88",
+    "duration_s": 2.975625
+  },
+  {
+    "id": "ref3-006",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到士師記第十四章第七節",
+    "target": [
+      7,
+      14,
+      7
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "6b55341e271aa10d3a987a401d851970e92128b66f4ca0cfa729fb44f59de7e3",
+    "duration_s": 3.0969375
+  },
+  {
+    "id": "ref3-007",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開路得記第二章第五節",
+    "target": [
+      8,
+      2,
+      5
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "84362912347e05e8d924653618994a6fb03bec5cf19494f47411d21bb551b48c",
+    "duration_s": 2.744375
+  },
+  {
+    "id": "ref3-008",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看撒母耳記上第八章第十八節",
+    "target": [
+      9,
+      8,
+      18
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "cc201d2333dc6a0f19655ba8f7bae3dce10d53328a7e2dfef199e2d199df2b4b",
+    "duration_s": 3.2826875
+  },
+  {
+    "id": "ref3-009",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到撒母耳記下第四章第三節",
+    "target": [
+      10,
+      4,
+      3
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "1bb4f6a64917c781ac4a7c01500c6f98c8b24702e8a6334a6982b93b469316e4",
+    "duration_s": 3.2184375
+  },
+  {
+    "id": "ref3-010",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開列王紀上第十七章第二十二節",
+    "target": [
+      11,
+      17,
+      22
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "cfae308aac11a2bff4d211dcca4c1f9491855ea03f6cf5c4e0120b94d75a255b",
+    "duration_s": 3.7935
+  },
+  {
+    "id": "ref3-011",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看列王紀下第九章第二節",
+    "target": [
+      12,
+      9,
+      2
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "dc17215f35e13ca9bf9fe026c353130f0cb0dae0f81ffe82a263a7c195f70936",
+    "duration_s": 2.7328125
+  },
+  {
+    "id": "ref3-012",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到歷代志上第七章第三十八節",
+    "target": [
+      13,
+      7,
+      38
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "4d4de266a220cd394e87f2c666648a8e5c5b95c10041c903f13f462745ba2f1d",
+    "duration_s": 3.50325
+  },
+  {
+    "id": "ref3-013",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開歷代志下第二十五章第二十七節",
+    "target": [
+      14,
+      25,
+      27
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "69ed0ee7824d8a516869b705bb185767bd9ba2d2c0caf809209568551e8eb9b9",
+    "duration_s": 3.4959375
+  },
+  {
+    "id": "ref3-014",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看以斯拉記第八章第二十五節",
+    "target": [
+      15,
+      8,
+      25
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "d9acb8471011d336b328bccda929ca2a5e70e05fad7f11268b30c50b738f8c2f",
+    "duration_s": 3.3639375
+  },
+  {
+    "id": "ref3-015",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到尼希米記第三章第二十三節",
+    "target": [
+      16,
+      3,
+      23
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "aa14221b538224c2da581143138b751875c257f73fb2def9903b301f153cfbfe",
+    "duration_s": 3.4034375
+  },
+  {
+    "id": "ref3-016",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開以斯帖記第九章第二十節",
+    "target": [
+      17,
+      9,
+      20
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "83bb998614f3d9d071cbc78a38753cbc17a391b47a90424deec1d3f50202dc8b",
+    "duration_s": 3.410375
+  },
+  {
+    "id": "ref3-017",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看約伯記第二十三章第十五節",
+    "target": [
+      18,
+      23,
+      15
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "4967346749615b088c23e411403cb6a16616acd00e0e5a0467ee11bef4057941",
+    "duration_s": 3.1028125
+  },
+  {
+    "id": "ref3-018",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到詩篇第三十三章第三節",
+    "target": [
+      19,
+      33,
+      3
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "8fcac2b7a13228b74e79d891e3fdf7985cd45089874dfff3178ec7041fd56308",
+    "duration_s": 3.329125
+  },
+  {
+    "id": "ref3-019",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開箴言第二十五章第九節",
+    "target": [
+      20,
+      25,
+      9
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "e9996239c37fbe39157005ec619aead499f78807bb9dc6df2751d0f719362522",
+    "duration_s": 3.021875
+  },
+  {
+    "id": "ref3-020",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看傳道書第二章第九節",
+    "target": [
+      21,
+      2,
+      9
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "fb0df7adb1003858eaf03c60872b2e98fb8930975256e39841cb26e74f5f2b42",
+    "duration_s": 2.737
+  },
+  {
+    "id": "ref3-021",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到雅歌第四章第十節",
+    "target": [
+      22,
+      4,
+      10
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "9433162f247f9f3b5442fc16cc69814802b517366c853873912853cfb1389779",
+    "duration_s": 2.5478125
+  },
+  {
+    "id": "ref3-022",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開以賽亞書第三十章第二十四節",
+    "target": [
+      23,
+      30,
+      24
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "8f8985e634e78423e0b71a4698b71ebf5fb0ddd695960e14e763210c97f9adbf",
+    "duration_s": 3.932875
+  },
+  {
+    "id": "ref3-023",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看耶利米書第十章第七節",
+    "target": [
+      24,
+      10,
+      7
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "a0f26dc910e469299c646fef320c3b99f34b14333f4559070cf5874e5c54a508",
+    "duration_s": 2.7675
+  },
+  {
+    "id": "ref3-024",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到耶利米哀歌第三章第十五節",
+    "target": [
+      25,
+      3,
+      15
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "9913614a6120c45285aed658cfcb699ab81399a11af4e4d823ab5ae0d9a404f8",
+    "duration_s": 3.631
+  },
+  {
+    "id": "ref3-025",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開以西結書第四十一章第二十一節",
+    "target": [
+      26,
+      41,
+      21
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "2a4a1c4a78d1eaa729f12a45196755ee5049cda59cb41ea413b31340315504dc",
+    "duration_s": 3.6346875
+  },
+  {
+    "id": "ref3-026",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看但以理書第六章第十五節",
+    "target": [
+      27,
+      6,
+      15
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "2ac859c550d76bee9c7cb535c3a8efda6e60045e26274ceef6b23a166dfb0bb6",
+    "duration_s": 3.1781875
+  },
+  {
+    "id": "ref3-027",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到何西阿書第六章第十一節",
+    "target": [
+      28,
+      6,
+      11
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "1c403570e1d9930a9d436c7ad2c145cabe2df1409e932b1a7c3b7a37d517982d",
+    "duration_s": 3.1259375
+  },
+  {
+    "id": "ref3-028",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開約珥書第二章第二十九節",
+    "target": [
+      29,
+      2,
+      29
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "2382bb14d7d9f6b85a084994693b0729fdb16197663d81f359af653812213eba",
+    "duration_s": 3.352375
+  },
+  {
+    "id": "ref3-029",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看阿摩司書第一章第五節",
+    "target": [
+      30,
+      1,
+      5
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "66f320e6a300a888d199ad05cfce2f03736c95193df502fe4aef921fde0d4b8e",
+    "duration_s": 2.698125
+  },
+  {
+    "id": "ref3-030",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到俄巴底亞書第一章第十八節",
+    "target": [
+      31,
+      1,
+      18
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "2c246bc34b956d3a40ac38e83ea55b97c564a23786a89c2b21b1616f59a0b219",
+    "duration_s": 3.410375
+  },
+  {
+    "id": "ref3-031",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開約拿書第一章第九節",
+    "target": [
+      32,
+      1,
+      9
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "17cc40a28d9045bea38cd7854df561f7aeca26f6ef0c19ac7c4d4753d3e38991",
+    "duration_s": 2.86
+  },
+  {
+    "id": "ref3-032",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看彌迦書第六章第十一節",
+    "target": [
+      33,
+      6,
+      11
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "7a1ec7c022efeee7ca19cd30e79c2ae47fac4aa6b1ea35757133eb06844aee16",
+    "duration_s": 2.8995625
+  },
+  {
+    "id": "ref3-033",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到那鴻書第二章第十三節",
+    "target": [
+      34,
+      2,
+      13
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "e7e25134062aec1435eab9c99027d99483a50588ec7f4c65d682256ca4b73d15",
+    "duration_s": 3.0103125
+  },
+  {
+    "id": "ref3-034",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開哈巴谷書第三章第十九節",
+    "target": [
+      35,
+      3,
+      19
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "b60cd6df576ed114d068f91bcecb5726c66dce4a7509beda16ff6d19dd76f0d8",
+    "duration_s": 3.4916875
+  },
+  {
+    "id": "ref3-035",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看西番雅書第一章第十二節",
+    "target": [
+      36,
+      1,
+      12
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "d11ce95cca2a23e42054d6de5011a12b7a61a077ee741fc9961007954480a534",
+    "duration_s": 3.068125
+  },
+  {
+    "id": "ref3-036",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到哈該書第一章第五節",
+    "target": [
+      37,
+      1,
+      5
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "dd6af262f2042d7551cee32077b5e3e406ffe6c15e403402a9ee7f2ad14a1e76",
+    "duration_s": 2.946
+  },
+  {
+    "id": "ref3-037",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開撒迦利亞書第五章第八節",
+    "target": [
+      38,
+      5,
+      8
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "e372aad44bde4b41aaf2b0d48191de8b01fbbae26cc3123efec6760427bf22bf",
+    "duration_s": 3.2184375
+  },
+  {
+    "id": "ref3-038",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看瑪拉基書第一章第八節",
+    "target": [
+      39,
+      1,
+      8
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "7080cfe12461f2ac6dfe18ea02fbe436bc94133623e24b32f9088beee597c89c",
+    "duration_s": 2.8415
+  },
+  {
+    "id": "ref3-039",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到馬太福音第十九章第二十六節",
+    "target": [
+      40,
+      19,
+      26
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "21847c591b37e5f26a2e32bc01cc1698c341411e41ba12bbd2dc703d4d89cb9e",
+    "duration_s": 3.3571875
+  },
+  {
+    "id": "ref3-040",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開馬可福音第十四章第三十九節",
+    "target": [
+      41,
+      14,
+      39
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "132f26ec8801b6882b421a8997a13dc3331aae836ea0e71932318c1297a251ac",
+    "duration_s": 3.9560625
+  },
+  {
+    "id": "ref3-041",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看路加福音第九章第四十九節",
+    "target": [
+      42,
+      9,
+      49
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "b7536e36f87494c97d9013f0d24e40e6c770f781047ac9eb6629b94541012b0f",
+    "duration_s": 3.1953125
+  },
+  {
+    "id": "ref3-042",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到約翰福音第四章第四節",
+    "target": [
+      43,
+      4,
+      4
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "5b778a7d20075c7ac8fc24ed4111f2d48dcd26b77171d0883203593234b32c79",
+    "duration_s": 3.2595
+  },
+  {
+    "id": "ref3-043",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開使徒行傳第二十二章第二十五節",
+    "target": [
+      44,
+      22,
+      25
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "dfd6d57c054b61c5c51e757fd406d47ccdecc89f8acc72b091411a0c716e22f6",
+    "duration_s": 3.73875
+  },
+  {
+    "id": "ref3-044",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看羅馬書第三章第二十一節",
+    "target": [
+      45,
+      3,
+      21
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "3e39a5c4a38958dddbe9c519930e8bf9bab19d5c6c72c20fd3190b2bf39579f2",
+    "duration_s": 3.143375
+  },
+  {
+    "id": "ref3-045",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到哥林多前書第五章第八節",
+    "target": [
+      46,
+      5,
+      8
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "98ae7a52dcb531fcb1dccde202cc5084941439208ead0e5bb542c4466d1accd7",
+    "duration_s": 3.206875
+  },
+  {
+    "id": "ref3-046",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開哥林多後書第八章第十六節",
+    "target": [
+      47,
+      8,
+      16
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "7f7a14f36adc0432c73d70bd6d3fa6acd9ec0bb30d690716c5ae086af89ae1ae",
+    "duration_s": 3.7586875
+  },
+  {
+    "id": "ref3-047",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看加拉太書第四章第八節",
+    "target": [
+      48,
+      4,
+      8
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "59d0647b4049847a6b9bdc6bc50f03f7a87f451b789a4436b44827ba1a80226e",
+    "duration_s": 2.8946875
+  },
+  {
+    "id": "ref3-048",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到以弗所書第四章第三節",
+    "target": [
+      49,
+      4,
+      3
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "2771de56ed7945446c951a471e83f244caf1cbafe2429836bdef1dd718ec56a9",
+    "duration_s": 3.224625
+  },
+  {
+    "id": "ref3-049",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開腓立比書第三章第十六節",
+    "target": [
+      50,
+      3,
+      16
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "23dfc21ac91160d611e2224814eaae4a264065b5ffdcd8d3d54c049d7bc802b5",
+    "duration_s": 3.3225
+  },
+  {
+    "id": "ref3-050",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看歌羅西書第四章第七節",
+    "target": [
+      51,
+      4,
+      7
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "5bc0c2f72f9c77943e703e3d83087ca4b128e7b83bcd5471550a44536ecfe2e2",
+    "duration_s": 2.9924375
+  },
+  {
+    "id": "ref3-051",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到帖撒羅尼迦前書第五章第十三節",
+    "target": [
+      52,
+      5,
+      13
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "d6f851c31436d757af4eae51ffeaf36b1a239f6e6b4fa10e8a947993420a85d4",
+    "duration_s": 3.8428125
+  },
+  {
+    "id": "ref3-052",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開帖撒羅尼迦後書第一章第三節",
+    "target": [
+      53,
+      1,
+      3
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "a8e975d2317be55ec697b9611a5826f8483b92530a8211ef8408902d4c5a0ef9",
+    "duration_s": 4.0489375
+  },
+  {
+    "id": "ref3-053",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看提摩太前書第二章第六節",
+    "target": [
+      54,
+      2,
+      6
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "b56df5f338e8b0cc440eb082b915b15f881792b63cc34299376a22afa5e441d1",
+    "duration_s": 3.0565625
+  },
+  {
+    "id": "ref3-054",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到提摩太後書第一章第十四節",
+    "target": [
+      55,
+      1,
+      14
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "f6a2c062c218c12c0f28db96371ef7597164ef03351bfc4905deaf9a5ccd6655",
+    "duration_s": 3.60775
+  },
+  {
+    "id": "ref3-055",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開提多書第三章第十二節",
+    "target": [
+      56,
+      3,
+      12
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "68856b09a27a775b4e9614c258f524938331f9fb2a05a3b0bf4a0637815a5f00",
+    "duration_s": 3.160625
+  },
+  {
+    "id": "ref3-056",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看腓利門書第一章第二十五節",
+    "target": [
+      57,
+      1,
+      25
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "008806383c60819cc1dd923026a0b01e3caae3129060eafcfc18b6219c327b30",
+    "duration_s": 3.3059375
+  },
+  {
+    "id": "ref3-057",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到希伯來書第十三章第十三節",
+    "target": [
+      58,
+      13,
+      13
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "808db6008db63ac5ba59f7ab686ce69642ce1af413355e752566eac0be7304ca",
+    "duration_s": 3.55375
+  },
+  {
+    "id": "ref3-058",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開雅各書第一章第二十節",
+    "target": [
+      59,
+      1,
+      20
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "077f898609f48c62fb977e476e5009945210d4d4580b1ddeb3bf1c1e02f094b8",
+    "duration_s": 3.0969375
+  },
+  {
+    "id": "ref3-059",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看彼得前書第二章第九節",
+    "target": [
+      60,
+      2,
+      9
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "63e3d53d835852a758f724ef72a3d853ca0f98d4131fcc1ae122f3fdd47f21f4",
+    "duration_s": 2.8715625
+  },
+  {
+    "id": "ref3-060",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到彼得後書第三章第十節",
+    "target": [
+      61,
+      3,
+      10
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "1c39b0ef8f75c4f126b9ffa38cde1719666aa0fbb348b0a5af1cea17dda64a10",
+    "duration_s": 3.13175
+  },
+  {
+    "id": "ref3-061",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開約翰一書第一章第一節",
+    "target": [
+      62,
+      1,
+      1
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "8bea437e6435bc3628729ae338f0fa1a2dec0588952ebac97dff000fa0d9e963",
+    "duration_s": 2.975625
+  },
+  {
+    "id": "ref3-062",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看約翰二書第一章第一節",
+    "target": [
+      63,
+      1,
+      1
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "e924f9113c7dbe086dc694900c18cfa16b0ff1be6f1ccbaef04f27a0fa0048d4",
+    "duration_s": 2.8995625
+  },
+  {
+    "id": "ref3-063",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻到約翰三書第一章第十五節",
+    "target": [
+      64,
+      1,
+      15
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "6b530ffd0a8e131d42fff976cf60d0e04d9b12c3fdf8b4dedf0546f55005d745",
+    "duration_s": 3.1721875
+  },
+  {
+    "id": "ref3-064",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請翻開猶大書第一章第十節",
+    "target": [
+      65,
+      1,
+      10
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "72b57566ca7d1548ff740dbd70f261cf8765fb12aea9ced9ce9259b6df907200",
+    "duration_s": 2.8995625
+  },
+  {
+    "id": "ref3-065",
+    "language": "zh",
+    "kind": "reference",
+    "text": "請看啟示錄第十九章第三節",
+    "target": [
+      66,
+      19,
+      3
+    ],
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "a45b9726007b0131921b10658883c0665f3c36b223dfff7c43b1195e207f6d93",
+    "duration_s": 2.8484375
+  },
+  {
+    "id": "ref3-106",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請不要讀約翰福音第三章第十六節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "4b192b75d17d8836a3af82f31de4c5ef9068715c09dd119fbdb16029df6bb53d",
+    "duration_s": 3.60775
+  },
+  {
+    "id": "ref3-107",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請不要讀約翰福音第三章第十六節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "1baa66815acfd949831a4ed332c85deee9810791ffb8cf74ead49667e8fe8561",
+    "duration_s": 3.299375
+  },
+  {
+    "id": "ref3-108",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請翻到課本第八章第十二節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "96e08998da83e09d77819481fd1c3e667e155f80c1daf9532df4618b16a0dad3",
+    "duration_s": 2.853125
+  },
+  {
+    "id": "ref3-109",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請翻到課本第八章第十二節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "168dfb595ed4481cd8b4ea639ea90654463df0ad414b597235bf4bc24912bdf2",
+    "duration_s": 2.7790625
+  },
+  {
+    "id": "ref3-110",
+    "language": "zh",
+    "kind": "negative",
+    "text": "馬太福音第一章第一節。不是現在。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "939d98c522cf0c93860f2485b9d0de82f2adfe5d315936773f0bbf5a73fccd17",
+    "duration_s": 3.4329375
+  },
+  {
+    "id": "ref3-111",
+    "language": "zh",
+    "kind": "negative",
+    "text": "馬太福音第一章第一節。不是現在。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "43a9e9e3e410fd790cf1c3a6b6c697c402ada73626286054f35ec041ee9c8940",
+    "duration_s": 3.339875
+  },
+  {
+    "id": "ref3-112",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰福音第三章第十六節只是練習例子。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "b5fba81c5ee6c3acad24fff43c3df0da465973e5b066859fd65b81bfc333175b",
+    "duration_s": 4.1175
+  },
+  {
+    "id": "ref3-113",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰福音第三章第十六節只是練習例子。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "012a32c5296dd1c030900d4d22e0ea497dc001d1185dd3b553f9c787ec540883",
+    "duration_s": 3.363125
+  },
+  {
+    "id": "ref3-114",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請看約翰福音第三章第十六節這個例子，不要跳轉。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "e36a3aa167ad6ceae3fbd4f15903ceebeb67636712b868c5dcdd08bfe0dd60b4",
+    "duration_s": 5.1286875
+  },
+  {
+    "id": "ref3-115",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請看約翰福音第三章第十六節這個例子，不要跳轉。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "3091a2677dc6f7f4aa451672579682844deb5519ab8071d8eec6becc6c2ca98a",
+    "duration_s": 4.640625
+  },
+  {
+    "id": "ref3-116",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請翻到約翰福音第九十九章第三節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "042e25a0d800fc7ddf1e399eb90b8b59da307f5e26d634a4cb9d19f1ccb98d45",
+    "duration_s": 3.6774375
+  },
+  {
+    "id": "ref3-117",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請翻到約翰福音第九十九章第三節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "dea275d446b5a338799cc7e39c88a255ef3749adcb5e9f9512dc77df1fb96af7",
+    "duration_s": 3.391875
+  },
+  {
+    "id": "ref3-118",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請翻到馬太福音第二章。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "f951f56ebd18c0efda58c4da9b0e55aacf8378af231a4b52d21db366a4bfd826",
+    "duration_s": 2.44675
+  },
+  {
+    "id": "ref3-119",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請翻到馬太福音第二章。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "dd5b3ed24012dbf73fb0d4c1e0634efd253d0312ee2a301149ad2cd37ca2e288",
+    "duration_s": 2.3859375
+  },
+  {
+    "id": "ref3-120",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰住三樓十六號房。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "c2cdd2518b042c3d211a72f6a9ad3525a0dd36f71c18011567cd6b79e18e1046",
+    "duration_s": 2.283125
+  },
+  {
+    "id": "ref3-121",
+    "language": "zh",
+    "kind": "negative",
+    "text": "約翰住三樓十六號房。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "10e293afdf1a8c466a8e721600665e05a611bf82eb5b611188deb8437e8f3a59",
+    "duration_s": 2.206875
+  },
+  {
+    "id": "ref3-122",
+    "language": "zh",
+    "kind": "negative",
+    "text": "不要翻到詩篇第二十三篇第四節，也不要跳轉。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "c2cc81617c893f1936003e3cba18af3fe63a6f3c7e693a01d26431044e1012a6",
+    "duration_s": 4.7649375
+  },
+  {
+    "id": "ref3-123",
+    "language": "zh",
+    "kind": "negative",
+    "text": "不要翻到詩篇第二十三篇第四節，也不要跳轉。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "13a88eabee32e824f0e52b4108cef1f5d56ab38c55539376e03eec5dda266b1d",
+    "duration_s": 4.4096875
+  },
+  {
+    "id": "ref3-124",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請讀第三章第八節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Meijia",
+    "rate": 175,
+    "sha256": "6a799a5e82a0cd6d31ee6c87b1a73e453a1458da08333fb890a74632dbae9a03",
+    "duration_s": 2.0288125
+  },
+  {
+    "id": "ref3-125",
+    "language": "zh",
+    "kind": "negative",
+    "text": "請讀第三章第八節。",
+    "target": null,
+    "split": "fresh-reference-v3",
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 175,
+    "sha256": "56f5dc50614ca35e28027ce37a552472afd51b76e507b6e609fd77a4fc18a712",
+    "duration_s": 2.050625
+  }
+]

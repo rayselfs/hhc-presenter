@@ -8,7 +8,7 @@ describe('Bible index cache format', () => {
     await db.put('content', books, 901)
     await db.put(
       'flexsearch',
-      { chunks: [{ key: 'old', data: 'possibly contaminated' }], updatedAt: 7 },
+      { chunks: [{ key: 'old', data: 'old raw encoder' }], updatedAt: 7, formatVersion: 1 },
       901
     )
     expect(await loadFlexSearchCache(901, 7)).toBeUndefined()

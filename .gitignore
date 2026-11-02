@@ -20,3 +20,5 @@ resources/video-engine/**/*
 src/renderer/public/lyrics-runtime/
 playwright-report/
 test-results/
+
+resources/speech/

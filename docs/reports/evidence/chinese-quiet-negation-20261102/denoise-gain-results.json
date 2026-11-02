@@ -1,0 +1,1730 @@
+[
+  {
+    "id": "segment-000",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "floor": 0.017052777111530304,
+    "full": {
+      "text": "請翻到《創世紀》第一章第一節",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 654.5337919378653,
+      "locateMs": 1.9078750628978014
+    },
+    "decisions": [
+      {
+        "text": "請翻到《創世紀》第一章第一節",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 562.5205419491976,
+        "locateMs": 1.1569580528885126,
+        "estimated_ms": 1932.2182090235874,
+        "endpoint_sample": 106240
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-001",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.017461679875850677,
+    "full": {
+      "text": "請不要切換到 創世紀第一章第一節",
+      "reference": null,
+      "asrMs": 566.5922090411186,
+      "locateMs": 1.0162079706788063
+    },
+    "decisions": [
+      {
+        "text": "請不要切換到 創世紀第一章第一節",
+        "reference": null,
+        "asrMs": 572.5700419861823,
+        "locateMs": 0.9911250090226531,
+        "estimated_ms": 1942.640874961391,
+        "endpoint_sample": 115840
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-002",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.01653112843632698,
+    "full": {
+      "text": "《创世纪》第一章第一节只是举例请不要切换",
+      "reference": null,
+      "asrMs": 580.143791041337,
+      "locateMs": 1.0484169470146298
+    },
+    "decisions": [
+      {
+        "text": "《创世纪》第一章第一节只是举例,请不要切换",
+        "reference": null,
+        "asrMs": 597.6400839863345,
+        "locateMs": 1.9457080634310842,
+        "estimated_ms": 1963.9102091332898,
+        "endpoint_sample": 129920
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-003",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.013911583460867405,
+    "full": {
+      "text": "创世纪第一章第一节",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 565.9991659922525,
+      "locateMs": 1.2533749686554074
+    },
+    "decisions": [
+      {
+        "text": "创世纪第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 565.8617919543758,
+        "locateMs": 0.7487920811399817,
+        "estimated_ms": 1930.1961670471355,
+        "endpoint_sample": 115840
+      }
+    ],
+    "correct": false,
+    "wrong": true,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-004",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "floor": 0.01697058416903019,
+    "full": {
+      "text": "請翻到《創世紀》第一章第一節",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 579.8804580699652,
+      "locateMs": 1.2629999546334147
+    },
+    "decisions": [
+      {
+        "text": "請翻到《創世紀》第一章第一節",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 576.690333080478,
+        "locateMs": 0.9435839019715786,
+        "estimated_ms": 1946.4124588975683,
+        "endpoint_sample": 115840
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-005",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.0173215102404356,
+    "full": {
+      "text": "請不要切換到 創世紀第一章第一節",
+      "reference": null,
+      "asrMs": 582.4786250013858,
+      "locateMs": 0.598041107878089
+    },
+    "decisions": [
+      {
+        "text": "請不要切換到 創世紀第一章第一節",
+        "reference": null,
+        "asrMs": 574.0093329222873,
+        "locateMs": 0.5726250819861889,
+        "estimated_ms": 1943.2967500369996,
+        "endpoint_sample": 125440
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-006",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.016526805236935616,
+    "full": {
+      "text": "创世纪第一章第一节只是举例,请不要切换",
+      "reference": null,
+      "asrMs": 597.8021250339225,
+      "locateMs": 1.182875013910234
+    },
+    "decisions": [
+      {
+        "text": "创世纪第一章第一节只是举例,请不要切换",
+        "reference": null,
+        "asrMs": 579.4731669593602,
+        "locateMs": 0.5166250048205256,
+        "estimated_ms": 1924.948376041837,
+        "endpoint_sample": 139200
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-007",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.013862131163477898,
+    "full": {
+      "text": "创世纪第一章第一节",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 579.6580839669332,
+      "locateMs": 0.703666009940207
+    },
+    "decisions": [
+      {
+        "text": "创世纪第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 579.3147919466719,
+        "locateMs": 0.7511250441893935,
+        "estimated_ms": 1950.5699169430882,
+        "endpoint_sample": 125440
+      }
+    ],
+    "correct": false,
+    "wrong": true,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0001",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      25,
+      3
+    ],
+    "floor": 0.00922891404479742,
+    "full": {
+      "text": "请三个创世纪第25章第三节",
+      "reference": null,
+      "asrMs": 585.8034580014646,
+      "locateMs": 2.69520899746567
+    },
+    "decisions": [
+      {
+        "text": "请三个创世纪第25桌第三节。",
+        "reference": null,
+        "asrMs": 601.964583969675,
+        "locateMs": 0.5798750789836049,
+        "estimated_ms": 2116.940917971544,
+        "endpoint_sample": 83200
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": true
+  },
+  {
+    "id": "0002",
+    "profile": "fan-20db",
+    "target": [
+      1,
+      50,
+      5
+    ],
+    "floor": 0.01730656996369362,
+    "full": {
+      "text": "创世纪第五十章第五节",
+      "reference": [
+        1,
+        50,
+        5
+      ],
+      "asrMs": 594.4047080120072,
+      "locateMs": 0.7722920272499323
+    },
+    "decisions": [
+      {
+        "text": "创世纪第五十章第五节",
+        "reference": [
+          1,
+          50,
+          5
+        ],
+        "asrMs": 607.9555829055607,
+        "locateMs": 1.7923340201377869,
+        "estimated_ms": 1973.478708946146,
+        "endpoint_sample": 74560
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0004",
+    "profile": "fan-20db",
+    "target": [
+      2,
+      20,
+      3
+    ],
+    "floor": 0.017170187085866928,
+    "full": {
+      "text": "请翻到出埃及记第20章第3节",
+      "reference": [
+        2,
+        20,
+        3
+      ],
+      "asrMs": 610.020124935545,
+      "locateMs": 1.189083093777299
+    },
+    "decisions": [
+      {
+        "text": "请翻到出埃及记第20章第3节",
+        "reference": [
+          2,
+          20,
+          3
+        ],
+        "asrMs": 601.1162500362843,
+        "locateMs": 0.43358292896300554,
+        "estimated_ms": 1960.61741603259,
+        "endpoint_sample": 91840
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0006",
+    "profile": "fan-20db",
+    "target": [
+      3,
+      1,
+      1
+    ],
+    "floor": 0.019245145842432976,
+    "full": {
+      "text": "第位季 第一章 第一节",
+      "reference": [
+        3,
+        1,
+        1
+      ],
+      "asrMs": 608.3816250320524,
+      "locateMs": 0.511458027176559
+    },
+    "decisions": [
+      {
+        "text": "第位季 第一章 第一节",
+        "reference": [
+          3,
+          1,
+          1
+        ],
+        "asrMs": 585.6150829931721,
+        "locateMs": 0.5195830017328262,
+        "estimated_ms": 1921.2559159062803,
+        "endpoint_sample": 73600
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0007",
+    "profile": "fan-20db",
+    "target": [
+      3,
+      13,
+      3
+    ],
+    "floor": 0.008265752345323563,
+    "full": {
+      "text": "请翻到立位镜第十三章第三节。",
+      "reference": [
+        3,
+        13,
+        3
+      ],
+      "asrMs": 618.5970829101279,
+      "locateMs": 0.7370420498773456
+    },
+    "decisions": [
+      {
+        "text": "请翻到立位镜第十三章第三节。",
+        "reference": [
+          3,
+          13,
+          3
+        ],
+        "asrMs": 663.4714999236166,
+        "locateMs": 0.5885000573471189,
+        "estimated_ms": 2186.659082938917,
+        "endpoint_sample": 80320
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0008",
+    "profile": "fan-20db",
+    "target": [
+      3,
+      27,
+      5
+    ],
+    "floor": 0.018049633130431175,
+    "full": {
+      "text": "第位季第27章第5节",
+      "reference": [
+        3,
+        27,
+        5
+      ],
+      "asrMs": 596.3699170388281,
+      "locateMs": 0.659791985526681
+    },
+    "decisions": [
+      {
+        "text": "第位季第27章第5节",
+        "reference": [
+          3,
+          27,
+          5
+        ],
+        "asrMs": 617.1064580557868,
+        "locateMs": 0.502666924148798,
+        "estimated_ms": 1986.226624974981,
+        "endpoint_sample": 76480
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0011",
+    "profile": "fan-20db",
+    "target": [
+      4,
+      36,
+      5
+    ],
+    "floor": 0.009391489438712597,
+    "full": {
+      "text": "民宿记第36章第5节",
+      "reference": [
+        4,
+        36,
+        5
+      ],
+      "asrMs": 611.5252920426428,
+      "locateMs": 0.6195410387590528
+    },
+    "decisions": [
+      {
+        "text": "民述记第36章第5节",
+        "reference": [
+          4,
+          36,
+          5
+        ],
+        "asrMs": 614.6857499843463,
+        "locateMs": 0.9515420533716679,
+        "estimated_ms": 2135.5788750257343,
+        "endpoint_sample": 69760
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0012",
+    "profile": "fan-20db",
+    "target": [
+      5,
+      1,
+      1
+    ],
+    "floor": 0.019527731463313103,
+    "full": {
+      "text": "生命纪 第一章 第一节",
+      "reference": [
+        5,
+        1,
+        1
+      ],
+      "asrMs": 595.8380000665784,
+      "locateMs": 1.0940840002149343
+    },
+    "decisions": [
+      {
+        "text": "生命纪第一章第一节",
+        "reference": [
+          5,
+          1,
+          1
+        ],
+        "asrMs": 575.1378329005092,
+        "locateMs": 0.8765840902924538,
+        "estimated_ms": 1921.1009590439498,
+        "endpoint_sample": 74880
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0013",
+    "profile": "fan-20db",
+    "target": [
+      5,
+      17,
+      3
+    ],
+    "floor": 0.007976353168487549,
+    "full": {
+      "text": "请翻转生命纪第十七章第三节。",
+      "reference": null,
+      "asrMs": 598.5552089987323,
+      "locateMs": 0.8038749219849706
+    },
+    "decisions": [
+      {
+        "text": "请翻转生命纪第17章第三节。",
+        "reference": null,
+        "asrMs": 613.0778340157121,
+        "locateMs": 2.5295830564573407,
+        "estimated_ms": 2133.53420905862,
+        "endpoint_sample": 83200
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": true
+  },
+  {
+    "id": "0014",
+    "profile": "fan-20db",
+    "target": [
+      5,
+      34,
+      5
+    ],
+    "floor": 0.018278393894433975,
+    "full": {
+      "text": "生命纪第34章第5节",
+      "reference": [
+        5,
+        34,
+        5
+      ],
+      "asrMs": 624.1776249371469,
+      "locateMs": 0.5407079588621855
+    },
+    "decisions": [
+      {
+        "text": "生命纪第34章第5节",
+        "reference": [
+          5,
+          34,
+          5
+        ],
+        "asrMs": 582.2026670211926,
+        "locateMs": 0.42170798406004906,
+        "estimated_ms": 1953.7886249842122,
+        "endpoint_sample": 77760
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0016",
+    "profile": "fan-20db",
+    "target": [
+      6,
+      12,
+      3
+    ],
+    "floor": 0.017891304567456245,
+    "full": {
+      "text": "请翻到《约书雅记》第十二章第三节",
+      "reference": [
+        6,
+        12,
+        3
+      ],
+      "asrMs": 623.7323749810457,
+      "locateMs": 0.9307920699939132
+    },
+    "decisions": [
+      {
+        "text": "请翻到《约书雅记》第十二章第三节",
+        "reference": [
+          6,
+          12,
+          3
+        ],
+        "asrMs": 631.6808329429477,
+        "locateMs": 0.8014170452952385,
+        "estimated_ms": 1997.9691249281168,
+        "endpoint_sample": 90560
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0018",
+    "profile": "fan-20db",
+    "target": [
+      7,
+      1,
+      1
+    ],
+    "floor": 0.017779668793082237,
+    "full": {
+      "text": "是世界第一章第一节",
+      "reference": [
+        7,
+        1,
+        1
+      ],
+      "asrMs": 584.6522080246359,
+      "locateMs": 0.5387499695643783
+    },
+    "decisions": [
+      {
+        "text": "是世界第一章第一节",
+        "reference": [
+          7,
+          1,
+          1
+        ],
+        "asrMs": 638.2632079767063,
+        "locateMs": 0.7013339782133698,
+        "estimated_ms": 1972.5823750188574,
+        "endpoint_sample": 74560
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0291",
+    "profile": "fan-20db",
+    "target": [
+      5,
+      20,
+      5
+    ],
+    "floor": 0.009360838681459427,
+    "full": {
+      "text": "官厂也要对百姓宣告说,谁建造房屋,尚未奔献,他可以回家去,恐怕他阵亡,别人去奔献。谁种葡萄园,尚未用所结的果子,他可以回家去,恐怕他阵亡,别人去用。",
+      "reference": [
+        5,
+        20,
+        5
+      ],
+      "asrMs": 1558.6425840156153,
+      "locateMs": 31.527916085906327
+    },
+    "decisions": [
+      {
+        "text": "官厂也要对百姓宣告说,谁建造房屋,尚未奔献,他可以回家去,恐怕他阵亡,别人去奔献。谁种葡萄园,尚未用所结的果子,他可以回家去,恐怕他阵亡,别人去用。",
+        "reference": [
+          5,
+          20,
+          5
+        ],
+        "asrMs": 1460.0514580961317,
+        "locateMs": 4.9804579466581345,
+        "estimated_ms": 2989.6815410573035,
+        "endpoint_sample": 323520
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0298",
+    "profile": "fan-20db",
+    "target": [
+      9,
+      26,
+      8
+    ],
+    "floor": 0.016859864816069603,
+    "full": {
+      "text": "雅比篩對大衛說:現在神將你的仇敵交在你手裡,求你容我拿槍將他刺透在地,一次就成,不用再刺。大衛對雅比篩說:不可害死他,有誰伸手害耶和華的受高者而無罪呢?",
+      "reference": [
+        9,
+        26,
+        8
+      ],
+      "asrMs": 1434.78591600433,
+      "locateMs": 10.042042005807161
+    },
+    "decisions": [
+      {
+        "text": "雅比篩對大衛說,現在神將你的仇敵交在你手裡,求你容我拿槍將他刺透在地,一次就成,不用再刺。大衛對雅比篩說,不可害死他,有誰伸手害耶和華的受高者而無罪呢?",
+        "reference": [
+          9,
+          26,
+          8
+        ],
+        "asrMs": 1557.3508340166882,
+        "locateMs": 20.715582999400795,
+        "estimated_ms": 2927.318459097296,
+        "endpoint_sample": 312000
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "ref3-106",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.018446752801537514,
+    "full": {
+      "text": "请不要读约翰福音第三章第16节",
+      "reference": null,
+      "asrMs": 602.8741670306772,
+      "locateMs": 1.0360419983044267
+    },
+    "decisions": [
+      {
+        "text": "请不要读约翰福音第三章第十六节。",
+        "reference": null,
+        "asrMs": 637.4343330971897,
+        "locateMs": 1.5035829273983836,
+        "estimated_ms": 2006.0687080156058,
+        "endpoint_sample": 95360
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "ref3-107",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.009294240735471249,
+    "full": {
+      "text": "請不要讀《暗福音》第三章第十六節。",
+      "reference": null,
+      "asrMs": 601.4313750201836,
+      "locateMs": 0.6965840002521873
+    },
+    "decisions": [
+      {
+        "text": "请不要读约翰福音第三章第16节。",
+        "reference": null,
+        "asrMs": 621.9331659376621,
+        "locateMs": 1.5624170191586018,
+        "estimated_ms": 2138.550124964677,
+        "endpoint_sample": 85120
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "ref3-108",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.01685328036546707,
+    "full": {
+      "text": "请翻到课本第8章第12节。",
+      "reference": null,
+      "asrMs": 677.3611670359969,
+      "locateMs": 2.2195830242708325
+    },
+    "decisions": [
+      {
+        "text": "请翻到课本第8章第12节",
+        "reference": null,
+        "asrMs": 630.0402919296175,
+        "locateMs": 0.6212500156834722,
+        "estimated_ms": 2006.8779579978436,
+        "endpoint_sample": 83200
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "ref3-109",
+    "profile": "fan-20db",
+    "target": null,
+    "floor": 0.008594720624387264,
+    "full": {
+      "text": "请翻课文第八章第十二节。",
+      "reference": null,
+      "asrMs": 625.0626249238849,
+      "locateMs": 1.2151250848546624
+    },
+    "decisions": [
+      {
+        "text": "请翻课文第八章第十二节。",
+        "reference": null,
+        "asrMs": 625.7715829415247,
+        "locateMs": 0.7393750129267573,
+        "estimated_ms": 2161.391541006975,
+        "endpoint_sample": 77120
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-000",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "floor": 0.053662192076444626,
+    "full": {
+      "text": "請翻到《創世紀》第一章第一節",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 639.3951249774545,
+      "locateMs": 0.8599170250818133
+    },
+    "decisions": [
+      {
+        "text": "请翻到创世纪 第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 642.2227500006557,
+        "locateMs": 1.0095000034198165,
+        "estimated_ms": 1988.908000074327,
+        "endpoint_sample": 105920
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-001",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.05509653314948082,
+    "full": {
+      "text": "請不要切換到 創世紀第一章第一節",
+      "reference": null,
+      "asrMs": 648.4287910861894,
+      "locateMs": 0.7483339868485928
+    },
+    "decisions": [
+      {
+        "text": "請不要切換到 創世紀第一章第一節",
+        "reference": null,
+        "asrMs": 642.9982500849292,
+        "locateMs": 0.5008339649066329,
+        "estimated_ms": 1989.7800420671701,
+        "endpoint_sample": 115520
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-002",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.052081961184740067,
+    "full": {
+      "text": "创世纪第一章第一节只是举例请不要切换",
+      "reference": null,
+      "asrMs": 634.5599580090493,
+      "locateMs": 0.8282919880002737
+    },
+    "decisions": [
+      {
+        "text": "创世纪第一章第一节只是举例请不要切换",
+        "reference": null,
+        "asrMs": 634.9960840307176,
+        "locateMs": 0.41266600601375103,
+        "estimated_ms": 1951.021458061412,
+        "endpoint_sample": 129280
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-003",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.04380463808774948,
+    "full": {
+      "text": "创世纪第一章第一节",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 627.8894999995828,
+      "locateMs": 0.8202920434996486
+    },
+    "decisions": [
+      {
+        "text": "创世纪第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 629.5681250048801,
+        "locateMs": 0.8238339796662331,
+        "estimated_ms": 1978.2139180256054,
+        "endpoint_sample": 115520
+      }
+    ],
+    "correct": false,
+    "wrong": true,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-004",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "floor": 0.05383649840950966,
+    "full": {
+      "text": "請翻到《創世紀》第一章第一節",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 624.7827910119668,
+      "locateMs": 0.574083998799324
+    },
+    "decisions": [
+      {
+        "text": "請翻到《創世紀》第一章第一節",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 620.3576660482213,
+        "locateMs": 0.6940839812159538,
+        "estimated_ms": 1963.73049998004,
+        "endpoint_sample": 115520
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-005",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.05475005879998207,
+    "full": {
+      "text": "請不要切換到 創世紀第一章第一節",
+      "reference": null,
+      "asrMs": 611.5042910678312,
+      "locateMs": 0.41874998714774847
+    },
+    "decisions": [
+      {
+        "text": "請不要切換到 創世紀第一章第一節",
+        "reference": null,
+        "asrMs": 611.3071250729263,
+        "locateMs": 0.3749999450519681,
+        "estimated_ms": 1957.7518340460956,
+        "endpoint_sample": 125120
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-006",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.052047934383153915,
+    "full": {
+      "text": "创世纪第一章第一节只是举例,请不要切换",
+      "reference": null,
+      "asrMs": 637.4232909874991,
+      "locateMs": 0.9677920024842024
+    },
+    "decisions": [
+      {
+        "text": "创世纪第一章第一节只是举例,请不要切换",
+        "reference": null,
+        "asrMs": 611.3864999497309,
+        "locateMs": 0.3967090742662549,
+        "estimated_ms": 1940.5138750253245,
+        "endpoint_sample": 138880
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "segment-007",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.043770141899585724,
+    "full": {
+      "text": "创世纪第一章第一节",
+      "reference": [
+        1,
+        1,
+        1
+      ],
+      "asrMs": 593.6411250149831,
+      "locateMs": 0.4202919080853462
+    },
+    "decisions": [
+      {
+        "text": "创世纪第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 631.4030420035124,
+        "locateMs": 0.7409160025417805,
+        "estimated_ms": 1973.5674160560593,
+        "endpoint_sample": 125120
+      }
+    ],
+    "correct": false,
+    "wrong": true,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0001",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      25,
+      3
+    ],
+    "floor": 0.028957240283489227,
+    "full": {
+      "text": "请三个创世纪第25章第三节",
+      "reference": null,
+      "asrMs": 620.2410829719156,
+      "locateMs": 1.2616249732673168
+    },
+    "decisions": [
+      {
+        "text": "请三个创世纪第25章第三节",
+        "reference": null,
+        "asrMs": 643.4968340909109,
+        "locateMs": 0.5278330063447356,
+        "estimated_ms": 2137.6568750320002,
+        "endpoint_sample": 82880
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": true
+  },
+  {
+    "id": "0002",
+    "profile": "hum-10db",
+    "target": [
+      1,
+      50,
+      5
+    ],
+    "floor": 0.054578304290771484,
+    "full": {
+      "text": "创世纪第五十章第五节",
+      "reference": [
+        1,
+        50,
+        5
+      ],
+      "asrMs": 613.2445000112057,
+      "locateMs": 0.4442919744178653
+    },
+    "decisions": [
+      {
+        "text": "创世纪第50章第5节",
+        "reference": [
+          1,
+          50,
+          5
+        ],
+        "asrMs": 620.9030000027269,
+        "locateMs": 0.9030409855768085,
+        "estimated_ms": 1982.8609990132973,
+        "endpoint_sample": 74560
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0004",
+    "profile": "hum-10db",
+    "target": [
+      2,
+      20,
+      3
+    ],
+    "floor": 0.05413975939154625,
+    "full": {
+      "text": "请翻到出埃及记第20章第3节",
+      "reference": [
+        2,
+        20,
+        3
+      ],
+      "asrMs": 639.7986250231043,
+      "locateMs": 1.0043330257758498
+    },
+    "decisions": [
+      {
+        "text": "请翻到出埃及记第20章第3节",
+        "reference": [
+          2,
+          20,
+          3
+        ],
+        "asrMs": 629.6274589840323,
+        "locateMs": 0.38179103285074234,
+        "estimated_ms": 1977.9319590674713,
+        "endpoint_sample": 91520
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0006",
+    "profile": "hum-10db",
+    "target": [
+      3,
+      1,
+      1
+    ],
+    "floor": 0.06053261458873749,
+    "full": {
+      "text": "第位季 第一章 第一节",
+      "reference": [
+        3,
+        1,
+        1
+      ],
+      "asrMs": 624.75533306133,
+      "locateMs": 0.6837919354438782
+    },
+    "decisions": [
+      {
+        "text": "地位季 第一章 第一节",
+        "reference": [
+          3,
+          1,
+          1
+        ],
+        "asrMs": 627.5135829346254,
+        "locateMs": 0.608125003054738,
+        "estimated_ms": 1946.4589578900486,
+        "endpoint_sample": 73280
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0007",
+    "profile": "hum-10db",
+    "target": [
+      3,
+      13,
+      3
+    ],
+    "floor": 0.026250259950757027,
+    "full": {
+      "text": "请翻到日味镜第十三章第三节。",
+      "reference": null,
+      "asrMs": 654.4422919396311,
+      "locateMs": 0.9271670132875443
+    },
+    "decisions": [
+      {
+        "text": "请翻到日味镜第十三章第三节。",
+        "reference": null,
+        "asrMs": 724.028707947582,
+        "locateMs": 0.47325005289167166,
+        "estimated_ms": 2229.515708005987,
+        "endpoint_sample": 80000
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": true
+  },
+  {
+    "id": "0008",
+    "profile": "hum-10db",
+    "target": [
+      3,
+      27,
+      5
+    ],
+    "floor": 0.05682248994708061,
+    "full": {
+      "text": "立位纪第27章第5节",
+      "reference": [
+        3,
+        27,
+        5
+      ],
+      "asrMs": 690.4146670131013,
+      "locateMs": 0.9423750452697277
+    },
+    "decisions": [
+      {
+        "text": "《立位記》第27章第5節",
+        "reference": [
+          3,
+          27,
+          5
+        ],
+        "asrMs": 648.7012919969857,
+        "locateMs": 0.5067919846624136,
+        "estimated_ms": 2019.6683750748634,
+        "endpoint_sample": 76480
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0011",
+    "profile": "hum-10db",
+    "target": [
+      4,
+      36,
+      5
+    ],
+    "floor": 0.029684733599424362,
+    "full": {
+      "text": "民宿记第36章第5节",
+      "reference": [
+        4,
+        36,
+        5
+      ],
+      "asrMs": 635.1577079622075,
+      "locateMs": 0.5058750975877047
+    },
+    "decisions": [
+      {
+        "text": "明述记第36章第5节。",
+        "reference": [
+          4,
+          36,
+          5
+        ],
+        "asrMs": 678.1539579387754,
+        "locateMs": 0.5424170522019267,
+        "estimated_ms": 2177.449958944693,
+        "endpoint_sample": 69440
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0012",
+    "profile": "hum-10db",
+    "target": [
+      5,
+      1,
+      1
+    ],
+    "floor": 0.061615172773599625,
+    "full": {
+      "text": "生命纪第一章第一节",
+      "reference": [
+        5,
+        1,
+        1
+      ],
+      "asrMs": 690.6299169640988,
+      "locateMs": 0.8283329661935568
+    },
+    "decisions": [
+      {
+        "text": "生命記第一章第一節",
+        "reference": [
+          5,
+          1,
+          1
+        ],
+        "asrMs": 700.0418329844251,
+        "locateMs": 1.5734999906271696,
+        "estimated_ms": 2024.004791976884,
+        "endpoint_sample": 74560
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0013",
+    "profile": "hum-10db",
+    "target": [
+      5,
+      17,
+      3
+    ],
+    "floor": 0.025259576737880707,
+    "full": {
+      "text": "请翻读《生命纪》第17章第三节。",
+      "reference": null,
+      "asrMs": 659.8654999397695,
+      "locateMs": 0.6663750391453505
+    },
+    "decisions": [
+      {
+        "text": "请翻转《生命纪》第17章第三节。",
+        "reference": null,
+        "asrMs": 643.929083016701,
+        "locateMs": 0.9675839683040977,
+        "estimated_ms": 2143.209500909783,
+        "endpoint_sample": 82880
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": true
+  },
+  {
+    "id": "0014",
+    "profile": "hum-10db",
+    "target": [
+      5,
+      34,
+      5
+    ],
+    "floor": 0.05747228488326073,
+    "full": {
+      "text": "生命纪第34章第5节",
+      "reference": [
+        5,
+        34,
+        5
+      ],
+      "asrMs": 763.041083002463,
+      "locateMs": 2.0402499940246344
+    },
+    "decisions": [
+      {
+        "text": "生命纪第34章第5节",
+        "reference": [
+          5,
+          34,
+          5
+        ],
+        "asrMs": 894.3746249424294,
+        "locateMs": 0.8122500730678439,
+        "estimated_ms": 2260.0745829250664,
+        "endpoint_sample": 77440
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0016",
+    "profile": "hum-10db",
+    "target": [
+      6,
+      12,
+      3
+    ],
+    "floor": 0.056545209139585495,
+    "full": {
+      "text": "请翻到《约书雅记》第十二章第三节",
+      "reference": [
+        6,
+        12,
+        3
+      ],
+      "asrMs": 1015.8318330068141,
+      "locateMs": 2.378083998337388
+    },
+    "decisions": [
+      {
+        "text": "请翻到《约书雅记》第十二章第三节",
+        "reference": [
+          6,
+          12,
+          3
+        ],
+        "asrMs": 911.1947499914095,
+        "locateMs": 0.9580840123817325,
+        "estimated_ms": 2267.8568340055645,
+        "endpoint_sample": 90240
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0018",
+    "profile": "hum-10db",
+    "target": [
+      7,
+      1,
+      1
+    ],
+    "floor": 0.056314073503017426,
+    "full": {
+      "text": "是師記第一章第一節",
+      "reference": [
+        7,
+        1,
+        1
+      ],
+      "asrMs": 694.680624990724,
+      "locateMs": 1.0071250144392252
+    },
+    "decisions": [
+      {
+        "text": "是師記第一章第一節",
+        "reference": [
+          7,
+          1,
+          1
+        ],
+        "asrMs": 720.3905830392614,
+        "locateMs": 0.855291960760951,
+        "estimated_ms": 2043.6239999141544,
+        "endpoint_sample": 74240
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0291",
+    "profile": "hum-10db",
+    "target": [
+      5,
+      20,
+      5
+    ],
+    "floor": 0.02963145822286606,
+    "full": {
+      "text": "官厂也要对百姓宣告说:谁建造房屋,尚未奉献,他可以回家吃,恐怕他阵亡,别人去奉献。谁种葡萄园,尚未用所结的果子,他可以回家吃,恐怕他阵亡,别人去用。",
+      "reference": [
+        5,
+        20,
+        5
+      ],
+      "asrMs": 1759.1665000654757,
+      "locateMs": 23.743666941300035
+    },
+    "decisions": [
+      {
+        "text": "官厂也要对百姓宣告说:谁建造房屋,尚未奔献,他可以回家吃,恐怕他阵亡,别人去奔献。谁种葡萄园,尚未用所结的果子,他可以回家吃,恐怕他阵亡,别人去用。",
+        "reference": [
+          5,
+          20,
+          5
+        ],
+        "asrMs": 2260.0703749340028,
+        "locateMs": 11.191917001269758,
+        "estimated_ms": 3816.960416919552,
+        "endpoint_sample": 323520
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "0298",
+    "profile": "hum-10db",
+    "target": [
+      9,
+      26,
+      8
+    ],
+    "floor": 0.05276716500520706,
+    "full": {
+      "text": "雅比篩對大衛說:現在神將你的仇敵交在你手裡,求你容我拿槍將他刺透在地,一次就成,不用再刺。大衛對雅比篩說:不可害死他,有誰伸手害耶和華的受高者而無罪呢?",
+      "reference": [
+        9,
+        26,
+        8
+      ],
+      "asrMs": 2038.6246250709519,
+      "locateMs": 20.593583933077753
+    },
+    "decisions": [
+      {
+        "text": "雅比篩對大衛說:現在神將你的仇敵交在你手裡,求你容我拿槍將他刺透在地,一次就成,不用再刺。大衛對雅比篩說:不可害死他,有誰伸手害耶和華的受高者而無罪呢?",
+        "reference": [
+          9,
+          26,
+          8
+        ],
+        "asrMs": 2418.8223750097677,
+        "locateMs": 30.772167025133967,
+        "estimated_ms": 3786.7262089578435,
+        "endpoint_sample": 311680
+      }
+    ],
+    "correct": true,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "ref3-106",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.05865243077278137,
+    "full": {
+      "text": "请不要读约翰福音第三章第16节",
+      "reference": null,
+      "asrMs": 716.4149159798399,
+      "locateMs": 2.3329589748755097
+    },
+    "decisions": [
+      {
+        "text": "请不要读约翰福音第三章第16节",
+        "reference": null,
+        "asrMs": 1010.1872499799356,
+        "locateMs": 1.161209074780345,
+        "estimated_ms": 2361.6171680707484,
+        "endpoint_sample": 95040
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "ref3-107",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.029149437323212624,
+    "full": {
+      "text": "请不要读约翰福音第三章第十六节。",
+      "reference": null,
+      "asrMs": 829.3864579172805,
+      "locateMs": 1.6007079975679517
+    },
+    "decisions": [
+      {
+        "text": "请不要读约翰福音第三章第十六节。",
+        "reference": null,
+        "asrMs": 898.3797080582008,
+        "locateMs": 0.8647920330986381,
+        "estimated_ms": 2402.2419170150533,
+        "endpoint_sample": 84800
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "ref3-108",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.05331694707274437,
+    "full": {
+      "text": "请翻到课本第8章第12节",
+      "reference": null,
+      "asrMs": 854.5788750052452,
+      "locateMs": 0.8713750867173076
+    },
+    "decisions": [
+      {
+        "text": "请翻到课本第8章第12节",
+        "reference": null,
+        "asrMs": 864.3832920351997,
+        "locateMs": 0.5781659856438637,
+        "estimated_ms": 2206.648957972415,
+        "endpoint_sample": 82880
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  },
+  {
+    "id": "ref3-109",
+    "profile": "hum-10db",
+    "target": null,
+    "floor": 0.027491044253110886,
+    "full": {
+      "text": "请颁到课本第八章第十二节。",
+      "reference": null,
+      "asrMs": 887.8739170031622,
+      "locateMs": 1.567250001244247
+    },
+    "decisions": [
+      {
+        "text": "请颁到课本第八章第十二节。",
+        "reference": null,
+        "asrMs": 932.0824580499902,
+        "locateMs": 2.2449169773608446,
+        "estimated_ms": 2430.2410000553355,
+        "endpoint_sample": 76480
+      }
+    ],
+    "correct": false,
+    "wrong": false,
+    "lost_vs_noisy_full": false,
+    "lost_vs_clean": false
+  }
+]

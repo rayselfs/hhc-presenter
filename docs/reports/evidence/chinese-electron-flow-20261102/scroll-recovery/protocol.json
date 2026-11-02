@@ -1,0 +1,12 @@
+{
+  "ids": [
+    "0001"
+  ],
+  "scrollFaultInjection": true,
+  "method": "Real-time synthetic WebAudio MediaStream → production AudioWorklet → Electron IPC → resident native Turbo → frozen locator → actual Bible preview",
+  "audioDevice": "Synthetic loopback replaces getUserMedia device only; no ASR or navigation mocks",
+  "omissions": "Physical microphone, room acoustics, human-labelled recordings, Windows, packaged native distribution",
+  "clock": "Source AudioContext output timestamp maps the last nonzero fixture sample to renderer performance time; independently compare captured last nonzero sample",
+  "endpoint": "300 ms speculative processing, 1500 ms exact-zero stability; all nonzero samples preserved",
+  "data": "Only Bible content transport is replaced with the fixed local CUV fixture; no speech handler is replaced"
+}

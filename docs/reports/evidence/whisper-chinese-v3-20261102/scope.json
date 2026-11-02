@@ -1,0 +1,7 @@
+{
+  "scope": "Synthetic calibration only. No private recordings or AI transcripts included.",
+  "source_head": "8308c15b",
+  "policy": "Frozen v2 phonetic-0.85",
+  "selection": "Turbo audio_ctx=768 is a candidate for regression, not approved for production",
+  "real_audio": "All private evidence remains outside repository; unlabeled and excluded from accuracy."
+}

@@ -1,0 +1,191 @@
+{
+  "baseline/calibration/en/reference": {
+    "n": 40,
+    "correct": 13,
+    "wrong": 21,
+    "rejected": 6,
+    "correct_within_3s": 13,
+    "p95_s": 0.580993499991335,
+    "over_3s": 0
+  },
+  "optimized/calibration/en/reference": {
+    "n": 40,
+    "correct": 38,
+    "wrong": 0,
+    "rejected": 2,
+    "correct_within_3s": 38,
+    "p95_s": 0.5799690419913349,
+    "over_3s": 0
+  },
+  "strict/calibration/en/reference": {
+    "n": 40,
+    "correct": 38,
+    "wrong": 0,
+    "rejected": 2,
+    "correct_within_3s": 38,
+    "p95_s": 0.5799919169683052,
+    "over_3s": 0
+  },
+  "phonetic-0.85/calibration/en/reference": {
+    "n": 40,
+    "correct": 38,
+    "wrong": 0,
+    "rejected": 2,
+    "correct_within_3s": 38,
+    "p95_s": 0.5799919169683052,
+    "over_3s": 0
+  },
+  "phonetic-0.88/calibration/en/reference": {
+    "n": 40,
+    "correct": 38,
+    "wrong": 0,
+    "rejected": 2,
+    "correct_within_3s": 38,
+    "p95_s": 0.5799919169683052,
+    "over_3s": 0
+  },
+  "phonetic-0.90/calibration/en/reference": {
+    "n": 40,
+    "correct": 38,
+    "wrong": 0,
+    "rejected": 2,
+    "correct_within_3s": 38,
+    "p95_s": 0.5799919169683052,
+    "over_3s": 0
+  },
+  "phonetic-0.92/calibration/en/reference": {
+    "n": 40,
+    "correct": 38,
+    "wrong": 0,
+    "rejected": 2,
+    "correct_within_3s": 38,
+    "p95_s": 0.5799919169683052,
+    "over_3s": 0
+  },
+  "baseline/calibration/en/quotation": {
+    "n": 20,
+    "correct": 20,
+    "wrong": 0,
+    "rejected": 0,
+    "correct_within_3s": 20,
+    "p95_s": 0.6447108330388516,
+    "over_3s": 0
+  },
+  "optimized/calibration/en/quotation": {
+    "n": 20,
+    "correct": 20,
+    "wrong": 0,
+    "rejected": 0,
+    "correct_within_3s": 20,
+    "p95_s": 0.6447102080388516,
+    "over_3s": 0
+  },
+  "strict/calibration/en/quotation": {
+    "n": 20,
+    "correct": 20,
+    "wrong": 0,
+    "rejected": 0,
+    "correct_within_3s": 20,
+    "p95_s": 0.6463687069585089,
+    "over_3s": 0
+  },
+  "phonetic-0.85/calibration/en/quotation": {
+    "n": 20,
+    "correct": 20,
+    "wrong": 0,
+    "rejected": 0,
+    "correct_within_3s": 20,
+    "p95_s": 0.6463687069585089,
+    "over_3s": 0
+  },
+  "phonetic-0.88/calibration/en/quotation": {
+    "n": 20,
+    "correct": 20,
+    "wrong": 0,
+    "rejected": 0,
+    "correct_within_3s": 20,
+    "p95_s": 0.6463687069585089,
+    "over_3s": 0
+  },
+  "phonetic-0.90/calibration/en/quotation": {
+    "n": 20,
+    "correct": 20,
+    "wrong": 0,
+    "rejected": 0,
+    "correct_within_3s": 20,
+    "p95_s": 0.6463687069585089,
+    "over_3s": 0
+  },
+  "phonetic-0.92/calibration/en/quotation": {
+    "n": 20,
+    "correct": 20,
+    "wrong": 0,
+    "rejected": 0,
+    "correct_within_3s": 20,
+    "p95_s": 0.6463687069585089,
+    "over_3s": 0
+  },
+  "baseline/calibration/en/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 0.5733097919833926,
+    "over_3s": 0
+  },
+  "optimized/calibration/en/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 0.5733134999833926,
+    "over_3s": 0
+  },
+  "strict/calibration/en/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 0.5729689588807492,
+    "over_3s": 0
+  },
+  "phonetic-0.85/calibration/en/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 0.5729689588807492,
+    "over_3s": 0
+  },
+  "phonetic-0.88/calibration/en/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 0.5729689588807492,
+    "over_3s": 0
+  },
+  "phonetic-0.90/calibration/en/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 0.5729689588807492,
+    "over_3s": 0
+  },
+  "phonetic-0.92/calibration/en/negative": {
+    "n": 1,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 1,
+    "correct_within_3s": 0,
+    "p95_s": 0.5729689588807492,
+    "over_3s": 0
+  }
+}
