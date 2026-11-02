@@ -28,6 +28,36 @@ edit counts, which must not be reported as accuracy.
 
 ## Synthetic comparison
 
+### Chinese segmentation experiments
+
+`segmentation_fixtures.py DATA` generates 24 Chinese pause/negation challenges
+with known splice boundaries and 40 diagnostic pieces emulating a naive 600 ms
+endpoint. Piece targets retain the complete utterance's intent; their edit rates
+against the full sentence are not meaningful and must not be reported. Aggregate
+piece decisions by source utterance, counting any premature wrong candidate.
+
+`segmentation_compare.py DATA CORPUS OUTPUT` alternates full-audio and exact-zero
+outer cropping on a single resident Turbo model. Both keep the length-aware 768
+context guard. Source WAV hashes remain unchanged in paired records; payload
+hashes and crop offsets separately identify the samples actually decoded.
+
+`run.py --trim-edge-silence energy` tests a 20 ms RMS threshold of 0.001 with
+300 ms padding. `--trim-edge-silence digital` removes only exterior exact zeros
+with the same padding. Neither splits internal pauses. Energy cropping can lose
+quiet negation and is not production VAD. Digital cropping has little value for
+real microphone background noise; preserving samples also does not guarantee
+identical ASR output. Compare localization before adopting either.
+
+`--vad-model PATH` tests the engine's built-in VAD with a separately pinned local
+model; record its hash and the engine defaults. `--skip-digital-silence` bypasses
+ASR only when every input sample is zero. Even one nonzero PCM sample retains
+recognition. None of these experimental switches changes the product UI or the
+English configuration.
+
+Timing includes crop/ASR plus measured localization after evaluation. It excludes
+capture, endpoint waiting, model/index preparation, IPC and UI. Do not call it
+end-to-end latency or assume a 600 ms silence is the end of a speaker's intent.
+
 ### Reference-format v3 candidate
 
 Keep `locate-v2.mjs` frozen. `evaluate_v2.py ... --reference-v3` selects the

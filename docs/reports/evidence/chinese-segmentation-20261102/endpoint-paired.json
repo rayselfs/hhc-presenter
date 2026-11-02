@@ -1,0 +1,482 @@
+[
+  {
+    "id": "segment-000",
+    "boundary_kind": "reference",
+    "pause_s": 0.2,
+    "whole": {
+      "actual": [
+        1,
+        1,
+        1
+      ],
+      "correct": true,
+      "wrong": false,
+      "rejected": false,
+      "total_s": 0.859992874834198,
+      "correct_within_3s": true
+    },
+    "pieces": {
+      "correct": true,
+      "wrong": false
+    },
+    "lost": false,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-001",
+    "boundary_kind": "prefix-negation",
+    "pause_s": 0.2,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.8406555850062711,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": false,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-002",
+    "boundary_kind": "suffix-negation",
+    "pause_s": 0.2,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.832377125947204,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": false,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-003",
+    "boundary_kind": "quiet-negation",
+    "pause_s": 0.2,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.8074038748825746,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": false,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-004",
+    "boundary_kind": "reference",
+    "pause_s": 0.8,
+    "whole": {
+      "actual": [
+        1,
+        1,
+        1
+      ],
+      "correct": true,
+      "wrong": false,
+      "rejected": false,
+      "total_s": 0.8272447909729619,
+      "correct_within_3s": true
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": true,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-005",
+    "boundary_kind": "prefix-negation",
+    "pause_s": 0.8,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.8865951669407189,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": true
+    },
+    "lost": false,
+    "new_wrong": true
+  },
+  {
+    "id": "segment-006",
+    "boundary_kind": "suffix-negation",
+    "pause_s": 0.8,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.9655416250370326,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": true
+    },
+    "lost": false,
+    "new_wrong": true
+  },
+  {
+    "id": "segment-007",
+    "boundary_kind": "quiet-negation",
+    "pause_s": 0.8,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.8351805829737868,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": true
+    },
+    "lost": false,
+    "new_wrong": true
+  },
+  {
+    "id": "segment-008",
+    "boundary_kind": "reference",
+    "pause_s": 1.2,
+    "whole": {
+      "actual": [
+        1,
+        1,
+        1
+      ],
+      "correct": true,
+      "wrong": false,
+      "rejected": false,
+      "total_s": 0.8886853331585824,
+      "correct_within_3s": true
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": true,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-009",
+    "boundary_kind": "prefix-negation",
+    "pause_s": 1.2,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.8718763337947365,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": true
+    },
+    "lost": false,
+    "new_wrong": true
+  },
+  {
+    "id": "segment-010",
+    "boundary_kind": "suffix-negation",
+    "pause_s": 1.2,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.9464829988842937,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": true
+    },
+    "lost": false,
+    "new_wrong": true
+  },
+  {
+    "id": "segment-011",
+    "boundary_kind": "quiet-negation",
+    "pause_s": 1.2,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.9246661259759441,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": true
+    },
+    "lost": false,
+    "new_wrong": true
+  },
+  {
+    "id": "segment-012",
+    "boundary_kind": "reference",
+    "pause_s": 0.2,
+    "whole": {
+      "actual": [
+        1,
+        1,
+        1
+      ],
+      "correct": true,
+      "wrong": false,
+      "rejected": false,
+      "total_s": 0.8962447931221085,
+      "correct_within_3s": true
+    },
+    "pieces": {
+      "correct": true,
+      "wrong": false
+    },
+    "lost": false,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-013",
+    "boundary_kind": "prefix-negation",
+    "pause_s": 0.2,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.9183532919035746,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": false,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-014",
+    "boundary_kind": "suffix-negation",
+    "pause_s": 0.2,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.9546935841009063,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": false,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-015",
+    "boundary_kind": "quiet-negation",
+    "pause_s": 0.2,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.8208445419188631,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": false,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-016",
+    "boundary_kind": "reference",
+    "pause_s": 0.8,
+    "whole": {
+      "actual": [
+        1,
+        1,
+        1
+      ],
+      "correct": true,
+      "wrong": false,
+      "rejected": false,
+      "total_s": 0.8326130410667274,
+      "correct_within_3s": true
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": true,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-017",
+    "boundary_kind": "prefix-negation",
+    "pause_s": 0.8,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.8518291249923737,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": false,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-018",
+    "boundary_kind": "suffix-negation",
+    "pause_s": 0.8,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.8658839590915963,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": false,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-019",
+    "boundary_kind": "quiet-negation",
+    "pause_s": 0.8,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.8528319579987962,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": false,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-020",
+    "boundary_kind": "reference",
+    "pause_s": 1.2,
+    "whole": {
+      "actual": [
+        1,
+        1,
+        1
+      ],
+      "correct": true,
+      "wrong": false,
+      "rejected": false,
+      "total_s": 0.8229304169440195,
+      "correct_within_3s": true
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": true,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-021",
+    "boundary_kind": "prefix-negation",
+    "pause_s": 1.2,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.8845637081509083,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": false,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-022",
+    "boundary_kind": "suffix-negation",
+    "pause_s": 1.2,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 1.0589612911308184,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": false,
+    "new_wrong": false
+  },
+  {
+    "id": "segment-023",
+    "boundary_kind": "quiet-negation",
+    "pause_s": 1.2,
+    "whole": {
+      "actual": null,
+      "correct": false,
+      "wrong": false,
+      "rejected": true,
+      "total_s": 0.7454215001544058,
+      "correct_within_3s": false
+    },
+    "pieces": {
+      "correct": false,
+      "wrong": false
+    },
+    "lost": false,
+    "new_wrong": false
+  }
+]

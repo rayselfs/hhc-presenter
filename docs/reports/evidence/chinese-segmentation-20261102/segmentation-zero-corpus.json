@@ -1,0 +1,109 @@
+[
+  {
+    "id": "turbo-boundary-silence-16",
+    "language": "zh",
+    "kind": "negative",
+    "target": null,
+    "text": "",
+    "voice": "silence",
+    "rate": 0,
+    "split": "boundary-probe",
+    "duration_s": 16,
+    "sha256": "0f01d6201b16ebf5ad80113a7b0d3039e1b780d69e9a30ceecd8d52f6591d1ef"
+  },
+  {
+    "id": "turbo-boundary-silence-22",
+    "language": "zh",
+    "kind": "negative",
+    "target": null,
+    "text": "",
+    "voice": "silence",
+    "rate": 0,
+    "split": "boundary-probe",
+    "duration_s": 22,
+    "sha256": "b52738d5e2a0de74ba9d69a73f1f0dc3b5b6b0de6cf3437f44cf5296ed9a3ae1"
+  },
+  {
+    "id": "opt-neg-048",
+    "language": "zh",
+    "kind": "negative",
+    "text": "",
+    "target": null,
+    "voice": "silence",
+    "rate": 0,
+    "split": "challenge",
+    "sha256": "643f8a8dc8bd9c19225afffad2becfec5426180b3749cb208abdf1a6c8354efc",
+    "duration_s": 1.0
+  },
+  {
+    "id": "opt-neg-049",
+    "language": "zh",
+    "kind": "negative",
+    "text": "",
+    "target": null,
+    "voice": "silence",
+    "rate": 0,
+    "split": "challenge",
+    "sha256": "d303811b8c84619667cd0501342f84ec6cbe69f7aa3856dcf52fabda374c92b8",
+    "duration_s": 3.0
+  },
+  {
+    "id": "opt-neg-050",
+    "language": "zh",
+    "kind": "negative",
+    "text": "",
+    "target": null,
+    "voice": "silence",
+    "rate": 0,
+    "split": "challenge",
+    "sha256": "262d1f34f300560a4c82ba8127ddea9e1d72946f187fdbd3e8f70ee096077aec",
+    "duration_s": 5.0
+  },
+  {
+    "id": "opt-neg-051",
+    "language": "zh",
+    "kind": "negative",
+    "text": "",
+    "target": null,
+    "voice": "silence",
+    "rate": 0,
+    "split": "challenge",
+    "sha256": "ee7bea4232762775f8fce9b3e27e4d3948c8ac6a45a87ca769f703d6eed0b448",
+    "duration_s": 10.0
+  },
+  {
+    "id": "0000",
+    "language": "zh",
+    "kind": "reference",
+    "text": "創世記第一章第一節",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "voice": "Meijia",
+    "rate": 150,
+    "split": "calibration",
+    "duration_s": 2.3355,
+    "sha256": "d4f3240926840f77a5ec39a946e251060443a90b3017ed736ffc3bb821b30b64"
+  },
+  {
+    "id": "segment-003",
+    "language": "zh",
+    "kind": "negative",
+    "target": null,
+    "text": "請不要切換到，創世記第一章第一節",
+    "split": "segmentation-challenge",
+    "voice": "Meijia",
+    "rate": 175,
+    "duration_s": 5.884,
+    "sha256": "5147807afaea51f51f5e30c31f0f5a6f65e9a74bd100b7ce182a174d09b634d7",
+    "boundary_kind": "quiet-negation",
+    "internal_pause_s": 0.2,
+    "prefix_gain": 0.02,
+    "first_phrase_start_s": 1,
+    "first_phrase_end_s": 2.56525,
+    "second_phrase_start_s": 2.76525,
+    "speech_end_s": 4.884
+  }
+]

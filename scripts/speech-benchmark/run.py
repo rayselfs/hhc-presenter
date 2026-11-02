@@ -16,6 +16,7 @@ except ImportError:
 
 import numpy as np
 from metrics import score
+from segmentation import is_digital_silence, speech_span
 
 
 def peak_rss_bytes():
@@ -59,6 +60,8 @@ def run(args):
                       context_params={'use_gpu': not args.cpu}, redirect_whispercpp_logs_to=None)
         def transcribe(audio, language):
             options = {'language': args.decode_language or language}
+            if args.vad_model:
+                options.update(vad=True, vad_model_path=str(args.vad_model))
             if args.audio_ctx:
                 options['audio_ctx'] = (fitted_audio_context(args.audio_ctx, len(audio))
                                         if args.fit_audio_context else args.audio_ctx)
@@ -120,15 +123,26 @@ def run(args):
                               'beam_size': args.beam_size, 'corpus': args.corpus, 'language': args.language,
                               'decode_language': args.decode_language, 'audio_ctx': args.audio_ctx,
                               'fit_audio_context': args.fit_audio_context,
+                              'trim_edge_silence': args.trim_edge_silence,
+                              'vad_model': args.vad_model.name if args.vad_model else None,
+                              'skip_digital_silence': args.skip_digital_silence,
                               'beam': args.beam or (args.bias and args.engine.startswith('sherpa')),
                               'timing': 'presegmented waveform decode; excludes capture, VAD endpoint and UI'}) + '\n')
         for i, row in enumerate(rows):
             audio = read_audio(args.root / 'audio' / f"{row['id']}.wav", row['sha256'])
             start_cpu = time.process_time()
             start = time.perf_counter()
-            text = transcribe(audio, row['language'])
+            bounds = speech_span(audio, args.trim_edge_silence) if args.trim_edge_silence else (0, len(audio))
+            payload = audio[bounds[0]:bounds[1]]
+            segmentation_s = time.perf_counter() - start
+            skipped = args.skip_digital_silence and is_digital_silence(payload)
+            text = '' if skipped else transcribe(payload, row['language'])
             elapsed = time.perf_counter() - start
             result = {**row, 'transcript': text, 'decode_s': elapsed, 'cpu_s': time.process_time() - start_cpu,
+                      'segmentation_s': segmentation_s, 'audio_start_s': bounds[0] / 16000,
+                      'skipped_digital_silence': skipped,
+                      'audio_end_s': bounds[1] / 16000, 'payload_samples': len(payload),
+                      'payload_sha256': hashlib.sha256(payload.tobytes()).hexdigest(),
                       'rtf': elapsed / row['duration_s'], 'max_rss_bytes': peak_rss_bytes(),
                       **score(row, text, books)}
             out.write(json.dumps(result, ensure_ascii=False) + '\n')
@@ -149,6 +163,9 @@ if __name__ == '__main__':
     parser.add_argument('--decode-language', choices=['zh', 'en', 'auto'])
     parser.add_argument('--audio-ctx', type=int, choices=[512, 768])
     parser.add_argument('--fit-audio-context', action='store_true')
+    parser.add_argument('--trim-edge-silence', nargs='?', const='energy', choices=['energy', 'digital'])
+    parser.add_argument('--vad-model', type=Path)
+    parser.add_argument('--skip-digital-silence', action='store_true')
     parser.add_argument('--short-prompt', action='store_true')
     parser.add_argument('--beam-size', type=int, choices=[3, 5])
     parser.add_argument('--bias', action='store_true')

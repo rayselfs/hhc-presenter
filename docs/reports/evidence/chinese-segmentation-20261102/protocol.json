@@ -1,0 +1,10 @@
+{
+  "language": "zh only; English unchanged",
+  "corpus": "segmentation-screen-corpus.json",
+  "n": 81,
+  "candidate": "20 ms RMS >= 0.001; 300 ms outer padding; preserve all internal pauses; silent/ambiguous input unchanged",
+  "model": "Turbo Q5_0 greedy no prompt, context 768 with full-context length guard",
+  "gate": "no lost correct cases, no new wrong candidates; compare ASR plus localization; no live UI latency claim",
+  "timing": "sequential fresh baseline and candidate; shared host load, not controlled performance comparison",
+  "followup": "Do not promote a crop that loses information; add boundary and quiet-negation challenges before acceptance"
+}

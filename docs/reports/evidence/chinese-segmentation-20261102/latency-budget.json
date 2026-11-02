@@ -1,0 +1,205 @@
+{
+  "scope": "Scheduling budget only; known synthetic boundaries; NOT live VAD, IPC or UI measurement",
+  "assumptions": "Start speculative decode 300 ms after known speech end, retain full buffer, invalidate on resumed speech, single inference flight, release only after 1500 ms quiet and latest full result. No audio queue loss.",
+  "formula": "start=max(last_speech_end+0.3, previous_request_end); ready=max(last_speech_end+1.5,start+measured_final_processing); latency=ready-last_speech_end",
+  "omissions": "Real speech-boundary detection, capture/resampling, cold startup, IPC, UI and acoustic noise. Pauses longer than stability interval can still admit a premature result.",
+  "n": 24,
+  "modeled_p95_s": 1.5000000000000004,
+  "modeled_max_s": 1.7093857078323689,
+  "modeled_over3": 0,
+  "early_release_possible": 0,
+  "rows": [
+    {
+      "id": "segment-000",
+      "partial_decode_s": 0.7979322919854894,
+      "final_processing_s": 0.7547386249541076,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-001",
+      "partial_decode_s": 0.8697737080510706,
+      "final_processing_s": 0.8359617898636194,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-002",
+      "partial_decode_s": 1.1086717080324888,
+      "final_processing_s": 0.837654958037767,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-003",
+      "partial_decode_s": 0.9366276669315994,
+      "final_processing_s": 0.8395954158724919,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-004",
+      "partial_decode_s": 0.8321892499225214,
+      "final_processing_s": 0.8055442499023762,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-005",
+      "partial_decode_s": 0.8427767499815673,
+      "final_processing_s": 0.8906819991554235,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-006",
+      "partial_decode_s": 0.8257131660357118,
+      "final_processing_s": 0.9774996639630112,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-007",
+      "partial_decode_s": 0.8239593330072239,
+      "final_processing_s": 0.9279989988544689,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-008",
+      "partial_decode_s": 0.8022898329654709,
+      "final_processing_s": 0.8725303330149055,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-009",
+      "partial_decode_s": 0.846746625029482,
+      "final_processing_s": 0.8948442068144147,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-010",
+      "partial_decode_s": 1.0128426670562476,
+      "final_processing_s": 1.4093857078323695,
+      "modeled_after_last_s": 1.7093857078323689,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-011",
+      "partial_decode_s": 0.7878923329990357,
+      "final_processing_s": 1.0389211680617854,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-012",
+      "partial_decode_s": 0.8624447080073878,
+      "final_processing_s": 0.8548922909863442,
+      "modeled_after_last_s": 1.5000000000000004,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-013",
+      "partial_decode_s": 0.8136572500225157,
+      "final_processing_s": 0.9403765841053352,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-014",
+      "partial_decode_s": 0.8800096670165658,
+      "final_processing_s": 0.9010696660246359,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-015",
+      "partial_decode_s": 0.8231677089352161,
+      "final_processing_s": 0.833695206988606,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-016",
+      "partial_decode_s": 0.8100387919694185,
+      "final_processing_s": 0.8596690418951809,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-017",
+      "partial_decode_s": 0.8609230419388041,
+      "final_processing_s": 0.9038397500332359,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-018",
+      "partial_decode_s": 0.8100144170457497,
+      "final_processing_s": 0.851064416104785,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-019",
+      "partial_decode_s": 0.8667220839997754,
+      "final_processing_s": 0.8545607900296289,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-020",
+      "partial_decode_s": 0.828486290993169,
+      "final_processing_s": 0.878334124940193,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-021",
+      "partial_decode_s": 0.7964580829720944,
+      "final_processing_s": 0.8577160840552163,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-022",
+      "partial_decode_s": 0.8202033329289407,
+      "final_processing_s": 0.8517619581094789,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    },
+    {
+      "id": "segment-023",
+      "partial_decode_s": 0.7890938749769703,
+      "final_processing_s": 0.9223689580692426,
+      "modeled_after_last_s": 1.5,
+      "queue_wait_s": 0,
+      "early_release_possible": false
+    }
+  ]
+}

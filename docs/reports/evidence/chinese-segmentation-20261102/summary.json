@@ -1,0 +1,134 @@
+{
+  "full_regression": {
+    "reference": {
+      "n": 292,
+      "whole_archived": {
+        "correct": 212,
+        "wrong": 0,
+        "rejected": 80,
+        "correct_within_3s": 212,
+        "p95_s": 0.9298474590875805,
+        "max_s": 1.6895679140947972,
+        "over_3s": 0
+      },
+      "digital": {
+        "correct": 212,
+        "wrong": 0,
+        "rejected": 80,
+        "correct_within_3s": 212,
+        "p95_s": 1.0946050849669064,
+        "max_s": 1.788365874973394,
+        "over_3s": 0
+      }
+    },
+    "all": {
+      "n": 505,
+      "whole_archived": {
+        "correct": 315,
+        "wrong": 0,
+        "rejected": 190,
+        "correct_within_3s": 315,
+        "p95_s": 1.057317250132485,
+        "max_s": 2.0075534571555065,
+        "over_3s": 0
+      },
+      "digital": {
+        "correct": 315,
+        "wrong": 0,
+        "rejected": 190,
+        "correct_within_3s": 315,
+        "p95_s": 1.126583624905847,
+        "max_s": 2.829426665983397,
+        "over_3s": 0
+      }
+    },
+    "positive": {
+      "n": 443,
+      "whole_archived": {
+        "correct": 315,
+        "wrong": 0,
+        "rejected": 128,
+        "correct_within_3s": 315,
+        "p95_s": 1.05959358299744,
+        "max_s": 2.0075534571555065,
+        "over_3s": 0
+      },
+      "digital": {
+        "correct": 315,
+        "wrong": 0,
+        "rejected": 128,
+        "correct_within_3s": 315,
+        "p95_s": 1.134083708037186,
+        "max_s": 2.829426665983397,
+        "over_3s": 0
+      }
+    },
+    "quotation": {
+      "n": 100,
+      "whole_archived": {
+        "correct": 89,
+        "wrong": 0,
+        "rejected": 11,
+        "correct_within_3s": 89,
+        "p95_s": 1.2449186669989047,
+        "max_s": 2.0075534571555065,
+        "over_3s": 0
+      },
+      "digital": {
+        "correct": 89,
+        "wrong": 0,
+        "rejected": 11,
+        "correct_within_3s": 89,
+        "p95_s": 1.1833944600262833,
+        "max_s": 2.829426665983397,
+        "over_3s": 0
+      }
+    },
+    "mixed": {
+      "n": 51,
+      "whole_archived": {
+        "correct": 14,
+        "wrong": 0,
+        "rejected": 37,
+        "correct_within_3s": 14,
+        "p95_s": 0.8039390401553277,
+        "max_s": 0.8149276259155986,
+        "over_3s": 0
+      },
+      "digital": {
+        "correct": 14,
+        "wrong": 0,
+        "rejected": 37,
+        "correct_within_3s": 14,
+        "p95_s": 1.1183872090936164,
+        "max_s": 1.1472203330877337,
+        "over_3s": 0
+      }
+    },
+    "negative": {
+      "n": 62,
+      "whole_archived": {
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 62,
+        "correct_within_3s": 0,
+        "p95_s": 0.8878126668981389,
+        "max_s": 1.295325209017962,
+        "over_3s": 0
+      },
+      "digital": {
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 62,
+        "correct_within_3s": 0,
+        "p95_s": 1.1196480000320599,
+        "max_s": 1.1514990011405912,
+        "over_3s": 0
+      }
+    }
+  },
+  "changed_payloads": 244,
+  "skipped_zero": 4,
+  "unique_source_cases": 606,
+  "decision": "Retain digital outer crop + exact-zero skip as benchmark prototype; reject energy crop, current default VAD, and hard 600 ms endpoint. Product runtime and live acceptance unchanged."
+}

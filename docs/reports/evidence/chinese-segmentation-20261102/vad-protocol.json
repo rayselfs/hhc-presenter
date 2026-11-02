@@ -1,0 +1,10 @@
+{
+  "n": 105,
+  "model": "ggml-silero-v5.1.2.bin",
+  "model_manifest": "models/vad/manifest.json",
+  "segmentation": "pywhispercpp built-in VAD defaults; no manually clipped audio",
+  "asr": "same Chinese Turbo no prompt greedy and original-length context guard",
+  "gate": "paired loss/new-wrong against original audio, no full promotion on any regression",
+  "chronology": "chosen after energy screen; before inspecting digital paired decisions",
+  "limits": "offline inference, not a live endpoint or UI latency test"
+}
