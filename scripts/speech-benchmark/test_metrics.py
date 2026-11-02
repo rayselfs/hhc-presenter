@@ -6,11 +6,16 @@ import wave
 from metrics import edit_distance, reference, normalize, score
 from corpus import chinese_number
 from evaluate import Retrieval, percentile
-from run import read_audio
+from run import read_audio, fitted_audio_context
 from evaluate_v2 import evaluate as evaluate_v2
 
 
 class MetricsTests(unittest.TestCase):
+    def test_context_covers_complete_waveform(self):
+        self.assertEqual(fitted_audio_context(768, 768 * 320), 768)
+        self.assertEqual(fitted_audio_context(768, 768 * 320 + 1), 0)
+        self.assertEqual(fitted_audio_context(768, 22 * 16000), 0)
+
     def test_unlabeled_audio_has_no_accuracy_score(self):
         self.assertTrue(all(value is None for value in score({'kind': 'unlabeled'}, 'John 3:16', []).values()))
         with tempfile.TemporaryDirectory() as directory:

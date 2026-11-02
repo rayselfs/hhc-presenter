@@ -27,6 +27,27 @@ edit counts, which must not be reported as accuracy.
 
 ## Synthetic comparison
 
+### Turbo context validation
+
+`--audio-ctx 768` reproduces the fixed reduced-context experiment. It can miss
+speech late in a longer waveform. Add `--fit-audio-context` to choose full context
+before inference whenever the waveform exceeds 768 audio tokens (15.36 seconds).
+This is a benchmark setting, not a user-facing model option or a second-pass retry.
+
+Run `run.py whisper-large-v3-turbo-q5_0` sequentially on
+`optimization-final-corpus.json` and `v2-fresh-corpus.json`, with `--language zh
+--audio-ctx 768 --fit-audio-context`. Evaluate each output with
+`optimization_evaluate.py`, then `evaluate_v2.py` and the frozen `phonetic-0.85`
+policy. `compare_turbo.py BASELINE_DECISIONS TURBO_DECISIONS OUTPUT` checks paired
+IDs, WAV hashes, targets and durations before summarizing. For the second dataset,
+pass `--exclude v2-097 v2-129` to retain the earlier text-deduplication rule.
+
+Boundary probes use the original synthetic `0000` and `0600` WAVs, placed at
+offset 0 or 16 seconds in a 22-second, 16 kHz mono PCM waveform, padded with zeros.
+Add pure zero-valued 16- and 22-second waveforms as negatives. These deliberate
+boundary probes are reported separately, not added to accuracy totals. Preserve
+the four original long quotations; do not discard them to improve timing results.
+
 Isolated Phase 0 experiment. No application runtime changes, microphone capture,
 cloud ASR, or remote model code. Model files and synthesized audio live outside
 the repository. The Python bindings are benchmark tooling, not a proposed Python

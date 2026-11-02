@@ -33,6 +33,11 @@ def read_audio(path, expected_hash=None):
         return np.frombuffer(wav.readframes(wav.getnframes()), dtype='<i2').astype(np.float32) / 32768
 
 
+def fitted_audio_context(requested, samples):
+    # Whisper audio tokens cover 20 ms at 16 kHz; long input needs the full context.
+    return requested if samples <= requested * 320 else 0
+
+
 def run(args):
     rows = json.loads((args.root / args.corpus).read_text())
     books = json.loads((args.root / 'books.json').read_text())
@@ -55,7 +60,8 @@ def run(args):
         def transcribe(audio, language):
             options = {'language': args.decode_language or language}
             if args.audio_ctx:
-                options['audio_ctx'] = args.audio_ctx
+                options['audio_ctx'] = (fitted_audio_context(args.audio_ctx, len(audio))
+                                        if args.fit_audio_context else args.audio_ctx)
             if args.beam_size:
                 options['beam_search'] = {'beam_size': args.beam_size, 'patience': 1.0}
             if args.short_prompt:
@@ -113,6 +119,7 @@ def run(args):
                               'bias': args.bias, 'subset': args.subset, 'short_prompt': args.short_prompt,
                               'beam_size': args.beam_size, 'corpus': args.corpus, 'language': args.language,
                               'decode_language': args.decode_language, 'audio_ctx': args.audio_ctx,
+                              'fit_audio_context': args.fit_audio_context,
                               'beam': args.beam or (args.bias and args.engine.startswith('sherpa')),
                               'timing': 'presegmented waveform decode; excludes capture, VAD endpoint and UI'}) + '\n')
         for i, row in enumerate(rows):
@@ -141,6 +148,7 @@ if __name__ == '__main__':
     parser.add_argument('--language', choices=['zh', 'en'])
     parser.add_argument('--decode-language', choices=['zh', 'en', 'auto'])
     parser.add_argument('--audio-ctx', type=int, choices=[512, 768])
+    parser.add_argument('--fit-audio-context', action='store_true')
     parser.add_argument('--short-prompt', action='store_true')
     parser.add_argument('--beam-size', type=int, choices=[3, 5])
     parser.add_argument('--bias', action='store_true')
