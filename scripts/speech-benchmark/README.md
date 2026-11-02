@@ -42,6 +42,15 @@ policy. `compare_turbo.py BASELINE_DECISIONS TURBO_DECISIONS OUTPUT` checks pair
 IDs, WAV hashes, targets and durations before summarizing. For the second dataset,
 pass `--exclude v2-097 v2-129` to retain the earlier text-deduplication rule.
 
+For English, calibrate `run.py` with `--language en --subset calibration`: Small
+uses the previously selected `--short-prompt`; compare Turbo with and without
+that prompt while keeping `--audio-ctx 768 --fit-audio-context`. Freeze the prompt
+selection before running both final corpora. Re-run both engines sequentially
+and use `compare_turbo.py ... --language en`, with the same second-dataset
+exclusions. Empty language selections fail instead of producing an empty success
+summary. Report Chinese, English and mixed speech separately; mixed-speech recall
+is a compatibility metric, not a primary-language acceptance gate.
+
 Boundary probes use the original synthetic `0000` and `0600` WAVs, placed at
 offset 0 or 16 seconds in a 22-second, 16 kHz mono PCM waveform, padded with zeros.
 Add pure zero-valued 16- and 22-second waveforms as negatives. These deliberate

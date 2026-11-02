@@ -5,6 +5,14 @@ from compare_turbo import compare, POLICY
 
 
 class PairedComparisonTests(unittest.TestCase):
+    def test_languages_are_not_pooled_and_empty_selection_fails(self):
+        chinese = self.row('zh')
+        english = {**self.row('en'), 'language': 'en'}
+        result = compare([chinese, english], [chinese, english], language='en')
+        self.assertEqual(result['groups']['all']['n'], 1)
+        with self.assertRaises(ValueError):
+            compare([chinese], [chinese], language='en')
+
     def row(self, ident, correct=False, seconds=1):
         return {'id': ident, 'language': 'zh', 'sha256': ident, 'target': [1, 1, 1],
                 'kind': 'mixed', 'duration_s': 5,

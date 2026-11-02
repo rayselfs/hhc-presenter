@@ -10,12 +10,12 @@ from evaluate import percentile
 POLICY = 'phonetic-0.85'
 
 
-def compare(baseline, candidate, excluded=()):
-    baseline = [row for row in baseline if row['language'] == 'zh' and row['id'] not in excluded]
-    candidate = [row for row in candidate if row['language'] == 'zh' and row['id'] not in excluded]
+def compare(baseline, candidate, excluded=(), language='zh'):
+    baseline = [row for row in baseline if row['language'] == language and row['id'] not in excluded]
+    candidate = [row for row in candidate if row['language'] == language and row['id'] not in excluded]
     before = {row['id']: row for row in baseline}
     after = {row['id']: row for row in candidate}
-    if len(before) != len(baseline) or len(after) != len(candidate) or before.keys() != after.keys():
+    if not before or len(before) != len(baseline) or len(after) != len(candidate) or before.keys() != after.keys():
         raise ValueError('Paired IDs must be unique and identical')
     groups = defaultdict(list)
     changes = {'gained': [], 'lost': [], 'new_wrong': [], 'over_3s': [], 'long_audio': []}
@@ -55,7 +55,8 @@ if __name__ == '__main__':
     parser.add_argument('candidate', type=Path)
     parser.add_argument('output', type=Path)
     parser.add_argument('--exclude', nargs='*', default=[])
+    parser.add_argument('--language', choices=['zh', 'en'], default='zh')
     args = parser.parse_args()
     read = lambda path: [json.loads(line) for line in path.read_text().splitlines()]
-    result = compare(read(args.baseline), read(args.candidate), args.exclude)
+    result = compare(read(args.baseline), read(args.candidate), args.exclude, args.language)
     args.output.write_text(json.dumps(result, indent=2))

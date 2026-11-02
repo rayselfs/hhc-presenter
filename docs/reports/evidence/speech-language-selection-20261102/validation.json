@@ -1,0 +1,17 @@
+{
+  "python_tests": 14,
+  "report_total_assertions": "passed",
+  "source_sha256": {
+    "scripts/speech-benchmark/run.py": "4d84ec25a9337753d844ee31b0c15a4c43803f6783f8e5bd08b175ac140c2567",
+    "scripts/speech-benchmark/compare_turbo.py": "27a41c4181d1d9c83a96a65dccd721f3d932c51dfe61d92b0a4b22a88c2263e6",
+    "scripts/speech-benchmark/evaluate_v2.py": "deda5cb0868c58f9aa46244e0e90baf46c45601c05d385e108cb7dcbd5c5bd45",
+    "scripts/speech-benchmark/locate-v2.mjs": "64cc21b8492359eaa7c51e274b1907989e7373e34f790818099330bc05c3ceb3"
+  },
+  "not_run": [
+    "human gold labels",
+    "Windows hardware",
+    "live end-to-end latency",
+    "full application build and CI",
+    "release"
+  ]
+}

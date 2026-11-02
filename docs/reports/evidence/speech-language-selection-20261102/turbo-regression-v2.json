@@ -1,0 +1,254 @@
+{
+  "baseline/holdout/en/reference": {
+    "n": 160,
+    "correct": 45,
+    "wrong": 102,
+    "rejected": 13,
+    "correct_within_3s": 45,
+    "p95_s": 0.940907542060605,
+    "over_3s": 0
+  },
+  "optimized/holdout/en/reference": {
+    "n": 160,
+    "correct": 141,
+    "wrong": 9,
+    "rejected": 10,
+    "correct_within_3s": 141,
+    "p95_s": 0.940056001060605,
+    "over_3s": 0
+  },
+  "strict/holdout/en/reference": {
+    "n": 160,
+    "correct": 145,
+    "wrong": 0,
+    "rejected": 15,
+    "correct_within_3s": 145,
+    "p95_s": 0.9400820010189415,
+    "over_3s": 0
+  },
+  "phonetic-0.85/holdout/en/reference": {
+    "n": 160,
+    "correct": 145,
+    "wrong": 0,
+    "rejected": 15,
+    "correct_within_3s": 145,
+    "p95_s": 0.9400820010189415,
+    "over_3s": 0
+  },
+  "phonetic-0.88/holdout/en/reference": {
+    "n": 160,
+    "correct": 145,
+    "wrong": 0,
+    "rejected": 15,
+    "correct_within_3s": 145,
+    "p95_s": 0.9400820010189415,
+    "over_3s": 0
+  },
+  "phonetic-0.90/holdout/en/reference": {
+    "n": 160,
+    "correct": 145,
+    "wrong": 0,
+    "rejected": 15,
+    "correct_within_3s": 145,
+    "p95_s": 0.9400820010189415,
+    "over_3s": 0
+  },
+  "phonetic-0.92/holdout/en/reference": {
+    "n": 160,
+    "correct": 145,
+    "wrong": 0,
+    "rejected": 15,
+    "correct_within_3s": 145,
+    "p95_s": 0.9400820010189415,
+    "over_3s": 0
+  },
+  "baseline/holdout/en/quotation": {
+    "n": 80,
+    "correct": 73,
+    "wrong": 2,
+    "rejected": 5,
+    "correct_within_3s": 73,
+    "p95_s": 1.268293664965375,
+    "over_3s": 0
+  },
+  "optimized/holdout/en/quotation": {
+    "n": 80,
+    "correct": 73,
+    "wrong": 0,
+    "rejected": 7,
+    "correct_within_3s": 73,
+    "p95_s": 1.268296331965375,
+    "over_3s": 0
+  },
+  "strict/holdout/en/quotation": {
+    "n": 80,
+    "correct": 73,
+    "wrong": 0,
+    "rejected": 7,
+    "correct_within_3s": 73,
+    "p95_s": 1.2682402080314457,
+    "over_3s": 0
+  },
+  "phonetic-0.85/holdout/en/quotation": {
+    "n": 80,
+    "correct": 73,
+    "wrong": 0,
+    "rejected": 7,
+    "correct_within_3s": 73,
+    "p95_s": 1.2682402080314457,
+    "over_3s": 0
+  },
+  "phonetic-0.88/holdout/en/quotation": {
+    "n": 80,
+    "correct": 73,
+    "wrong": 0,
+    "rejected": 7,
+    "correct_within_3s": 73,
+    "p95_s": 1.2682402080314457,
+    "over_3s": 0
+  },
+  "phonetic-0.90/holdout/en/quotation": {
+    "n": 80,
+    "correct": 73,
+    "wrong": 0,
+    "rejected": 7,
+    "correct_within_3s": 73,
+    "p95_s": 1.2682402080314457,
+    "over_3s": 0
+  },
+  "phonetic-0.92/holdout/en/quotation": {
+    "n": 80,
+    "correct": 73,
+    "wrong": 0,
+    "rejected": 7,
+    "correct_within_3s": 73,
+    "p95_s": 1.2682402080314457,
+    "over_3s": 0
+  },
+  "baseline/holdout/en/negative": {
+    "n": 4,
+    "correct": 0,
+    "wrong": 1,
+    "rejected": 3,
+    "correct_within_3s": 0,
+    "p95_s": 0.7630841250807898,
+    "over_3s": 0
+  },
+  "optimized/holdout/en/negative": {
+    "n": 4,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 4,
+    "correct_within_3s": 0,
+    "p95_s": 0.7630837090807898,
+    "over_3s": 0
+  },
+  "strict/holdout/en/negative": {
+    "n": 4,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 4,
+    "correct_within_3s": 0,
+    "p95_s": 0.7630616660687104,
+    "over_3s": 0
+  },
+  "phonetic-0.85/holdout/en/negative": {
+    "n": 4,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 4,
+    "correct_within_3s": 0,
+    "p95_s": 0.7630616660687104,
+    "over_3s": 0
+  },
+  "phonetic-0.88/holdout/en/negative": {
+    "n": 4,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 4,
+    "correct_within_3s": 0,
+    "p95_s": 0.7630616660687104,
+    "over_3s": 0
+  },
+  "phonetic-0.90/holdout/en/negative": {
+    "n": 4,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 4,
+    "correct_within_3s": 0,
+    "p95_s": 0.7630616660687104,
+    "over_3s": 0
+  },
+  "phonetic-0.92/holdout/en/negative": {
+    "n": 4,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 4,
+    "correct_within_3s": 0,
+    "p95_s": 0.7630616660687104,
+    "over_3s": 0
+  },
+  "baseline/challenge/en/negative": {
+    "n": 28,
+    "correct": 0,
+    "wrong": 14,
+    "rejected": 14,
+    "correct_within_3s": 0,
+    "p95_s": 0.8109282090076165,
+    "over_3s": 0
+  },
+  "optimized/challenge/en/negative": {
+    "n": 28,
+    "correct": 0,
+    "wrong": 6,
+    "rejected": 22,
+    "correct_within_3s": 0,
+    "p95_s": 0.8109266670076165,
+    "over_3s": 0
+  },
+  "strict/challenge/en/negative": {
+    "n": 28,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 28,
+    "correct_within_3s": 0,
+    "p95_s": 0.811248126004779,
+    "over_3s": 0
+  },
+  "phonetic-0.85/challenge/en/negative": {
+    "n": 28,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 28,
+    "correct_within_3s": 0,
+    "p95_s": 0.811248126004779,
+    "over_3s": 0
+  },
+  "phonetic-0.88/challenge/en/negative": {
+    "n": 28,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 28,
+    "correct_within_3s": 0,
+    "p95_s": 0.811248126004779,
+    "over_3s": 0
+  },
+  "phonetic-0.90/challenge/en/negative": {
+    "n": 28,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 28,
+    "correct_within_3s": 0,
+    "p95_s": 0.811248126004779,
+    "over_3s": 0
+  },
+  "phonetic-0.92/challenge/en/negative": {
+    "n": 28,
+    "correct": 0,
+    "wrong": 0,
+    "rejected": 28,
+    "correct_within_3s": 0,
+    "p95_s": 0.811248126004779,
+    "over_3s": 0
+  }
+}

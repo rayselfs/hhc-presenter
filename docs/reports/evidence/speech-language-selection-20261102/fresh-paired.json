@@ -1,0 +1,98 @@
+{
+  "groups": {
+    "reference": {
+      "n": 12,
+      "small": {
+        "correct": 12,
+        "wrong": 0,
+        "rejected": 0,
+        "correct_within_3s": 12,
+        "p95_s": 0.327362209061563,
+        "max_s": 0.327362209061563,
+        "over_3s": 0
+      },
+      "turbo": {
+        "correct": 10,
+        "wrong": 0,
+        "rejected": 2,
+        "correct_within_3s": 10,
+        "p95_s": 1.112021250021146,
+        "max_s": 1.112021250021146,
+        "over_3s": 0
+      }
+    },
+    "all": {
+      "n": 21,
+      "small": {
+        "correct": 12,
+        "wrong": 0,
+        "rejected": 9,
+        "correct_within_3s": 12,
+        "p95_s": 0.2813953750323983,
+        "max_s": 0.327362209061563,
+        "over_3s": 0
+      },
+      "turbo": {
+        "correct": 10,
+        "wrong": 0,
+        "rejected": 11,
+        "correct_within_3s": 10,
+        "p95_s": 0.9346493749179957,
+        "max_s": 1.112021250021146,
+        "over_3s": 0
+      }
+    },
+    "positive": {
+      "n": 12,
+      "small": {
+        "correct": 12,
+        "wrong": 0,
+        "rejected": 0,
+        "correct_within_3s": 12,
+        "p95_s": 0.327362209061563,
+        "max_s": 0.327362209061563,
+        "over_3s": 0
+      },
+      "turbo": {
+        "correct": 10,
+        "wrong": 0,
+        "rejected": 2,
+        "correct_within_3s": 10,
+        "p95_s": 1.112021250021146,
+        "max_s": 1.112021250021146,
+        "over_3s": 0
+      }
+    },
+    "negative": {
+      "n": 9,
+      "small": {
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 9,
+        "correct_within_3s": 0,
+        "p95_s": 0.275318707008134,
+        "max_s": 0.275318707008134,
+        "over_3s": 0
+      },
+      "turbo": {
+        "correct": 0,
+        "wrong": 0,
+        "rejected": 9,
+        "correct_within_3s": 0,
+        "p95_s": 0.8475769589833021,
+        "max_s": 0.8475769589833021,
+        "over_3s": 0
+      }
+    }
+  },
+  "changes": {
+    "gained": [],
+    "lost": [
+      "v2-103",
+      "v2-109"
+    ],
+    "new_wrong": [],
+    "over_3s": [],
+    "long_audio": []
+  }
+}
