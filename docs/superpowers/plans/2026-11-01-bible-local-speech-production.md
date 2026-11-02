@@ -213,3 +213,7 @@ Selected microphone
 - [M5 Bible workflow](../../roadmap/milestones/M5-bible-professional-workflow.md)
 
 官方文件於前一輪 2026-11-01 分析查閱；只支持候選能力，不構成本專案 benchmark 或特定模型散布授權確認。
+
+### Strong-noise quiet-negation checkpoint (2026-11-02)
+
+See `docs/reports/2026-11-02-chinese-quiet-negation.md`. Waveform ambiguity guard replay inhibits all six observed false candidates across 84 strong-noise cases without additional positive loss, but only 36/40 positive locations remain. Additional light controls retain 40/40. Guard stays benchmark-only: known calibration, quiet benign introductions/trailing words, dynamic noise and actual screen latency remain unverified. Six context-comparison decodes recover neither original failed command; no retry or parser exception adopted. English unchanged; private recording labels remain user-owned. Strong-noise automatic navigation and the three-second gate remain open.
