@@ -1,3 +1,4 @@
+import { registerLocalSpeech } from './ipc/local-speech'
 import { join } from 'node:path'
 import { registerCaptureHandlers } from './ipc/capture'
 import { registerMediaPermissions } from './media-permissions'
@@ -7,8 +8,7 @@ import { WindowManager } from './windowManager'
 import { registerProjectionHandlers } from './ipc/projection'
 import { registerTimerHandlers } from './ipc/timer'
 import { registerBibleApiHandlers } from './ipc/bible-api'
-import { registerAppIpc, registerLocalModelProtocol } from './ipc/app'
-import { registerSpeechKeyStorageHandlers } from './ipc/speech-key-storage'
+import { registerAppIpc } from './ipc/app'
 import { registerChineseSpeechPilot } from './ipc/chinese-speech'
 import {
   clearNativeMediaLeases,
@@ -38,7 +38,6 @@ protocol.registerSchemesAsPrivileged([
     scheme: 'hhc-lyrics',
     privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true }
   },
-  { scheme: 'local-model', privileges: { secure: true, supportFetchAPI: true, stream: true } },
   {
     scheme: 'hhc-media',
     privileges: {
@@ -135,9 +134,8 @@ if (gotSingleInstanceLock) {
     registerTimerHandlers(wm)
     registerBibleApiHandlers(wm)
     registerAppIpc(wm, hhcAuthService, oneDriveService)
-    registerLocalModelProtocol()
-    registerSpeechKeyStorageHandlers(wm)
     registerChineseSpeechPilot(wm)
+    registerLocalSpeech(wm)
     registerNativeFsHandlers(wm)
     registerProjectionVlcHandlers(wm)
     registerVideoPosterHandlers(wm)

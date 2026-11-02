@@ -1,5 +1,4 @@
 import { StrictMode } from 'react'
-import { WhisperSpeechAdapter } from '@renderer/lib/speech-adapter/providers/whisper-speech-adapter'
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { useSpeechSession } from '../useSpeechSession'
@@ -260,52 +259,6 @@ it('reports configuration/factory/start failure and allows a fresh retry', async
     await hook.result.current.start()
   })
   expect(hook.result.current).toMatchObject({ isRecognizing: true, error: null })
-  hook.unmount()
-})
-
-it('keeps Whisper duration failure visible when its provider timer fires before the owner deadline', async () => {
-  const stopTrack = vi.fn()
-  vi.stubGlobal('navigator', {
-    onLine: false,
-    mediaDevices: { getUserMedia: async () => ({ getTracks: () => [{ stop: stopTrack }] }) }
-  })
-  vi.stubGlobal(
-    'Worker',
-    class {
-      onmessage = null
-      postMessage = vi.fn()
-      terminate = vi.fn()
-    }
-  )
-  vi.stubGlobal(
-    'MediaRecorder',
-    class {
-      state = 'inactive'
-      ondataavailable = null
-      start(): void {
-        this.state = 'recording'
-      }
-      stop(): void {
-        this.state = 'inactive'
-      }
-    }
-  )
-  const adapter = new WhisperSpeechAdapter({ maxSessionMs: 1000 })
-  const hook = renderHook(() =>
-    useSpeechSession({
-      ...options(),
-      createAdapter: async () => adapter,
-      requiresOnline: false,
-      maxSessionMs: 2000
-    })
-  )
-  await act(async () => {
-    await hook.result.current.start()
-  })
-  act(() => vi.advanceTimersByTime(1000))
-  expect(hook.result.current).toMatchObject({ isRecognizing: false, error: 'max-duration' })
-  expect(stopTrack).toHaveBeenCalledOnce()
-  expect(vi.getTimerCount()).toBe(0)
   hook.unmount()
 })
 

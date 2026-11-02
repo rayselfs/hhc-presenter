@@ -20,7 +20,7 @@ export const useBibleSettingsStore = create<BibleSettingsStore>()(
     (set) => ({
       fontSize: 90,
       selectedVersionId: 0,
-      speechMaxSessionSec: 3600,
+      speechMaxSessionSec: 0,
       speechEnabled: false,
       scriptureTemplateId: 'dark-stage',
 
@@ -33,7 +33,11 @@ export const useBibleSettingsStore = create<BibleSettingsStore>()(
       },
 
       setSpeechMaxSessionSec: (sec: number) => {
-        set({ speechMaxSessionSec: sec })
+        set({
+          speechMaxSessionSec: Number.isFinite(sec)
+            ? Math.max(0, Math.min(86400, Math.floor(sec)))
+            : 0
+        })
       },
 
       setSpeechEnabled: (enabled: boolean) => {
@@ -47,7 +51,7 @@ export const useBibleSettingsStore = create<BibleSettingsStore>()(
     {
       name: createKey('bible-settings'),
       storage: hhcPersistStorage,
-      version: 4,
+      version: 5,
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as Record<string, unknown>
         if (version < 1) {
@@ -64,6 +68,11 @@ export const useBibleSettingsStore = create<BibleSettingsStore>()(
         if (version < 4) {
           state.scriptureTemplateId = 'dark-stage'
         }
+        if (
+          version < 5 &&
+          (state.speechMaxSessionSec === 3600 || typeof state.speechMaxSessionSec !== 'number')
+        )
+          state.speechMaxSessionSec = 0
         return state as unknown as BibleSettingsStore
       },
       partialize: (state) => ({

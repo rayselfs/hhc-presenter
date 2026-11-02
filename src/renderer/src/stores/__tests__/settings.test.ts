@@ -22,7 +22,6 @@ vi.mock('@renderer/lib/env', () => ({
 import {
   useSettingsStore,
   TIMEZONE_OPTIONS,
-  AZURE_REGION_OPTIONS,
   DEFAULT_SPEECH,
   DEFAULT_LAN_REMOTE,
   getEffectiveOneDriveClientId,
@@ -99,7 +98,7 @@ describe('setTimezone', () => {
     expect(persisted).toBeTruthy()
     const parsed = JSON.parse(persisted!)
     expect(parsed.state.timezone).toBe('America/New_York')
-    expect(parsed.version).toBe(13)
+    expect(parsed.version).toBe(14)
 
     vi.unstubAllGlobals()
   })
@@ -136,7 +135,7 @@ describe('setHardwareAcceleration', () => {
     expect(persisted).toBeTruthy()
     const parsed = JSON.parse(persisted!)
     expect(parsed.state.hardwareAcceleration).toBe(false)
-    expect(parsed.version).toBe(13)
+    expect(parsed.version).toBe(14)
 
     vi.unstubAllGlobals()
   })
@@ -243,7 +242,7 @@ describe('persistence round-trip', () => {
     const parsed = JSON.parse(persisted!)
     expect(parsed.state.timezone).toBe('Europe/London')
     expect(parsed.state.hardwareAcceleration).toBe(false)
-    expect(parsed.version).toBe(13)
+    expect(parsed.version).toBe(14)
 
     vi.unstubAllGlobals()
   })
@@ -352,69 +351,30 @@ describe('themePreference', () => {
     expect(persisted).toBeTruthy()
     const parsed = JSON.parse(persisted!)
     expect(parsed.state.themePreference).toBe('dark')
-    expect(parsed.version).toBe(13)
+    expect(parsed.version).toBe(14)
 
     vi.unstubAllGlobals()
   })
 })
 
 describe('speech settings', () => {
-  it('defaults to Web Speech API on web', () => {
-    vi.mocked(isElectron).mockReturnValue(false)
-    expect(getDefaultSpeechSettings().activeProvider).toBe('webSpeech')
+  it('defaults to Chinese locally without provider credentials or model paths', () => {
+    expect(getDefaultSpeechSettings()).toEqual({ recognitionLanguage: 'zh', microphoneId: '' })
   })
-
-  it('defaults to Azure Speech on Electron', () => {
-    vi.mocked(isElectron).mockReturnValue(true)
-    expect(getDefaultSpeechSettings().activeProvider).toBe('azure')
+  it('preserves the old English choice while removing provider secrets and paths', () => {
+    expect(
+      normalizeSettingsState({
+        speech: {
+          azure: { language: 'en-US', region: 'old' },
+          whisper: { modelDir: '/user/models' }
+        }
+      }).speech
+    ).toEqual({ recognitionLanguage: 'en', microphoneId: '' })
   })
-
-  it('initializes with default speech settings', () => {
-    const state = useSettingsStore.getState()
-    expect(state.speech).toEqual(DEFAULT_SPEECH)
-    expect(state.speech.activeProvider).toBe('azure')
-    expect(state.speech.azure.region).toBe('eastasia')
-  })
-
-  it('updates speech settings', () => {
-    const { setSpeech } = useSettingsStore.getState()
-    const updated = { ...DEFAULT_SPEECH, azure: { ...DEFAULT_SPEECH.azure, region: 'westus2' } }
-
-    setSpeech(updated)
-
-    const state = useSettingsStore.getState()
-    expect(state.speech.azure.region).toBe('westus2')
-  })
-
-  it('persists speech to localStorage with correct version', () => {
-    let localStorageMock: Record<string, string> = {}
-    vi.stubGlobal('localStorage', {
-      getItem: (key: string) => localStorageMock[key] || null,
-      setItem: (key: string, value: string) => {
-        localStorageMock[key] = value
-      },
-      removeItem: (key: string) => {
-        delete localStorageMock[key]
-      },
-      clear: () => {
-        localStorageMock = {}
-      },
-      length: 0,
-      key: (index: number) => {
-        const keys = Object.keys(localStorageMock)
-        return keys[index] || null
-      }
-    })
-
-    const updated = { ...DEFAULT_SPEECH, azure: { ...DEFAULT_SPEECH.azure, region: 'japaneast' } }
-    useSettingsStore.getState().setSpeech(updated)
-    const persisted = localStorage.getItem('hhc-settings')
-    expect(persisted).toBeTruthy()
-    const parsed = JSON.parse(persisted!)
-    expect(parsed.state.speech.azure.region).toBe('japaneast')
-    expect(parsed.version).toBe(13)
-
-    vi.unstubAllGlobals()
+  it('rejects unsupported languages and retains a chosen microphone', () => {
+    expect(
+      normalizeSettingsState({ speech: { recognitionLanguage: 'fr', microphoneId: 'mic' } }).speech
+    ).toEqual({ recognitionLanguage: 'zh', microphoneId: 'mic' })
   })
 })
 
@@ -534,32 +494,6 @@ describe('settings normalization', () => {
   })
 })
 
-describe('AZURE_REGION_OPTIONS', () => {
-  it('contains 34 regions', () => {
-    expect(AZURE_REGION_OPTIONS).toHaveLength(34)
-  })
-
-  it('includes eastasia region', () => {
-    const hasEastAsia = AZURE_REGION_OPTIONS.some((r) => r.value === 'eastasia')
-    expect(hasEastAsia).toBe(true)
-  })
-
-  it('all regions have value and label', () => {
-    AZURE_REGION_OPTIONS.forEach((region) => {
-      expect(region.value).toBeTruthy()
-      expect(region.label).toBeTruthy()
-      expect(typeof region.value).toBe('string')
-      expect(typeof region.label).toBe('string')
-    })
-  })
-
-  it('has unique region values', () => {
-    const values = AZURE_REGION_OPTIONS.map((r) => r.value)
-    const uniqueValues = new Set(values)
-    expect(uniqueValues.size).toBe(values.length)
-  })
-})
-
 describe('recent presentation fonts', () => {
   it('normalizes and bounds the persisted recent font list', () => {
     expect(
@@ -573,4 +507,15 @@ describe('recent presentation fonts', () => {
     expect(useSettingsStore.getState().recentPresentationFonts[0]).toBe('Font 5')
     expect(normalizeSettingsState({}).recentPresentationFonts).toEqual([])
   })
+})
+it('preserves legacy English choices while removing provider credentials and directories', () => {
+  for (const speech of [
+    { language: 'en-US', key: 'retired' },
+    { provider: 'gcp', gcp: { language: 'en-GB', key: 'retired' }, whisper: { modelDir: '/old' } }
+  ]) {
+    expect(normalizeSettingsState({ speech }).speech).toEqual({
+      recognitionLanguage: 'en',
+      microphoneId: ''
+    })
+  }
 })

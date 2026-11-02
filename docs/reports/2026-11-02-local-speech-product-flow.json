@@ -1,0 +1,97 @@
+{
+  "method": "Native production IPC/AudioWorklet, real-time synthetic loopback; Bible transport fixture; last nonzero source sample to visible target verse",
+  "hardware": ["Apple M4", "25769803776"],
+  "os": "27.0.1",
+  "results": [
+    {
+      "id": "0000",
+      "language": "zh",
+      "target": "1:1:1",
+      "passed": true,
+      "paint": 9274.700000047684,
+      "displayed": "1:1:1",
+      "status": "listening",
+      "lastSampleToPaintMs": 1527.0085
+    },
+    {
+      "id": "0001",
+      "language": "zh",
+      "target": "1:25:3",
+      "passed": true,
+      "paint": 14110.600000023842,
+      "displayed": "1:25:3",
+      "status": "listening",
+      "lastSampleToPaintMs": 1506.4769999761593
+    },
+    {
+      "id": "0201",
+      "language": "zh",
+      "target": "3:18:16",
+      "passed": true,
+      "paint": 20550.200000047684,
+      "displayed": "3:18:16",
+      "status": "listening",
+      "lastSampleToPaintMs": 1505.0490000238424
+    },
+    {
+      "id": "0291",
+      "language": "zh",
+      "target": "5:20:5",
+      "passed": true,
+      "paint": 41753.800000071526,
+      "displayed": "5:20:5",
+      "status": "listening",
+      "lastSampleToPaintMs": 2690.0050000715273
+    },
+    {
+      "id": "0292",
+      "language": "zh",
+      "target": "26:44:24",
+      "passed": true,
+      "paint": 66135.10000002384,
+      "displayed": "26:44:24",
+      "status": "listening",
+      "lastSampleToPaintMs": 1971.0989999761587
+    },
+    {
+      "id": "0300",
+      "language": "en",
+      "target": "1:1:1",
+      "passed": true,
+      "paint": 7172.299999952316,
+      "displayed": "1:1:1",
+      "status": "listening",
+      "lastSampleToPaintMs": 1513.8249999999998
+    },
+    {
+      "id": "0301",
+      "language": "en",
+      "target": "1:25:3",
+      "passed": true,
+      "paint": 12760.700000047684,
+      "displayed": "1:25:3",
+      "status": "listening",
+      "lastSampleToPaintMs": 1510.6665000953672
+    },
+    {
+      "id": "0500",
+      "language": "en",
+      "target": "5:10:18",
+      "passed": true,
+      "paint": 20525.799999952316,
+      "displayed": "5:10:18",
+      "status": "listening",
+      "lastSampleToPaintMs": 1511.4864999046295
+    },
+    {
+      "id": "0591",
+      "language": "en",
+      "target": "40:15:19",
+      "passed": true,
+      "paint": 38411.5,
+      "displayed": "40:15:19",
+      "status": "listening",
+      "lastSampleToPaintMs": 1522.8034999761585
+    }
+  ]
+}

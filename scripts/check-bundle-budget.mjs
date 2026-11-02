@@ -4,7 +4,8 @@ import { join } from 'node:path'
 
 const outputDir = join(process.cwd(), 'out', 'renderer')
 const assetsDir = join(outputDir, 'assets')
-const MAX_PRECACHE_BYTES = 5 * 1024 * 1024
+// Shared Chinese normalization is embedded in both the renderer and search Worker.
+const MAX_PRECACHE_BYTES = 5.25 * 1024 * 1024
 const MAX_FONT_ASSETS_BYTES = 10 * 1024 * 1024
 const MAX_JS_CHUNK_BYTES = 2.25 * 1024 * 1024
 const MAX_LYRICS_RUNTIME_BYTES = 64 * 1024 * 1024

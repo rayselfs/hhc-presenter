@@ -28,6 +28,7 @@ interface WebSpeechRecognitionErrorEvent extends Event {
   readonly message: string
 }
 interface IWebSpeechRecognition extends EventTarget {
+  processLocally: boolean
   continuous: boolean
   interimResults: boolean
   lang: string
@@ -37,6 +38,31 @@ interface IWebSpeechRecognition extends EventTarget {
   onstart: (() => void) | null
   start(): void
   stop(): void
+}
+
+interface LocalRecognitionConstructor {
+  new (): IWebSpeechRecognition
+  available?: (options: { langs: string[]; processLocally: true }) => Promise<string>
+  install?: (options: { langs: string[]; processLocally: true }) => Promise<boolean>
+}
+function localConstructor(): LocalRecognitionConstructor | null {
+  const win = window as unknown as Record<string, unknown>
+  const value = win.SpeechRecognition ?? win.webkitSpeechRecognition
+  return typeof value === 'function' ? (value as unknown as LocalRecognitionConstructor) : null
+}
+export async function browserSpeechAvailability(language: string): Promise<string> {
+  const constructor = localConstructor()
+  if (!constructor?.available) return 'unsupported'
+  try {
+    return await constructor.available({ langs: [language], processLocally: true })
+  } catch {
+    return 'unsupported'
+  }
+}
+export async function installBrowserSpeech(language: string): Promise<boolean> {
+  const constructor = localConstructor()
+  if (!constructor?.install) return false
+  return constructor.install({ langs: [language], processLocally: true })
 }
 
 export interface WebSpeechAdapterConfig {
@@ -63,14 +89,20 @@ export class WebSpeechAdapter implements SpeechAdapter {
   async start(): Promise<void> {
     if (this.disposed) throw new Error('Speech adapter is disposed')
     if (this.recognition) return
-    const win = window as unknown as Record<string, unknown>
-    const SpeechRecognitionCtor = win['SpeechRecognition'] || win['webkitSpeechRecognition']
-    if (!SpeechRecognitionCtor) {
-      throw new Error('Web Speech API not supported in this browser')
+    const Constructor = localConstructor()
+    if (!Constructor?.available) throw new Error('on-device-unavailable')
+    const recognition = new Constructor()
+    if (!('processLocally' in recognition)) throw new Error('on-device-unavailable')
+    this.recognition = recognition
+    try {
+      if ((await browserSpeechAvailability(this.config.language)) !== 'available')
+        throw new Error('language-pack-unavailable')
+      if (this.disposed || this.recognition !== recognition) throw new Error('session-stopped')
+    } catch (error) {
+      if (this.recognition === recognition) this.cleanup()
+      throw error
     }
-
-    this.recognition = new (SpeechRecognitionCtor as new () => IWebSpeechRecognition)()
-    const recognition = this.recognition
+    this.recognition.processLocally = true
     this.recognition.continuous = true
     this.recognition.interimResults = true
     this.recognition.lang = this.config.language
@@ -110,21 +142,19 @@ export class WebSpeechAdapter implements SpeechAdapter {
     this.recognition.onstart = () => {
       if (this.recognition !== recognition) return
       this.active = true
-      this.maxDurationTimer = setTimeout(
-        () => {
+      if (this.config.maxSessionMs && this.config.maxSessionMs > 0)
+        this.maxDurationTimer = setTimeout(() => {
           if (this.recognition !== recognition) return
           this.cleanup()
           this.emit('maxDurationReached', undefined)
-        },
-        this.config.maxSessionMs ?? 60 * 60 * 1000
-      )
+        }, this.config.maxSessionMs)
       this.emit('sessionStarted', undefined)
     }
 
     try {
       recognition.start()
     } catch (error) {
-      this.cleanup()
+      if (this.recognition === recognition) this.cleanup()
       throw error
     }
   }
@@ -142,6 +172,8 @@ export class WebSpeechAdapter implements SpeechAdapter {
     recognition.onerror = null
     try {
       if (stop) recognition.stop()
+    } catch {
+      // A pending browser permission request may not have started a native session yet.
     } finally {
       this.emit('sessionStopped', undefined)
     }

@@ -122,9 +122,9 @@ export class BibleSearchEngine {
     await this.request({ type: 'LOAD_INDEX', chunks, id: ++this.requestCounter }, 'INDEX_LOADED')
   }
 
-  async search(query: string, limit = 20): Promise<number[]> {
+  async search(query: string, limit = 20, suggest = false): Promise<number[]> {
     const result = await this.request(
-      { type: 'SEARCH', query, limit, id: ++this.requestCounter },
+      { type: 'SEARCH', query, limit, suggest, id: ++this.requestCounter },
       'SEARCH_RESULT'
     )
     return result.results

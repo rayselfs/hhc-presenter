@@ -1,0 +1,20 @@
+cmake_minimum_required(VERSION 3.24)
+project(hhc_speech LANGUAGES C CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(GGML_NATIVE OFF CACHE BOOL "" FORCE)
+set(GGML_METAL_EMBED_LIBRARY ON CACHE BOOL "" FORCE)
+set(WHISPER_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(WHISPER_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(WHISPER_BUILD_SERVER OFF CACHE BOOL "" FORCE)
+include(FetchContent)
+# Same whisper.cpp revision as the measured pywhispercpp 1.5.1 runtime.
+FetchContent_Declare(whisper
+  URL https://codeload.github.com/ggml-org/whisper.cpp/tar.gz/f24588a272ae8e23280d9c220536437164e6ed28
+  URL_HASH SHA256=c3488eba0c6666a8b256f53267c129aa46292b35b0cb7391e4b5623cf9e23c8d)
+FetchContent_MakeAvailable(whisper)
+add_executable(hhc-speech main.cpp)
+target_link_libraries(hhc-speech PRIVATE whisper)
+install(TARGETS hhc-speech RUNTIME DESTINATION . COMPONENT speech-runtime)
+install(FILES ${whisper_SOURCE_DIR}/LICENSE DESTINATION . RENAME whisper-LICENSE COMPONENT speech-runtime)

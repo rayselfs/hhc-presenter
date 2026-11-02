@@ -1,3 +1,4 @@
+import type { RecognitionLanguage } from '../shared/local-speech'
 import type { PresenterApi } from '../shared/presenter-api'
 import type { PersonalNativeApi } from '../shared/personal-cloud'
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
@@ -5,10 +6,7 @@ import type {
   IpcInvokeChannel,
   IpcInvokeMap,
   IpcMainToRendererChannel,
-  IpcMainToRendererMap,
-  WhisperModel,
-  WhisperDownloadProgress,
-  WhisperDirInfo
+  IpcMainToRendererMap
 } from '../shared/ipc-channels'
 import type {
   ProjectionChannel,
@@ -91,14 +89,7 @@ const appApi = {
   confirmClose: () => typedInvoke('app:confirm-close'),
   onCloseRequested: (callback: () => void) => typedOn('app:close-requested', callback),
   clearUserData: () => typedInvoke('app:clear-user-data'),
-  selectDirectory: () => typedInvoke('app:select-directory'),
-  setModelDir: (dir: string) => typedInvoke('app:set-model-dir', dir),
-  checkWhisperDir: (dir: string): Promise<WhisperDirInfo> =>
-    typedInvoke('app:check-whisper-dir', dir),
-  downloadWhisperModel: (model: WhisperModel, destDir: string) =>
-    typedInvoke('app:download-whisper-model', model, destDir),
-  onDownloadProgress: (callback: (data: WhisperDownloadProgress) => void) =>
-    typedOn('app:download-progress', callback)
+  selectDirectory: () => typedInvoke('app:select-directory')
 }
 
 const updateApi = {
@@ -109,14 +100,21 @@ const updateApi = {
 }
 
 const speechApi = {
+  onInterrupted: (callback: () => void) => typedOn('speech:interrupted', callback),
+  modelStatus: (language: RecognitionLanguage) => typedInvoke('speech:model-status', language),
+  installModel: (language: RecognitionLanguage) => typedInvoke('speech:model-install', language),
+  cancelInstall: () => typedInvoke('speech:model-cancel'),
+  removeModel: (language: RecognitionLanguage) => typedInvoke('speech:model-remove', language),
+  prepare: (session: string, language: RecognitionLanguage) =>
+    typedInvoke('speech:local-prepare', session, language),
+  transcribe: (session: string, pcm: Float32Array) =>
+    typedInvoke('speech:local-transcribe', session, pcm),
+  stop: (session: string) => typedInvoke('speech:local-stop', session),
   chineseAvailable: () => typedInvoke('speech:chinese-available'),
   chinesePrepare: (session: string) => typedInvoke('speech:chinese-prepare', session),
   chineseTranscribe: (session: string, pcm: Float32Array) =>
     typedInvoke('speech:chinese-transcribe', session, pcm),
-  chineseStop: (session: string) => typedInvoke('speech:chinese-stop', session),
-  saveKey: (provider: string, apiKey: string) => typedInvoke('speech:saveKey', provider, apiKey),
-  loadKey: (provider: string) => typedInvoke('speech:loadKey', provider),
-  deleteKey: (provider: string) => typedInvoke('speech:deleteKey', provider)
+  chineseStop: (session: string) => typedInvoke('speech:chinese-stop', session)
 }
 
 const nativeFsApi = {

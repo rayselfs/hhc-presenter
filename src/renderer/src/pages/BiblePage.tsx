@@ -40,7 +40,7 @@ export default function BiblePage(): React.JSX.Element {
   const [projectedPassage, setProjectedPassage] = useState<ProjectedPassage | null>(null)
   const scrollBehaviorRef = useRef<ScrollBehavior>('instant')
   const { showPreviewMenu } = useBibleContextMenu()
-  const { project, startProjection, isProjectionOpen } = useProjection()
+  const { project, startProjection, isProjectionOpen, activeOwner } = useProjection()
 
   const selectedVerseIndexRef = useRef(0)
 
@@ -79,6 +79,7 @@ export default function BiblePage(): React.JSX.Element {
 
   const projectVerse = useCallback(
     (verseIndex: number, skipHistory = false) => {
+      window.dispatchEvent(new Event('bible:pause-speech'))
       const verses = getCurrentVerses()
       if (!verses || verses.length === 0) return
       const clamped = Math.max(0, Math.min(verseIndex, verses.length - 1))
@@ -121,31 +122,56 @@ export default function BiblePage(): React.JSX.Element {
     [getCurrentVerses, getCurrentBook, getCurrentChapter, startProjection, navigateTo]
   )
 
+  const restoreCommittedPassage = useCallback((): number => {
+    window.dispatchEvent(new Event('bible:pause-speech'))
+    if (isProjectionOpen && activeOwner === 'bible') {
+      const chapter = useBibleProjectionStore
+        .getState()
+        .lastPayloads?.find(([channel]) => channel === 'bible:chapter')
+      if (chapter?.[0] === 'bible:chapter') {
+        const payload = chapter[1]
+        navigateTo({
+          bookNumber: payload.bookNumber,
+          chapter: payload.chapter,
+          verse: payload.currentVerse
+        })
+        return Math.max(
+          0,
+          getCurrentVerses()?.findIndex((verse) => verse.number === payload.currentVerse) ?? 0
+        )
+      }
+    }
+    return selectedVerseIndexRef.current
+  }, [isProjectionOpen, activeOwner, navigateTo, getCurrentVerses])
+
   const handleNextVerse = useCallback(() => {
+    const baseIndex = restoreCommittedPassage()
     const verses = getCurrentVerses()
     if (!verses || verses.length === 0) return
-    const next = Math.min(selectedVerseIndexRef.current + 1, verses.length - 1)
+    const next = Math.min(baseIndex + 1, verses.length - 1)
     scrollBehaviorRef.current = 'smooth'
     projectVerse(next, true)
-  }, [getCurrentVerses, projectVerse])
+  }, [getCurrentVerses, projectVerse, restoreCommittedPassage])
 
   const handlePrevVerse = useCallback(() => {
-    const prev = Math.max(selectedVerseIndexRef.current - 1, 0)
+    const prev = Math.max(restoreCommittedPassage() - 1, 0)
     scrollBehaviorRef.current = 'smooth'
     projectVerse(prev, true)
-  }, [projectVerse])
+  }, [projectVerse, restoreCommittedPassage])
 
   const handleNextChapter = useCallback(() => {
+    restoreCommittedPassage()
     nextChapter()
     scrollBehaviorRef.current = 'instant'
     projectVerse(0, true)
-  }, [nextChapter, projectVerse])
+  }, [nextChapter, projectVerse, restoreCommittedPassage])
 
   const handlePrevChapter = useCallback(() => {
+    restoreCommittedPassage()
     prevChapter()
     scrollBehaviorRef.current = 'instant'
     projectVerse(0, true)
-  }, [prevChapter, projectVerse])
+  }, [prevChapter, projectVerse, restoreCommittedPassage])
 
   const handleOpenSelector = useCallback(() => {
     setSelectorOpen(true)

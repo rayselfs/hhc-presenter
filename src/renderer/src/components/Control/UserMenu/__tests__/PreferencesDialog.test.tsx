@@ -90,12 +90,7 @@ vi.mock('@renderer/stores/settings', () => ({
       hardwareAcceleration: true,
       reminderMode: 'subtract' as const,
       setReminderMode: vi.fn(),
-      speech: {
-        activeProvider: 'azure' as const,
-        azure: { region: 'eastasia', language: 'zh-TW' as const },
-        gcp: { language: 'cmn-Hant-TW' as const },
-        whisper: { modelDir: '', installedModel: null }
-      },
+      speech: { recognitionLanguage: 'zh' as const, microphoneId: '' },
       setTimezone: vi.fn(),
       setHardwareAcceleration: vi.fn(),
       setSpeech: vi.fn(),
@@ -317,7 +312,7 @@ describe('PreferencesDialog', () => {
     renderDialog(true)
 
     await user.click(screen.getByTestId('category-bible'))
-    expect(await screen.findByText('Test Connection')).toBeInTheDocument()
+    expect(await screen.findByText('Main spoken language')).toBeInTheDocument()
     expect(screen.queryByLabelText('Language')).not.toBeInTheDocument()
 
     await user.click(screen.getByTestId('category-general'))
@@ -372,12 +367,7 @@ describe('PreferencesDialog', () => {
         setTimerRingColorEnabled: vi.fn(),
         reminderMode: 'subtract' as const,
         setReminderMode: vi.fn(),
-        speech: {
-          activeProvider: 'azure' as const,
-          azure: { region: 'eastasia', language: 'zh-TW' as const },
-          gcp: { language: 'cmn-Hant-TW' as const },
-          whisper: { modelDir: '', installedModel: null }
-        },
+        speech: { recognitionLanguage: 'zh' as const, microphoneId: '' },
         setSpeech: vi.fn(),
         defaultSyncOfflinePolicy: 'always-offline' as const,
         setDefaultSyncOfflinePolicy: vi.fn(),
@@ -483,12 +473,7 @@ describe('PreferencesDialog', () => {
         setTimerRingColorEnabled: vi.fn(),
         reminderMode: 'subtract' as const,
         setReminderMode: vi.fn(),
-        speech: {
-          activeProvider: 'azure' as const,
-          azure: { region: 'eastasia', language: 'zh-TW' as const },
-          gcp: { language: 'cmn-Hant-TW' as const },
-          whisper: { modelDir: '', installedModel: null }
-        },
+        speech: { recognitionLanguage: 'zh' as const, microphoneId: '' },
         setSpeech: vi.fn(),
         defaultSyncOfflinePolicy: 'always-offline' as const,
         setDefaultSyncOfflinePolicy: vi.fn(),
@@ -546,12 +531,7 @@ describe('PreferencesDialog', () => {
         setTimerRingColorEnabled: vi.fn(),
         reminderMode: 'subtract' as const,
         setReminderMode: vi.fn(),
-        speech: {
-          activeProvider: 'azure' as const,
-          azure: { region: 'eastasia', language: 'zh-TW' as const },
-          gcp: { language: 'cmn-Hant-TW' as const },
-          whisper: { modelDir: '', installedModel: null }
-        },
+        speech: { recognitionLanguage: 'zh' as const, microphoneId: '' },
         setSpeech: vi.fn(),
         defaultSyncOfflinePolicy: 'always-offline' as const,
         setDefaultSyncOfflinePolicy: vi.fn(),
@@ -606,12 +586,7 @@ describe('PreferencesDialog', () => {
         setTimerRingColorEnabled: vi.fn(),
         reminderMode: 'subtract' as const,
         setReminderMode: vi.fn(),
-        speech: {
-          activeProvider: 'azure' as const,
-          azure: { region: 'eastasia', language: 'zh-TW' as const },
-          gcp: { language: 'cmn-Hant-TW' as const },
-          whisper: { modelDir: '', installedModel: null }
-        },
+        speech: { recognitionLanguage: 'zh' as const, microphoneId: '' },
         setSpeech: vi.fn(),
         defaultSyncOfflinePolicy: 'always-offline' as const,
         setDefaultSyncOfflinePolicy: vi.fn(),
@@ -664,12 +639,7 @@ describe('PreferencesDialog', () => {
         setTimerRingColorEnabled: vi.fn(),
         reminderMode: 'subtract' as const,
         setReminderMode: vi.fn(),
-        speech: {
-          activeProvider: 'azure' as const,
-          azure: { region: 'eastasia', language: 'zh-TW' as const },
-          gcp: { language: 'cmn-Hant-TW' as const },
-          whisper: { modelDir: '', installedModel: null }
-        },
+        speech: { recognitionLanguage: 'zh' as const, microphoneId: '' },
         setSpeech: vi.fn(),
         defaultSyncOfflinePolicy: 'always-offline' as const,
         setDefaultSyncOfflinePolicy: vi.fn(),
@@ -722,12 +692,7 @@ describe('PreferencesDialog', () => {
         setTimerRingColorEnabled: vi.fn(),
         reminderMode: 'subtract' as const,
         setReminderMode: vi.fn(),
-        speech: {
-          activeProvider: 'azure' as const,
-          azure: { region: 'eastasia', language: 'zh-TW' as const },
-          gcp: { language: 'cmn-Hant-TW' as const },
-          whisper: { modelDir: '', installedModel: null }
-        },
+        speech: { recognitionLanguage: 'zh' as const, microphoneId: '' },
         setSpeech: vi.fn(),
         defaultSyncOfflinePolicy: 'always-offline' as const,
         setDefaultSyncOfflinePolicy: vi.fn(),
