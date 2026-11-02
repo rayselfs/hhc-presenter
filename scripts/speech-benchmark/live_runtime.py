@@ -17,6 +17,7 @@ from metrics import normalize, normalize_reference, tokens
 from optimization_evaluate import quote_decision
 from run import fitted_audio_context
 from segmentation import speech_span, is_digital_silence
+from stationary_noise import balance_volume, covered_context
 
 
 class Locator:
@@ -68,6 +69,8 @@ def serve(root):
                   print_realtime=False, print_timestamps=False, no_context=True,
                   no_timestamps=True, temperature=0.0, temperature_inc=0.0,
                   context_params={'use_gpu': True}, redirect_whispercpp_logs_to=None)
+    if os.environ.get('HHC_SPEECH_NOISE_WARMUP') == '1':
+        model.transcribe(np.zeros(16000, dtype=np.float32), language='zh', audio_ctx=0)
     print(json.dumps({'ready': True}), flush=True)
     try:
         while line := sys.stdin.buffer.readline(3_000_000):
@@ -76,10 +79,15 @@ def serve(root):
             if not 0 < len(audio) <= 480000 or not np.isfinite(audio).all() or np.max(np.abs(audio)) > 1:
                 raise ValueError('Invalid PCM')
             start = time.perf_counter()
+            if os.environ.get('HHC_SPEECH_NOISE_GAIN') == '1':
+                audio = balance_volume(audio)
             first, last = speech_span(audio, 'digital')
             payload = audio[first:last]
+            context = fitted_audio_context(768, len(payload))
+            if context == 0 and os.environ.get('HHC_SPEECH_NOISE_CONTEXT') == '1':
+                context = covered_context(len(payload))
             text = '' if is_digital_silence(payload) else ''.join(segment.text for segment in model.transcribe(
-                payload, language='zh', audio_ctx=fitted_audio_context(768, len(payload))))
+                payload, language='zh', audio_ctx=context))
             decoded = time.perf_counter()
             reference = locator.locate(text)
             print(json.dumps({'text': text, 'reference': reference, 'asrMs': (decoded-start)*1000,

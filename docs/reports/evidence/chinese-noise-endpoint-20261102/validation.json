@@ -1,0 +1,24 @@
+{
+  "pythonTestsPassed": 30,
+  "targetedRuntimeTestsPassed": 12,
+  "desktopBuild": "passed",
+  "changedHarnessLint": "passed",
+  "defaultChineseLongFlow": {
+    "correct": 2,
+    "wrong": 0,
+    "over3s": 0,
+    "cancelLateResultIgnored": true
+  },
+  "noiseIntegration": {
+    "cases": 10,
+    "positiveCorrect": 6,
+    "negativeRejected": 4,
+    "over3s": 0,
+    "maxLocatedMs": 2834.451
+  },
+  "strongNoiseSafetyGate": "failed; 4 wrong candidate cases and 2 lost correct locations",
+  "normalApplicationSourceChanged": false,
+  "englishChanged": false,
+  "remoteCI": "not run",
+  "mergeTagRelease": "not performed"
+}

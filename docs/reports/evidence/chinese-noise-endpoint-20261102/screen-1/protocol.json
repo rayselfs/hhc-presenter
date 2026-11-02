@@ -1,0 +1,39 @@
+{
+  "ids": [
+    "segment-000",
+    "segment-001",
+    "segment-002",
+    "segment-003",
+    "segment-004",
+    "segment-005",
+    "segment-006",
+    "segment-007",
+    "0001",
+    "0002",
+    "0004",
+    "0006",
+    "0007",
+    "0008",
+    "0011",
+    "0012",
+    "0013",
+    "0014",
+    "0016",
+    "0018",
+    "0291",
+    "0298",
+    "ref3-106",
+    "ref3-107",
+    "ref3-108",
+    "ref3-109"
+  ],
+  "profiles": [
+    "fan-20db",
+    "hum-10db"
+  ],
+  "seed": 20261102,
+  "calibration_s": 1,
+  "endpoint_s": 1.5,
+  "threshold_ratio": 1.15,
+  "measurement": "Offline screening: estimated last clean source sample to endpoint plus native processing. Not screen latency."
+}

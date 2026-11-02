@@ -1,0 +1,24 @@
+{
+  "ids": [
+    "segment-003",
+    "segment-007",
+    "0001",
+    "0013",
+    "0291",
+    "0298",
+    "ref3-106",
+    "ref3-109"
+  ],
+  "noisyProbe": true,
+  "inferenceWarmup": false,
+  "coveredAudioContext": true,
+  "endpointDriver": "Experimental stationary-noise detector endpoint schedules the existing Finish action; not a shipped automatic endpoint. Native gain is enabled only for this probe.",
+  "noiseCalibration": "One second supplied noise-only prefix; fixed floor, 1.15 RMS ratio, 1.5 second endpoint; source speech-end labels used only for latency scoring.",
+  "scrollFaultInjection": false,
+  "method": "Real-time synthetic WebAudio MediaStream → production AudioWorklet → Electron IPC → resident native Turbo → frozen locator → actual Bible preview",
+  "audioDevice": "Synthetic loopback replaces getUserMedia device only; no ASR or navigation mocks",
+  "omissions": "Physical microphone, room acoustics, human-labelled recordings, Windows, packaged native distribution",
+  "clock": "Source AudioContext output timestamp maps the last nonzero fixture sample to renderer performance time; independently compare captured last nonzero sample",
+  "endpoint": "1500 ms stationary-noise endpoint, entire retained PCM; driver clicks Finish at detected endpoint",
+  "data": "Only Bible content transport is replaced with the fixed local CUV fixture; no speech handler is replaced"
+}

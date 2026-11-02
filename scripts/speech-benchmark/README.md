@@ -232,3 +232,21 @@ labels only score results. Fresh rows v2-097 and v2-129 duplicate previous texts
 retain their raw results but exclude them from the 128-row fresh report table.
 Timing reuses recorded ASR decode and remeasures localization against prebuilt
 indexes; it remains an offline estimate, not live microphone-to-preview latency.
+
+### Stationary-noise experiments (not enabled by default)
+
+See `docs/reports/2026-11-02-chinese-noise-endpoint.md` for paired failures and acceptance limits.
+`noisy_endpoint.py DATA OUTPUT` compares full noisy audio with calibrated endpoint payloads.
+Options: `--light` (40 dB), `--denoise` (spectral), `--rnnoise` (pinned local sh model),
+`--agc` (bounded local gain), `--holdout` (unused segmentation challenges),
+`--quiet-suffix` (attenuated trailing negation).
+Keep inference runs sequential. The offline latency estimate is not screen latency.
+
+After the light-noise screen, `noise_flow_fixtures.py DATA` exports the fixed noisy Electron probes.
+Run `electron-flow.mjs DATA OUTPUT --noisy-probe --fit-noise`, optionally with `--long-noise`.
+The test driver schedules the existing Finish action from the detector endpoint; this is not a
+shipped automatic noise endpoint or calibration UI. `--warm-noise` reproduces the rejected warm-up.
+The harness sets `HHC_SPEECH_NOISE_GAIN`, `HHC_SPEECH_NOISE_CONTEXT`, and
+`HHC_SPEECH_NOISE_WARMUP` only for explicit experiments; normal runs explicitly disable them.
+Do not enable noisy-room automatic following based on the successful light-noise subset:
+stronger noise still produces wrong candidates on quiet negation.

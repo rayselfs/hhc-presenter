@@ -7,6 +7,7 @@ import { resolve, join } from 'node:path'
 
 const root = resolve(process.argv[2])
 const output = resolve(process.argv[3])
+const noisy = process.argv.includes('--noisy-probe')
 const full = process.argv.includes('--full')
 const refusals = process.argv.includes('--refusals')
 const repo = process.cwd()
@@ -36,25 +37,42 @@ const retentionCases = [
     .slice(0, 12),
   ...original.filter((row) => ['0291', '0292', '0297', '0298'].includes(row.id))
 ]
-const selected = process.argv.includes('--scroll-recovery')
-  ? original.filter((row) => row.id === '0292')
-  : process.argv.includes('--all')
-    ? [...retentionCases, ...refusedCases]
-    : process.argv.includes('--visibility')
-      ? original.filter((row) => ['0297', '0298'].includes(row.id))
-      : refusals
-        ? refusedCases
-        : full
-          ? retentionCases
-          : ['0000', 'segment-007', 'segment-002', '0291'].map((id) =>
-              screen.find((row) => row.id === id)
-            )
+const selected = noisy
+  ? await readJson(
+      join(
+        root,
+        'noisy-endpoint/flow-fixtures',
+        process.argv.includes('--long-noise') ? 'long-corpus.json' : 'corpus.json'
+      )
+    )
+  : process.argv.includes('--scroll-recovery')
+    ? original.filter((row) => row.id === '0292')
+    : process.argv.includes('--all')
+      ? [...retentionCases, ...refusedCases]
+      : process.argv.includes('--visibility')
+        ? original.filter((row) => ['0297', '0298'].includes(row.id))
+        : refusals
+          ? refusedCases
+          : full
+            ? retentionCases
+            : ['0000', 'segment-007', 'segment-002', '0291'].map((id) =>
+                screen.find((row) => row.id === id)
+              )
 if (selected.some((row) => !row)) throw new Error('Missing fixture')
 await writeFile(
   join(output, 'protocol.json'),
   JSON.stringify(
     {
       ids: selected.map((row) => row.id),
+      noisyProbe: noisy,
+      inferenceWarmup: noisy && process.argv.includes('--warm-noise'),
+      coveredAudioContext: noisy && process.argv.includes('--fit-noise'),
+      endpointDriver: noisy
+        ? 'Experimental stationary-noise detector endpoint schedules the existing Finish action; not a shipped automatic endpoint. Native gain is enabled only for this probe.'
+        : 'Application exact-zero endpoint',
+      noiseCalibration: noisy
+        ? 'One second supplied noise-only prefix; fixed floor, 1.15 RMS ratio, 1.5 second endpoint; source speech-end labels used only for latency scoring.'
+        : null,
       scrollFaultInjection: process.argv.includes('--scroll-recovery'),
       method:
         'Real-time synthetic WebAudio MediaStream → production AudioWorklet → Electron IPC → resident native Turbo → frozen locator → actual Bible preview',
@@ -64,8 +82,9 @@ await writeFile(
         'Physical microphone, room acoustics, human-labelled recordings, Windows, packaged native distribution',
       clock:
         'Source AudioContext output timestamp maps the last nonzero fixture sample to renderer performance time; independently compare captured last nonzero sample',
-      endpoint:
-        '300 ms speculative processing, 1500 ms exact-zero stability; all nonzero samples preserved',
+      endpoint: noisy
+        ? '1500 ms stationary-noise endpoint, entire retained PCM; driver clicks Finish at detected endpoint'
+        : '300 ms speculative processing, 1500 ms exact-zero stability; all nonzero samples preserved',
       data: 'Only Bible content transport is replaced with the fixed local CUV fixture; no speech handler is replaced'
     },
     null,
@@ -93,7 +112,10 @@ const app = await _electron.launch({
     ...process.env,
     HHC_SPEECH_DATA: root,
     HHC_SPEECH_PYTHON: join(root, 'venv/bin/python'),
-    HHC_SPEECH_NODE: process.execPath
+    HHC_SPEECH_NODE: process.execPath,
+    HHC_SPEECH_NOISE_GAIN: noisy ? '1' : '0',
+    HHC_SPEECH_NOISE_CONTEXT: noisy && process.argv.includes('--fit-noise') ? '1' : '0',
+    HHC_SPEECH_NOISE_WARMUP: noisy && process.argv.includes('--warm-noise') ? '1' : '0'
   }
 })
 const logs = []
@@ -163,7 +185,17 @@ try {
   const readyMs = Date.now() - preparing
   console.log('Ready', readyMs, 'ms')
   for (const row of selected) {
-    const wav = await readFile(join(root, 'audio', `${row.id}.wav`))
+    if (noisy && results.length) {
+      await page.getByRole('button', { name: '開始中文聆聽', exact: true }).click()
+      await expect(page.locator('[data-speech-status]')).toHaveAttribute(
+        'data-speech-status',
+        'listening',
+        { timeout: 60000 }
+      )
+    }
+    const wav = await readFile(
+      join(root, noisy ? 'noisy-endpoint/flow-fixtures' : 'audio', `${row.id}.wav`)
+    )
     if (createHash('sha256').update(wav).digest('hex') !== row.sha256)
       throw new Error('Fixture checksum mismatch')
     let position = 12,
@@ -191,6 +223,7 @@ try {
       pcm[i] = bytes.readInt16LE(i * 2) / 32768
       if (pcm[i] !== 0) lastSignal = i
     }
+    if (noisy) lastSignal = row.speech_end_sample
     const count = await page.locator('[data-speech-trace]').count()
     const previous = (await page.locator('[data-bible-passage]').count())
       ? await page.locator('[data-bible-passage]').getAttribute('data-bible-passage')
@@ -216,6 +249,13 @@ try {
       },
       { encoded: Buffer.from(pcm.buffer).toString('base64'), lastSignal }
     )
+    if (noisy) {
+      const endpointAt = sourceEnd + (row.endpoint_sample - row.speech_end_sample) / 16
+      await page.evaluate(async (at) => {
+        await new Promise((done) => setTimeout(done, Math.max(0, at - performance.now())))
+      }, endpointAt)
+      await page.getByRole('button', { name: '完成一句', exact: true }).click()
+    }
     await expect(page.locator('[data-speech-trace]')).toHaveCount(count + 1, {
       timeout: Math.ceil((row.duration_s + 18) * 1000)
     })
@@ -246,7 +286,7 @@ try {
         !correct,
       unexpectedNavigation: row.target === null && displayed !== previous,
       sourceToPaintMs: trace.paintedAt - sourceEnd,
-      captureClockOffsetMs: trace.lastSampleAt - sourceEnd,
+      captureClockOffsetMs: noisy ? null : trace.lastSampleAt - sourceEnd,
       trace
     }
     results.push(item)
@@ -273,6 +313,13 @@ try {
       )
     if (results.length === 1 || trace.outcome === 'not-visible')
       await page.screenshot({ path: join(output, 'first-result.png') })
+    if (noisy) {
+      await expect(page.locator('[data-speech-status]')).toHaveAttribute(
+        'data-speech-status',
+        'idle'
+      )
+      await page.evaluate(() => window.chineseFixture.context.close())
+    }
   }
   if (
     process.argv.includes('--scroll-recovery') &&
@@ -280,26 +327,28 @@ try {
   ) {
     throw new Error('Scroll recovery was not exercised')
   }
-  const beforeCancel = await page.locator('[data-speech-trace]').count()
-  const beforePassage = (await page.locator('[data-bible-passage]').count())
-    ? await page.locator('[data-bible-passage]').getAttribute('data-bible-passage')
-    : null
-  const cancelDelay = await page.evaluate(() => {
-    const fixture = window.chineseFixture
-    const source = fixture.context.createBufferSource()
-    source.buffer = fixture.firstBuffer
-    source.connect(fixture.destination)
-    source.start(fixture.context.currentTime + 0.1)
-    return (fixture.firstLastSignalSeconds + 0.5) * 1000
-  })
-  await page.waitForTimeout(cancelDelay)
-  await page.getByRole('button', { name: '停止', exact: true }).click()
-  await page.waitForTimeout(1800)
-  await expect(page.locator('[data-speech-trace]')).toHaveCount(beforeCancel)
-  const afterPassage = (await page.locator('[data-bible-passage]').count())
-    ? await page.locator('[data-bible-passage]').getAttribute('data-bible-passage')
-    : null
-  if (afterPassage !== beforePassage) throw new Error('Cancelled audio navigated')
+  if (!noisy) {
+    const beforeCancel = await page.locator('[data-speech-trace]').count()
+    const beforePassage = (await page.locator('[data-bible-passage]').count())
+      ? await page.locator('[data-bible-passage]').getAttribute('data-bible-passage')
+      : null
+    const cancelDelay = await page.evaluate(() => {
+      const fixture = window.chineseFixture
+      const source = fixture.context.createBufferSource()
+      source.buffer = fixture.firstBuffer
+      source.connect(fixture.destination)
+      source.start(fixture.context.currentTime + 0.1)
+      return (fixture.firstLastSignalSeconds + 0.5) * 1000
+    })
+    await page.waitForTimeout(cancelDelay)
+    await page.getByRole('button', { name: '停止', exact: true }).click()
+    await page.waitForTimeout(1800)
+    await expect(page.locator('[data-speech-trace]')).toHaveCount(beforeCancel)
+    const afterPassage = (await page.locator('[data-bible-passage]').count())
+      ? await page.locator('[data-bible-passage]').getAttribute('data-bible-passage')
+      : null
+    if (afterPassage !== beforePassage) throw new Error('Cancelled audio navigated')
+  }
   await expect(page.locator('[data-speech-status]')).toHaveAttribute('data-speech-status', 'idle')
   const tracksEnded = await page.evaluate(() =>
     window.chineseFixture.destination.stream
@@ -324,7 +373,7 @@ try {
         over3s: results.filter((r) => r.sourceToPaintMs > 3000).map((r) => r.id),
         tracksEnded,
         projectionWindows,
-        cancelLateResultIgnored: true
+        cancelLateResultIgnored: noisy ? null : true
       },
       null,
       2

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "0292",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "有爭訟的事，他們應當站立判斷，要按我的典章判斷。在我一切的節期必守我的律法、條例，也必以我的安息日爲聖日。 他們不可挨近死屍沾染自己，只可爲父親、母親、兒子、女兒、弟兄，和未嫁人的姊妹沾染自己。",
+    "target": [
+      26,
+      44,
+      24
+    ],
+    "voice": "Meijia",
+    "rate": 175,
+    "split": "holdout",
+    "cross_verse": true,
+    "duration_s": 24.61375,
+    "sha256": "1e3b1b488f6e13d60871b26e6c90db9e3af2dea942e13e35b70556e667226b62",
+    "endpoint_sample": 367360,
+    "speech_end_sample": 345656,
+    "noise_profile": "fan-40db",
+    "noise_floor": 0.0016741611761972308
+  },
+  {
+    "id": "0297",
+    "language": "zh",
+    "kind": "quotation",
+    "text": "他們無論往何處去，耶和華都以災禍攻擊他們，正如耶和華所說的話，又如耶和華向他們所起的誓；他們便極其困苦。 耶和華興起士師，士師就拯救他們脫離搶奪他們人的手。",
+    "target": [
+      7,
+      2,
+      15
+    ],
+    "voice": "Eddy (Chinese (Taiwan))",
+    "rate": 150,
+    "split": "holdout",
+    "cross_verse": true,
+    "duration_s": 20.18525,
+    "sha256": "93027a29df6c504369607a1434a96290ec7ea74e63038109bf1d3b2378c1ec46",
+    "endpoint_sample": 290560,
+    "speech_end_sample": 266046,
+    "noise_profile": "fan-40db",
+    "noise_floor": 0.000922365696169436
+  }
+]
