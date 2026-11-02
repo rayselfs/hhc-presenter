@@ -92,8 +92,14 @@ export default function LocalSpeechCard(): React.JSX.Element {
   }, [state, sessionLimit, stop, t])
 
   const refresh = useCallback(async () => {
-    if (desktop) setModel(await window.api.speech.modelStatus(language))
-    else setBrowserAvailability(await browserSpeechAvailability(locale))
+    if (desktop) {
+      const value = await window.api.speech.modelStatus(language)
+      if (useSettingsStore.getState().speech.recognitionLanguage === language) setModel(value)
+    } else {
+      const value = await browserSpeechAvailability(locale)
+      if (useSettingsStore.getState().speech.recognitionLanguage === language)
+        setBrowserAvailability(value)
+    }
   }, [desktop, language, locale])
 
   useEffect(() => {
@@ -166,7 +172,12 @@ export default function LocalSpeechCard(): React.JSX.Element {
       if (next.query !== old.query) pauseFollowing()
     })
     const translation = useBibleSettingsStore.subscribe((next, old) => {
-      if (next.selectedVersionId !== old.selectedVersionId) stop()
+      if (next.selectedVersionId !== old.selectedVersionId) {
+        stop()
+        setCandidates([])
+        setTranscript('')
+        previous.current = null
+      }
     })
     const unsubscribeInterrupted = desktop ? window.api.speech.onInterrupted?.(stop) : undefined
     const hidden = (): void => {
@@ -385,9 +396,13 @@ export default function LocalSpeechCard(): React.JSX.Element {
     ? model?.phase === 'installed' && model.runtimeAvailable
     : browserAvailability === 'available'
   return (
-    <section className="flex h-full min-h-0 flex-col gap-3 p-3" aria-label={t('localSpeech.title')}>
+    <section
+      className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto p-3"
+      aria-label={t('localSpeech.title')}
+    >
       <Select
         value={language}
+        isDisabled={installing || busyInstall}
         onChange={(key) => {
           if (key === 'zh' || key === 'en') setSpeech({ ...speech, recognitionLanguage: key })
         }}
@@ -454,44 +469,6 @@ export default function LocalSpeechCard(): React.JSX.Element {
           </Button>
         </>
       )}
-      {desktop && (
-        <Select
-          value={speech.microphoneId || 'default'}
-          onChange={(key) =>
-            setSpeech({ ...speech, microphoneId: key === 'default' ? '' : String(key) })
-          }
-          aria-label={t('localSpeech.microphone')}
-        >
-          <Label>{t('localSpeech.microphone')}</Label>
-          <Select.Trigger>
-            <Select.Value />
-            <Select.Indicator />
-          </Select.Trigger>
-          <Select.Popover>
-            <ListBox>
-              <ListBox.Item id="default" textValue={t('localSpeech.defaultMicrophone')}>
-                {t('localSpeech.defaultMicrophone')}
-              </ListBox.Item>
-              {speech.microphoneId && !devices.some((d) => d.deviceId === speech.microphoneId) && (
-                <ListBox.Item id={speech.microphoneId} textValue={t('localSpeech.savedMicrophone')}>
-                  {t('localSpeech.savedMicrophone')}
-                </ListBox.Item>
-              )}
-              {devices
-                .filter((d) => d.deviceId !== 'default')
-                .map((d, i) => (
-                  <ListBox.Item
-                    id={d.deviceId}
-                    key={d.deviceId}
-                    textValue={d.label || `Microphone ${i + 1}`}
-                  >
-                    {d.label || `Microphone ${i + 1}`}
-                  </ListBox.Item>
-                ))}
-            </ListBox>
-          </Select.Popover>
-        </Select>
-      )}
       <p role="status" data-speech-status={state}>
         {t(`localSpeech.${state}`)}
       </p>
@@ -501,7 +478,13 @@ export default function LocalSpeechCard(): React.JSX.Element {
       )}
       <div className="flex flex-wrap gap-2">
         <Button
-          isDisabled={!installed || !indexReady || !['idle', 'ready'].includes(state)}
+          isDisabled={
+            installing ||
+            busyInstall ||
+            !installed ||
+            !indexReady ||
+            !['idle', 'ready'].includes(state)
+          }
           onPress={() => {
             void start()
           }}
@@ -529,6 +512,53 @@ export default function LocalSpeechCard(): React.JSX.Element {
           {t('localSpeech.stop')}
         </Button>
       </div>
+      {desktop && (
+        <details>
+          <summary className="cursor-pointer text-sm">{t('localSpeech.microphone')}</summary>
+          {desktop && (
+            <Select
+              value={speech.microphoneId || 'default'}
+              onChange={(key) =>
+                setSpeech({ ...speech, microphoneId: key === 'default' ? '' : String(key) })
+              }
+              aria-label={t('localSpeech.microphone')}
+            >
+              <Label>{t('localSpeech.microphone')}</Label>
+              <Select.Trigger>
+                <Select.Value />
+                <Select.Indicator />
+              </Select.Trigger>
+              <Select.Popover>
+                <ListBox>
+                  <ListBox.Item id="default" textValue={t('localSpeech.defaultMicrophone')}>
+                    {t('localSpeech.defaultMicrophone')}
+                  </ListBox.Item>
+                  {speech.microphoneId &&
+                    !devices.some((d) => d.deviceId === speech.microphoneId) && (
+                      <ListBox.Item
+                        id={speech.microphoneId}
+                        textValue={t('localSpeech.savedMicrophone')}
+                      >
+                        {t('localSpeech.savedMicrophone')}
+                      </ListBox.Item>
+                    )}
+                  {devices
+                    .filter((d) => d.deviceId !== 'default')
+                    .map((d, i) => (
+                      <ListBox.Item
+                        id={d.deviceId}
+                        key={d.deviceId}
+                        textValue={d.label || `Microphone ${i + 1}`}
+                      >
+                        {d.label || `Microphone ${i + 1}`}
+                      </ListBox.Item>
+                    ))}
+                </ListBox>
+              </Select.Popover>
+            </Select>
+          )}
+        </details>
+      )}
       <meter min={0} max={1} value={level} aria-label={t('localSpeech.level')} />
       <p className="text-xs text-muted">{t('localSpeech.noiseHelp')}</p>
       {!following && (
@@ -581,7 +611,7 @@ export default function LocalSpeechCard(): React.JSX.Element {
           {t('localSpeech.back')}
         </Button>
       )}
-      {desktop && installed && state !== 'listening' && (
+      {desktop && model?.phase === 'installed' && state !== 'listening' && (
         <div className="flex gap-2">
           <Button
             variant="ghost"

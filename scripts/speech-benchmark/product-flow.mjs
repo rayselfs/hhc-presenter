@@ -2,6 +2,7 @@
 import { _electron, expect } from '@playwright/test'
 import { readFile, writeFile, mkdir, mkdtemp, rm, link } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { createHash } from 'node:crypto'
 import { resolve, join } from 'node:path'
 const root = resolve(process.argv[2])
 const output = resolve(process.argv[3])
@@ -10,8 +11,21 @@ const json = async (path) => JSON.parse((await readFile(path, 'utf8')).replace(/
 const names = await json(join(root, 'books.json'))
 const corpus = await json(join(root, 'corpus.json'))
 const ids = process.argv.includes('--full')
-  ? ['0000', '0001', '0201', '0291', '0292', '0300', '0301', '0500', '0591']
-  : ['0000', '0201', '0300', '0500']
+  ? [
+      '0000',
+      '0001',
+      '0201',
+      '0291',
+      '0292',
+      '0300',
+      '0301',
+      '0500',
+      '0591',
+      ...(process.argv.includes('--negative') ? ['0651', '0653', '0656', '0658'] : [])
+    ]
+  : process.argv.includes('--negative')
+    ? ['0000', '0651', '0653', '0300', '0656', '0658']
+    : ['0000', '0201', '0300', '0500']
 const profile = await mkdtemp(join(tmpdir(), 'hhc-product-speech-'))
 for (const [id, filename] of [
   ['turbo-q5-0-v1', 'ggml-large-v3-turbo-q5_0.bin'],
@@ -19,12 +33,14 @@ for (const [id, filename] of [
 ]) {
   const directory = join(profile, 'speech-models', id)
   await mkdir(directory, { recursive: true })
-  await link(join(root, 'models/whisper', filename), join(directory, 'model.bin'))
+  if (!(process.argv.includes('--install') && id === 'small-v1'))
+    await link(join(root, 'models/whisper', filename), join(directory, 'model.bin'))
 }
 const env = { ...process.env }
 for (const key of Object.keys(env)) if (key.startsWith('HHC_SPEECH_')) delete env[key]
 const app = await _electron.launch({
-  args: [process.cwd(), `--user-data-dir=${profile}`],
+  executablePath: process.env.PACKAGED_APP_PATH,
+  args: [...(process.env.PACKAGED_APP_PATH ? [] : [process.cwd()]), `--user-data-dir=${profile}`],
   env,
   timeout: 60000
 })
@@ -71,7 +87,7 @@ try {
       settings.version = 14
       settings.state = {
         ...settings.state,
-        speech: { recognitionLanguage: language, microphoneId: '' }
+        speech: { recognitionLanguage: 'zh', microphoneId: '' }
       }
       localStorage.setItem('hhc-settings', JSON.stringify(settings))
       localStorage.setItem(
@@ -89,6 +105,25 @@ try {
     }, language)
     await page.reload()
     await page.goto(`${page.url().split('#')[0]}#/bible`)
+    if (language === 'en') {
+      await page.getByRole('button', { name: /主要辨識語言|Main spoken language/ }).click()
+      await page.getByRole('option', { name: 'English', exact: true }).click()
+      if (process.argv.includes('--install')) {
+        await page.getByRole('button', { name: 'Install speech', exact: true }).click()
+        await expect
+          .poll(
+            () => page.evaluate(() => window.api.speech.modelStatus('en').then((s) => s.received)),
+            { timeout: 30000 }
+          )
+          .toBeGreaterThan(0)
+        await page.getByRole('button', { name: 'Cancel download', exact: true }).click()
+        await expect
+          .poll(() => page.evaluate(() => window.api.speech.modelStatus('en').then((s) => s.error)))
+          .toBe('cancelled')
+        await page.getByRole('button', { name: 'Install speech', exact: true }).click()
+        console.log('Real managed download cancelled and retried')
+      }
+    }
     await expect(page.locator('[data-speech-status]')).toHaveAttribute(
       'data-speech-status',
       'ready',
@@ -109,10 +144,14 @@ try {
       'listening',
       { timeout: 90000 }
     )
+    await expect(page.getByRole('button', { name: /^(停止|Stop)$/ })).toBeInViewport()
     for (const id of ids) {
       const row = corpus.find((r) => r.id === id)
-      if (!row || row.language !== language) continue
+      if (!row) throw new Error('Missing frozen fixture')
+      if (row.language !== language) continue
       const wav = await readFile(join(root, 'audio', `${id}.wav`))
+      if (createHash('sha256').update(wav).digest('hex') !== row.sha256)
+        throw new Error('Fixture checksum mismatch')
       let position = 12,
         bytes
       while (position + 8 <= wav.length) {
@@ -130,14 +169,23 @@ try {
         pcm[i] = bytes.readInt16LE(i * 2) / 32768
         if (pcm[i] !== 0) last = i
       }
-      const target = row.target.join(':')
+      const target = row.target?.join(':') ?? null
+      const previous = (await page.locator('[data-bible-passage]').count())
+        ? await page.locator('[data-bible-passage]').getAttribute('data-bible-passage')
+        : null
+      const previousTranscript = await page
+        .locator('[data-speech-status]')
+        .evaluate((el) => el.parentElement.querySelector('p[aria-live="polite"]')?.textContent)
       const end = await page.evaluate(
-        ({ encoded, last, target }) => {
+        ({ encoded, last, target, previous }) => {
           window.productPaint = null
+          window.productWrong = false
           window.productTarget = target
           const observer = new MutationObserver(() => {
             const passage = document.querySelector('[data-bible-passage]')
-            if (passage?.getAttribute('data-bible-passage') === target) {
+            if (!target && passage?.getAttribute('data-bible-passage') !== previous)
+              window.productWrong = true
+            if (target && passage?.getAttribute('data-bible-passage') === target) {
               requestAnimationFrame(() =>
                 requestAnimationFrame(() => {
                   const verse = passage.querySelector(
@@ -171,39 +219,73 @@ try {
           source.connect(destination)
           const start = context.currentTime + 0.5
           source.start(start)
-          const stamp = context.getOutputTimestamp()
-          return stamp.performanceTime + (start + last / 16000 - stamp.contextTime) * 1000
+          window.productAudioEnd = start + last / 16000
+          return performance.now() + (window.productAudioEnd - context.currentTime) * 1000
         },
-        { encoded: Buffer.from(pcm.buffer).toString('base64'), last, target }
+        { encoded: Buffer.from(pcm.buffer).toString('base64'), last, target, previous }
       )
       let passed = true
       try {
-        await page.waitForFunction(
-          () =>
-            window.productPaint !== null &&
-            document.querySelector('[data-bible-passage]')?.getAttribute('data-bible-passage') ===
-              window.productTarget,
-          null,
-          { timeout: Math.ceil(row.duration_s * 1000 + 15000) }
-        )
+        if (!target)
+          await page.evaluate(async (end) => {
+            await new Promise((resolve) =>
+              setTimeout(resolve, Math.max(0, end + 6000 - performance.now()))
+            )
+          }, end)
+        else
+          await page.waitForFunction(
+            () =>
+              window.productPaint !== null &&
+              document.querySelector('[data-bible-passage]')?.getAttribute('data-bible-passage') ===
+                window.productTarget,
+            null,
+            { timeout: Math.ceil(row.duration_s * 1000 + 15000) }
+          )
       } catch {
         passed = false
       }
-      const result = await page.evaluate(() => ({
-        paint: window.productPaint,
-        displayed: document
-          .querySelector('[data-bible-passage]')
-          ?.getAttribute('data-bible-passage'),
-        status: document.querySelector('[data-speech-status]')?.getAttribute('data-speech-status')
-      }))
-      passed = passed && result.displayed === target && result.paint >= end
+      const result = await page.evaluate(() => {
+        const context = window.productFixture.context
+        const now = performance.now()
+        const sourceEnd = now + (window.productAudioEnd - context.currentTime) * 1000 - 8
+        const stamp = context.getOutputTimestamp()
+        const hardwareEnd =
+          stamp.performanceTime + (window.productAudioEnd - stamp.contextTime) * 1000
+        return {
+          sourceEnd,
+          sourceClock: {
+            method: 'render-clock with one-quantum conservative allowance',
+            now,
+            contextTime: context.currentTime,
+            hardwareEnd
+          },
+          paint: window.productPaint,
+          wrong: window.productWrong,
+          transcript: document
+            .querySelector('[data-speech-status]')
+            ?.parentElement.querySelector('p[aria-live="polite"]')?.textContent,
+          displayed: document
+            .querySelector('[data-bible-passage]')
+            ?.getAttribute('data-bible-passage'),
+          status: document.querySelector('[data-speech-status]')?.getAttribute('data-speech-status')
+        }
+      })
+      passed =
+        passed &&
+        (target
+          ? result.displayed === target && result.paint >= result.sourceEnd
+          : result.displayed === previous &&
+            !result.wrong &&
+            !!result.transcript &&
+            result.transcript !== previousTranscript)
+      passed = passed && result.status === 'listening'
       results.push({
         id,
         language,
         target,
         passed,
         ...result,
-        lastSampleToPaintMs: result.paint === null ? null : result.paint - end
+        lastSampleToPaintMs: result.paint === null ? null : result.paint - result.sourceEnd
       })
       await writeFile(join(output, 'results.json'), JSON.stringify(results, null, 2))
       console.log(JSON.stringify(results.at(-1)))
@@ -217,4 +299,5 @@ try {
   await writeFile(join(output, 'console.log'), logs.join('\n'))
   await rm(profile, { recursive: true, force: true })
 }
+if (results.length !== ids.length) throw new Error('Incomplete fixture run')
 if (results.some((r) => !r.passed || r.lastSampleToPaintMs > 3000)) process.exitCode = 1

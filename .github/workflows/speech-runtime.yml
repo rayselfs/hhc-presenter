@@ -21,6 +21,18 @@ jobs:
         run: node scripts/build-speech-runtime.mjs
       - name: Verify packaged runtime contract
         run: node scripts/check-speech-runtime.mjs
+      - name: Reject external Windows compiler runtime dependencies
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products '*' -property installationPath
+          $dumpbin = Get-ChildItem "$vs\VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $dumpbin) { throw 'Missing dependency inspection tool' }
+          $imports = & $dumpbin.FullName /DEPENDENTS resources/speech/win32-x64/hhc-speech.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency inspection failed' }
+          $imports
+          if ($imports -match '(?i)\b(vcruntime|msvcp|vcomp|libomp|libiomp|libgcc|libstdc)') { throw 'Unbundled compiler runtime dependency' }
       - uses: actions/cache@v4
         with:
           path: .local-runtimes/speech-smoke-models

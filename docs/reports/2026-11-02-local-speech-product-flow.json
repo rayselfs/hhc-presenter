@@ -1,97 +1,262 @@
 {
-  "method": "Native production IPC/AudioWorklet, real-time synthetic loopback; Bible transport fixture; last nonzero source sample to visible target verse",
+  "method": "Packaged native production IPC/AudioWorklet, real-time synthetic loopback; Bible transport fixture; source render-clock last nonzero sample to visible target verse. One 128-frame quantum (8 ms at 16 kHz) is included conservatively. Hardware output clock retained only for diagnostics.",
   "hardware": ["Apple M4", "25769803776"],
   "os": "27.0.1",
+  "appAsarSha256": "1cfc221c23d4c5e507d91c6f0a58ce2d0ae1b76d5fefb289b76d2531ea00c278",
+  "engine": {
+    "protocol": 1,
+    "target": "darwin-arm64",
+    "filename": "hhc-speech",
+    "revision": "f24588a272ae8e23280d9c220536437164e6ed28",
+    "sha256": "4f33dee002c71f3d0de2551da1a6562e3490fb5c6a88e75e95f5935eb0357fb0"
+  },
   "results": [
     {
       "id": "0000",
       "language": "zh",
       "target": "1:1:1",
       "passed": true,
-      "paint": 9274.700000047684,
+      "sourceEnd": 6813.087499976158,
+      "sourceClock": {
+        "method": "render-clock with one-quantum conservative allowance",
+        "now": 8414.399999976158,
+        "contextTime": 4.584,
+        "hardwareEnd": 6856.574500023842
+      },
+      "paint": 8410,
+      "wrong": false,
+      "transcript": "創世紀第一章第一節",
       "displayed": "1:1:1",
       "status": "listening",
-      "lastSampleToPaintMs": 1527.0085
+      "lastSampleToPaintMs": 1596.9125000238419
     },
     {
       "id": "0001",
       "language": "zh",
       "target": "1:25:3",
       "passed": true,
-      "paint": 14110.600000023842,
+      "sourceEnd": 11761.22500002384,
+      "sourceClock": {
+        "method": "render-clock with one-quantum conservative allowance",
+        "now": 13362.100000023842,
+        "contextTime": 9.528,
+        "hardwareEnd": 11800.913999999999
+      },
+      "paint": 13345.700000047684,
+      "wrong": false,
+      "transcript": "請翻到創世紀第25章第三節。",
       "displayed": "1:25:3",
       "status": "listening",
-      "lastSampleToPaintMs": 1506.4769999761593
+      "lastSampleToPaintMs": 1584.4750000238437
     },
     {
       "id": "0201",
       "language": "zh",
       "target": "3:18:16",
       "passed": true,
-      "paint": 20550.200000047684,
+      "sourceEnd": 18276.549999952316,
+      "sourceClock": {
+        "method": "render-clock with one-quantum conservative allowance",
+        "now": 19868.299999952316,
+        "contextTime": 16.04,
+        "hardwareEnd": 18322.103000023842
+      },
+      "paint": 19862.5,
+      "wrong": false,
+      "transcript": "不可錄你弟兄親子的下題,這本是你弟兄的下題。",
       "displayed": "3:18:16",
       "status": "listening",
-      "lastSampleToPaintMs": 1505.0490000238424
+      "lastSampleToPaintMs": 1585.9500000476837
     },
     {
       "id": "0291",
       "language": "zh",
       "target": "5:20:5",
       "passed": true,
-      "paint": 41753.800000071526,
+      "sourceEnd": 38323,
+      "sourceClock": {
+        "method": "render-clock with one-quantum conservative allowance",
+        "now": 40584,
+        "contextTime": 36.752,
+        "hardwareEnd": 38364.592999952314
+      },
+      "paint": 40575,
+      "wrong": false,
+      "transcript": "官長也要對百姓宣告說,誰建造房屋,尚未奉獻,他可以回家去,恐怕他陣亡,別人去奉獻。誰種葡萄園,尚未用所結的果子,他可以回家去,恐怕他陣亡,別人去用。",
       "displayed": "5:20:5",
       "status": "listening",
-      "lastSampleToPaintMs": 2690.0050000715273
+      "lastSampleToPaintMs": 2252
     },
     {
       "id": "0292",
       "language": "zh",
       "target": "26:44:24",
       "passed": true,
-      "paint": 66135.10000002384,
+      "sourceEnd": 62946.60000002385,
+      "sourceClock": {
+        "method": "render-clock with one-quantum conservative allowance",
+        "now": 64891.10000002384,
+        "contextTime": 61.056,
+        "hardwareEnd": 62984.860000023844
+      },
+      "paint": 64870,
+      "wrong": false,
+      "transcript": "有徵頌的是,他們應當戰利判斷,要按我的典章判斷,在我一切的節旗必守我的律法、條例,也必以我的安息日爲聖日,他們不可哀盡死屍沾染自己,只可爲父親、母親、兒子、女兒、弟兄、捍衛嫁人的姐妹沾染自己。",
       "displayed": "26:44:24",
       "status": "listening",
-      "lastSampleToPaintMs": 1971.0989999761587
+      "lastSampleToPaintMs": 1923.3999999761509
+    },
+    {
+      "id": "0651",
+      "language": "zh",
+      "target": null,
+      "passed": true,
+      "sourceEnd": 70182.58749997616,
+      "sourceClock": {
+        "method": "render-clock with one-quantum conservative allowance",
+        "now": 76196.89999997616,
+        "contextTime": 72.368,
+        "hardwareEnd": 70226.9905
+      },
+      "paint": null,
+      "wrong": false,
+      "transcript": "我們是要關心身邊的朋友,這是今天分享的重點。",
+      "displayed": "26:44:24",
+      "status": "listening",
+      "lastSampleToPaintMs": null
+    },
+    {
+      "id": "0653",
+      "language": "zh",
+      "target": null,
+      "passed": true,
+      "sourceEnd": 79900.95000004768,
+      "sourceClock": {
+        "method": "render-clock with one-quantum conservative allowance",
+        "now": 85936.70000004768,
+        "contextTime": 82.104,
+        "hardwareEnd": 79941.43299997615
+      },
+      "paint": null,
+      "wrong": false,
+      "transcript": "週六下午3點到4點,我們在二樓開會。",
+      "displayed": "26:44:24",
+      "status": "listening",
+      "lastSampleToPaintMs": null
     },
     {
       "id": "0300",
       "language": "en",
       "target": "1:1:1",
       "passed": true,
-      "paint": 7172.299999952316,
+      "sourceEnd": 7631.875,
+      "sourceClock": {
+        "method": "render-clock with one-quantum conservative allowance",
+        "now": 9211,
+        "contextTime": 4.568,
+        "hardwareEnd": 7670.676
+      },
+      "paint": 9188.800000071526,
+      "wrong": false,
+      "transcript": " Genesis chapter 1 verse 1.",
       "displayed": "1:1:1",
       "status": "listening",
-      "lastSampleToPaintMs": 1513.8249999999998
+      "lastSampleToPaintMs": 1556.9250000715256
     },
     {
       "id": "0301",
       "language": "en",
       "target": "1:25:3",
       "passed": true,
-      "paint": 12760.700000047684,
+      "sourceEnd": 13270.637500047684,
+      "sourceClock": {
+        "method": "render-clock with one-quantum conservative allowance",
+        "now": 14850.200000047684,
+        "contextTime": 10.208,
+        "hardwareEnd": 13310.1685
+      },
+      "paint": 14833.100000023842,
+      "wrong": false,
+      "transcript": " Please turn to Genesis chapter 25 verse 3.",
       "displayed": "1:25:3",
       "status": "listening",
-      "lastSampleToPaintMs": 1510.6665000953672
+      "lastSampleToPaintMs": 1562.4624999761581
     },
     {
       "id": "0500",
       "language": "en",
       "target": "5:10:18",
       "passed": true,
-      "paint": 20525.799999952316,
+      "sourceEnd": 21100.8125,
+      "sourceClock": {
+        "method": "render-clock with one-quantum conservative allowance",
+        "now": 22668,
+        "contextTime": 18.032,
+        "hardwareEnd": 21146.406500071524
+      },
+      "paint": 22655.300000071526,
+      "wrong": false,
+      "transcript": " He doth execute the judgment of the fatherless and widow, and love of the stranger, in giving him food and raiment.",
       "displayed": "5:10:18",
       "status": "listening",
-      "lastSampleToPaintMs": 1511.4864999046295
+      "lastSampleToPaintMs": 1554.4875000715256
     },
     {
       "id": "0591",
       "language": "en",
       "target": "40:15:19",
       "passed": true,
-      "paint": 38411.5,
+      "sourceEnd": 39023.21250009537,
+      "sourceClock": {
+        "method": "render-clock with one-quantum conservative allowance",
+        "now": 40603.90000009537,
+        "contextTime": 35.968,
+        "hardwareEnd": 39068.806500047685
+      },
+      "paint": 40585.5,
+      "wrong": false,
+      "transcript": " For out of the hard proceed evil thoughts, murders, adulteries, fornications, thefts, false witness, blasphemies, these are the things which defile a man, but to eat with unwashed hands defileeth not a man.",
       "displayed": "40:15:19",
       "status": "listening",
-      "lastSampleToPaintMs": 1522.8034999761585
+      "lastSampleToPaintMs": 1562.2874999046326
+    },
+    {
+      "id": "0656",
+      "language": "en",
+      "target": null,
+      "passed": true,
+      "sourceEnd": 43367.36250007153,
+      "sourceClock": {
+        "method": "render-clock with one-quantum conservative allowance",
+        "now": 49378.300000071526,
+        "contextTime": 44.736,
+        "hardwareEnd": 43406.44950002384
+      },
+      "paint": null,
+      "wrong": false,
+      "transcript": " We need to care for our friends and neighbors.",
+      "displayed": "40:15:19",
+      "status": "listening",
+      "lastSampleToPaintMs": null
+    },
+    {
+      "id": "0658",
+      "language": "en",
+      "target": null,
+      "passed": true,
+      "sourceEnd": 52543.825000047684,
+      "sourceClock": {
+        "method": "render-clock with one-quantum conservative allowance",
+        "now": 58560.700000047684,
+        "contextTime": 53.92,
+        "hardwareEnd": 52584.50300002384
+      },
+      "paint": null,
+      "wrong": false,
+      "transcript": " The meeting is on the second floor at 3.30.",
+      "displayed": "40:15:19",
+      "status": "listening",
+      "lastSampleToPaintMs": null
     }
   ]
 }

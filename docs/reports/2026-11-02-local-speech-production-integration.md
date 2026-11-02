@@ -35,9 +35,17 @@ An initial strict-AND search integration lost 59 quotation decisions. Speech-onl
 
 The native smoke runner verifies model ready, a known synthetic citation, digital silence, a second request and clean process shutdown for both models. First local smoke: Chinese 947 ms / English 558 ms native inference; startup is separately measured and excluded from utterance latency. This is not minimum-hardware acceptance.
 
-The product-flow runner uses a temporary app profile, verified model files, real native IPC/AudioWorklet and real-time synthetic loopback. Only Bible content transport and the microphone source are fixture-controlled. It measures source last nonzero sample to a visibly positioned verse. Corrected real-time replay: 5 Chinese and 4 English positive controls all visibly located; Chinese maximum 2.690 seconds, English maximum 1.523 seconds. See the adjacent `2026-11-02-local-speech-product-flow.json`. These selected regression cases do not replace the full accuracy denominator or negative/audio acceptance.
+The product-flow runner uses a temporary app profile, verified model files, real native IPC/AudioWorklet and real-time synthetic loopback. Only Bible content transport and the microphone source are fixture-controlled. It measures source last nonzero sample to a visibly positioned verse. Final packaged replay: 5 Chinese and 4 English positive controls all visibly located; Chinese maximum 2.252 seconds, English maximum 1.563 seconds. Four additional negative controls produced fresh transcripts, stayed listening, and caused no navigation during six seconds of post-speech observation. See the adjacent `2026-11-02-local-speech-product-flow.json`. These selected regression cases do not replace the full accuracy denominator or negative/audio acceptance.
 
-A measurement-observer race in the initial UI harness produced stale/negative timestamps and overlapping fixtures. Those timings are rejected; the corrected runner isolates the current target and validates displayed reference and timestamp ordering.
+Two harness defects were rejected before qualification: an old observer could report stale/negative timestamps and overlap fixtures, and an initial AudioContext output timestamp could be zero or include unrelated hardware playback latency. The final runner isolates the current target, validates all 13 frozen WAV hashes, measures the live source render clock after processing with an additional conservative 8 ms quantum, and records the hardware clock separately. No model/endpoint change was used to repair a measurement defect.
+
+### Delivery checks
+
+- Local full unit run: 362 files / 4,575 tests passed, one optional external-data replay skipped. Subsequent narrow install/version lifecycle guards have focused coverage; final totals are recorded by PR CI.
+- Browser E2E: 103 passed, three existing conditional skips; real Worker search, committed-vs-preview projection navigation and local-only speech privacy checks passed.
+- macOS unsigned unpacked build, native integrity/license checks and both actual models pass. A separate real managed English model download was cancelled after bytes arrived, retried, verified and used by the packaged UI. End users do not need the build tools.
+- Initial macOS and Windows hosted native smoke jobs passed. Windows is additionally rebuilt without OpenMP and checked for external compiler-runtime DLL imports before merge.
+- Initial PR quality CI caught the already identified settings test that assumed one selector button; it is fixed rather than bypassed. Final CI/merge receipts are maintained in PR #198 and engineering issue #197.
 
 ### Distribution and website budget
 
