@@ -1,0 +1,13 @@
+{
+  "n": 6,
+  "readyMs": 6976,
+  "lostCorrect": [
+    "segment-016-fan-20db"
+  ],
+  "correct": 1,
+  "wrong": 0,
+  "over3s": [],
+  "tracksEnded": true,
+  "projectionWindows": 0,
+  "cancelLateResultIgnored": null
+}

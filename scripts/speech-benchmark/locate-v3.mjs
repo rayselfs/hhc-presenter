@@ -81,6 +81,12 @@ const locate = (text) => {
         score: 1 - distance(sound, n.sound) / Math.max(sound.length, n.sound.length)
       }))
       .sort((a, b) => b.score - a.score)
+    // Chinese full book names never start with a number; do not fuzzy-map a century/date.
+    if (
+      process.env.HHC_SPEECH_STRICT_CITATIONS === '1' &&
+      /^[零〇一二兩三四五六七八九十百0-9]/u.test(book)
+    )
+      return null
     if (candidates[0].score >= 0.75 && candidates[0].score - candidates[1].score >= 0.12)
       id = candidates[0].id
   }

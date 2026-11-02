@@ -7,7 +7,9 @@ import { resolve, join } from 'node:path'
 
 const root = resolve(process.argv[2])
 const output = resolve(process.argv[3])
-const noisy = process.argv.includes('--noisy-probe')
+const strong = process.argv.includes('--strong-probe')
+const noisy = strong || process.argv.includes('--noisy-probe')
+const noiseFolder = strong ? 'strong-final/flow-fixtures' : 'noisy-endpoint/flow-fixtures'
 const full = process.argv.includes('--full')
 const refusals = process.argv.includes('--refusals')
 const repo = process.cwd()
@@ -41,7 +43,7 @@ const selected = noisy
   ? await readJson(
       join(
         root,
-        'noisy-endpoint/flow-fixtures',
+        noiseFolder,
         process.argv.includes('--long-noise') ? 'long-corpus.json' : 'corpus.json'
       )
     )
@@ -65,6 +67,8 @@ await writeFile(
     {
       ids: selected.map((row) => row.id),
       noisyProbe: noisy,
+      strongNoiseGuardAndRetry: strong,
+      strongCitationGate: strong ? 'reject numeric-leading Chinese fuzzy book names' : null,
       inferenceWarmup: noisy && process.argv.includes('--warm-noise'),
       coveredAudioContext: noisy && process.argv.includes('--fit-noise'),
       endpointDriver: noisy
@@ -113,6 +117,8 @@ const app = await _electron.launch({
     HHC_SPEECH_DATA: root,
     HHC_SPEECH_PYTHON: join(root, 'venv/bin/python'),
     HHC_SPEECH_NODE: process.execPath,
+    HHC_SPEECH_STRONG_PROBE: strong ? '1' : '0',
+    HHC_SPEECH_STRICT_CITATIONS: '0',
     HHC_SPEECH_NOISE_GAIN: noisy ? '1' : '0',
     HHC_SPEECH_NOISE_CONTEXT: noisy && process.argv.includes('--fit-noise') ? '1' : '0',
     HHC_SPEECH_NOISE_WARMUP: noisy && process.argv.includes('--warm-noise') ? '1' : '0'
@@ -193,9 +199,7 @@ try {
         { timeout: 60000 }
       )
     }
-    const wav = await readFile(
-      join(root, noisy ? 'noisy-endpoint/flow-fixtures' : 'audio', `${row.id}.wav`)
-    )
+    const wav = await readFile(join(root, noisy ? noiseFolder : 'audio', `${row.id}.wav`))
     if (createHash('sha256').update(wav).digest('hex') !== row.sha256)
       throw new Error('Fixture checksum mismatch')
     let position = 12,
@@ -281,7 +285,8 @@ try {
       wrong,
       lostCorrect:
         row.target !== null &&
-        (row.id.startsWith('segment-') ||
+        (strong ||
+          row.id.startsWith('segment-') ||
           baseline.get(row.id)?.['phonetic-0.85'].correct === true) &&
         !correct,
       unexpectedNavigation: row.target === null && displayed !== previous,

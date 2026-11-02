@@ -1,0 +1,106 @@
+[
+  {
+    "id": "0001",
+    "hum": false,
+    "cutoff": 0,
+    "text": "请三个创世纪第25章第三节",
+    "reference": null,
+    "processing_ms": 670.2607909683138
+  },
+  {
+    "id": "0001",
+    "hum": false,
+    "cutoff": 120,
+    "text": "请三个创世纪第25装第三节",
+    "reference": null,
+    "processing_ms": 823.3196659712121
+  },
+  {
+    "id": "0001",
+    "hum": false,
+    "cutoff": 200,
+    "text": "请三个创世纪第25装第三节",
+    "reference": null,
+    "processing_ms": 648.4859579941258
+  },
+  {
+    "id": "0001",
+    "hum": true,
+    "cutoff": 0,
+    "text": "请三个创世纪第25章第三节",
+    "reference": null,
+    "processing_ms": 575.049459002912
+  },
+  {
+    "id": "0001",
+    "hum": true,
+    "cutoff": 120,
+    "text": "请三个创世纪第25章第三节",
+    "reference": null,
+    "processing_ms": 856.2977920519188
+  },
+  {
+    "id": "0001",
+    "hum": true,
+    "cutoff": 200,
+    "text": "请三个创世纪第25装第三节",
+    "reference": null,
+    "processing_ms": 701.113749993965
+  },
+  {
+    "id": "segment-012",
+    "hum": false,
+    "cutoff": 0,
+    "text": "请三道创世纪第一章第一节",
+    "reference": null,
+    "processing_ms": 530.4215829819441
+  },
+  {
+    "id": "segment-012",
+    "hum": false,
+    "cutoff": 120,
+    "text": "請三道創世紀 第一章第一節",
+    "reference": null,
+    "processing_ms": 643.629250000231
+  },
+  {
+    "id": "segment-012",
+    "hum": false,
+    "cutoff": 200,
+    "text": "請三道創世紀 第一章第一節",
+    "reference": null,
+    "processing_ms": 638.6722919996828
+  },
+  {
+    "id": "segment-016",
+    "hum": false,
+    "cutoff": 0,
+    "text": "请翻到创世纪 第一章第一节",
+    "reference": [
+      1,
+      1,
+      1
+    ],
+    "processing_ms": 530.2923748968169
+  },
+  {
+    "id": "segment-016",
+    "hum": false,
+    "cutoff": 120,
+    "text": "請翻到刷世紀 第一章第一節",
+    "reference": null,
+    "processing_ms": 714.3344579963014
+  },
+  {
+    "id": "segment-016",
+    "hum": false,
+    "cutoff": 200,
+    "text": "请翻到创世纪 第一章第一节",
+    "reference": [
+      1,
+      1,
+      1
+    ],
+    "processing_ms": 704.5601659920067
+  }
+]

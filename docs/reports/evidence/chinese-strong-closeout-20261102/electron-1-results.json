@@ -1,0 +1,200 @@
+[
+  {
+    "id": "segment-016-fan-20db",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": true,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 2860.790000095367,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "请翻造创世纪,第1章第1节。",
+        "reference": null,
+        "asrMs": 1261.6939169820398,
+        "locateMs": 2.657123957760632
+      },
+      "lastSampleAt": 15167.716499952316,
+      "requestAt": 14962.099999904633,
+      "responseAt": 16247.899999976158,
+      "stableAt": 16247.899999976158,
+      "manual": true,
+      "paintedAt": 16259.5,
+      "scrollCorrected": false,
+      "totalMs": 1091.7835000476844,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-008-fan-20db",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "reference": [
+      1,
+      1,
+      1
+    ],
+    "correct": true,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 2121.707999928476,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "请翻到创世纪第一章第一节",
+        "reference": [
+          1,
+          1,
+          1
+        ],
+        "asrMs": 690.3558330377564,
+        "locateMs": 2.391416928730905
+      },
+      "lastSampleAt": 31505.920499976157,
+      "requestAt": 31294.299999952316,
+      "responseAt": 31995.599999904633,
+      "stableAt": 31995.599999904633,
+      "manual": true,
+      "paintedAt": 32015.599999904633,
+      "scrollCorrected": false,
+      "totalMs": 509.6794999284757,
+      "outcome": "located"
+    }
+  },
+  {
+    "id": "segment-011-fan-20db",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1471.3224999761587,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "",
+        "reference": null,
+        "asrMs": 15.166124911047518,
+        "locateMs": 2.770625054836273
+      },
+      "lastSampleAt": 47356.4315,
+      "requestAt": 47148,
+      "responseAt": 47183.799999952316,
+      "stableAt": 47183.799999952316,
+      "manual": true,
+      "paintedAt": 47208.199999928474,
+      "scrollCorrected": false,
+      "totalMs": -148.23150007152435,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "segment-011-hum-10db",
+    "kind": "negative",
+    "target": null,
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1456.6955000715243,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "",
+        "reference": null,
+        "asrMs": 11.542625026777387,
+        "locateMs": 1.7484999261796474
+      },
+      "lastSampleAt": 62504.84149997616,
+      "requestAt": 62293.39999997616,
+      "responseAt": 62328.09999990463,
+      "stableAt": 62328.09999990463,
+      "manual": true,
+      "paintedAt": 62358,
+      "scrollCorrected": false,
+      "totalMs": -146.84149997615896,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "benign-0-0-0.02-fan-20db",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1457.116499952317,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "",
+        "reference": null,
+        "asrMs": 19.803583971224725,
+        "locateMs": 1.427666051313281
+      },
+      "lastSampleAt": 77087.54749990463,
+      "requestAt": 76878.89999997616,
+      "responseAt": 76928.69999992847,
+      "stableAt": 76928.69999992847,
+      "manual": true,
+      "paintedAt": 76941.09999990463,
+      "scrollCorrected": false,
+      "totalMs": -146.44749999999476,
+      "outcome": "rejected"
+    }
+  },
+  {
+    "id": "benign-1-0-0.1-hum-10db",
+    "kind": "reference",
+    "target": [
+      1,
+      1,
+      1
+    ],
+    "reference": null,
+    "correct": false,
+    "wrong": false,
+    "lostCorrect": false,
+    "unexpectedNavigation": false,
+    "sourceToPaintMs": 1607.0160000000033,
+    "captureClockOffsetMs": null,
+    "trace": {
+      "result": {
+        "text": "",
+        "reference": null,
+        "asrMs": 14.488041982986033,
+        "locateMs": 2.341915969736874
+      },
+      "lastSampleAt": 90941.82349997616,
+      "requestAt": 90727.39999997616,
+      "responseAt": 90754.89999997616,
+      "stableAt": 90754.89999997616,
+      "manual": true,
+      "paintedAt": 90774.29999995232,
+      "scrollCorrected": false,
+      "totalMs": -167.52350002384628,
+      "outcome": "rejected"
+    }
+  }
+]
