@@ -14,7 +14,6 @@ export default defineConfig(
   {
     ignores: [
       '**/node_modules',
-      'vendor/deepmerge/index.cjs',
       'src/renderer/public/lyrics-runtime/**',
       'test-results/**',
       'playwright-report/**',

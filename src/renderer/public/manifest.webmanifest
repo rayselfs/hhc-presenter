@@ -1,0 +1,14 @@
+{
+  "name": "HHC Presenter",
+  "short_name": "HHC Presenter",
+  "description": "A projection system designed for church services.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "lang": "en",
+  "scope": "./",
+  "icons": [
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
