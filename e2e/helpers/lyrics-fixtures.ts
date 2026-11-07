@@ -54,6 +54,14 @@ export async function installLyricsFixture(page: Page): Promise<void> {
   )
 }
 
+export async function setLyricsMode(page: Page, enabled: boolean): Promise<void> {
+  const toggle = page.getByRole('switch', { name: 'Lyrics subtitles', exact: true })
+  await expect(toggle).toBeEnabled()
+  if ((await toggle.isChecked()) !== enabled)
+    await page.locator('header').getByText('Lyrics subtitles', { exact: true }).click()
+  await expect(toggle).toBeChecked({ checked: enabled })
+}
+
 export async function verifyLyricsWorkflow(
   page: Page,
   testInfo: TestInfo,
@@ -65,7 +73,7 @@ export async function verifyLyricsWorkflow(
   })
   await page.getByTestId('camera-source-selector').click()
   await page.getByRole('option').first().click()
-  await page.getByRole('switch', { name: 'Lyrics subtitles', exact: true }).check()
+  await setLyricsMode(page, true)
   await expect(page.getByTestId('lyrics-output')).toBeVisible()
   await expect(page.getByRole('spinbutton', { name: 'Height', exact: true })).toHaveValue('40')
   await expect(page.getByRole('spinbutton', { name: 'X', exact: true })).toHaveCount(0)
@@ -168,13 +176,13 @@ export async function verifyLyricsWorkflow(
   await expect(projection.getByTestId('lyrics-line')).toHaveCount(0)
   if (await page.evaluate(() => !!navigator.serviceWorker?.controller)) {
     await page.context().setOffline(true)
-    await page.getByRole('switch', { name: 'Lyrics subtitles', exact: true }).uncheck()
-    await page.getByRole('switch', { name: 'Lyrics subtitles', exact: true }).check()
+    await setLyricsMode(page, false)
+    await setLyricsMode(page, true)
     await setFixture(page, 'dark', allLines)
     await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 40000 })
     await page.context().setOffline(false)
   }
-  await page.getByRole('switch', { name: 'Lyrics subtitles', exact: true }).uncheck()
+  await setLyricsMode(page, false)
   await expect(page.getByRole('spinbutton', { name: 'X', exact: true })).toBeVisible()
   await expect(page.getByRole('spinbutton', { name: 'Height', exact: true })).toHaveCount(0)
   await expect

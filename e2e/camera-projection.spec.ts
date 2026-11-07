@@ -67,7 +67,7 @@ test('keeps camera projection across navigation, explicitly reclaims it, and pre
     expect(canvas).not.toBeNull()
     expect(canvas!.width / canvas!.height).toBeCloseTo(16 / 9, 2)
     const header = page.locator('header')
-    const toggle = await header.getByRole('switch').boundingBox()
+    const toggle = await header.locator('[data-slot="switch"]').boundingBox()
     const type = await page.getByTestId('camera-source-type-selector').boundingBox()
     const source = await page.getByTestId('camera-source-selector').boundingBox()
     const action = await header
