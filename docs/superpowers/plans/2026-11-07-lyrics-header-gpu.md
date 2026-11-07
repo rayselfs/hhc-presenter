@@ -20,7 +20,12 @@
 
 ## Tasks
 
-- [ ] Header/page: add behavior tests for mode visibility, capture readiness, explicit projection takeover and stop; move controls using existing store/actions; update affected E2E selectors.
-- [ ] Crop: test upper-40% default and larger editable crops; update store; keep three-row fixture coverage.
-- [ ] OCR: inspect pinned SDK provider behavior; test GPU/CPU recovery and abort lifecycle; implement the smallest supported acceleration path; benchmark the same fixture corpus on available browser and Electron runtimes.
-- [ ] Verification: lint, types, complete unit suite, desktop/web builds, browser camera/lyrics E2E and sandboxed Electron OCR. Record before/after latency and hardware limits. Review diff before completion.
+- [x] Header/page: add behavior tests for mode visibility, capture readiness, explicit projection takeover and stop; move controls using existing store/actions; update affected E2E selectors.
+- [x] Crop: test upper-40% default and larger editable crops; update store; keep three-row fixture coverage.
+- [x] OCR: inspect pinned SDK provider behavior; test GPU/CPU recovery and abort lifecycle; implement the smallest supported acceleration path; benchmark the same fixture corpus on available browser and Electron runtimes.
+- [x] Local verification: lint, types, complete unit suite, desktop/web builds, browser camera/lyrics E2E and sandboxed Electron OCR. Record before/after latency and hardware limits. Review diff before completion.
+- [ ] Final-head PR CI and separate Windows target-machine acceptance.
+
+## Execution record
+
+Implementation and initial validation are recorded in `docs/reports/2026-11-07-lyrics-header-gpu.md`. The user explicitly authorized a separate Windows test chat. PR CI and Windows hardware acceptance remain distinct from local validation.
