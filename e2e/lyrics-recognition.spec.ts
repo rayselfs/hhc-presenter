@@ -52,9 +52,12 @@ test.describe('CPU fallback', () => {
     expect(runtime).toContain('"detProvider":"wasm"')
     expect(runtime).toContain('"recProvider":"wasm"')
     const lines = ['祂從災難中保護我們', '堅定腳步走過每一天', '在樹蔭邊彼此扶持']
+    const popup = page.context().waitForEvent('page')
+    await page.getByRole('button', { name: 'Present source', exact: true }).click()
+    const projection = await popup
     await setFixture(page, 'bright', lines)
     await expect
-      .poll(() => page.getByTestId('lyrics-line').allTextContents(), { timeout: 40000 })
+      .poll(() => projection.getByTestId('lyrics-line').allTextContents(), { timeout: 40000 })
       .toEqual(lines)
     await setLyricsMode(page, false)
     await expect(page.getByRole('spinbutton', { name: 'X', exact: true })).toBeVisible()

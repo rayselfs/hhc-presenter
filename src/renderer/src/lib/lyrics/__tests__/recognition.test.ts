@@ -40,9 +40,10 @@ for (const event of ['dispose', 'mute', 'ended']) {
     const { stream, track } = source()
     const onLines = vi.fn(),
       onError = vi.fn()
+    const crop = { x: 0, y: 0, width: 1, height: 1 }
     const stop = startLyricsRecognition({
       stream,
-      crop: { x: 0, y: 0, width: 1, height: 1 },
+      getCrop: () => crop,
       onStatus: vi.fn(),
       onLines,
       onError
@@ -74,3 +75,33 @@ for (const event of ['dispose', 'mute', 'ended']) {
     expect(track.stop).not.toHaveBeenCalled()
   })
 }
+
+it('changes crop without reloading the engine and drops the old in-flight result', async () => {
+  vi.mocked(createLyricsEngine).mockClear()
+  let crop = { x: 0, y: 0, width: 1, height: 0.4 }
+  let finish!: (value: LyricsBlock[]) => void
+  const recognize = vi.fn(
+    () =>
+      new Promise<LyricsBlock[]>((resolve) => {
+        finish = resolve
+      })
+  )
+  const dispose = vi.fn()
+  vi.mocked(createLyricsEngine).mockResolvedValue({ recognize, dispose })
+  const onLines = vi.fn()
+  const stop = startLyricsRecognition({
+    stream: source().stream,
+    getCrop: () => crop,
+    onStatus: vi.fn(),
+    onLines,
+    onError: vi.fn()
+  })
+  await vi.waitFor(() => expect(recognize).toHaveBeenCalledOnce())
+  crop = { ...crop, height: 0.6 }
+  finish([])
+  await vi.waitFor(() => expect(recognize).toHaveBeenCalledTimes(2))
+  expect(onLines).not.toHaveBeenCalled()
+  expect(createLyricsEngine).toHaveBeenCalledOnce()
+  expect(dispose).not.toHaveBeenCalled()
+  stop()
+})

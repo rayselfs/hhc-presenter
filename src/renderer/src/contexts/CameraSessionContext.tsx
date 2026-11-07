@@ -32,8 +32,6 @@ export function CameraSessionProvider({
   const [retry, setRetry] = useState(0)
   const projecting = activeOwner === 'camera' && isProjectionOpen
   const lyricsEnabled = useCameraLyricsStore((state) => state.enabled)
-  const lyricsManual = useCameraLyricsStore((state) => state.manual)
-  const lyricsCrop = useCameraLyricsStore((state) => state.crop)
   const keepCapture = pathname === '/camera' || projecting
 
   useEffect(() => {
@@ -83,7 +81,7 @@ export function CameraSessionProvider({
       }
       useCameraStore.setState({ busy: true, capturing: false, error: null, deviceId })
       setStream(null)
-      useCameraLyricsStore.setState({ lines: [], acceptedAt: 0, manual: false })
+      useCameraLyricsStore.setState({ lines: [], acceptedAt: 0 })
       try {
         const next = await current.selectSource(deviceId)
         if (session.current !== current) return
@@ -117,7 +115,6 @@ export function CameraSessionProvider({
             useCameraLyricsStore.setState({
               lines: [],
               acceptedAt: 0,
-              manual: false,
               error: 'source'
             })
             useCameraStore.setState({ error: 'ended', capturing: false, connection: 'unavailable' })
@@ -185,15 +182,14 @@ export function CameraSessionProvider({
       useCameraLyricsStore.setState({ lines: [], acceptedAt: 0, status: 'idle' })
       return
     }
-    if (lyricsManual) return
     return startLyricsRecognition({
       stream,
-      crop: lyricsCrop,
+      getCrop: () => useCameraLyricsStore.getState().crop,
       onStatus: (status) => useCameraLyricsStore.setState({ status, error: null }),
       onLines: (lines) => useCameraLyricsStore.getState().acceptLines(lines),
       onError: (error) => useCameraLyricsStore.setState({ error, status: 'error' })
     })
-  }, [stream, lyricsEnabled, lyricsManual, lyricsCrop, retry])
+  }, [stream, lyricsEnabled, retry])
 
   useEffect(() => {
     if (!lyricsEnabled || !stream) return
@@ -202,7 +198,6 @@ export function CameraSessionProvider({
       useCameraLyricsStore.setState({
         lines: [],
         acceptedAt: 0,
-        manual: false,
         status: 'error',
         error: 'source'
       })
@@ -223,8 +218,8 @@ export function CameraSessionProvider({
         lyrics: {
           lines: lyrics.lines,
           style: lyrics.style,
-          visible: lyrics.visible && lyrics.error !== 'overflow',
-          expiresAt: lyrics.manual ? Date.now() + 1000 : lyrics.acceptedAt + 1000
+          visible: lyrics.error !== 'overflow',
+          expiresAt: lyrics.acceptedAt + 1000
         }
       })
     }

@@ -27,3 +27,22 @@ it('rejects crops outside the source without trimming them silently', () => {
   expect(isLyricsCrop({ x: 0.5, y: 0, width: 0.6, height: 1 })).toBe(false)
   expect(isLyricsCrop({ x: 0, y: 0, width: 0, height: 1 })).toBe(false)
 })
+
+it('accepts installed font families and rejects malformed appearance values', () => {
+  expect(isLyricsStyle({ ...DEFAULT_LYRICS_STYLE, font: 'Microsoft JhengHei', bold: false })).toBe(
+    true
+  )
+  expect(isLyricsStyle({ ...DEFAULT_LYRICS_STYLE, font: 'Inter Variable', bold: true })).toBe(true)
+  for (const font of [
+    '',
+    ' ',
+    ' Arial',
+    'a'.repeat(129),
+    'Arial\nBlack',
+    '<script>',
+    'Arial; color:red'
+  ]) {
+    expect(isLyricsStyle({ ...DEFAULT_LYRICS_STYLE, font })).toBe(false)
+  }
+  expect(isLyricsStyle({ ...DEFAULT_LYRICS_STYLE, bold: 'false' })).toBe(false)
+})

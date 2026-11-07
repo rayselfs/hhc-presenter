@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { loadPresentationFont } from '@renderer/lib/font-loader'
+import { useLyricsLayout } from '@renderer/lib/lyrics/use-lyrics-layout'
 import type { LyricsOutput as Output } from '@shared/lyrics'
 export default function LyricsOutput({
   output,
@@ -10,8 +10,7 @@ export default function LyricsOutput({
 }): React.JSX.Element {
   const box = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0)
-  const [validated, setValidated] = useState<{ key: string; overflow: boolean } | null>(null)
-  const key = JSON.stringify({ lines: output.lines, style: output.style })
+  const { weight, family, key, validated } = useLyricsLayout(output, onOverflow)
   const subscribe = useCallback(
     (notify: () => void) => {
       const timer = setTimeout(
@@ -30,46 +29,6 @@ export default function LyricsOutput({
     if (box.current) observer?.observe(box.current)
     return () => observer?.disconnect()
   }, [])
-  useEffect(() => {
-    let active = true
-    void (async () => {
-      try {
-        const family =
-          output.style.font === 'sans-serif' ? 'sans-serif' : JSON.stringify(output.style.font)
-        await loadPresentationFont(output.style.font)
-        await document.fonts?.load(
-          `600 ${output.style.fontSize}px ${family}`,
-          output.lines.join('')
-        )
-        if (!active) return
-        const context = document.createElement('canvas').getContext('2d')
-        if (!context) throw new Error('Text measurement unavailable')
-        context.font = `600 ${output.style.fontSize}px ${family}`
-        const overflow =
-          output.lines.some((line) => {
-            const text = context.measureText(line)
-            return (
-              Math.max(
-                text.width,
-                (text.actualBoundingBoxLeft || 0) + (text.actualBoundingBoxRight || 0)
-              ) > 1728
-            )
-          }) ||
-          output.lines.length * output.style.fontSize * output.style.lineHeight >
-            1080 * (0.95 - output.style.bottom / 100)
-        setValidated({ key, overflow })
-        onOverflow?.(overflow)
-      } catch {
-        if (active) {
-          setValidated({ key, overflow: true })
-          onOverflow?.(true)
-        }
-      }
-    })()
-    return () => {
-      active = false
-    }
-  }, [key, output.lines, output.style, onOverflow])
   const show = output.visible && !expired && validated?.key === key && !validated.overflow
   return (
     <div
@@ -97,10 +56,10 @@ export default function LyricsOutput({
               left: 96,
               right: 96,
               bottom: `${output.style.bottom}%`,
-              fontFamily: output.style.font,
+              fontFamily: family,
               fontSize: output.style.fontSize,
               lineHeight: output.style.lineHeight,
-              fontWeight: 600,
+              fontWeight: weight,
               textAlign: 'center'
             }}
           >

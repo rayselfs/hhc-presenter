@@ -1,9 +1,9 @@
-import LyricsPreview from '@renderer/components/Control/Camera/LyricsPreview'
+import { useProjection } from '@renderer/contexts/ProjectionContext'
 import { useCameraLyricsStore } from '@renderer/stores/camera-lyrics'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Lock, LockOpen, RotateCcw } from 'lucide-react'
-import { AlertDialog, Button } from '@heroui/react'
+import { Lock, LockOpen, RotateCcw, Monitor } from 'lucide-react'
+import { AlertDialog, Button, Input } from '@heroui/react'
 import LyricsRecognitionControls from '@renderer/components/Control/Camera/LyricsRecognitionControls'
 import CameraStage from '@renderer/components/Common/CameraStage'
 import { useCameraSession } from '@renderer/contexts/CameraSessionContext'
@@ -20,8 +20,6 @@ import type { CameraTransform } from '@shared/camera'
 import { snapElementPosition } from '@renderer/lib/presentation-editor-commands'
 
 type Corner = CameraHandle
-const control =
-  'rounded-lg border border-border bg-background px-3 py-2 text-sm disabled:opacity-40'
 function videoError(): void {
   useCameraStore.setState({ error: 'playback' })
 }
@@ -48,6 +46,8 @@ function cameraDimensions(width: number, height: number): void {
 export default function CameraWorkspacePage(): React.JSX.Element {
   const { t } = useTranslation()
   const camera = useCameraSession()
+  const { activeOwner, isProjectionOpen, startProjection } = useProjection()
+  const projecting = isProjectionOpen && activeOwner === 'camera'
   const [resetOpen, setResetOpen] = useState(false)
   const [snapGuides, setSnapGuides] = useState<{
     verticalGuide?: number
@@ -132,6 +132,18 @@ export default function CameraWorkspacePage(): React.JSX.Element {
   )
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-4" aria-label={t('camera.title')}>
+      <div className="flex shrink-0 justify-center">
+        <Button
+          type="button"
+          variant="danger"
+          className="min-h-11 rounded-full px-6 font-semibold"
+          isDisabled={!state.capturing || projecting}
+          onPress={() => void startProjection('camera')}
+        >
+          <Monitor size={16} aria-hidden="true" />
+          {t(projecting ? 'camera.presenting' : 'camera.present')}
+        </Button>
+      </div>
       {state.error && (
         <div
           role="alert"
@@ -140,9 +152,9 @@ export default function CameraWorkspacePage(): React.JSX.Element {
           <span>
             {t(`camera.errors.${state.error}`, { defaultValue: t('camera.errors.unavailable') })}
           </span>
-          <button
-            className={control}
-            onClick={() => {
+          <Button
+            variant="secondary"
+            onPress={() => {
               if (camera.stream) camera.retry()
               else if (state.deviceId || state.lastDeviceId)
                 void camera.selectSource(state.deviceId || state.lastDeviceId)
@@ -150,175 +162,174 @@ export default function CameraWorkspacePage(): React.JSX.Element {
             }}
           >
             {t('camera.retry')}
-          </button>
+          </Button>
         </div>
       )}
-      <div
-        ref={canvas}
-        role="group"
-        aria-label={t('camera.canvas')}
-        tabIndex={0}
-        data-testid="camera-editor"
-        className="relative w-full shrink-0 touch-none overflow-hidden bg-black outline outline-1 outline-border focus:outline-2 focus:outline-accent"
-        style={{
-          aspectRatio: '16 / 9',
-          height: 'auto',
-          width: 'min(100%, max(320px, calc((100dvh - 250px) * 16 / 9)))',
-          alignSelf: 'center'
-        }}
-        onPointerDown={(event) => begin(event)}
-        onPointerMove={move}
-        onPointerUp={(event) => {
-          move(event)
-          drag.current = null
-          setSnapGuides({})
-          if (canvas.current?.hasPointerCapture(event.pointerId))
-            canvas.current.releasePointerCapture(event.pointerId)
-        }}
-        onPointerCancel={() => {
-          drag.current = null
-          setSnapGuides({})
-        }}
-        onLostPointerCapture={() => {
-          drag.current = null
-          setSnapGuides({})
-        }}
-      >
-        {lyricsEnabled ? (
-          <LyricsPreview />
-        ) : (
+      {!lyricsEnabled && (
+        <div
+          ref={canvas}
+          role="group"
+          aria-label={t('camera.canvas')}
+          tabIndex={0}
+          data-testid="camera-editor"
+          className="relative w-full shrink-0 touch-none overflow-hidden bg-black outline outline-1 outline-border focus:outline-2 focus:outline-accent"
+          style={{
+            aspectRatio: '16 / 9',
+            height: 'auto',
+            width: 'min(100%, max(320px, calc((100dvh - 250px) * 16 / 9)))',
+            alignSelf: 'center'
+          }}
+          onPointerDown={(event) => begin(event)}
+          onPointerMove={move}
+          onPointerUp={(event) => {
+            move(event)
+            drag.current = null
+            setSnapGuides({})
+            if (canvas.current?.hasPointerCapture(event.pointerId))
+              canvas.current.releasePointerCapture(event.pointerId)
+          }}
+          onPointerCancel={() => {
+            drag.current = null
+            setSnapGuides({})
+          }}
+          onLostPointerCapture={() => {
+            drag.current = null
+            setSnapGuides({})
+          }}
+        >
           <CameraStage
             stream={camera.stream}
             transform={state.transform}
             onError={videoError}
             onDimensions={cameraDimensions}
           />
-        )}
-        {!camera.stream && (
-          <p className="pointer-events-none absolute inset-0 grid place-items-center text-white/60">
-            {t('camera.empty')}
-          </p>
-        )}
-        {camera.stream && !lyricsEnabled && (
-          <div
-            data-testid="camera-frame"
-            className={`pointer-events-none absolute border-2 ${state.locked ? 'border-danger' : 'border-accent'}`}
-            style={{
-              left: `${(state.transform.x / 1920) * 100}%`,
-              top: `${(state.transform.y / 1080) * 100}%`,
-              width: `${(state.transform.width / 1920) * 100}%`,
-              height: `${(state.transform.height / 1080) * 100}%`
-            }}
-          ></div>
-        )}
-        {camera.stream &&
-          !lyricsEnabled &&
-          !state.locked &&
-          snapGuides.verticalGuide !== undefined && (
-            <span
-              aria-hidden="true"
-              data-testid="camera-guide-vertical"
-              className="pointer-events-none absolute inset-y-0 w-px border-l border-dashed border-fuchsia-400"
-              style={{
-                left: `${(snapGuides.verticalGuide / CAMERA_STAGE.width) * 100}%`,
-                transform:
-                  snapGuides.verticalGuide === CAMERA_STAGE.width ? 'translateX(-100%)' : undefined
-              }}
-            />
+          {!camera.stream && (
+            <p className="pointer-events-none absolute inset-0 grid place-items-center text-white/60">
+              {t('camera.empty')}
+            </p>
           )}
-        {camera.stream &&
-          !lyricsEnabled &&
-          !state.locked &&
-          snapGuides.horizontalGuide !== undefined && (
-            <span
-              aria-hidden="true"
-              data-testid="camera-guide-horizontal"
-              className="pointer-events-none absolute inset-x-0 h-px border-t border-dashed border-fuchsia-400"
+          {camera.stream && !lyricsEnabled && (
+            <div
+              data-testid="camera-frame"
+              className={`pointer-events-none absolute border-2 ${state.locked ? 'border-danger' : 'border-accent'}`}
               style={{
-                top: `${(snapGuides.horizontalGuide / CAMERA_STAGE.height) * 100}%`,
-                transform:
-                  snapGuides.horizontalGuide === CAMERA_STAGE.height
-                    ? 'translateY(-100%)'
-                    : undefined
+                left: `${(state.transform.x / 1920) * 100}%`,
+                top: `${(state.transform.y / 1080) * 100}%`,
+                width: `${(state.transform.width / 1920) * 100}%`,
+                height: `${(state.transform.height / 1080) * 100}%`
               }}
-            />
+            ></div>
           )}
-        {camera.stream && !lyricsEnabled && state.locked && (
-          <div
-            role="status"
-            aria-label={t('camera.locked')}
-            title={t('camera.locked')}
-            data-testid="camera-lock-indicator"
-            className="pointer-events-none absolute top-2 right-2 inline-flex items-center gap-2 rounded-md bg-black/80 px-3 py-2 text-sm text-white"
-          >
-            <Lock size={16} aria-hidden="true" />
-          </div>
-        )}
-        {camera.stream &&
-          !lyricsEnabled &&
-          !state.locked &&
-          (['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const).map((corner) => (
-            <button
-              type="button"
-              aria-label={t('presentationWorkspace.resizeImage', {
-                direction: t(`presentationWorkspace.handleDirection.${corner}`)
-              })}
-              key={corner}
-              data-testid={`camera-resize-${corner}`}
-              onPointerDown={(event) => begin(event, corner)}
-              className="absolute flex size-[25px] items-center justify-center touch-none"
-              style={{
-                left: `${((state.transform.x + (corner.includes('e') ? state.transform.width : corner.includes('w') ? 0 : state.transform.width / 2)) / 1920) * 100}%`,
-                top: `${((state.transform.y + (corner.includes('s') ? state.transform.height : corner.includes('n') ? 0 : state.transform.height / 2)) / 1080) * 100}%`,
-                transform: 'translate(-50%, -50%)',
-                cursor:
-                  corner === 'n' || corner === 's'
-                    ? 'ns-resize'
-                    : corner === 'e' || corner === 'w'
-                      ? 'ew-resize'
-                      : corner === 'ne' || corner === 'sw'
-                        ? 'nesw-resize'
-                        : 'nwse-resize'
-              }}
+          {camera.stream &&
+            !lyricsEnabled &&
+            !state.locked &&
+            snapGuides.verticalGuide !== undefined && (
+              <span
+                aria-hidden="true"
+                data-testid="camera-guide-vertical"
+                className="pointer-events-none absolute inset-y-0 w-px border-l border-dashed border-fuchsia-400"
+                style={{
+                  left: `${(snapGuides.verticalGuide / CAMERA_STAGE.width) * 100}%`,
+                  transform:
+                    snapGuides.verticalGuide === CAMERA_STAGE.width
+                      ? 'translateX(-100%)'
+                      : undefined
+                }}
+              />
+            )}
+          {camera.stream &&
+            !lyricsEnabled &&
+            !state.locked &&
+            snapGuides.horizontalGuide !== undefined && (
+              <span
+                aria-hidden="true"
+                data-testid="camera-guide-horizontal"
+                className="pointer-events-none absolute inset-x-0 h-px border-t border-dashed border-fuchsia-400"
+                style={{
+                  top: `${(snapGuides.horizontalGuide / CAMERA_STAGE.height) * 100}%`,
+                  transform:
+                    snapGuides.horizontalGuide === CAMERA_STAGE.height
+                      ? 'translateY(-100%)'
+                      : undefined
+                }}
+              />
+            )}
+          {camera.stream && !lyricsEnabled && state.locked && (
+            <div
+              role="status"
+              aria-label={t('camera.locked')}
+              title={t('camera.locked')}
+              data-testid="camera-lock-indicator"
+              className="pointer-events-none absolute top-2 right-2 inline-flex items-center gap-2 rounded-md bg-black/80 px-3 py-2 text-sm text-white"
             >
-              <span className="pointer-events-none size-4 rounded-full border border-white bg-accent" />
-            </button>
-          ))}
-      </div>
+              <Lock size={16} aria-hidden="true" />
+            </div>
+          )}
+          {camera.stream &&
+            !lyricsEnabled &&
+            !state.locked &&
+            (['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const).map((corner) => (
+              <button
+                type="button"
+                aria-label={t('presentationWorkspace.resizeImage', {
+                  direction: t(`presentationWorkspace.handleDirection.${corner}`)
+                })}
+                key={corner}
+                data-testid={`camera-resize-${corner}`}
+                onPointerDown={(event) => begin(event, corner)}
+                className="absolute flex size-[25px] items-center justify-center touch-none"
+                style={{
+                  left: `${((state.transform.x + (corner.includes('e') ? state.transform.width : corner.includes('w') ? 0 : state.transform.width / 2)) / 1920) * 100}%`,
+                  top: `${((state.transform.y + (corner.includes('s') ? state.transform.height : corner.includes('n') ? 0 : state.transform.height / 2)) / 1080) * 100}%`,
+                  transform: 'translate(-50%, -50%)',
+                  cursor:
+                    corner === 'n' || corner === 's'
+                      ? 'ns-resize'
+                      : corner === 'e' || corner === 'w'
+                        ? 'ew-resize'
+                        : corner === 'ne' || corner === 'sw'
+                          ? 'nesw-resize'
+                          : 'nwse-resize'
+                }}
+              >
+                <span className="pointer-events-none size-4 rounded-full border border-white bg-accent" />
+              </button>
+            ))}
+        </div>
+      )}
       {!lyricsEnabled && (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
-              className={`${control} inline-flex items-center gap-2 aria-pressed:border-danger aria-pressed:bg-danger aria-pressed:text-danger-foreground`}
+              variant={state.locked ? 'danger' : 'secondary'}
+              isIconOnly
               aria-label={t(state.locked ? 'camera.unlock' : 'camera.lock')}
-              title={t(state.locked ? 'camera.unlock' : 'camera.lock')}
               aria-pressed={state.locked}
-              disabled={lyricsEnabled || (!camera.stream && !state.locked)}
-              onClick={() => {
+              isDisabled={lyricsEnabled || (!camera.stream && !state.locked)}
+              onPress={() => {
                 drag.current = null
                 setSnapGuides({})
                 state.setLocked(!state.locked)
               }}
             >
               <LockIcon size={20} aria-hidden="true" />
-            </button>
-            <button
-              className={control}
-              disabled={!camera.stream || state.locked || lyricsEnabled}
+            </Button>
+            <Button
+              variant="secondary"
+              isDisabled={!camera.stream || state.locked || lyricsEnabled}
               aria-label={t('camera.reset')}
-              title={t('camera.reset')}
-              onClick={() => setResetOpen(true)}
+              onPress={() => setResetOpen(true)}
             >
               <RotateCcw size={20} aria-hidden="true" />
-            </button>
+            </Button>
           </div>
           <div className="ml-auto flex flex-wrap justify-end gap-3">
             {(['x', 'y', 'width'] as const).map((key) => (
               <label key={key} className="flex items-center gap-2 text-sm">
                 {t(`camera.${key}`)}
-                <input
-                  className={`${control} w-28`}
+                <Input
+                  className="w-28"
                   type="number"
                   step="1"
                   disabled={!camera.stream || state.locked || lyricsEnabled}

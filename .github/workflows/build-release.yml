@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   quality-gates:
+    needs: prepare
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
@@ -28,6 +29,12 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Download verified OCR models
+        uses: actions/download-artifact@v7.0.0
+        with:
+          name: verified-lyrics-models
+          path: src/renderer/public/lyrics-runtime
+
       - name: Dependency security audit
         run: npm audit --audit-level=low
 
@@ -42,26 +49,16 @@ jobs:
 
       - name: Build
         env:
+          HHC_LYRICS_MODELS_OFFLINE: '1'
           VITE_HHC_ACCOUNT_ORIGIN: ${{ vars.VITE_HHC_ACCOUNT_ORIGIN }}
           VITE_HHC_ASSET_ORIGIN: ${{ vars.VITE_HHC_ASSET_ORIGIN }}
           VITE_ONEDRIVE_CLIENT_ID: ${{ vars.VITE_ONEDRIVE_CLIENT_ID }}
           VITE_BIBLE_API_HOST: ${{ vars.VITE_BIBLE_API_HOST }}
           VITE_BIBLE_API_V1_PREFIX: ${{ vars.VITE_BIBLE_API_V1_PREFIX }}
           VITE_BIBLE_API_V2_PREFIX: ${{ vars.VITE_BIBLE_API_V2_PREFIX }}
-        run: npm run build
-
-      - name: Share verified OCR models with packagers
-        uses: actions/upload-artifact@v6.0.0
-        with:
-          name: verified-lyrics-models
-          path: |
-            src/renderer/public/lyrics-runtime/det.tar
-            src/renderer/public/lyrics-runtime/rec.tar
-          if-no-files-found: error
-          retention-days: 2
+        run: npm run prepare:lyrics-runtime && npx electron-vite build && npm run check:bundle
 
   prepare:
-    needs: quality-gates
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.get_version.outputs.version }}
@@ -83,8 +80,32 @@ jobs:
           fi
           echo "version=${PACKAGE_VERSION}" >> "${GITHUB_OUTPUT}"
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v5.0.0
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install model tooling
+        run: npm ci --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare verified OCR models
+        run: npm run prepare:lyrics-runtime
+
+      - name: Share verified OCR models with packagers
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: verified-lyrics-models
+          path: |
+            src/renderer/public/lyrics-runtime/det.tar
+            src/renderer/public/lyrics-runtime/rec.tar
+          if-no-files-found: error
+          retention-days: 2
+
   package:
-    needs: [quality-gates, prepare]
+    needs: prepare
     runs-on: ${{ matrix.os }}
     env:
       VITE_HHC_ACCOUNT_ORIGIN: ${{ vars.VITE_HHC_ACCOUNT_ORIGIN }}

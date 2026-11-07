@@ -45,10 +45,7 @@ test('keeps camera projection across navigation, explicitly reclaims it, and pre
     )
     .toBeGreaterThan(0)
   const popup = context.waitForEvent('page')
-  await page
-    .locator('header')
-    .getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ })
-    .click()
+  await page.getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ }).click()
   const projection = await popup
   await expect(projection.getByTestId('camera-projection')).toBeVisible()
   await expect
@@ -228,13 +225,13 @@ test('keeps camera projection across navigation, explicitly reclaims it, and pre
     .getByRole('link', { name: /^Video Capture$|^影像擷取$|^影像采集$/, exact: true })
     .click()
   await expect(
-    page.locator('header').getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ })
+    page.getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ })
   ).toBeEnabled()
   await expect(projection.getByTestId('camera-projection')).toHaveCount(0)
-  await page
-    .locator('header')
-    .getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ })
-    .click()
+  await expect(
+    page.locator('header').getByRole('button', { name: /^Stop projection$|^停止投影$/ })
+  ).toBeEnabled()
+  await page.getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ }).click()
   await expect(projection.getByTestId('camera-projection')).toBeVisible()
   expect(context.pages()).toHaveLength(2)
   await expect
@@ -308,7 +305,7 @@ test('allows retry after camera permission is denied', async ({ page }) => {
   await selectCamera(page)
   await expect(workspace.getByRole('alert')).toBeVisible()
   await expect(
-    page.locator('header').getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ })
+    page.getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ })
   ).toBeDisabled()
   await workspace.getByRole('button', { name: /^Retry$|^重試$|^重试$/ }).click()
   await expect(workspace.getByRole('alert')).toHaveCount(0)
@@ -390,10 +387,7 @@ test('snaps camera framing with preview-only guides at different window sizes', 
     .toBeGreaterThan(0)
   const workspace = page.locator('section').filter({ has: editor })
   const popup = context.waitForEvent('page')
-  await page
-    .locator('header')
-    .getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ })
-    .click()
+  await page.getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ }).click()
   const projection = await popup
   await expect(projection.getByTestId('camera-projection')).toBeVisible()
   for (const size of [

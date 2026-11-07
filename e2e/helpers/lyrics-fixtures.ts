@@ -67,6 +67,7 @@ export async function verifyLyricsWorkflow(
   testInfo: TestInfo,
   waitForProjection: () => Promise<Page>
 ): Promise<void> {
+  if (!page.url().startsWith('file:')) await page.context().grantPermissions(['local-fonts'])
   const runtimeMessages: string[] = []
   page.on('console', (message) => {
     if (message.text().startsWith('[lyrics] OCR initialized')) runtimeMessages.push(message.text())
@@ -74,9 +75,23 @@ export async function verifyLyricsWorkflow(
   await page.getByTestId('camera-source-selector').click()
   await page.getByRole('option').first().click()
   await setLyricsMode(page, true)
-  await expect(page.getByTestId('lyrics-output')).toBeVisible()
+  await expect(page.getByTestId('lyrics-source-preview')).toBeVisible()
+  const popup = waitForProjection()
+  await page.getByRole('button', { name: 'Present source', exact: true }).click()
+  const projection = await popup
+  await expect(projection.getByTestId('lyrics-output')).toBeVisible()
   await expect(page.getByRole('spinbutton', { name: 'Height', exact: true })).toHaveValue('40')
   await expect(page.getByRole('spinbutton', { name: 'X', exact: true })).toHaveCount(0)
+  await expect(page.getByTestId('camera-editor')).toHaveCount(0)
+  await expect(page.locator('video')).toHaveCount(1)
+  await expect(page.getByTestId('lyrics-crop-overlay')).toHaveAttribute('style', /height: 40%/)
+  const height = page.getByRole('slider', { name: 'Height', exact: true })
+  await height.focus()
+  await height.press('Home')
+  for (let step = 5; step < 60; step++) await height.press('ArrowRight')
+  await expect(page.getByTestId('lyrics-crop-overlay')).toHaveAttribute('style', /height: 60%/)
+  await expect(page.getByRole('spinbutton', { name: 'Height', exact: true })).toHaveValue('60')
+  await page.getByRole('spinbutton', { name: 'Height', exact: true }).fill('40')
   const results: Array<{ background: string; lines: number; elapsedMs: number }> = []
   for (let cycle = 0; cycle < 5; cycle++) {
     for (const background of ['black', 'dark', 'bright']) {
@@ -85,7 +100,7 @@ export async function verifyLyricsWorkflow(
           started = Date.now()
         await setFixture(page, background, lines)
         await expect
-          .poll(() => page.getByTestId('lyrics-line').allTextContents(), {
+          .poll(() => projection.getByTestId('lyrics-line').allTextContents(), {
             timeout: 40000,
             intervals: [100]
           })
@@ -94,6 +109,15 @@ export async function verifyLyricsWorkflow(
       }
     }
   }
+  const initializations = runtimeMessages.length
+  await height.focus()
+  await height.press('Home')
+  for (let step = 5; step < 60; step++) await height.press('ArrowRight')
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 15000 })
+  await page.getByRole('spinbutton', { name: 'Height', exact: true }).fill('40')
+  await expect(height).toHaveValue('40')
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 15000 })
+  expect(runtimeMessages).toHaveLength(initializations)
   await testInfo.attach('lyrics-mode-controls', {
     body: await page.screenshot({ fullPage: true }),
     contentType: 'image/png'
@@ -121,19 +145,47 @@ export async function verifyLyricsWorkflow(
     ),
     contentType: 'application/json'
   })
-  const popup = waitForProjection()
-  await page.getByRole('button', { name: 'Present source', exact: true }).click()
-  const projection = await popup
   await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines)
   await expect(projection.locator('video')).toHaveCount(0)
   await testInfo.attach('three-line-projection', {
     body: await projection.screenshot(),
     contentType: 'image/png'
   })
+  const font = page.getByRole('combobox', { name: 'Font', exact: true })
+  await font.fill('Roboto')
+  const fontPopover = page.locator('.combo-box__popover')
+  await expect(fontPopover).toBeVisible()
+  await expect(fontPopover).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+  await page.getByRole('option', { name: 'Roboto', exact: true }).click()
+  await page.getByRole('button', { name: 'Bold', exact: true }).click()
+  await expect(projection.getByTestId('lyrics-lines')).toHaveCSS('font-weight', '400')
+  await expect(projection.getByTestId('lyrics-lines')).toHaveCSS('font-family', /Roboto Variable/)
+  if (await page.evaluate(() => 'queryLocalFonts' in window)) {
+    await font.fill('')
+    await font.click()
+    await expect.poll(() => page.getByRole('option').count()).toBeGreaterThan(5)
+    const bundled = ['Noto Sans TC', 'Noto Sans SC', 'Inter', 'Roboto', 'System sans serif']
+    const installed = (await page.getByRole('option').allTextContents()).find(
+      (name) => !bundled.includes(name.trim())
+    )
+    expect(installed).toBeTruthy()
+    await page.getByRole('option', { name: installed!.trim(), exact: true }).click()
+    await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines)
+  }
+  await font.scrollIntoViewIfNeeded()
+  await testInfo.attach('lyrics-font-controls', {
+    body: await page.screenshot(),
+    contentType: 'image/png'
+  })
+  await font.fill('Noto Sans TC')
+  await page.getByRole('option', { name: 'Noto Sans TC', exact: true }).click()
+  await page.getByRole('button', { name: 'Bold', exact: true }).click()
+  await expect(projection.getByTestId('lyrics-lines')).toHaveCSS('font-weight', '700')
   await page.getByRole('spinbutton', { name: 'Font size', exact: true }).fill('160')
   await page.getByRole('spinbutton', { name: 'Line height', exact: true }).fill('2')
   await page.getByRole('spinbutton', { name: 'Bottom distance (%)', exact: true }).fill('50')
-  await expect(page.getByTestId('lyrics-output')).toHaveAttribute('data-overflow', 'true')
+  await expect(projection.getByTestId('lyrics-output')).toHaveAttribute('data-overflow', 'true')
+  await expect(page.getByRole('alert')).toBeVisible()
   await expect(projection.getByTestId('lyrics-line')).toHaveCount(0)
   await page.evaluate(() => {
     location.hash = '/files'
@@ -161,19 +213,8 @@ export async function verifyLyricsWorkflow(
         .evaluate((node) => parseFloat(getComputedStyle(node).bottom))
     )
     .toBeCloseTo(86.4, 1)
-  await page.getByRole('button', { name: 'Hide subtitles', exact: true }).click()
-  await expect(projection.getByTestId('lyrics-line')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Show subtitles', exact: true }).click()
-  await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines)
-  await page.getByRole('button', { name: 'Correct text', exact: true }).click()
-  await page
-    .getByRole('textbox', { name: 'Lyrics (one source line per row)', exact: true })
-    .fill(allLines.join('\n'))
-  await page.getByRole('button', { name: 'Apply correction', exact: true }).click()
-  await setFixture(page, 'black', [])
-  await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines)
-  await page.getByRole('button', { name: 'Resume recognition', exact: true }).click()
-  await expect(projection.getByTestId('lyrics-line')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Hide subtitles', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Correct text', exact: true })).toHaveCount(0)
   if (await page.evaluate(() => !!navigator.serviceWorker?.controller)) {
     await page.context().setOffline(true)
     await setLyricsMode(page, false)

@@ -40,7 +40,7 @@ jobs:
       - name: Verify Electron local assets and projection
         run: npx playwright test --config playwright.lyrics-electron.config.ts
       - name: Build hosted artifacts
-        run: npm run build:web
+        run: npx electron-vite build --mode web && npm run check:web-build && npm run check:bundle
       - name: Install Chromium
         run: npx playwright install chromium
       - name: Recognize real images and verify camera projection

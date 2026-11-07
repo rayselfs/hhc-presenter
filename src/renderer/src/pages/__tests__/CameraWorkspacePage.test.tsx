@@ -35,8 +35,8 @@ it('shows canvas and reset without duplicate header controls', () => {
   expect(screen.getByTestId('camera-editor')).toBeVisible()
   expect(screen.queryByRole('combobox')).toBeNull()
   expect(screen.queryByRole('heading')).toBeNull()
-  expect(screen.getAllByRole('button')).toHaveLength(2)
-  expect(screen.queryByRole('button', { name: 'camera.present' })).toBeNull()
+  expect(screen.getAllByRole('button')).toHaveLength(3)
+  expect(screen.getByRole('button', { name: 'camera.present' })).toBeDisabled()
   expect(screen.getByRole('button', { name: 'camera.lock' })).toBeDisabled()
   expect(screen.getByRole('button', { name: 'camera.reset' })).toBeDisabled()
   expect(screen.queryByText(/contain|stretch/i)).toBeNull()
@@ -54,6 +54,16 @@ it('shows only the active mode controls and restores raw framing', () => {
   act(() => useCameraLyricsStore.getState().setEnabled(true))
   expect(screen.queryByRole('spinbutton', { name: 'camera.x' })).toBeNull()
   expect(screen.queryByRole('button', { name: 'camera.lock' })).toBeNull()
+  expect(screen.queryByTestId('camera-editor')).toBeNull()
+  expect(document.querySelector('video')).not.toBeNull()
+  expect(screen.getByTestId('lyrics-source-preview')).toBeVisible()
+  fireEvent.change(screen.getByRole('slider', { name: 'cameraLyrics.height' }), {
+    target: { value: '55' }
+  })
+  expect(screen.getByRole('spinbutton', { name: 'cameraLyrics.height' })).toHaveValue(55)
+  fireEvent.change(screen.getByRole('slider', { name: 'cameraLyrics.height' }), {
+    target: { value: '40' }
+  })
   expect(screen.getByRole('spinbutton', { name: 'cameraLyrics.height' })).toHaveValue(40)
   fireEvent.change(screen.getByRole('spinbutton', { name: 'cameraLyrics.height' }), {
     target: { value: '60' }
@@ -174,9 +184,30 @@ it('shows an accessible icon-only lock indicator and red active lock button', ()
   const lock = screen.getByRole('button', { name: 'camera.lock' })
   fireEvent.click(lock)
   expect(lock).toHaveAttribute('aria-pressed', 'true')
-  expect(lock.className).toContain('aria-pressed:bg-danger')
+  expect(lock).toHaveAttribute('variant', 'danger')
   const indicator = screen.getByRole('status', { name: 'camera.locked' })
   expect(indicator.textContent).toBe('')
   camera.stream = null
   useCameraStore.setState({ locked: false })
 })
+
+it.each(['timer', 'bible', 'media'])(
+  'explicitly reclaims projection from %s using the red page action',
+  (owner) => {
+    projection.activeOwner = owner
+    projection.isProjectionOpen = true
+    projection.startProjection.mockClear()
+    useCameraStore.setState({ capturing: true })
+    render(
+      <MemoryRouter>
+        <CameraWorkspacePage />
+      </MemoryRouter>
+    )
+    expect(projection.startProjection).not.toHaveBeenCalled()
+    const button = screen.getByRole('button', { name: 'camera.present' })
+    expect(button).toBeEnabled()
+    fireEvent.click(button)
+    expect(projection.startProjection).toHaveBeenCalledWith('camera')
+    useCameraStore.setState({ capturing: false })
+  }
+)

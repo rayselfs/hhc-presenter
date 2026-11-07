@@ -1437,7 +1437,22 @@
       "overflow": "文字超出安全區，請調小字級、行距或調整底部距離；不會自動拆行或裁字。",
       "source": "來源暫時無法使用，字幕將清除。"
     },
-    "inputError": "最多 12 行，每行最多 256 個字。"
+    "inputError": "最多 12 行，每行最多 256 個字。",
+    "notoScFont": "思源黑體 SC",
+    "bold": "粗體",
+    "loadLocalFonts": "載入本機字體",
+    "localFontHint": "本機字體須安裝於投影裝置；缺少字體或字元時會使用思源黑體 TC 替代。",
+    "localFontsUnsupported": "此瀏覽器無法列出本機字體，仍可使用內建字體。",
+    "localFontsFailed": "無法載入本機字體，請確認字體存取權限後重試。",
+    "manualStatus": "手動字幕",
+    "hiddenStatus": "已隱藏",
+    "recognitionHeight": "辨識高度",
+    "cropOrigin": "從來源頂部 {{top}}% 開始",
+    "searchFonts": "搜尋字體…",
+    "noFonts": "找不到符合的字體",
+    "loadingFonts": "正在載入字體…",
+    "retryFonts": "重試",
+    "advanced": "進階設定"
   },
   "localSpeech": {
     "title": "聖經語音",

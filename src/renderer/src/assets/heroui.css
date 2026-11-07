@@ -55,6 +55,7 @@
 @import '@heroui/styles/components/popover.css' layer(components);
 @import '@heroui/styles/components/tooltip.css' layer(components);
 @import '@heroui/styles/components/select.css' layer(components);
+@import '@heroui/styles/components/combo-box.css' layer(components);
 @import '@heroui/styles/components/scroll-shadow.css' layer(components);
 @import '@heroui/styles/themes/default' layer(theme);
 @import '@heroui/styles/utilities';
