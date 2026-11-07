@@ -45,7 +45,10 @@ test('keeps camera projection across navigation, explicitly reclaims it, and pre
     )
     .toBeGreaterThan(0)
   const popup = context.waitForEvent('page')
-  await workspace.getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ }).click()
+  await page
+    .locator('header')
+    .getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ })
+    .click()
   const projection = await popup
   await expect(projection.getByTestId('camera-projection')).toBeVisible()
   await expect
@@ -63,6 +66,20 @@ test('keeps camera projection across navigation, explicitly reclaims it, and pre
     const canvas = await editor.boundingBox()
     expect(canvas).not.toBeNull()
     expect(canvas!.width / canvas!.height).toBeCloseTo(16 / 9, 2)
+    const header = page.locator('header')
+    const toggle = await header.getByRole('switch').boundingBox()
+    const type = await page.getByTestId('camera-source-type-selector').boundingBox()
+    const source = await page.getByTestId('camera-source-selector').boundingBox()
+    const action = await header
+      .getByRole('button', { name: /^Stop projection$|^停止投影$/ })
+      .boundingBox()
+    expect(toggle).not.toBeNull()
+    expect(type).not.toBeNull()
+    expect(source).not.toBeNull()
+    expect(action).not.toBeNull()
+    expect(toggle!.x + toggle!.width).toBeLessThanOrEqual(type!.x)
+    expect(type!.x + type!.width).toBeLessThanOrEqual(source!.x)
+    expect(source!.x + source!.width).toBeLessThanOrEqual(action!.x)
   }
   await page.setViewportSize({ width: 1280, height: 720 })
   const bounds = await editor.boundingBox()
@@ -211,10 +228,13 @@ test('keeps camera projection across navigation, explicitly reclaims it, and pre
     .getByRole('link', { name: /^Video Capture$|^影像擷取$|^影像采集$/, exact: true })
     .click()
   await expect(
-    workspace.getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ })
+    page.locator('header').getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ })
   ).toBeEnabled()
   await expect(projection.getByTestId('camera-projection')).toHaveCount(0)
-  await workspace.getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ }).click()
+  await page
+    .locator('header')
+    .getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ })
+    .click()
   await expect(projection.getByTestId('camera-projection')).toBeVisible()
   expect(context.pages()).toHaveLength(2)
   await expect
@@ -288,7 +308,7 @@ test('allows retry after camera permission is denied', async ({ page }) => {
   await selectCamera(page)
   await expect(workspace.getByRole('alert')).toBeVisible()
   await expect(
-    page.locator('header').getByRole('button', { name: /^Start projection$|^開始投影$|^开始投影$/ })
+    page.locator('header').getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ })
   ).toBeDisabled()
   await workspace.getByRole('button', { name: /^Retry$|^重試$|^重试$/ }).click()
   await expect(workspace.getByRole('alert')).toHaveCount(0)
@@ -370,7 +390,10 @@ test('snaps camera framing with preview-only guides at different window sizes', 
     .toBeGreaterThan(0)
   const workspace = page.locator('section').filter({ has: editor })
   const popup = context.waitForEvent('page')
-  await workspace.getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ }).click()
+  await page
+    .locator('header')
+    .getByRole('button', { name: /^Present source$|^開啟投影$|^开启投影$/ })
+    .click()
   const projection = await popup
   await expect(projection.getByTestId('camera-projection')).toBeVisible()
   for (const size of [

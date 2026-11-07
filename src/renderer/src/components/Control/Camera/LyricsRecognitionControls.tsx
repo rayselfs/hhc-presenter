@@ -10,7 +10,6 @@ export default function LyricsRecognitionControls({
 }): React.JSX.Element {
   const { t } = useTranslation()
   const state = useCameraLyricsStore()
-  const hasSource = !!stream
   const sourceVideo = useRef<HTMLVideoElement>(null)
   const [sourceRatio, setSourceRatio] = useState('16 / 9')
   useEffect(() => {
@@ -30,15 +29,6 @@ export default function LyricsRecognitionControls({
       aria-label={t('cameraLyrics.title')}
       className="flex flex-col gap-3 rounded-xl border border-border p-4"
     >
-      <label className="flex items-center gap-2 font-semibold">
-        <input
-          type="checkbox"
-          checked={state.enabled}
-          disabled={!hasSource && !state.enabled}
-          onChange={(event) => state.setEnabled(event.target.checked)}
-        />
-        {t('cameraLyrics.title')}
-      </label>
       <p className="text-sm text-muted">{t('cameraLyrics.description')}</p>
       {state.enabled && (
         <>

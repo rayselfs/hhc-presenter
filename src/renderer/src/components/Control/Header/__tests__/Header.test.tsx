@@ -1,3 +1,7 @@
+vi.unmock('@heroui/react/select')
+vi.unmock('@heroui/react/list-box')
+vi.unmock('@heroui/react/switch')
+vi.unmock('@heroui/react/label')
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
@@ -15,6 +19,12 @@ import { ShortcutScopeProvider } from '@renderer/contexts/ShortcutScopeContext'
 import type { useProjection as useProjectionHook } from '@renderer/contexts/ProjectionContext'
 import ConfirmDialog from '../../../Common/ConfirmDialog'
 import Header from '../Header'
+import { useCameraStore } from '@renderer/stores/camera'
+import { useCameraLyricsStore } from '@renderer/stores/camera-lyrics'
+
+vi.mock('@renderer/contexts/CameraSessionContext', () => ({
+  useCameraSession: () => ({ prepareSources: vi.fn(), selectSource: vi.fn() })
+}))
 
 vi.mock('@renderer/contexts/ProjectionContext', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@renderer/contexts/ProjectionContext')>()
@@ -99,6 +109,7 @@ function renderWithRouter(initialEntries: string[] = ['/']): ReturnType<typeof r
     [
       { path: '/', element },
       { path: '/timer', element },
+      { path: '/camera', element },
       { path: '/bible', element },
       { path: '/files', element },
       { path: '/cloud-files', element },
@@ -452,4 +463,39 @@ describe('Header', () => {
       expect(wrapper?.className).toContain('opacity-0')
     })
   })
+})
+
+it('switches lyrics mode in the header without claiming projection and preserves framing', async () => {
+  await i18n.changeLanguage('en')
+  const projection = await mockProjectionContext({ isProjectionOpen: true, activeOwner: 'bible' })
+  useCameraStore.setState({
+    capturing: true,
+    locked: true,
+    transform: { x: 12, y: 34, width: 1920, height: 1080 }
+  })
+  useCameraLyricsStore.getState().setEnabled(false)
+  renderWithRouter(['/camera'])
+  const toggle = screen.getByRole('switch', { name: 'Lyrics subtitles' })
+  await userEvent.click(toggle)
+  expect(useCameraLyricsStore.getState().enabled).toBe(true)
+  expect(projection.startProjection).not.toHaveBeenCalled()
+  await userEvent.click(toggle)
+  expect(useCameraLyricsStore.getState().enabled).toBe(false)
+  expect(useCameraStore.getState()).toMatchObject({ locked: true, transform: { x: 12, y: 34 } })
+  await userEvent.click(screen.getByRole('button', { name: 'Present source' }))
+  expect(projection.startProjection).toHaveBeenCalledWith('camera')
+  expect(projection.stopProjection).not.toHaveBeenCalled()
+})
+
+it('stops an active camera projection from the header even after capture ends', async () => {
+  await i18n.changeLanguage('en')
+  const projection = await mockProjectionContext({ isProjectionOpen: true, activeOwner: 'camera' })
+  useCameraStore.setState({ capturing: false })
+  useCameraLyricsStore.getState().setEnabled(true)
+  renderWithRouter(['/camera'])
+  expect(screen.getByRole('switch', { name: 'Lyrics subtitles' })).toBeEnabled()
+  await userEvent.click(screen.getByRole('switch', { name: 'Lyrics subtitles' }))
+  expect(screen.getByRole('switch', { name: 'Lyrics subtitles' })).toBeDisabled()
+  await userEvent.click(screen.getByRole('button', { name: 'Stop projection' }))
+  expect(projection.stopProjection).toHaveBeenCalledOnce()
 })
