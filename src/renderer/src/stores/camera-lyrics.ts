@@ -36,7 +36,7 @@ export const useCameraLyricsStore = create<LyricsStore>()(
       error: null,
       lines: [],
       acceptedAt: 0,
-      crop: { x: 0, y: 0, width: 1, height: 0.6 },
+      crop: { x: 0, y: 0, width: 1, height: 0.4 },
       style: { ...DEFAULT_LYRICS_STYLE },
       setEnabled: (enabled) =>
         set({ enabled, lines: [], acceptedAt: 0, manual: false, error: null, status: 'idle' }),

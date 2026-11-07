@@ -1,7 +1,7 @@
 import { expect, type Page, type TestInfo } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 const allLines = ['祂從災難中保護我們', '堅定腳步走過每一天', '在樹蔭邊彼此扶持']
-async function setFixture(page: Page, background: string, lines: string[]): Promise<void> {
+export async function setFixture(page: Page, background: string, lines: string[]): Promise<void> {
   await page.waitForFunction(() =>
     Array.from(document.fonts).some((font) => font.family.includes('Noto Sans TC'))
   )
@@ -54,15 +54,29 @@ export async function installLyricsFixture(page: Page): Promise<void> {
   )
 }
 
+export async function setLyricsMode(page: Page, enabled: boolean): Promise<void> {
+  const toggle = page.getByRole('switch', { name: 'Lyrics subtitles', exact: true })
+  await expect(toggle).toBeEnabled()
+  if ((await toggle.isChecked()) !== enabled)
+    await page.locator('header').getByText('Lyrics subtitles', { exact: true }).click()
+  await expect(toggle).toBeChecked({ checked: enabled })
+}
+
 export async function verifyLyricsWorkflow(
   page: Page,
   testInfo: TestInfo,
   waitForProjection: () => Promise<Page>
 ): Promise<void> {
+  const runtimeMessages: string[] = []
+  page.on('console', (message) => {
+    if (message.text().startsWith('[lyrics] OCR initialized')) runtimeMessages.push(message.text())
+  })
   await page.getByTestId('camera-source-selector').click()
   await page.getByRole('option').first().click()
-  await page.getByRole('checkbox', { name: 'Lyrics subtitles', exact: true }).check()
+  await setLyricsMode(page, true)
   await expect(page.getByTestId('lyrics-output')).toBeVisible()
+  await expect(page.getByRole('spinbutton', { name: 'Height', exact: true })).toHaveValue('40')
+  await expect(page.getByRole('spinbutton', { name: 'X', exact: true })).toHaveCount(0)
   const results: Array<{ background: string; lines: number; elapsedMs: number }> = []
   for (let cycle = 0; cycle < 5; cycle++) {
     for (const background of ['black', 'dark', 'bright']) {
@@ -80,6 +94,15 @@ export async function verifyLyricsWorkflow(
       }
     }
   }
+  await testInfo.attach('lyrics-mode-controls', {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: 'image/png'
+  })
+  await testInfo.attach('ocr-runtime', {
+    body: runtimeMessages.join('\n'),
+    contentType: 'text/plain'
+  })
+  console.log('LYRICS_RUNTIME', runtimeMessages.join('\n'))
   const times = results.map((result) => result.elapsedMs).sort((a, b) => a - b)
   console.log(
     'LYRICS_METRICS',
@@ -153,13 +176,15 @@ export async function verifyLyricsWorkflow(
   await expect(projection.getByTestId('lyrics-line')).toHaveCount(0)
   if (await page.evaluate(() => !!navigator.serviceWorker?.controller)) {
     await page.context().setOffline(true)
-    await page.getByRole('checkbox', { name: 'Lyrics subtitles', exact: true }).uncheck()
-    await page.getByRole('checkbox', { name: 'Lyrics subtitles', exact: true }).check()
+    await setLyricsMode(page, false)
+    await setLyricsMode(page, true)
     await setFixture(page, 'dark', allLines)
     await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 40000 })
     await page.context().setOffline(false)
   }
-  await page.getByRole('checkbox', { name: 'Lyrics subtitles', exact: true }).uncheck()
+  await setLyricsMode(page, false)
+  await expect(page.getByRole('spinbutton', { name: 'X', exact: true })).toBeVisible()
+  await expect(page.getByRole('spinbutton', { name: 'Height', exact: true })).toHaveCount(0)
   await expect
     .poll(() => projection.locator('video').evaluate((v: HTMLVideoElement) => v.videoWidth), {
       timeout: 15000

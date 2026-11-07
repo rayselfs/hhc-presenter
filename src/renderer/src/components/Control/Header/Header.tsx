@@ -5,6 +5,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useProjection } from '@renderer/contexts/ProjectionContext'
 import { useCallback } from 'react'
 import { ButtonGroup } from '@heroui/react/button-group'
+import { Switch } from '@heroui/react/switch'
+import { Label } from '@heroui/react/label'
+import { useCameraLyricsStore } from '@renderer/stores/camera-lyrics'
 import { Button } from '@heroui/react/button'
 import { toast } from '@heroui/react/toast'
 import { X, Monitor } from 'lucide-react'
@@ -47,10 +50,13 @@ export default function Header(): React.JSX.Element {
   const { t } = useTranslation()
   const location = useLocation()
   const navigate = useNavigate()
-  const { isProjectionOpen, ensureProjectionOpen, startProjection, stopProjection } =
+  const { activeOwner, isProjectionOpen, ensureProjectionOpen, startProjection, stopProjection } =
     useProjection()
   const cameraReady = useCameraStore((state) => state.capturing)
   const showCameraControls = location.pathname === '/camera'
+  const lyricsEnabled = useCameraLyricsStore((state) => state.enabled)
+  const stopCurrentProjection =
+    isProjectionOpen && (!showCameraControls || activeOwner === 'camera')
   const mode = useTimerStore((s) => s.mode)
 
   const currentFolderId = useFileExplorerStore((state) => state.currentFolderId)
@@ -120,6 +126,11 @@ export default function Header(): React.JSX.Element {
       : setSortFieldAndDir
 
   const startCurrentRouteProjection = useCallback(async (): Promise<void> => {
+    if (showCameraControls) {
+      if (cameraReady && (!isProjectionOpen || activeOwner !== 'camera'))
+        await startProjection('camera')
+      return
+    }
     if (isProjectionOpen || projectionHeaderState.disabled) return
     const started = await startProjectionForRoute({
       pathname: location.pathname,
@@ -133,6 +144,9 @@ export default function Header(): React.JSX.Element {
     })
     if (started && isFilesRoute(location.pathname)) navigate('/media')
   }, [
+    activeOwner,
+    cameraReady,
+    showCameraControls,
     biblePayloads,
     ensureProjectionOpen,
     isProjectionOpen,
@@ -159,7 +173,7 @@ export default function Header(): React.JSX.Element {
   )
 
   const handleProjectionAction = async (): Promise<void> => {
-    if (!isProjectionOpen) {
+    if (!stopCurrentProjection) {
       await startCurrentRouteProjection()
       return
     }
@@ -182,7 +196,22 @@ export default function Header(): React.JSX.Element {
   }
 
   return (
-    <header className="relative flex items-center justify-end gap-2 p-2">
+    <header
+      className={`relative items-center gap-2 p-2 ${showCameraControls ? 'grid grid-cols-[auto_minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)_minmax(0,1fr)]' : 'flex justify-end'}`}
+    >
+      {showCameraControls && (
+        <Switch
+          isSelected={lyricsEnabled}
+          isDisabled={!cameraReady && !lyricsEnabled}
+          onChange={(enabled) => useCameraLyricsStore.getState().setEnabled(enabled)}
+          className="justify-self-start"
+        >
+          <Switch.Control>
+            <Switch.Thumb />
+          </Switch.Control>
+          <Label className="whitespace-nowrap">{t('cameraLyrics.title')}</Label>
+        </Switch>
+      )}
       {(showTimerControls || showBibleControls) && (
         <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
           <SettingsPopover
@@ -245,11 +274,11 @@ export default function Header(): React.JSX.Element {
       </div>
 
       {showCameraControls && (
-        <div className="absolute inset-y-0 left-2 right-14 flex items-center lg:left-1/2 lg:right-auto lg:-translate-x-1/2">
+        <div className="mx-auto flex w-full max-w-96 min-w-0 items-center">
           <CameraSelector />
         </div>
       )}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-self-end gap-2">
         {(showBibleControls || showFilesControls) && (
           <SearchBarToggle variant={showBibleControls ? 'bible' : 'fileExplorer'} />
         )}
@@ -258,13 +287,22 @@ export default function Header(): React.JSX.Element {
           isIconOnly
           variant="outline"
           className={`size-10 min-w-10 rounded-full p-0 ${
-            isProjectionOpen ? 'text-danger' : 'text-default-foreground'
+            stopCurrentProjection ? 'text-danger' : 'text-default-foreground'
           }`}
           onPress={() => void handleProjectionAction()}
-          isDisabled={!isProjectionOpen && projectionHeaderState.disabled}
-          aria-label={t(isProjectionOpen ? 'projection.stopButton' : 'projection.startButton')}
+          isDisabled={
+            !stopCurrentProjection &&
+            (showCameraControls ? !cameraReady : projectionHeaderState.disabled)
+          }
+          aria-label={t(
+            stopCurrentProjection
+              ? 'projection.stopButton'
+              : showCameraControls
+                ? 'camera.present'
+                : 'projection.startButton'
+          )}
         >
-          {isProjectionOpen ? <X className="size-4" /> : <Monitor className="size-4" />}
+          {stopCurrentProjection ? <X className="size-4" /> : <Monitor className="size-4" />}
         </Button>
       </div>
     </header>

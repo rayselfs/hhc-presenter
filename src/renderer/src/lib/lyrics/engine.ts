@@ -9,6 +9,51 @@ type WorkerResponse = {
   error?: { message: string }
 }
 export async function createLyricsEngine(signal: AbortSignal): Promise<LyricsEngine> {
+  const abort = new AbortController()
+  const dispose = (): void => {
+    abort.abort()
+    signal.removeEventListener('abort', dispose)
+  }
+  signal.addEventListener('abort', dispose, { once: true })
+  if (signal.aborted) dispose()
+  let cpuOnly = false
+  const startCpu = (): Promise<LyricsEngine> => {
+    cpuOnly = true
+    return createWorkerEngine(abort.signal, 'wasm')
+  }
+  try {
+    let engine: LyricsEngine
+    try {
+      engine = await createWorkerEngine(abort.signal, 'auto')
+    } catch (error) {
+      if (abort.signal.aborted) throw error
+      engine = await startCpu()
+    }
+    return {
+      async recognize(image) {
+        try {
+          return await engine.recognize(image)
+        } catch (error) {
+          if (abort.signal.aborted || cpuOnly) throw error
+          // A lost GPU device must not poison the CPU recovery session.
+          engine.dispose()
+          engine = await startCpu()
+          return engine.recognize(image)
+        }
+      },
+      dispose
+    }
+  } catch (error) {
+    dispose()
+    throw error
+  }
+}
+
+async function createWorkerEngine(
+  signal: AbortSignal,
+  backend: 'auto' | 'wasm'
+): Promise<LyricsEngine> {
+  signal.throwIfAborted()
   const packaged = isElectron() && location.protocol === 'file:'
   const baseUrl = packaged
     ? 'hhc-lyrics://runtime/lyrics-runtime/'
@@ -73,12 +118,14 @@ export async function createLyricsEngine(signal: AbortSignal): Promise<LyricsEng
     const response = await fetch(new URL('pipeline.json', baseUrl), { signal })
     if (!response.ok) throw new Error('OCR configuration unavailable')
     const pipelineConfig: unknown = await response.json()
-    await send('init', {
+    const initialized = await send('init', {
       options: {
         pipelineConfig,
-        ortOptions: { backend: 'wasm', numThreads: 1, wasmPaths: baseUrl, proxy: false }
+        ortOptions: { backend, numThreads: 1, wasmPaths: baseUrl, proxy: false }
       }
     })
+    if (initialized && typeof initialized === 'object' && 'summary' in initialized)
+      console.info('[lyrics] OCR initialized', JSON.stringify(initialized.summary))
   } catch (error) {
     dispose()
     throw error

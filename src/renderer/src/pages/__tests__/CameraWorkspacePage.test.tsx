@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { useCameraStore } from '@renderer/stores/camera'
+import { useCameraLyricsStore } from '@renderer/stores/camera-lyrics'
 import CameraWorkspacePage from '../CameraWorkspacePage'
 const projection = vi.hoisted(() => ({
   activeOwner: 'timer',
@@ -34,23 +35,32 @@ it('shows canvas and reset without duplicate header controls', () => {
   expect(screen.getByTestId('camera-editor')).toBeVisible()
   expect(screen.queryByRole('combobox')).toBeNull()
   expect(screen.queryByRole('heading')).toBeNull()
-  expect(screen.getAllByRole('button')).toHaveLength(3)
-  expect(screen.getByRole('button', { name: 'camera.present' })).toBeDisabled()
+  expect(screen.getAllByRole('button')).toHaveLength(2)
+  expect(screen.queryByRole('button', { name: 'camera.present' })).toBeNull()
   expect(screen.getByRole('button', { name: 'camera.lock' })).toBeDisabled()
   expect(screen.getByRole('button', { name: 'camera.reset' })).toBeDisabled()
   expect(screen.queryByText(/contain|stretch/i)).toBeNull()
 })
 
-it('explicitly presents the camera into an already open projection', () => {
-  useCameraStore.setState({ capturing: true })
+it('shows only the active mode controls and restores raw framing', () => {
+  useCameraLyricsStore.getState().setEnabled(false)
   render(
     <MemoryRouter>
       <CameraWorkspacePage />
     </MemoryRouter>
   )
-  fireEvent.click(screen.getByRole('button', { name: 'camera.present' }))
-  expect(projection.startProjection).toHaveBeenCalledWith('camera')
-  useCameraStore.setState({ capturing: false })
+  expect(screen.queryByRole('region', { name: 'cameraLyrics.title' })).toBeNull()
+  expect(screen.getByRole('spinbutton', { name: 'camera.x' })).toBeVisible()
+  act(() => useCameraLyricsStore.getState().setEnabled(true))
+  expect(screen.queryByRole('spinbutton', { name: 'camera.x' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'camera.lock' })).toBeNull()
+  expect(screen.getByRole('spinbutton', { name: 'cameraLyrics.height' })).toHaveValue(40)
+  fireEvent.change(screen.getByRole('spinbutton', { name: 'cameraLyrics.height' }), {
+    target: { value: '60' }
+  })
+  expect(useCameraLyricsStore.getState().crop.height).toBe(0.6)
+  act(() => useCameraLyricsStore.getState().setEnabled(false))
+  expect(screen.getByRole('spinbutton', { name: 'camera.x' })).toBeVisible()
 })
 
 it('requires confirmation before resetting framing and cancellation preserves it', async () => {
