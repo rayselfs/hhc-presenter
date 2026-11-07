@@ -81,7 +81,9 @@ describe('HHC browser auth entry and hosting config', () => {
   it('keeps OAuth callback queries outside PWA navigation fallback', () => {
     expect(OAUTH_CALLBACK_PWA_DENYLIST.test('/oauth/callback?code=code-1&state=state-1')).toBe(true)
     expect(OAUTH_CALLBACK_PWA_DENYLIST.test('/oauth/callback/other')).toBe(false)
-    expect(read('electron.vite.config.ts')).toContain('OAUTH_CALLBACK_PWA_DENYLIST')
+    expect(read('src/renderer/src/service-worker.ts')).toMatch(
+      /navigateFallbackDenylist: \[[^\n]+OAUTH_CALLBACK_PWA_DENYLIST\]/
+    )
   })
 
   it('builds the hosted renderer with root-relative assets', () => {
@@ -220,7 +222,7 @@ describe('HHC browser auth entry and hosting config', () => {
   })
 
   it('keeps Asset tickets outside runtime caches and persisted browser storage', () => {
-    const config = read('electron.vite.config.ts')
+    const config = read('src/renderer/src/service-worker.ts')
     expect(config).toContain('navigateFallbackDenylist: [/^\\/api\\//')
     expect(config).not.toMatch(/runtimeCaching:[\s\S]*api\/assets/)
 
