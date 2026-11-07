@@ -4,10 +4,9 @@ import { defineConfig } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { visualizer } from 'rollup-plugin-visualizer'
-import { VitePWA } from 'vite-plugin-pwa'
+import { serwist } from '@serwist/vite'
 import { loadEnv, type Plugin } from 'vite'
 import { rendererManualChunk } from './scripts/renderer-manual-chunk'
-import { OAUTH_CALLBACK_PWA_DENYLIST } from './scripts/pwa-navigation-denylist'
 
 const pkg = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8'))
 const DEFAULT_ONEDRIVE_CLIENT_ID = '2aeb121a-c658-4766-ad71-d31625db10bd'
@@ -146,72 +145,24 @@ export default defineConfig(({ mode }) => {
         tailwindcss(),
         configuredOriginsCsp(buildConfig.hhcAccountOrigin, buildConfig.hhcAssetOrigin),
         devCspUnsafeInline(),
-        VitePWA({
-          registerType: 'autoUpdate',
-          injectRegister: 'auto',
-          manifest: {
-            name: 'HHC Presenter',
-            short_name: 'HHC Presenter',
-            description: 'A projection system designed for church services.',
-            theme_color: '#000000',
-            background_color: '#000000',
-            display: 'standalone',
-            icons: [
-              {
-                src: '/icon-512.png',
-                sizes: '512x512',
-                type: 'image/png',
-                purpose: 'any maskable'
-              }
-            ]
-          },
-          workbox: {
-            globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-            globIgnores: [
-              '**/lyrics-runtime/**',
-              '**/assets/ChineseSpeechPilot-*.js',
-              '**/assets/pdf-*.js',
-              '**/assets/pdf.worker-*.js',
-              '**/assets/transformers*.js',
-              '**/assets/microsoft.cognitiveservices.speech.sdk-*.js',
-              '**/assets/aiden0z-pptx-renderer*.js',
-              '**/assets/hhc-asset-api-*.js',
-              '**/assets/hhc-line-access-*.js',
-              '**/assets/hhc-line-connect-*.js'
-            ],
-            navigateFallback: '/index.html',
-            navigateFallbackDenylist: [/^\/api\//, OAUTH_CALLBACK_PWA_DENYLIST],
-            runtimeCaching: [
-              {
-                urlPattern: ({ url }) => url.pathname.startsWith('/lyrics-runtime/'),
-                handler: 'NetworkFirst',
-                options: {
-                  cacheName: 'hhc-lyrics-runtime',
-                  networkTimeoutSeconds: 3,
-                  expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 30 }
-                }
-              },
-              {
-                urlPattern: ({ url }) =>
-                  url.pathname.endsWith('.woff2') ||
-                  /\/assets\/(pdf(?:\.|-)|transformers(?:\.web)?-|microsoft\.cognitiveservices\.speech\.sdk-)/.test(
-                    url.pathname
-                  ) ||
-                  /\/assets\/aiden0z-pptx-renderer/.test(url.pathname) ||
-                  /^\/assets\/hhc-(?:asset-api|line-access|line-connect)-[^/]+\.js$/.test(
-                    url.pathname
-                  ),
-                handler: 'CacheFirst',
-                options: {
-                  cacheName: 'hhc-optional-assets',
-                  expiration: {
-                    maxEntries: 300,
-                    maxAgeSeconds: 60 * 60 * 24 * 30
-                  }
-                }
-              }
-            ]
-          }
+        serwist({
+          swSrc: resolve('src/renderer/src/service-worker.ts'),
+          swDest: 'sw.js',
+          globDirectory: resolve('out/renderer'),
+          rollupFormat: 'iife',
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+          globIgnores: [
+            '**/lyrics-runtime/**',
+            '**/assets/ChineseSpeechPilot-*.js',
+            '**/assets/pdf-*.js',
+            '**/assets/pdf.worker-*.js',
+            '**/assets/transformers*.js',
+            '**/assets/microsoft.cognitiveservices.speech.sdk-*.js',
+            '**/assets/aiden0z-pptx-renderer*.js',
+            '**/assets/hhc-asset-api-*.js',
+            '**/assets/hhc-line-access-*.js',
+            '**/assets/hhc-line-connect-*.js'
+          ]
         }),
         visualizer({
           filename: 'bundle-report.html',
