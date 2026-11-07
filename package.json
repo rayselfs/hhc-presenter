@@ -1,6 +1,6 @@
 {
   "name": "hhc-presenter",
-  "version": "2.7.1",
+  "version": "2.8.0",
   "description": "A projection system designed for church services.",
   "license": "GPL-3.0-or-later",
   "main": "./out/main/index.js",
@@ -93,7 +93,8 @@
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/coverage-v8": "^4.1.2",
-    "electron": "^41.10.6",
+    "deepmerge": "file:vendor/deepmerge",
+    "electron": "^42.11.18",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.1",
@@ -109,7 +110,7 @@
     "react-dom": "^19.2.1",
     "rollup-plugin-visualizer": "^7.0.1",
     "typescript": "^5.9.3",
-    "vite": "^7.3.6",
+    "vite": "^7.3.7",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.1.2"
   },
@@ -118,6 +119,13 @@
     "sharp": "0.35.5",
     "global-agent": {
       "roarr": "3.3.0"
-    }
+    },
+    "deepmerge": "$deepmerge",
+    "glob@>=9": "14.0.4",
+    "minimatch@>=7": "11.0.5",
+    "fast-uri": "3.1.9",
+    "follow-redirects": "1.16.2",
+    "serialize-javascript": "7.1.4",
+    "zod": "4.6.7"
   }
 }
