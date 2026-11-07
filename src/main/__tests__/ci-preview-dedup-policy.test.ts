@@ -18,16 +18,20 @@ function job(workflow: string, name: string): string {
 describe('same-run PR hosted renderer validation', () => {
   test('runs shared gates exactly once and preserves default and hosted build inputs', () => {
     const producer = job(ci, 'quality-build')
-    for (const command of [
-      'npm run lint',
-      'npm run typecheck',
-      'npx vitest run',
-      'npm run build',
-      'npm run build:web'
-    ]) {
+    const checks = job(ci, 'quality-checks')
+    expect(producer).not.toContain('needs:')
+    expect(checks).not.toContain('needs:')
+    for (const command of ['npm run lint', 'npm run typecheck', 'npx vitest run']) {
       expect(ci.split(`run: ${command}\n`)).toHaveLength(2)
-      expect(producer).toContain(`run: ${command}\n`)
+      expect(checks).toContain(`run: ${command}\n`)
     }
+    expect(producer).toContain(
+      'npm run prepare:lyrics-runtime && npx electron-vite build && npm run check:bundle'
+    )
+    expect(producer).toContain(
+      'npx electron-vite build --mode web && npm run check:web-build && npm run check:bundle'
+    )
+    expect(producer).not.toContain('npm run typecheck')
     expect(producer).toContain(
       'e2e/hosted-artifact.spec.ts --project=chromium --workers=1 --retries=0'
     )
@@ -52,10 +56,13 @@ describe('same-run PR hosted renderer validation', () => {
 
   test('makes the original required quality job fail when producer fails', () => {
     const browser = job(ci, 'quality-gates')
-    expect(browser).toContain('needs: quality-build')
+    expect(browser).toContain('needs: [quality-build, quality-checks]')
     expect(browser).toContain('if: always()')
     expect(browser).toContain('QUALITY_BUILD_RESULT: ${{ needs.quality-build.result }}')
-    expect(browser).toContain('run: test "$QUALITY_BUILD_RESULT" = success')
+    expect(browser).toContain('QUALITY_CHECKS_RESULT: ${{ needs.quality-checks.result }}')
+    expect(browser).toContain(
+      'run: test "$QUALITY_BUILD_RESULT" = success && test "$QUALITY_CHECKS_RESULT" = success'
+    )
     expect(browser).toContain('run: npm run test:e2e:browser')
     expect(browser).not.toContain('npm run build')
   })
@@ -83,7 +90,7 @@ describe('same-run PR hosted renderer validation', () => {
 
   test('isolates deploy credentials from source execution and keeps cleanup separate', () => {
     const deploy = job(ci, 'build_and_deploy_job')
-    expect(deploy).toContain('needs: [quality-build, cleanup_stale_previews]')
+    expect(deploy).toContain('needs: [quality-build, quality-checks, cleanup_stale_previews]')
     expect(deploy).not.toContain('quality-gates')
     expect(deploy).toContain('contents: read')
     expect(deploy).toContain('pull-requests: read')
@@ -110,4 +117,24 @@ describe('same-run PR hosted renderer validation', () => {
     expect(job(azure, 'close_pull_request_job')).toContain("github.event.action == 'closed'")
     expect(job(azure, 'close_pull_request_job')).toContain("action: 'close'")
   })
+})
+
+test('keeps release quality and package gates mandatory while allowing parallel packaging', () => {
+  const release = readFileSync('.github/workflows/build-release.yml', 'utf8').replace(/\r\n/g, '\n')
+  const prepare = job(release, 'prepare')
+  expect(prepare).not.toContain('needs:')
+  expect(prepare).toContain('Validate release version')
+  expect(prepare).toContain('run: npm run prepare:lyrics-runtime')
+  expect(prepare).toContain('name: verified-lyrics-models')
+  for (const name of ['quality-gates', 'package']) {
+    const consumer = job(release, name)
+    expect(consumer).toContain('needs: prepare')
+    expect(consumer).toContain('name: verified-lyrics-models')
+    expect(consumer).toContain("HHC_LYRICS_MODELS_OFFLINE: '1'")
+  }
+  expect(job(release, 'quality-gates')).toContain('npm audit --audit-level=low')
+  expect(job(release, 'quality-gates')).toContain('npx vitest run')
+  expect(job(release, 'package')).toContain('npm run test:e2e:packaged')
+  expect(job(release, 'release')).toContain('needs: [quality-gates, prepare, package]')
+  expect(release).not.toMatch(/continue-on-error:|cancel-in-progress: true/)
 })

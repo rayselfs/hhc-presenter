@@ -3,46 +3,30 @@ import { DEFAULT_LYRICS_STYLE } from '@shared/lyrics'
 beforeEach(() =>
   useCameraLyricsStore.setState({
     enabled: false,
-    manual: false,
     lines: [],
     acceptedAt: 0,
     style: { ...DEFAULT_LYRICS_STYLE }
   })
 )
-it('keeps manual rows intact and clears them on resume or disable', () => {
+it('accepts only automatic rows while enabled and drops late results after disable', () => {
   const state = useCameraLyricsStore.getState()
   state.setEnabled(true)
-  state.setManual('第一行\n第二行\n第三行')
-  expect(useCameraLyricsStore.getState()).toMatchObject({
-    manual: true,
-    lines: ['第一行', '第二行', '第三行']
-  })
-  state.resume()
-  expect(useCameraLyricsStore.getState()).toMatchObject({ manual: false, lines: [] })
-  state.setManual('手動')
+  state.acceptLines(['第一行', '第二行'])
+  expect(useCameraLyricsStore.getState().lines).toEqual(['第一行', '第二行'])
   state.setEnabled(false)
-  expect(useCameraLyricsStore.getState()).toMatchObject({
-    enabled: false,
-    manual: false,
-    lines: []
-  })
+  state.acceptLines(['Late cue'])
+  expect(useCameraLyricsStore.getState().lines).toEqual([])
 })
-it('validates styles and persists only appearance, never captured text or permission', () => {
+it('validates styles and persists only configuration, never captured text or permission', () => {
   const store = useCameraLyricsStore.getState()
   store.setStyle({ ...DEFAULT_LYRICS_STYLE, fontSize: 72 })
   store.setStyle({ ...DEFAULT_LYRICS_STYLE, fontSize: NaN })
   expect(useCameraLyricsStore.getState().style.fontSize).toBe(72)
   const partialize = useCameraLyricsStore.persist.getOptions().partialize!
   expect(partialize(useCameraLyricsStore.getState())).toEqual({
-    style: useCameraLyricsStore.getState().style
+    style: useCameraLyricsStore.getState().style,
+    crop: useCameraLyricsStore.getState().crop
   })
-})
-it('rejects invalid manual corrections without replacing accepted rows', () => {
-  const store = useCameraLyricsStore.getState()
-  expect(store.setManual('First\r\nSecond\rThird')).toBe(true)
-  expect(store.setManual('x'.repeat(257))).toBe(false)
-  expect(store.setManual(Array(13).fill('row').join('\n'))).toBe(false)
-  expect(useCameraLyricsStore.getState().lines).toEqual(['First', 'Second', 'Third'])
 })
 it('recovers from a previous overflow on the next cue even without the operator preview mounted', () => {
   const store = useCameraLyricsStore.getState()
@@ -65,13 +49,27 @@ it('recovers from a previous overflow on the next cue even without the operator 
     error: 'recognize'
   })
 })
-it('does not overwrite manual text while worker cleanup is pending', () => {
-  const store = useCameraLyricsStore.getState()
-  store.setEnabled(true)
-  store.setManual('Corrected cue')
-  store.acceptLines(['Late automatic cue'])
-  expect(useCameraLyricsStore.getState().lines).toEqual(['Corrected cue'])
-  store.setEnabled(false)
-  store.acceptLines(['Late automatic cue'])
-  expect(useCameraLyricsStore.getState().lines).toEqual([])
+it('migrates legacy appearance without resetting size, spacing or position', async () => {
+  const options = useCameraLyricsStore.persist.getOptions()
+  expect(options.version).toBe(2)
+  const oldStyle = { font: 'sans-serif', fontSize: 88, lineHeight: 1.5, bottom: 12 }
+  const saved = await options.migrate?.({ style: oldStyle }, 0)
+  const merged = options.merge?.(saved, useCameraLyricsStore.getState())
+  expect(merged?.style).toEqual({ ...oldStyle, bold: true })
+  const invalid = await options.migrate?.({ style: { ...oldStyle, fontSize: NaN } }, 0)
+  expect(options.merge?.(invalid, useCameraLyricsStore.getState()).style).toEqual(
+    DEFAULT_LYRICS_STYLE
+  )
+})
+
+it('restores a valid saved crop and preserves explicit normal weight from version one', async () => {
+  const options = useCameraLyricsStore.persist.getOptions()
+  const crop = { x: 0, y: 0, width: 1, height: 0.6 }
+  const style = { ...DEFAULT_LYRICS_STYLE, bold: false }
+  const saved = await options.migrate?.({ style, crop }, 1)
+  const merged = options.merge?.(saved, useCameraLyricsStore.getState())
+  expect(merged).toMatchObject({ style, crop })
+  expect(
+    options.merge?.({ crop: { ...crop, height: 2 } }, useCameraLyricsStore.getState()).crop
+  ).toEqual(useCameraLyricsStore.getState().crop)
 })

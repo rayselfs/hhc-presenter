@@ -74,3 +74,32 @@ it('expires stale snapshots without waiting for another message', async () => {
     vi.useRealTimers()
   }
 })
+
+it('measures with the rendered font weight and rechecks overflow when bold changes', async () => {
+  const context = {
+    font: '',
+    measureText: () => ({ width: context.font.startsWith('700 ') ? 1800 : 1000 })
+  }
+  vi.mocked(HTMLCanvasElement.prototype.getContext).mockReturnValue(
+    context as unknown as CanvasRenderingContext2D
+  )
+  const output = {
+    lines: ['A borderline cue'],
+    style: { ...DEFAULT_LYRICS_STYLE, font: 'Arial', bold: false },
+    visible: true,
+    expiresAt: Date.now() + 60000
+  }
+  const onOverflow = vi.fn()
+  const { rerender } = render(<LyricsOutput output={output} onOverflow={onOverflow} />)
+  await waitFor(() => expect(screen.getByTestId('lyrics-lines')).toHaveStyle({ fontWeight: 400 }))
+  expect(context.font).toContain('400 64px "Arial"')
+  expect(screen.getByTestId('lyrics-lines').style.fontFamily).toContain('Noto Sans TC Variable')
+  rerender(
+    <LyricsOutput
+      output={{ ...output, style: { ...output.style, bold: true } }}
+      onOverflow={onOverflow}
+    />
+  )
+  await waitFor(() => expect(onOverflow).toHaveBeenLastCalledWith(true))
+  expect(screen.queryByTestId('lyrics-lines')).toBeNull()
+})

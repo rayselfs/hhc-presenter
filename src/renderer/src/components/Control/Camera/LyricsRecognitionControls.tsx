@@ -1,8 +1,21 @@
-import { useEffect, useRef, useState } from 'react'
+import { useLyricsLayout } from '@renderer/lib/lyrics/use-lyrics-layout'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Button, ComboBox, Input, Label, ListBox, ListBoxItem, Slider } from '@heroui/react'
+import { isElectron } from '@renderer/lib/env'
+import LyricsPreview from './LyricsPreview'
 import { useTranslation } from 'react-i18next'
 import { useCameraLyricsStore } from '@renderer/stores/camera-lyrics'
-import { LYRICS_FONTS } from '@shared/lyrics'
-const field = 'rounded-lg border border-border bg-background px-3 py-2 text-sm disabled:opacity-40'
+import { isLyricsFont, LYRICS_FONTS } from '@shared/lyrics'
+import {
+  mergeFontFamilies,
+  queryLocalFontFamiliesOnce,
+  supportsLocalFontAccess
+} from '@renderer/lib/local-fonts'
+function reportOverflow(overflow: boolean): void {
+  const state = useCameraLyricsStore.getState()
+  if (overflow && state.error !== 'overflow') useCameraLyricsStore.setState({ error: 'overflow' })
+  if (!overflow && state.error === 'overflow') useCameraLyricsStore.setState({ error: null })
+}
 export default function LyricsRecognitionControls({
   stream
 }: {
@@ -10,29 +23,110 @@ export default function LyricsRecognitionControls({
 }): React.JSX.Element {
   const { t } = useTranslation()
   const state = useCameraLyricsStore()
-  const sourceVideo = useRef<HTMLVideoElement>(null)
-  const [sourceRatio, setSourceRatio] = useState('16 / 9')
-  useEffect(() => {
-    const video = sourceVideo.current
-    if (!video || !stream || !state.enabled) return
-    video.srcObject = stream
-    void video.play().catch(() => undefined)
-    return () => {
-      video.srcObject = null
+  useLyricsLayout(state, reportOverflow)
+  const [localFonts, setLocalFonts] = useState<string[]>([])
+  const [localFontStatus, setLocalFontStatus] = useState<'idle' | 'loading' | 'failed'>('idle')
+  const localFontsSupported = supportsLocalFontAccess()
+  const fontFamilies = useMemo(
+    () => mergeFontFamilies(LYRICS_FONTS, localFonts, [state.style.font]).filter(isLyricsFont),
+    [localFonts, state.style.font]
+  )
+  const loadingFonts = useRef(false)
+  const loadedFonts = useRef(false)
+  const loadLocalFonts = useCallback(async (): Promise<void> => {
+    if (!localFontsSupported || loadingFonts.current || loadedFonts.current) return
+    loadingFonts.current = true
+    setLocalFontStatus('loading')
+    try {
+      setLocalFonts(await queryLocalFontFamiliesOnce())
+      loadedFonts.current = true
+      setLocalFontStatus('idle')
+    } catch {
+      setLocalFontStatus('failed')
+    } finally {
+      loadingFonts.current = false
     }
-  }, [stream, state.enabled])
-  const [draft, setDraft] = useState('')
-  const [editing, setEditing] = useState(false)
-  const [invalidDraft, setInvalidDraft] = useState(false)
+  }, [localFontsSupported])
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      if (!localFontsSupported) return
+      const allowed =
+        isElectron() ||
+        (
+          await navigator.permissions
+            ?.query({ name: 'local-fonts' as PermissionName })
+            .catch(() => null)
+        )?.state === 'granted'
+      if (allowed && !cancelled) await loadLocalFonts()
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [loadLocalFonts, localFontsSupported])
+  const fontLabel = (font: string): string =>
+    font === 'sans-serif'
+      ? t('cameraLyrics.systemFont')
+      : font === 'Noto Sans TC Variable'
+        ? t('cameraLyrics.notoFont')
+        : font === 'Noto Sans SC Variable'
+          ? t('cameraLyrics.notoScFont')
+          : font.replace(/ Variable$/, '')
+  const fontItems = fontFamilies.map((font) => ({ id: font, name: fontLabel(font) }))
+  const cropMaximum = (key: keyof typeof state.crop): number =>
+    Math.round(
+      100 *
+        (key === 'x'
+          ? 1 - state.crop.width
+          : key === 'y'
+            ? 1 - state.crop.height
+            : key === 'width'
+              ? 1 - state.crop.x
+              : 1 - state.crop.y)
+    )
+  const setCropPercent = (key: keyof typeof state.crop, value: number): void => {
+    const min = key === 'width' || key === 'height' ? 5 : 0
+    state.setCrop({ ...state.crop, [key]: Math.min(cropMaximum(key), Math.max(min, value)) / 100 })
+  }
+  const cropInput = (key: keyof typeof state.crop): React.JSX.Element => (
+    <Input
+      aria-label={t(`cameraLyrics.${key}`)}
+      type="number"
+      min={key === 'width' || key === 'height' ? 5 : 0}
+      max={cropMaximum(key)}
+      step={1}
+      className="w-20"
+      value={Math.round(state.crop[key] * 100)}
+      onChange={(event) => {
+        if (event.target.value) setCropPercent(key, Number(event.target.value))
+      }}
+    />
+  )
+  const styleInput = (key: 'fontSize' | 'lineHeight' | 'bottom'): React.JSX.Element => (
+    <label className="flex items-center gap-2 text-sm">
+      {t(`cameraLyrics.${key}`)}
+      <Input
+        type="number"
+        className="w-20"
+        defaultValue={state.style[key]}
+        min={key === 'fontSize' ? 24 : key === 'lineHeight' ? 1 : 5}
+        max={key === 'fontSize' ? 160 : key === 'lineHeight' ? 2 : 50}
+        step={key === 'lineHeight' ? 0.05 : 1}
+        onBlur={(event) => {
+          event.currentTarget.value = String(useCameraLyricsStore.getState().style[key])
+        }}
+        onChange={(event) => {
+          if (event.target.value)
+            state.setStyle({ ...state.style, [key]: Number(event.target.value) })
+        }}
+      />
+    </label>
+  )
   return (
-    <section
-      aria-label={t('cameraLyrics.title')}
-      className="flex flex-col gap-3 rounded-xl border border-border p-4"
-    >
-      <p className="text-sm text-muted">{t('cameraLyrics.description')}</p>
+    <section aria-label={t('cameraLyrics.title')} className="flex flex-col gap-4">
       {state.enabled && (
         <>
-          <div role="status" className="text-sm">
+          <div role="status" className="text-sm font-medium">
             {t(`cameraLyrics.status.${state.status}`)}
           </div>
           {state.error && (
@@ -40,159 +134,100 @@ export default function LyricsRecognitionControls({
               {t(`cameraLyrics.errors.${state.error}`)}
             </p>
           )}
-          <div
-            className="relative w-full max-w-xl self-center overflow-hidden bg-black"
-            style={{ aspectRatio: sourceRatio }}
-          >
-            <video
-              ref={sourceVideo}
-              autoPlay
-              muted
-              playsInline
-              className="absolute inset-0 h-full w-full object-contain"
-              onLoadedMetadata={(event) => {
-                const video = event.currentTarget
-                if (video.videoWidth && video.videoHeight)
-                  setSourceRatio(video.videoWidth + ' / ' + video.videoHeight)
-              }}
-            />
-            <div
-              className="pointer-events-none absolute border-2 border-accent"
-              style={{
-                left: state.crop.x * 100 + '%',
-                top: state.crop.y * 100 + '%',
-                width: state.crop.width * 100 + '%',
-                height: state.crop.height * 100 + '%'
-              }}
-            />
-          </div>
-          <fieldset className="flex flex-wrap gap-3">
-            <legend className="mb-2 text-sm font-medium">{t('cameraLyrics.crop')}</legend>
-            {(['x', 'y', 'width', 'height'] as const).map((key) => (
-              <label key={key} className="flex items-center gap-2 text-sm">
-                {t(`cameraLyrics.${key}`)}
-                <input
-                  type="number"
-                  min={key === 'width' || key === 'height' ? 5 : 0}
-                  max="100"
-                  step="1"
-                  className={`${field} w-20`}
-                  defaultValue={Math.round(state.crop[key] * 100)}
-                  onBlur={(event) => {
-                    event.currentTarget.value = String(
-                      Math.round(useCameraLyricsStore.getState().crop[key] * 100)
-                    )
-                  }}
-                  onChange={(event) => {
-                    if (!event.target.value) return
-                    state.setCrop({ ...state.crop, [key]: Number(event.target.value) / 100 })
-                  }}
-                />
-              </label>
-            ))}
-          </fieldset>
-          <p className="text-sm text-muted">{t('cameraLyrics.cropHint')}</p>
-          <div className="flex flex-wrap gap-3">
-            <label className="flex items-center gap-2 text-sm">
-              {t('cameraLyrics.font')}
-              <select
-                className={field}
-                value={state.style.font}
-                onChange={(event) => {
-                  const font = LYRICS_FONTS.find((value) => value === event.target.value)
-                  if (font) state.setStyle({ ...state.style, font })
-                }}
-              >
-                {LYRICS_FONTS.map((font) => (
-                  <option key={font} value={font}>
-                    {t(font === 'sans-serif' ? 'cameraLyrics.systemFont' : 'cameraLyrics.notoFont')}
-                  </option>
-                ))}
-              </select>
+          <LyricsPreview stream={stream} />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4">
+            <label htmlFor="lyrics-height" className="text-sm font-medium">
+              {t('cameraLyrics.recognitionHeight')}
             </label>
-            {(['fontSize', 'lineHeight', 'bottom'] as const).map((key) => (
+            <Slider
+              id="lyrics-height"
+              aria-label={t('cameraLyrics.height')}
+              minValue={5}
+              maxValue={cropMaximum('height')}
+              step={1}
+              value={Math.round(state.crop.height * 100)}
+              onChange={(value) => {
+                if (typeof value === 'number') setCropPercent('height', value)
+              }}
+              className="min-w-32 max-w-sm flex-1 py-3"
+            >
+              <Slider.Track>
+                <Slider.Fill />
+                <Slider.Thumb />
+              </Slider.Track>
+            </Slider>
+            <div className="flex items-center gap-2">
+              {cropInput('height')}
+              <span className="text-sm text-muted">%</span>
+            </div>
+            <span className="text-sm text-muted">
+              {t('cameraLyrics.cropOrigin', { top: Math.round(state.crop.y * 100) })}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            {(['x', 'y', 'width'] as const).map((key) => (
               <label key={key} className="flex items-center gap-2 text-sm">
                 {t(`cameraLyrics.${key}`)}
-                <input
-                  type="number"
-                  className={`${field} w-24`}
-                  defaultValue={state.style[key]}
-                  onBlur={(event) => {
-                    event.currentTarget.value = String(useCameraLyricsStore.getState().style[key])
-                  }}
-                  min={key === 'fontSize' ? 24 : key === 'lineHeight' ? 1 : 5}
-                  max={key === 'fontSize' ? 160 : key === 'lineHeight' ? 2 : 50}
-                  step={key === 'lineHeight' ? 0.05 : 1}
-                  onChange={(event) => {
-                    if (event.target.value)
-                      state.setStyle({ ...state.style, [key]: Number(event.target.value) })
-                  }}
-                />
+                {cropInput(key)}
+                <span className="text-muted">%</span>
               </label>
             ))}
           </div>
-          <p className="text-sm text-muted">{t('cameraLyrics.keyHint')}</p>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              className={field}
-              aria-pressed={!state.visible}
-              onClick={() => useCameraLyricsStore.setState({ visible: !state.visible })}
-            >
-              {t(state.visible ? 'cameraLyrics.hide' : 'cameraLyrics.show')}
-            </button>
-            <button
-              type="button"
-              className={field}
-              onClick={() => {
-                setDraft(state.lines.join('\n'))
-                setInvalidDraft(false)
-                setEditing(true)
+          <div className="flex flex-wrap items-end gap-3">
+            <ComboBox
+              className="w-80 max-w-full"
+              defaultItems={fontItems}
+              selectedKey={state.style.font}
+              onSelectionChange={(key) => {
+                if (typeof key === 'string' && fontFamilies.includes(key))
+                  state.setStyle({ ...state.style, font: key })
+              }}
+              onOpenChange={(open) => {
+                if (open) void loadLocalFonts()
               }}
             >
-              {t('cameraLyrics.edit')}
-            </button>
-            {state.manual && (
-              <button
-                type="button"
-                className={field}
-                onClick={() => {
-                  state.resume()
-                  setEditing(false)
-                }}
-              >
-                {t('cameraLyrics.resume')}
-              </button>
-            )}
+              <Label>{t('cameraLyrics.font')}</Label>
+              <ComboBox.InputGroup className="w-full">
+                <Input placeholder={t('cameraLyrics.searchFonts')} className="min-w-0 flex-1" />
+                <ComboBox.Trigger />
+              </ComboBox.InputGroup>
+              <ComboBox.Popover>
+                <ListBox
+                  className="max-h-64 overflow-auto"
+                  renderEmptyState={() => (
+                    <p className="p-3 text-sm text-muted">{t('cameraLyrics.noFonts')}</p>
+                  )}
+                >
+                  {(item: { id: string; name: string }) => (
+                    <ListBoxItem id={item.id} textValue={item.name}>
+                      {item.name}
+                    </ListBoxItem>
+                  )}
+                </ListBox>
+              </ComboBox.Popover>
+            </ComboBox>
+            <div className="flex h-10 items-center">{styleInput('fontSize')}</div>
+            <Button
+              type="button"
+              variant={state.style.bold ? 'primary' : 'secondary'}
+              className="h-10 font-bold"
+              aria-pressed={state.style.bold}
+              onPress={() => state.setStyle({ ...state.style, bold: !state.style.bold })}
+            >
+              {t('cameraLyrics.bold')}
+            </Button>
+            <div className="flex h-10 items-center">{styleInput('lineHeight')}</div>
+            <div className="flex h-10 items-center">{styleInput('bottom')}</div>
           </div>
-          {editing && (
-            <div className="flex flex-col gap-2">
-              <label className="flex flex-col gap-2 text-sm">
-                {t('cameraLyrics.text')}
-                <textarea
-                  rows={4}
-                  maxLength={3072}
-                  className={field}
-                  value={draft}
-                  aria-invalid={invalidDraft}
-                  onChange={(event) => {
-                    setDraft(event.target.value)
-                    setInvalidDraft(false)
-                  }}
-                />
-              </label>
-              <button
-                type="button"
-                className={`${field} self-start`}
-                onClick={() => {
-                  if (state.setManual(draft)) setEditing(false)
-                  else setInvalidDraft(true)
-                }}
-              >
-                {t('cameraLyrics.apply')}
-              </button>
-              {invalidDraft && <p role="alert">{t('cameraLyrics.inputError')}</p>}
-              <p className="text-sm text-muted">{t('cameraLyrics.manualHint')}</p>
+          {localFontStatus === 'loading' && (
+            <p className="text-sm text-muted">{t('cameraLyrics.loadingFonts')}</p>
+          )}
+          {localFontStatus === 'failed' && (
+            <div className="flex items-center gap-3 text-sm">
+              <p role="alert">{t('cameraLyrics.localFontsFailed')}</p>
+              <Button type="button" variant="secondary" onPress={() => void loadLocalFonts()}>
+                {t('cameraLyrics.retryFonts')}
+              </Button>
             </div>
           )}
         </>

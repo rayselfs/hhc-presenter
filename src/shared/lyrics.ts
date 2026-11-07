@@ -1,6 +1,13 @@
-export const LYRICS_FONTS = ['Noto Sans TC Variable', 'sans-serif'] as const
+export const LYRICS_FONTS = [
+  'Noto Sans TC Variable',
+  'Noto Sans SC Variable',
+  'Inter Variable',
+  'Roboto Variable',
+  'sans-serif'
+] as const
 export type LyricsStyle = {
-  font: (typeof LYRICS_FONTS)[number]
+  font: string
+  bold: boolean
   fontSize: number
   lineHeight: number
   bottom: number
@@ -14,15 +21,26 @@ export type LyricsOutput = {
 export type LyricsCrop = { x: number; y: number; width: number; height: number }
 export const DEFAULT_LYRICS_STYLE: LyricsStyle = {
   font: 'Noto Sans TC Variable',
+  bold: true,
   fontSize: 64,
   lineHeight: 1.25,
   bottom: 5
+}
+export function isLyricsFont(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    value.length > 0 &&
+    value.length <= 128 &&
+    value.trim() === value &&
+    !/[<>{};]|\p{Cc}/u.test(value)
+  )
 }
 export function isLyricsStyle(value: unknown): value is LyricsStyle {
   if (!value || typeof value !== 'object') return false
   const v = value as Record<string, unknown>
   return (
-    LYRICS_FONTS.some((font) => font === v.font) &&
+    isLyricsFont(v.font) &&
+    typeof v.bold === 'boolean' &&
     typeof v.fontSize === 'number' &&
     Number.isFinite(v.fontSize) &&
     v.fontSize >= 24 &&

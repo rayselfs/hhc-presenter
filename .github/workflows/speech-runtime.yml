@@ -2,8 +2,18 @@ name: Local Speech Runtime
 on:
   pull_request:
     branches: [main]
+    paths:
+      - '.github/workflows/speech-runtime.yml'
+      - 'native/speech/**'
+      - 'scripts/*speech*'
+      - 'src/main/**/*[Ss]peech*'
+      - 'src/shared/*speech*'
+      - 'resources/speech/**'
 permissions:
   contents: read
+concurrency:
+  group: speech-runtime-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 jobs:
   native-speech:
     strategy:

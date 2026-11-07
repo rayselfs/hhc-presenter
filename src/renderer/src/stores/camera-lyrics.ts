@@ -11,8 +11,6 @@ import {
 import { createPersistName, hhcPersistStorage } from '@renderer/lib/persist-storage'
 interface LyricsStore {
   enabled: boolean
-  visible: boolean
-  manual: boolean
   status: 'idle' | 'loading' | 'recognizing' | 'ready' | 'empty' | 'error'
   error: 'load' | 'recognize' | 'overflow' | 'source' | null
   lines: string[]
@@ -23,15 +21,11 @@ interface LyricsStore {
   setStyle(value: LyricsStyle): void
   setCrop(value: LyricsCrop): void
   acceptLines(lines: string[]): void
-  setManual(text: string): boolean
-  resume(): void
 }
 export const useCameraLyricsStore = create<LyricsStore>()(
   persist(
     (set, get) => ({
       enabled: false,
-      visible: true,
-      manual: false,
       status: 'idle',
       error: null,
       lines: [],
@@ -39,16 +33,16 @@ export const useCameraLyricsStore = create<LyricsStore>()(
       crop: { x: 0, y: 0, width: 1, height: 0.4 },
       style: { ...DEFAULT_LYRICS_STYLE },
       setEnabled: (enabled) =>
-        set({ enabled, lines: [], acceptedAt: 0, manual: false, error: null, status: 'idle' }),
+        set({ enabled, lines: [], acceptedAt: 0, error: null, status: 'idle' }),
       setStyle: (style) => {
         if (isLyricsStyle(style)) set({ style })
       },
       setCrop: (crop) => {
-        if (isLyricsCrop(crop)) set({ crop, lines: [], acceptedAt: 0, manual: false, error: null })
+        if (isLyricsCrop(crop)) set({ crop, lines: [], acceptedAt: 0, error: null })
       },
       acceptLines: (lines) => {
         const previous = get()
-        if (!previous.enabled || previous.manual) return
+        if (!previous.enabled) return
         if (!isLyricsLines(lines)) {
           set({ error: 'recognize', status: 'error' })
           return
@@ -62,23 +56,28 @@ export const useCameraLyricsStore = create<LyricsStore>()(
           status: lines.length ? 'ready' : 'empty',
           error: unchanged && previous.error === 'overflow' ? 'overflow' : null
         })
-      },
-      setManual: (text) => {
-        const lines = text.replace(/\r\n?/g, '\n').split('\n')
-        if (!isLyricsLines(lines)) return false
-        set({ lines, acceptedAt: Date.now(), manual: true, status: 'ready', error: null })
-        return true
-      },
-      resume: () => set({ manual: false, lines: [], acceptedAt: 0, error: null })
+      }
     }),
     {
       name: createPersistName('camera-lyrics'),
       storage: hhcPersistStorage,
-      version: 0,
-      partialize: (state) => ({ style: state.style }),
+      version: 2,
+      migrate: (saved, version) => {
+        if (!saved || typeof saved !== 'object' || !('style' in saved)) return {}
+        const style = saved.style
+        if (!style || typeof style !== 'object') return {}
+        const migrated = version === 0 ? { ...style, bold: true } : style
+        return { ...saved, style: isLyricsStyle(migrated) ? migrated : undefined }
+      },
+      partialize: (state) => ({ style: state.style, crop: state.crop }),
       merge: (saved, current) => {
         const value = saved && typeof saved === 'object' && 'style' in saved ? saved.style : null
-        return { ...current, style: isLyricsStyle(value) ? value : current.style }
+        const crop = saved && typeof saved === 'object' && 'crop' in saved ? saved.crop : null
+        return {
+          ...current,
+          style: isLyricsStyle(value) ? value : current.style,
+          crop: isLyricsCrop(crop) ? crop : current.crop
+        }
       }
     }
   )

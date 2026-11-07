@@ -418,7 +418,7 @@ describe('Header', () => {
     expect(startProjection).not.toHaveBeenCalled()
   })
 
-  it.each(['/timer', '/bible', '/files'])(
+  it.each(['/timer', '/bible', '/files', '/camera'])(
     'only stops projection from %s when projection is already open',
     async (route) => {
       await i18n.changeLanguage('en')
@@ -482,9 +482,9 @@ it('switches lyrics mode in the header without claiming projection and preserves
   await userEvent.click(toggle)
   expect(useCameraLyricsStore.getState().enabled).toBe(false)
   expect(useCameraStore.getState()).toMatchObject({ locked: true, transform: { x: 12, y: 34 } })
-  await userEvent.click(screen.getByRole('button', { name: 'Present source' }))
-  expect(projection.startProjection).toHaveBeenCalledWith('camera')
-  expect(projection.stopProjection).not.toHaveBeenCalled()
+  await userEvent.click(screen.getByRole('button', { name: 'Stop projection' }))
+  expect(projection.startProjection).not.toHaveBeenCalled()
+  expect(projection.stopProjection).toHaveBeenCalledOnce()
 })
 
 it('stops an active camera projection from the header even after capture ends', async () => {

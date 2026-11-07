@@ -1437,7 +1437,22 @@
       "overflow": "文字超出安全区，请调小字号、行距或调整底部距离；不会自动拆行或裁字。",
       "source": "来源暂时无法使用，字幕将清除。"
     },
-    "inputError": "最多 12 行，每行最多 256 个字。"
+    "inputError": "最多 12 行，每行最多 256 个字。",
+    "notoScFont": "思源黑体 SC",
+    "bold": "粗体",
+    "loadLocalFonts": "载入本机字体",
+    "localFontHint": "本机字体须安装于投影设备；缺少字体或字符时会使用思源黑体 TC 替代。",
+    "localFontsUnsupported": "此浏览器无法列出本机字体，仍可使用内置字体。",
+    "localFontsFailed": "无法载入本机字体，请确认字体访问权限后重试。",
+    "manualStatus": "手动字幕",
+    "hiddenStatus": "已隐藏",
+    "recognitionHeight": "识别高度",
+    "cropOrigin": "从来源顶部 {{top}}% 开始",
+    "searchFonts": "搜索字体…",
+    "noFonts": "找不到符合的字体",
+    "loadingFonts": "正在加载字体…",
+    "retryFonts": "重试",
+    "advanced": "高级设置"
   },
   "localSpeech": {
     "title": "圣经语音",

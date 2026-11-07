@@ -3,7 +3,7 @@ import { createLyricsGate, readLyricsLines, samePixels } from './lines'
 import type { LyricsCrop } from '@shared/lyrics'
 type RecognitionOptions = {
   stream: MediaStream
-  crop: LyricsCrop
+  getCrop(): LyricsCrop
   onStatus(status: 'loading' | 'recognizing'): void
   onLines(lines: string[]): void
   onError(error: 'load' | 'recognize' | 'source'): void
@@ -19,6 +19,7 @@ export function startLyricsRecognition(options: RecognitionOptions): () => void 
   let engine: LyricsEngine | null = null
   let timer: ReturnType<typeof setTimeout> | undefined
   let previousPixels: Uint8ClampedArray | null = null
+  let previousCrop: LyricsCrop | null = null
   let previousSize = ''
   let previousLines: string[] | null = null
   const active = (): boolean => !abort.signal.aborted
@@ -40,7 +41,13 @@ export function startLyricsRecognition(options: RecognitionOptions): () => void 
       if (!sourceLive() || video.readyState < 2) {
         unavailable()
       } else {
-        const roi = options.crop
+        const roi = options.getCrop()
+        if (roi !== previousCrop) {
+          gate.reset()
+          previousPixels = null
+          previousLines = null
+          previousCrop = roi
+        }
         const width = video.videoWidth * roi.width,
           height = video.videoHeight * roi.height
         const scale = Math.min(1, 960 / width)
@@ -67,6 +74,10 @@ export function startLyricsRecognition(options: RecognitionOptions): () => void 
             ? previousLines
             : readLyricsLines(await engine!.recognize(image))
         if (!active()) return
+        if (roi !== options.getCrop()) {
+          timer = setTimeout(() => void run(), 100)
+          return
+        }
         if (!sourceLive()) {
           unavailable()
           timer = setTimeout(() => void run(), 100)

@@ -50,13 +50,12 @@ export default function Header(): React.JSX.Element {
   const { t } = useTranslation()
   const location = useLocation()
   const navigate = useNavigate()
-  const { activeOwner, isProjectionOpen, ensureProjectionOpen, startProjection, stopProjection } =
+  const { isProjectionOpen, ensureProjectionOpen, startProjection, stopProjection } =
     useProjection()
   const cameraReady = useCameraStore((state) => state.capturing)
   const showCameraControls = location.pathname === '/camera'
   const lyricsEnabled = useCameraLyricsStore((state) => state.enabled)
-  const stopCurrentProjection =
-    isProjectionOpen && (!showCameraControls || activeOwner === 'camera')
+  const stopCurrentProjection = isProjectionOpen
   const mode = useTimerStore((s) => s.mode)
 
   const currentFolderId = useFileExplorerStore((state) => state.currentFolderId)
@@ -126,11 +125,6 @@ export default function Header(): React.JSX.Element {
       : setSortFieldAndDir
 
   const startCurrentRouteProjection = useCallback(async (): Promise<void> => {
-    if (showCameraControls) {
-      if (cameraReady && (!isProjectionOpen || activeOwner !== 'camera'))
-        await startProjection('camera')
-      return
-    }
     if (isProjectionOpen || projectionHeaderState.disabled) return
     const started = await startProjectionForRoute({
       pathname: location.pathname,
@@ -144,9 +138,6 @@ export default function Header(): React.JSX.Element {
     })
     if (started && isFilesRoute(location.pathname)) navigate('/media')
   }, [
-    activeOwner,
-    cameraReady,
-    showCameraControls,
     biblePayloads,
     ensureProjectionOpen,
     isProjectionOpen,
@@ -294,13 +285,7 @@ export default function Header(): React.JSX.Element {
             !stopCurrentProjection &&
             (showCameraControls ? !cameraReady : projectionHeaderState.disabled)
           }
-          aria-label={t(
-            stopCurrentProjection
-              ? 'projection.stopButton'
-              : showCameraControls
-                ? 'camera.present'
-                : 'projection.startButton'
-          )}
+          aria-label={t(stopCurrentProjection ? 'projection.stopButton' : 'projection.startButton')}
         >
           {stopCurrentProjection ? <X className="size-4" /> : <Monitor className="size-4" />}
         </Button>
