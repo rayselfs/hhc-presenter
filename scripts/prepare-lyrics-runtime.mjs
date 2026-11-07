@@ -65,13 +65,21 @@ for (const [slot, name, digest] of [
   }
   const hash = (value) => createHash('sha256').update(value).digest('hex')
   if (!bytes || hash(bytes) !== digest) {
-    const response = await fetch(`${origin}${name}_onnx_infer.tar`, {
-      signal: AbortSignal.timeout(120000)
-    })
-    if (!response.ok) throw new Error(`OCR model download failed: ${response.status}`)
-    bytes = Buffer.from(await response.arrayBuffer())
-    if (hash(bytes) !== digest) throw new Error(`OCR ${slot} model checksum mismatch`)
-    await writeFile(path, bytes)
+    try {
+      if (process.env.HHC_LYRICS_MODELS_OFFLINE === '1')
+        throw new Error('Verified build artifact is missing or has the wrong checksum')
+      const response = await fetch(`${origin}${name}_onnx_infer.tar`, {
+        signal: AbortSignal.timeout(120000)
+      })
+      if (!response.ok) throw new Error(`Download returned HTTP ${response.status}`)
+      bytes = Buffer.from(await response.arrayBuffer())
+      if (hash(bytes) !== digest) throw new Error('Model checksum mismatch')
+      await writeFile(path, bytes)
+    } catch (error) {
+      // Catch here so the SDK's OpenCV exception handler cannot bury the download error.
+      console.error(`Unable to prepare OCR model ${name}`, error)
+      process.exit(1)
+    }
   }
 }
 console.log('Verified pinned OCR models and local WASM runtime')

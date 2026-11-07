@@ -50,6 +50,16 @@ jobs:
           VITE_BIBLE_API_V2_PREFIX: ${{ vars.VITE_BIBLE_API_V2_PREFIX }}
         run: npm run build
 
+      - name: Share verified OCR models with packagers
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: verified-lyrics-models
+          path: |
+            src/renderer/public/lyrics-runtime/det.tar
+            src/renderer/public/lyrics-runtime/rec.tar
+          if-no-files-found: error
+          retention-days: 2
+
   prepare:
     needs: quality-gates
     runs-on: ubuntu-24.04
@@ -112,6 +122,12 @@ jobs:
         run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download verified OCR models
+        uses: actions/download-artifact@v7.0.0
+        with:
+          name: verified-lyrics-models
+          path: src/renderer/public/lyrics-runtime
 
       - name: Download macOS video engine runtime
         if: runner.os == 'macOS'
@@ -188,6 +204,7 @@ jobs:
       - name: Build explicit unsigned desktop package
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          HHC_LYRICS_MODELS_OFFLINE: '1'
         run: >-
           npm run package:desktop -- ${{ matrix.target }} --publish never
           --config.forceCodeSigning=false
@@ -241,6 +258,7 @@ jobs:
       - name: Download desktop artifacts
         uses: actions/download-artifact@v7.0.0
         with:
+          pattern: hhc-presenter-{windows,macos}-${{ needs.prepare.outputs.version }}
           path: release-artifacts
           merge-multiple: true
 
