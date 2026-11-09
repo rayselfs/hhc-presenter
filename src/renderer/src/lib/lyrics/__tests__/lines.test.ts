@@ -58,20 +58,20 @@ it('ignores unstable Chinese whitespace without ignoring English word boundaries
   expect(gate.observe(['aname'])).toBeNull()
   expect(gate.observe(['耶穌', '耶穌'])).toBeNull()
 })
-it('requires two seconds of uninterrupted empty observations before clearing', () => {
+it('requires five seconds of uninterrupted empty observations before clearing', () => {
   vi.useFakeTimers()
   try {
     const gate = createLyricsGate()
     expect(gate.observe([])).toBeNull()
     vi.advanceTimersByTime(100)
     expect(gate.observe([])).toBeNull()
-    vi.advanceTimersByTime(1899)
+    vi.advanceTimersByTime(4899)
     expect(gate.observe([])).toBeNull()
     vi.advanceTimersByTime(1)
     expect(gate.observe([])).toEqual([])
     gate.reset()
     expect(gate.observe([])).toBeNull()
-    vi.advanceTimersByTime(2000)
+    vi.advanceTimersByTime(5000)
     gate.observe(['新歌詞'])
     expect(gate.observe([])).toBeNull()
   } finally {

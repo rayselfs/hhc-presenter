@@ -82,7 +82,7 @@ export function createLyricsGate(): { observe(lines: string[]): string[] | null;
       }
       previous = next
       count++
-      if (!normalized.length && Date.now() - emptySince < 2000) return null
+      if (!normalized.length && Date.now() - emptySince < 5000) return null
       return count >= 2 ? candidate : null
     },
     reset() {
