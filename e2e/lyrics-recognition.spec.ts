@@ -18,6 +18,7 @@ test('recognizes picture backgrounds and preserves all rows through subtitle pro
   context
 }, testInfo) => {
   test.setTimeout(300000)
+  await page.setViewportSize({ width: 1008, height: 700 })
   await installLyricsFixture(page)
   await page.goto('/')
   await completeOnboarding(page)

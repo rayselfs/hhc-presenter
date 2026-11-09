@@ -165,6 +165,7 @@ export async function verifyLyricsWorkflow(
     contentType: 'image/png'
   })
   const font = page.getByRole('combobox', { name: 'Font', exact: true })
+  await font.scrollIntoViewIfNeeded()
   await font.fill('Roboto')
   const fontPopover = page.locator('.combo-box__popover')
   await expect(fontPopover).toBeVisible()
