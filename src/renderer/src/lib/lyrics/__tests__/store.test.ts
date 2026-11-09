@@ -88,3 +88,38 @@ it('restores only a boolean mode preference without rehydrating runtime lyrics',
   const migrated = await options.migrate!({ style: DEFAULT_LYRICS_STYLE }, 2)
   expect(options.merge!(migrated, useCameraLyricsStore.getState()).enabled).toBe(false)
 })
+
+it('retains the accepted cue while a newly applied crop is being recognized', () => {
+  const store = useCameraLyricsStore.getState()
+  store.setEnabled(true)
+  store.acceptLines(['Current cue'])
+  store.setCrop({ x: 0, y: 0, width: 1, height: 0.5 })
+  expect(useCameraLyricsStore.getState()).toMatchObject({
+    lines: ['Current cue'],
+    status: 'recognizing'
+  })
+})
+it('keeps recognizing while hidden and never persists runtime visibility', () => {
+  const store = useCameraLyricsStore.getState()
+  store.setEnabled(true)
+  store.setHidden(true)
+  store.acceptLines(['Latest cue'])
+  expect(useCameraLyricsStore.getState()).toMatchObject({
+    enabled: true,
+    hidden: true,
+    lines: ['Latest cue']
+  })
+  expect(
+    useCameraLyricsStore.persist.getOptions().partialize!(useCameraLyricsStore.getState())
+  ).not.toHaveProperty('hidden')
+  store.setEnabled(false)
+  expect(useCameraLyricsStore.getState().hidden).toBe(false)
+})
+
+it('preserves initialization and source failures when applying a crop so recovery remains available', () => {
+  for (const error of ['load', 'source'] as const) {
+    useCameraLyricsStore.setState({ error, status: 'error' })
+    useCameraLyricsStore.getState().setCrop({ x: 0, y: 0, width: 1, height: 0.6 })
+    expect(useCameraLyricsStore.getState()).toMatchObject({ error, status: 'error' })
+  }
+})

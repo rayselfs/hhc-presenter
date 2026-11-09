@@ -1,5 +1,5 @@
 vi.unmock('@heroui/react')
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { DEFAULT_LYRICS_STYLE } from '@shared/lyrics'
 import { useCameraLyricsStore } from '@renderer/stores/camera-lyrics'
@@ -21,6 +21,10 @@ beforeEach(() => {
   fonts.query.mockReset().mockResolvedValue(['Arial', 'Noto Sans TC Variable', '<script>'])
   useCameraLyricsStore.setState({
     enabled: true,
+    hidden: false,
+    lines: [],
+    error: null,
+    status: 'idle',
     crop: { x: 0, y: 0, width: 1, height: 0.4 },
     style: { ...DEFAULT_LYRICS_STYLE }
   })
@@ -67,7 +71,7 @@ it('keeps source crop preview and all settings visible without manual controls o
   expect(screen.getByTestId('lyrics-source-preview').querySelector('video')).not.toBeNull()
   expect(screen.getByTestId('lyrics-crop-overlay')).toHaveStyle({ top: '20%', height: '40%' })
   expect(screen.getByRole('spinbutton', { name: 'cameraLyrics.lineHeight' })).toBeVisible()
-  for (const key of ['hide', 'edit', 'resume', 'advanced', 'keyHint', 'localFontHint']) {
+  for (const key of ['edit', 'resume', 'advanced', 'keyHint', 'localFontHint']) {
     expect(screen.queryByText(`cameraLyrics.${key}`)).toBeNull()
   }
   expect(screen.getByRole('spinbutton', { name: 'cameraLyrics.height' })).toHaveAttribute(
@@ -77,6 +81,9 @@ it('keeps source crop preview and all settings visible without manual controls o
   fireEvent.change(screen.getByRole('spinbutton', { name: 'cameraLyrics.height' }), {
     target: { value: '99' }
   })
+  expect(useCameraLyricsStore.getState().crop.height).toBe(0.4)
+  expect(screen.getByTestId('lyrics-crop-overlay')).toHaveStyle({ height: '80%' })
+  fireEvent.click(screen.getByRole('button', { name: 'cameraLyrics.applyCrop' }))
   expect(useCameraLyricsStore.getState().crop.height).toBe(0.8)
 })
 
@@ -89,4 +96,47 @@ it('reports subtitle overflow without rendering an extra output preview', async 
   render(<LyricsRecognitionControls stream={null} />)
   await screen.findByText('cameraLyrics.errors.overflow')
   expect(screen.queryByTestId('lyrics-output')).toBeNull()
+})
+
+it('explains retained output and permits hiding without disabling recognition', async () => {
+  useCameraLyricsStore.setState({
+    lines: ['Last cue'],
+    status: 'error',
+    error: 'recognize',
+    acceptedAt: Date.now() - 5000
+  })
+  render(<LyricsRecognitionControls stream={null} />)
+  expect(screen.getByText('cameraLyrics.holding')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'cameraLyrics.hide' }))
+  expect(useCameraLyricsStore.getState()).toMatchObject({
+    enabled: true,
+    hidden: true,
+    lines: ['Last cue']
+  })
+  expect(screen.getByText('cameraLyrics.hidden')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'cameraLyrics.show' }))
+  expect(useCameraLyricsStore.getState().hidden).toBe(false)
+})
+it('offers a direct retry after OCR initialization fails', () => {
+  const retry = vi.fn()
+  useCameraLyricsStore.setState({ status: 'error', error: 'load' })
+  render(<LyricsRecognitionControls stream={null} onRetry={retry} />)
+  fireEvent.click(screen.getByRole('button', { name: 'cameraLyrics.retryRecognition' }))
+  expect(retry).toHaveBeenCalledOnce()
+  expect(useCameraLyricsStore.getState().enabled).toBe(true)
+})
+
+it('keeps the font search and options stable while OCR accepts new observations', async () => {
+  const user = userEvent.setup()
+  render(<LyricsRecognitionControls stream={null} />)
+  await waitFor(() => expect(fonts.query).toHaveBeenCalledOnce())
+  const input = screen.getByRole('combobox', { name: 'cameraLyrics.font' })
+  await user.clear(input)
+  await user.type(input, 'Arial')
+  const option = await screen.findByRole('option', { name: 'Arial' })
+  act(() => useCameraLyricsStore.getState().acceptLines(['Updated cue']))
+  expect(input).toHaveValue('Arial')
+  expect(screen.getByRole('option', { name: 'Arial' })).toBe(option)
+  await user.click(option)
+  expect(useCameraLyricsStore.getState().style.font).toBe('Arial')
 })

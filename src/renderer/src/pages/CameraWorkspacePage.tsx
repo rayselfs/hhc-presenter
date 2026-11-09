@@ -349,7 +349,7 @@ export default function CameraWorkspacePage(): React.JSX.Element {
           </div>
         </div>
       )}
-      {lyricsEnabled && <LyricsRecognitionControls stream={camera.stream} />}
+      {lyricsEnabled && <LyricsRecognitionControls stream={camera.stream} onRetry={camera.retry} />}
       <AlertDialog.Backdrop isOpen={resetOpen} onOpenChange={setResetOpen}>
         <AlertDialog.Container size="sm">
           <AlertDialog.Dialog role="alertdialog">

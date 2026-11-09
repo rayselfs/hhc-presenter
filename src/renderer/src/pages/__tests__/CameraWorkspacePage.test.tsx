@@ -68,6 +68,8 @@ it('shows only the active mode controls and restores raw framing', () => {
   fireEvent.change(screen.getByRole('spinbutton', { name: 'cameraLyrics.height' }), {
     target: { value: '60' }
   })
+  expect(useCameraLyricsStore.getState().crop.height).toBe(0.4)
+  fireEvent.click(screen.getByRole('button', { name: 'cameraLyrics.applyCrop' }))
   expect(useCameraLyricsStore.getState().crop.height).toBe(0.6)
   act(() => useCameraLyricsStore.getState().setEnabled(false))
   expect(screen.getByRole('spinbutton', { name: 'camera.x' })).toBeVisible()

@@ -1432,8 +1432,8 @@
       "empty": "此範圍內沒有歌詞"
     },
     "errors": {
-      "load": "無法啟動辨識，請關閉再開啟歌詞字幕重試。",
-      "recognize": "文字尚未穩定，請檢查歌詞範圍，或手動修正文字。",
+      "load": "無法啟動辨識，請按「重新辨識」。",
+      "recognize": "文字尚未穩定，有上一句時會先保留。請檢查辨識範圍或重新辨識。",
       "overflow": "文字超出安全區，請調小字級、行距或調整底部距離；不會自動拆行或裁字。",
       "source": "來源暫時無法使用，字幕將清除。"
     },
@@ -1452,7 +1452,14 @@
     "noFonts": "找不到符合的字體",
     "loadingFonts": "正在載入字體…",
     "retryFonts": "重試",
-    "advanced": "進階設定"
+    "advanced": "進階設定",
+    "holding": "正在保留上一句字幕",
+    "heldDuration": "距上次確認 {{seconds}} 秒，等待穩定的新結果。",
+    "hidden": "字幕已隱藏，辨識持續進行",
+    "retryRecognition": "重新辨識",
+    "applyCrop": "套用辨識範圍",
+    "cancelCrop": "取消調整",
+    "cropPending": "目前僅預覽，套用後才變更辨識範圍。"
   },
   "localSpeech": {
     "title": "聖經語音",

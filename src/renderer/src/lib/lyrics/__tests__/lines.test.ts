@@ -83,3 +83,30 @@ it('preserves explicit English word boundaries between adjacent OCR blocks', () 
   expect(readLyricsLines([box('Amazing ', 0, 0), box('grace', 110, 0)])).toEqual(['Amazing grace'])
   expect(readLyricsLines([box('Amazing', 0, 0), box(' grace', 110, 0)])).toEqual(['Amazing grace'])
 })
+
+it('repairs spacing that appears after the first two matching observations', () => {
+  const gate = createLyricsGate()
+  expect(gate.observe(['耶穌耶穌'])).toBeNull()
+  expect(gate.observe(['耶穌耶穌'])).toEqual(['耶穌耶穌'])
+  expect(gate.observe(['耶穌 耶穌'])).toEqual(['耶穌 耶穌'])
+  expect(gate.observe(['耶穌耶穌'])).toEqual(['耶穌 耶穌'])
+})
+
+it('restarts the five-second empty interval after recognition uncertainty', () => {
+  vi.useFakeTimers()
+  try {
+    const gate = createLyricsGate()
+    gate.observe([])
+    vi.advanceTimersByTime(4000)
+    expect(gate.observe([])).toBeNull()
+    gate.reset()
+    vi.advanceTimersByTime(1000)
+    expect(gate.observe([])).toBeNull()
+    vi.advanceTimersByTime(4999)
+    expect(gate.observe([])).toBeNull()
+    vi.advanceTimersByTime(1)
+    expect(gate.observe([])).toEqual([])
+  } finally {
+    vi.useRealTimers()
+  }
+})

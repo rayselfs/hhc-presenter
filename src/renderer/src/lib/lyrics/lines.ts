@@ -77,7 +77,7 @@ export function createLyricsGate(): { observe(lines: string[]): string[] | null;
         count = 0
         emptySince = Date.now()
         candidate = normalized
-      } else if (count === 1 && normalized.join('').length > candidate.join('').length) {
+      } else if (normalized.join('').length > candidate.join('').length) {
         candidate = normalized
       }
       previous = next

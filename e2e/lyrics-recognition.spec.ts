@@ -84,3 +84,23 @@ test('remembers the subtitle preference across navigation and reload', async ({ 
     page.getByRole('switch', { name: 'Lyrics subtitles', exact: true })
   ).not.toBeChecked()
 })
+
+test('recognizes small source lyrics without relaxing text validation', async ({
+  page,
+  context
+}) => {
+  test.setTimeout(90000)
+  await installLyricsFixture(page)
+  await page.goto('/')
+  await completeOnboarding(page)
+  await page.goto('/#/camera')
+  await page.getByTestId('camera-source-selector').click()
+  await page.getByRole('option').first().click()
+  await setLyricsMode(page, true)
+  const popup = context.waitForEvent('page')
+  await page.getByRole('button', { name: 'Present source', exact: true }).click()
+  const projection = await popup
+  const lines = ['祂從災難中保護我們', '堅定腳步走過每一天']
+  await setFixture(page, 'black', lines, 24)
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(lines, { timeout: 40000 })
+})

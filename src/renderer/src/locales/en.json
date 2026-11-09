@@ -1432,8 +1432,8 @@
       "empty": "No lyrics in the selected area"
     },
     "errors": {
-      "load": "Unable to start recognition. Turn subtitles off and on to retry.",
-      "recognize": "Text is not stable enough to display. Check the lyrics area or correct it manually.",
+      "load": "Unable to start recognition. Select Retry recognition.",
+      "recognize": "Text is not stable enough. The previous subtitles are retained when available. Check the lyrics area or retry recognition.",
       "overflow": "Text exceeds the safe area. Reduce font size or line height, or adjust bottom distance. Lines will not be split or cropped.",
       "source": "The source is unavailable. Subtitles will clear."
     },
@@ -1452,7 +1452,14 @@
     "noFonts": "No matching fonts",
     "loadingFonts": "Loading fonts…",
     "retryFonts": "Retry",
-    "advanced": "Advanced settings"
+    "advanced": "Advanced settings",
+    "holding": "Holding the previous subtitles",
+    "heldDuration": "Last confirmed {{seconds}} seconds ago. Waiting for a stable result.",
+    "hidden": "Subtitles hidden; recognition continues",
+    "retryRecognition": "Retry recognition",
+    "applyCrop": "Apply lyrics area",
+    "cancelCrop": "Cancel adjustment",
+    "cropPending": "Preview only. Apply to change recognition."
   },
   "localSpeech": {
     "title": "Bible speech",

@@ -11,6 +11,7 @@ import {
 import { createPersistName, hhcPersistStorage } from '@renderer/lib/persist-storage'
 interface LyricsStore {
   enabled: boolean
+  hidden: boolean
   status: 'idle' | 'loading' | 'recognizing' | 'ready' | 'empty' | 'error'
   error: 'load' | 'recognize' | 'overflow' | 'source' | null
   lines: string[]
@@ -18,6 +19,7 @@ interface LyricsStore {
   crop: LyricsCrop
   style: LyricsStyle
   setEnabled(value: boolean): void
+  setHidden(value: boolean): void
   setStyle(value: LyricsStyle): void
   setCrop(value: LyricsCrop): void
   acceptLines(lines: string[]): void
@@ -26,6 +28,7 @@ export const useCameraLyricsStore = create<LyricsStore>()(
   persist(
     (set, get) => ({
       enabled: false,
+      hidden: false,
       status: 'idle',
       error: null,
       lines: [],
@@ -33,12 +36,20 @@ export const useCameraLyricsStore = create<LyricsStore>()(
       crop: { x: 0, y: 0, width: 1, height: 0.4 },
       style: { ...DEFAULT_LYRICS_STYLE },
       setEnabled: (enabled) =>
-        set({ enabled, lines: [], acceptedAt: 0, error: null, status: 'idle' }),
+        set({ enabled, hidden: false, lines: [], acceptedAt: 0, error: null, status: 'idle' }),
+      setHidden: (hidden) => set({ hidden }),
       setStyle: (style) => {
         if (isLyricsStyle(style)) set({ style })
       },
       setCrop: (crop) => {
-        if (isLyricsCrop(crop)) set({ crop, lines: [], acceptedAt: 0, error: null })
+        if (!isLyricsCrop(crop)) return
+        const { error, status } = get()
+        set({
+          crop,
+          status:
+            error === 'load' || error === 'source' || status === 'loading' ? status : 'recognizing',
+          error: error === 'recognize' ? null : error
+        })
       },
       acceptLines: (lines) => {
         const previous = get()

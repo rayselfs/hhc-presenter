@@ -439,6 +439,22 @@ it('renews the output lease during recognition errors but clears ended sources',
     const output = projection.send.mock.calls.at(-1)![1].lyrics
     expect(output.lines).toEqual(['保留歌詞'])
     expect(output.expiresAt).toBeGreaterThan(Date.now())
+    const starts = vi.mocked(startLyricsRecognition).mock.calls.length
+    act(() => useCameraLyricsStore.getState().setHidden(true))
+    expect(projection.send.mock.calls.at(-1)![1].lyrics.visible).toBe(false)
+    act(() => callbacks.onLines(['Hidden latest cue']))
+    expect(projection.send.mock.calls.at(-1)![1].lyrics.visible).toBe(false)
+    act(() => useCameraLyricsStore.getState().setHidden(false))
+    expect(projection.send.mock.calls.at(-1)![1].lyrics).toMatchObject({
+      visible: true,
+      lines: ['Hidden latest cue']
+    })
+    expect(vi.mocked(startLyricsRecognition).mock.calls).toHaveLength(starts)
+    act(() => camera.retry())
+    expect(vi.mocked(startLyricsRecognition).mock.calls).toHaveLength(starts + 1)
+    expect(track.stop).not.toHaveBeenCalled()
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledTimes(1)
+    expect(useCameraLyricsStore.getState().lines).toEqual(['Hidden latest cue'])
     act(() => track.dispatchEvent(new Event('ended')))
     expect(useCameraLyricsStore.getState().lines).toEqual([])
     expect(useCameraLyricsStore.getState().enabled).toBe(true)

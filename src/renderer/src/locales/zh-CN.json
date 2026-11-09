@@ -1432,8 +1432,8 @@
       "empty": "此范围内没有歌词"
     },
     "errors": {
-      "load": "无法启动识别，请关闭再开启歌词字幕重试。",
-      "recognize": "文字尚未稳定，请检查歌词范围，或手动修正文字。",
+      "load": "无法启动识别，请按“重新识别”。",
+      "recognize": "文字尚未稳定，有上一句时会先保留。请检查识别范围或重新识别。",
       "overflow": "文字超出安全区，请调小字号、行距或调整底部距离；不会自动拆行或裁字。",
       "source": "来源暂时无法使用，字幕将清除。"
     },
@@ -1452,7 +1452,14 @@
     "noFonts": "找不到符合的字体",
     "loadingFonts": "正在加载字体…",
     "retryFonts": "重试",
-    "advanced": "高级设置"
+    "advanced": "高级设置",
+    "holding": "正在保留上一句字幕",
+    "heldDuration": "距上次确认 {{seconds}} 秒，等待稳定的新结果。",
+    "hidden": "字幕已隐藏，识别持续进行",
+    "retryRecognition": "重新识别",
+    "applyCrop": "应用识别范围",
+    "cancelCrop": "取消调整",
+    "cropPending": "目前仅预览，应用后才变更识别范围。"
   },
   "localSpeech": {
     "title": "圣经语音",

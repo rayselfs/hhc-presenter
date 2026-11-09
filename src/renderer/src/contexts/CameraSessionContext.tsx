@@ -218,7 +218,7 @@ export function CameraSessionProvider({
         lyrics: {
           lines: lyrics.lines,
           style: lyrics.style,
-          visible: lyrics.error !== 'overflow',
+          visible: !lyrics.hidden && lyrics.error !== 'overflow',
           // The lease tracks the live controller, not the last successful OCR frame.
           expiresAt: Date.now() + 1000
         }

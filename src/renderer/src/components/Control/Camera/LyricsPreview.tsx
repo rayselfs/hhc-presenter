@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { useCameraLyricsStore } from '@renderer/stores/camera-lyrics'
+import type { LyricsCrop } from '@shared/lyrics'
 
 export default function LyricsPreview({
-  stream
+  stream,
+  crop
 }: {
   stream: MediaStream | null
+  crop: LyricsCrop
 }): React.JSX.Element {
-  const crop = useCameraLyricsStore((state) => state.crop)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [ratio, setRatio] = useState('16 / 9')
   useEffect(() => {
