@@ -3,6 +3,8 @@ import { act, render, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { MemoryRouter, useNavigate } from 'react-router-dom'
 import { CameraSessionProvider, useCameraSession } from '../CameraSessionContext'
+import { useCameraLyricsStore } from '@renderer/stores/camera-lyrics'
+import { startLyricsRecognition } from '@renderer/lib/lyrics/recognition'
 import { useCameraStore } from '@renderer/stores/camera'
 
 const projection = vi.hoisted(() => ({
@@ -21,6 +23,9 @@ const peer = vi.hoisted(() => ({
   acceptSignal: vi.fn().mockResolvedValue(undefined)
 }))
 vi.mock('@renderer/lib/camera-peer', () => ({ createCameraPeer: () => peer }))
+vi.mock('@renderer/lib/lyrics/recognition', () => ({
+  startLyricsRecognition: vi.fn(() => vi.fn())
+}))
 let navigate: ReturnType<typeof useNavigate>
 let camera: ReturnType<typeof useCameraSession>
 function Controls(): null {
@@ -33,6 +38,8 @@ function Controls(): null {
   return null
 }
 beforeEach(() => {
+  useCameraLyricsStore.getState().setEnabled(false)
+  projection.send.mockClear()
   projection.isProjectionOpen = false
   projection.activeOwner = 'camera'
   projection.on.mockReturnValue(() => undefined)
@@ -379,4 +386,63 @@ it('discovers camera permission while a desktop source remains live', async () =
   expect(permissionTrack.stop).toHaveBeenCalledOnce()
   expect(desktopTrack.stop).not.toHaveBeenCalled()
   expect(useCameraStore.getState().capturing).toBe(true)
+})
+
+it('retains the subtitle preference when leaving the camera route', async () => {
+  render(
+    <MemoryRouter initialEntries={['/camera']}>
+      <CameraSessionProvider>
+        <Controls />
+      </CameraSessionProvider>
+    </MemoryRouter>
+  )
+  act(() => useCameraLyricsStore.getState().setEnabled(true))
+  act(() => navigate('/files'))
+  expect(useCameraLyricsStore.getState().enabled).toBe(true)
+  expect(useCameraLyricsStore.getState().lines).toEqual([])
+})
+it('renews the output lease during recognition errors but clears ended sources', async () => {
+  const track = Object.assign(new EventTarget(), {
+    stop: vi.fn(),
+    getSettings: () => ({ deviceId: 'cam', width: 1920, height: 1080 })
+  })
+  const stream = { getTracks: () => [track], getVideoTracks: () => [track] }
+  Object.defineProperty(navigator, 'mediaDevices', {
+    configurable: true,
+    value: {
+      getUserMedia: vi.fn().mockResolvedValue(stream),
+      enumerateDevices: vi.fn().mockResolvedValue([]),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn()
+    }
+  })
+  vi.useFakeTimers()
+  projection.isProjectionOpen = true
+  useCameraLyricsStore.getState().setEnabled(true)
+  render(
+    <MemoryRouter initialEntries={['/camera']}>
+      <CameraSessionProvider>
+        <Controls />
+      </CameraSessionProvider>
+    </MemoryRouter>
+  )
+  await act(async () => {
+    await camera.selectSource('cam')
+  })
+  const callbacks = vi.mocked(startLyricsRecognition).mock.calls.at(-1)![0]
+  act(() => callbacks.onLines(['保留歌詞']))
+  try {
+    act(() => {
+      callbacks.onError('recognize')
+      vi.advanceTimersByTime(3000)
+    })
+    const output = projection.send.mock.calls.at(-1)![1].lyrics
+    expect(output.lines).toEqual(['保留歌詞'])
+    expect(output.expiresAt).toBeGreaterThan(Date.now())
+    act(() => track.dispatchEvent(new Event('ended')))
+    expect(useCameraLyricsStore.getState().lines).toEqual([])
+    expect(useCameraLyricsStore.getState().enabled).toBe(true)
+  } finally {
+    vi.useRealTimers()
+  }
 })

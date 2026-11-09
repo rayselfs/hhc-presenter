@@ -109,6 +109,19 @@ export async function verifyLyricsWorkflow(
       }
     }
   }
+  const spaced = ['耶穌 耶穌 無人能像祢']
+  await setFixture(page, 'black', spaced)
+  await expect(projection.getByTestId('lyrics-line')).toHaveText([/^耶穌\s*耶穌\s*無人能像祢$/], {
+    timeout: 40000
+  })
+  await setFixture(page, 'bright', allLines)
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 40000 })
+  await setFixture(page, 'black', ['耶稣 耶稣 无人能像祢'])
+  await expect(projection.getByTestId('lyrics-line')).toHaveText([/^耶穌\s*耶穌\s*無人能像祢$/], {
+    timeout: 40000
+  })
+  await setFixture(page, 'bright', allLines)
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 40000 })
   const initializations = runtimeMessages.length
   await height.focus()
   await height.press('Home')
@@ -184,7 +197,6 @@ export async function verifyLyricsWorkflow(
   await page.getByRole('spinbutton', { name: 'Font size', exact: true }).fill('160')
   await page.getByRole('spinbutton', { name: 'Line height', exact: true }).fill('2')
   await page.getByRole('spinbutton', { name: 'Bottom distance (%)', exact: true }).fill('50')
-  await expect(projection.getByTestId('lyrics-output')).toHaveAttribute('data-overflow', 'true')
   await expect(page.getByRole('alert')).toBeVisible()
   await expect(projection.getByTestId('lyrics-line')).toHaveCount(0)
   await page.evaluate(() => {

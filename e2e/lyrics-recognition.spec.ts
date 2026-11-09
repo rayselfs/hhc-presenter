@@ -63,3 +63,23 @@ test.describe('CPU fallback', () => {
     await expect(page.getByRole('spinbutton', { name: 'X', exact: true })).toBeVisible()
   })
 })
+
+test('remembers the subtitle preference across navigation and reload', async ({ page }) => {
+  await installLyricsFixture(page)
+  await page.goto('/')
+  await completeOnboarding(page)
+  await page.goto('/#/camera')
+  await page.getByTestId('camera-source-selector').click()
+  await page.getByRole('option').first().click()
+  await setLyricsMode(page, true)
+  await page.goto('/#/files')
+  await page.goto('/#/camera')
+  await expect(page.getByRole('switch', { name: 'Lyrics subtitles', exact: true })).toBeChecked()
+  await page.reload()
+  await expect(page.getByRole('switch', { name: 'Lyrics subtitles', exact: true })).toBeChecked()
+  await setLyricsMode(page, false)
+  await page.reload()
+  await expect(
+    page.getByRole('switch', { name: 'Lyrics subtitles', exact: true })
+  ).not.toBeChecked()
+})

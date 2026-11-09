@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
 import LyricsOutput from '../LyricsOutput'
+import { loadPresentationFont } from '@renderer/lib/font-loader'
 import { DEFAULT_LYRICS_STYLE } from '@shared/lyrics'
 vi.mock('@renderer/lib/font-loader', () => ({
   loadPresentationFont: vi.fn().mockResolvedValue(undefined)
@@ -102,4 +103,60 @@ it('measures with the rendered font weight and rechecks overflow when bold chang
   )
   await waitFor(() => expect(onOverflow).toHaveBeenLastCalledWith(true))
   expect(screen.queryByTestId('lyrics-lines')).toBeNull()
+})
+
+it('keeps the previous validated cue until a replacement layout is ready', async () => {
+  const output = {
+    lines: ['原本歌詞'],
+    style: DEFAULT_LYRICS_STYLE,
+    visible: true,
+    expiresAt: Date.now() + 60000
+  }
+  const { rerender } = render(<LyricsOutput output={output} />)
+  await waitFor(() => expect(screen.getByTestId('lyrics-line')).toHaveTextContent('原本歌詞'))
+  let finish!: () => void
+  vi.mocked(loadPresentationFont).mockImplementationOnce(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve
+      })
+  )
+  rerender(<LyricsOutput output={{ ...output, lines: ['下一句歌詞'] }} />)
+  expect(screen.getByTestId('lyrics-line')).toHaveTextContent('原本歌詞')
+  await act(async () => finish())
+  await waitFor(() => expect(screen.getByTestId('lyrics-line')).toHaveTextContent('下一句歌詞'))
+  rerender(<LyricsOutput output={{ ...output, lines: [] }} />)
+  expect(screen.queryByTestId('lyrics-line')).toBeNull()
+})
+
+it('does not resurrect a cleared cue while the next layout is loading', async () => {
+  const output = {
+    lines: ['Old cue'],
+    style: DEFAULT_LYRICS_STYLE,
+    visible: true,
+    expiresAt: Date.now() + 60000
+  }
+  const { rerender } = render(<LyricsOutput output={output} />)
+  await waitFor(() => expect(screen.getByTestId('lyrics-line')).toHaveTextContent('Old cue'))
+  vi.mocked(loadPresentationFont).mockImplementationOnce(() => new Promise<void>(() => {}))
+  rerender(<LyricsOutput output={{ ...output, lines: [] }} />)
+  vi.mocked(loadPresentationFont).mockImplementationOnce(() => new Promise<void>(() => {}))
+  rerender(<LyricsOutput output={{ ...output, lines: ['New cue'] }} />)
+  expect(screen.queryByTestId('lyrics-line')).toBeNull()
+})
+
+it('does not resurrect a hidden cue while the next layout is loading', async () => {
+  const output = {
+    lines: ['Old cue'],
+    style: DEFAULT_LYRICS_STYLE,
+    visible: true,
+    expiresAt: Date.now() + 60000
+  }
+  const { rerender } = render(<LyricsOutput output={output} />)
+  await waitFor(() => expect(screen.getByTestId('lyrics-line')).toHaveTextContent('Old cue'))
+  rerender(<LyricsOutput output={{ ...output, visible: false }} />)
+  expect(screen.queryByTestId('lyrics-line')).toBeNull()
+  vi.mocked(loadPresentationFont).mockImplementationOnce(() => new Promise<void>(() => {}))
+  rerender(<LyricsOutput output={{ ...output, lines: ['New cue'] }} />)
+  expect(screen.queryByTestId('lyrics-line')).toBeNull()
 })

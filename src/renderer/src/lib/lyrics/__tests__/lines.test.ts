@@ -42,3 +42,44 @@ it('never skips a one-pixel subtitle change', () => {
   expect(samePixels(a, b)).toBe(false)
   expect(samePixels(a, null)).toBe(false)
 })
+
+it('preserves visible phrase gaps and normalizes OCR text to Traditional Chinese', () => {
+  expect(
+    readLyricsLines([box('耶稣', 0, 0), box('耶稣', 160, 0), box('无人能像祢', 320, 0)])
+  ).toEqual(['耶穌 耶穌 無人能像祢'])
+  expect(readLyricsLines([box('  耶穌　 耶穌  ', 0, 0)])).toEqual(['耶穌 耶穌'])
+})
+it('ignores unstable Chinese whitespace without ignoring English word boundaries or row structure', () => {
+  const gate = createLyricsGate()
+  expect(gate.observe(['耶穌 耶穌'])).toBeNull()
+  expect(gate.observe(['耶穌耶穌'])).toEqual(['耶穌 耶穌'])
+  expect(gate.observe(['耶穌　耶穌'])).toEqual(['耶穌 耶穌'])
+  expect(gate.observe(['a name'])).toBeNull()
+  expect(gate.observe(['aname'])).toBeNull()
+  expect(gate.observe(['耶穌', '耶穌'])).toBeNull()
+})
+it('requires two seconds of uninterrupted empty observations before clearing', () => {
+  vi.useFakeTimers()
+  try {
+    const gate = createLyricsGate()
+    expect(gate.observe([])).toBeNull()
+    vi.advanceTimersByTime(100)
+    expect(gate.observe([])).toBeNull()
+    vi.advanceTimersByTime(1899)
+    expect(gate.observe([])).toBeNull()
+    vi.advanceTimersByTime(1)
+    expect(gate.observe([])).toEqual([])
+    gate.reset()
+    expect(gate.observe([])).toBeNull()
+    vi.advanceTimersByTime(2000)
+    gate.observe(['新歌詞'])
+    expect(gate.observe([])).toBeNull()
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+it('preserves explicit English word boundaries between adjacent OCR blocks', () => {
+  expect(readLyricsLines([box('Amazing ', 0, 0), box('grace', 110, 0)])).toEqual(['Amazing grace'])
+  expect(readLyricsLines([box('Amazing', 0, 0), box(' grace', 110, 0)])).toEqual(['Amazing grace'])
+})

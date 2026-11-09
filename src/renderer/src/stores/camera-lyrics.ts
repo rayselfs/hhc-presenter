@@ -61,7 +61,7 @@ export const useCameraLyricsStore = create<LyricsStore>()(
     {
       name: createPersistName('camera-lyrics'),
       storage: hhcPersistStorage,
-      version: 2,
+      version: 3,
       migrate: (saved, version) => {
         if (!saved || typeof saved !== 'object' || !('style' in saved)) return {}
         const style = saved.style
@@ -69,12 +69,15 @@ export const useCameraLyricsStore = create<LyricsStore>()(
         const migrated = version === 0 ? { ...style, bold: true } : style
         return { ...saved, style: isLyricsStyle(migrated) ? migrated : undefined }
       },
-      partialize: (state) => ({ style: state.style, crop: state.crop }),
+      partialize: (state) => ({ style: state.style, crop: state.crop, enabled: state.enabled }),
       merge: (saved, current) => {
         const value = saved && typeof saved === 'object' && 'style' in saved ? saved.style : null
         const crop = saved && typeof saved === 'object' && 'crop' in saved ? saved.crop : null
+        const enabled =
+          saved && typeof saved === 'object' && 'enabled' in saved ? saved.enabled : null
         return {
           ...current,
+          enabled: typeof enabled === 'boolean' ? enabled : current.enabled,
           style: isLyricsStyle(value) ? value : current.style,
           crop: isLyricsCrop(crop) ? crop : current.crop
         }
