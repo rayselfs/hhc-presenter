@@ -105,3 +105,91 @@ it('changes crop without reloading the engine and drops the old in-flight result
   expect(dispose).not.toHaveBeenCalled()
   stop()
 })
+
+for (const uncertain of [false, true]) {
+  it(`retries a ${uncertain ? 'low-confidence' : 'missing'} result once at higher resolution and caches it`, async () => {
+    vi.useFakeTimers()
+    vi.spyOn(HTMLVideoElement.prototype, 'videoWidth', 'get').mockReturnValue(1920)
+    vi.spyOn(HTMLVideoElement.prototype, 'videoHeight', 'get').mockReturnValue(1080)
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+      getImageData: (_x: number, _y: number, width: number, height: number) => ({
+        data: new Uint8ClampedArray(8),
+        width,
+        height
+      })
+    } as unknown as CanvasRenderingContext2D)
+    const block = {
+      text: '耶穌 耶穌',
+      score: 0.99,
+      poly: [
+        [0, 0],
+        [100, 0],
+        [100, 40],
+        [0, 40]
+      ]
+    }
+    const recognize = vi
+      .fn()
+      .mockResolvedValueOnce(uncertain ? [{ ...block, score: 0.5 }] : [])
+      .mockResolvedValue([block])
+    vi.mocked(createLyricsEngine).mockResolvedValue({ recognize, dispose: vi.fn() })
+    const crop = { x: 0, y: 0, width: 1, height: 0.4 }
+    const onLines = vi.fn()
+    const stop = startLyricsRecognition({
+      stream: source().stream,
+      getCrop: () => crop,
+      onStatus: vi.fn(),
+      onLines,
+      onError: vi.fn()
+    })
+    try {
+      await vi.advanceTimersByTimeAsync(250)
+      expect(recognize.mock.calls.map(([image]) => image.width)).toEqual([960, 1920])
+      expect(onLines).toHaveBeenCalledWith(['耶穌 耶穌'])
+    } finally {
+      stop()
+      vi.useRealTimers()
+    }
+  })
+}
+
+it('does not turn uncertain text into blank output when the fallback misses it', async () => {
+  vi.useFakeTimers()
+  vi.spyOn(HTMLVideoElement.prototype, 'videoWidth', 'get').mockReturnValue(1920)
+  const recognize = vi.fn().mockImplementation(async () =>
+    recognize.mock.calls.length % 2
+      ? [
+          {
+            text: 'Uncertain',
+            score: 0.5,
+            poly: [
+              [0, 0],
+              [2, 0],
+              [2, 1],
+              [0, 1]
+            ]
+          }
+        ]
+      : []
+  )
+  vi.mocked(createLyricsEngine).mockResolvedValue({ recognize, dispose: vi.fn() })
+  const crop = { x: 0, y: 0, width: 1, height: 0.4 }
+  const onLines = vi.fn(),
+    onError = vi.fn()
+  const stop = startLyricsRecognition({
+    stream: source().stream,
+    getCrop: () => crop,
+    onStatus: vi.fn(),
+    onLines,
+    onError
+  })
+  try {
+    await vi.advanceTimersByTimeAsync(6000)
+    expect(onLines).not.toHaveBeenCalled()
+    expect(onError).toHaveBeenCalledWith('recognize')
+  } finally {
+    stop()
+    vi.useRealTimers()
+  }
+})

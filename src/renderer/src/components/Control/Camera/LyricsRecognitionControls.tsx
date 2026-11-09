@@ -17,13 +17,32 @@ function reportOverflow(overflow: boolean): void {
   if (!overflow && state.error === 'overflow') useCameraLyricsStore.setState({ error: null })
 }
 export default function LyricsRecognitionControls({
-  stream
+  stream,
+  onRetry
 }: {
   stream: MediaStream | null
+  onRetry?: () => void
 }): React.JSX.Element {
   const { t } = useTranslation()
   const state = useCameraLyricsStore()
   useLyricsLayout(state, reportOverflow)
+  const [draftCrop, setDraftCrop] = useState(state.crop)
+  useEffect(() => setDraftCrop(state.crop), [state.crop, stream])
+  const cropChanged = (Object.keys(draftCrop) as Array<keyof typeof draftCrop>).some(
+    (key) => draftCrop[key] !== state.crop[key]
+  )
+  const holding =
+    state.lines.length > 0 &&
+    ['loading', 'recognizing', 'error'].includes(state.status) &&
+    state.error !== 'overflow' &&
+    state.error !== 'source'
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    if (!holding) return
+    setNow(Date.now())
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [holding])
   const [localFonts, setLocalFonts] = useState<string[]>([])
   const [localFontStatus, setLocalFontStatus] = useState<'idle' | 'loading' | 'failed'>('idle')
   const localFontsSupported = supportsLocalFontAccess()
@@ -73,22 +92,22 @@ export default function LyricsRecognitionControls({
           ? t('cameraLyrics.notoScFont')
           : font.replace(/ Variable$/, '')
   const fontItems = fontFamilies.map((font) => ({ id: font, name: fontLabel(font) }))
-  const cropMaximum = (key: keyof typeof state.crop): number =>
+  const cropMaximum = (key: keyof typeof draftCrop): number =>
     Math.round(
       100 *
         (key === 'x'
-          ? 1 - state.crop.width
+          ? 1 - draftCrop.width
           : key === 'y'
-            ? 1 - state.crop.height
+            ? 1 - draftCrop.height
             : key === 'width'
-              ? 1 - state.crop.x
-              : 1 - state.crop.y)
+              ? 1 - draftCrop.x
+              : 1 - draftCrop.y)
     )
-  const setCropPercent = (key: keyof typeof state.crop, value: number): void => {
+  const setCropPercent = (key: keyof typeof draftCrop, value: number): void => {
     const min = key === 'width' || key === 'height' ? 5 : 0
-    state.setCrop({ ...state.crop, [key]: Math.min(cropMaximum(key), Math.max(min, value)) / 100 })
+    setDraftCrop({ ...draftCrop, [key]: Math.min(cropMaximum(key), Math.max(min, value)) / 100 })
   }
-  const cropInput = (key: keyof typeof state.crop): React.JSX.Element => (
+  const cropInput = (key: keyof typeof draftCrop): React.JSX.Element => (
     <Input
       aria-label={t(`cameraLyrics.${key}`)}
       type="number"
@@ -96,7 +115,7 @@ export default function LyricsRecognitionControls({
       max={cropMaximum(key)}
       step={1}
       className="w-20"
-      value={Math.round(state.crop[key] * 100)}
+      value={Math.round(draftCrop[key] * 100)}
       onChange={(event) => {
         if (event.target.value) setCropPercent(key, Number(event.target.value))
       }}
@@ -127,14 +146,36 @@ export default function LyricsRecognitionControls({
       {state.enabled && (
         <>
           <div role="status" className="text-sm font-medium">
-            {t(`cameraLyrics.status.${state.status}`)}
+            {t(
+              state.hidden
+                ? 'cameraLyrics.hidden'
+                : holding
+                  ? 'cameraLyrics.holding'
+                  : `cameraLyrics.status.${state.status}`
+            )}
           </div>
-          {state.error && (
-            <p role="alert" className="text-sm text-danger">
-              {t(`cameraLyrics.errors.${state.error}`)}
-            </p>
-          )}
-          <LyricsPreview stream={stream} />
+          {/* Keep status changes from scrolling the form and closing an open font picker. */}
+          <p className="min-h-5 text-sm text-muted" aria-live="off">
+            {holding &&
+              !state.hidden &&
+              t('cameraLyrics.heldDuration', {
+                seconds: Math.max(0, Math.floor((now - state.acceptedAt) / 1000))
+              })}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" onPress={() => state.setHidden(!state.hidden)}>
+              {t(state.hidden ? 'cameraLyrics.show' : 'cameraLyrics.hide')}
+            </Button>
+            {onRetry && (state.error === 'load' || state.error === 'recognize') && (
+              <Button variant="secondary" onPress={onRetry} isDisabled={state.status === 'loading'}>
+                {t('cameraLyrics.retryRecognition')}
+              </Button>
+            )}
+          </div>
+          <p role={state.error ? 'alert' : undefined} className="min-h-10 text-sm text-danger">
+            {state.error && t(`cameraLyrics.errors.${state.error}`)}
+          </p>
+          <LyricsPreview stream={stream} crop={draftCrop} />
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4">
             <label htmlFor="lyrics-height" className="text-sm font-medium">
               {t('cameraLyrics.recognitionHeight')}
@@ -145,7 +186,7 @@ export default function LyricsRecognitionControls({
               minValue={5}
               maxValue={cropMaximum('height')}
               step={1}
-              value={Math.round(state.crop.height * 100)}
+              value={Math.round(draftCrop.height * 100)}
               onChange={(value) => {
                 if (typeof value === 'number') setCropPercent('height', value)
               }}
@@ -161,7 +202,7 @@ export default function LyricsRecognitionControls({
               <span className="text-sm text-muted">%</span>
             </div>
             <span className="text-sm text-muted">
-              {t('cameraLyrics.cropOrigin', { top: Math.round(state.crop.y * 100) })}
+              {t('cameraLyrics.cropOrigin', { top: Math.round(draftCrop.y * 100) })}
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-4">
@@ -172,6 +213,21 @@ export default function LyricsRecognitionControls({
                 <span className="text-muted">%</span>
               </label>
             ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button isDisabled={!cropChanged} onPress={() => state.setCrop(draftCrop)}>
+              {t('cameraLyrics.applyCrop')}
+            </Button>
+            <Button
+              variant="tertiary"
+              isDisabled={!cropChanged}
+              onPress={() => setDraftCrop(state.crop)}
+            >
+              {t('cameraLyrics.cancelCrop')}
+            </Button>
+            {cropChanged && (
+              <span className="text-sm text-muted">{t('cameraLyrics.cropPending')}</span>
+            )}
           </div>
           <div className="flex flex-wrap items-end gap-3">
             <ComboBox

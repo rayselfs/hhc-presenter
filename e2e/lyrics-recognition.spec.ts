@@ -18,6 +18,7 @@ test('recognizes picture backgrounds and preserves all rows through subtitle pro
   context
 }, testInfo) => {
   test.setTimeout(300000)
+  await page.setViewportSize({ width: 1008, height: 700 })
   await installLyricsFixture(page)
   await page.goto('/')
   await completeOnboarding(page)
@@ -62,4 +63,44 @@ test.describe('CPU fallback', () => {
     await setLyricsMode(page, false)
     await expect(page.getByRole('spinbutton', { name: 'X', exact: true })).toBeVisible()
   })
+})
+
+test('remembers the subtitle preference across navigation and reload', async ({ page }) => {
+  await installLyricsFixture(page)
+  await page.goto('/')
+  await completeOnboarding(page)
+  await page.goto('/#/camera')
+  await page.getByTestId('camera-source-selector').click()
+  await page.getByRole('option').first().click()
+  await setLyricsMode(page, true)
+  await page.goto('/#/files')
+  await page.goto('/#/camera')
+  await expect(page.getByRole('switch', { name: 'Lyrics subtitles', exact: true })).toBeChecked()
+  await page.reload()
+  await expect(page.getByRole('switch', { name: 'Lyrics subtitles', exact: true })).toBeChecked()
+  await setLyricsMode(page, false)
+  await page.reload()
+  await expect(
+    page.getByRole('switch', { name: 'Lyrics subtitles', exact: true })
+  ).not.toBeChecked()
+})
+
+test('recognizes small source lyrics without relaxing text validation', async ({
+  page,
+  context
+}) => {
+  test.setTimeout(90000)
+  await installLyricsFixture(page)
+  await page.goto('/')
+  await completeOnboarding(page)
+  await page.goto('/#/camera')
+  await page.getByTestId('camera-source-selector').click()
+  await page.getByRole('option').first().click()
+  await setLyricsMode(page, true)
+  const popup = context.waitForEvent('page')
+  await page.getByRole('button', { name: 'Present source', exact: true }).click()
+  const projection = await popup
+  const lines = ['祂從災難中保護我們', '堅定腳步走過每一天']
+  await setFixture(page, 'black', lines, 24)
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(lines, { timeout: 40000 })
 })

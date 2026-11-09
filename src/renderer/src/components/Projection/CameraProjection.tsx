@@ -58,6 +58,7 @@ export default function CameraProjection({
       >
         {camera.lyrics ? (
           <LyricsOutput
+            key={sessionId}
             output={{
               ...camera.lyrics,
               visible: camera.status !== 'unavailable' && camera.lyrics.visible

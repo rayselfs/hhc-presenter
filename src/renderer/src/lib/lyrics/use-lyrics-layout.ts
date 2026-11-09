@@ -2,38 +2,40 @@ import { useEffect, useState } from 'react'
 import { loadPresentationFont } from '@renderer/lib/font-loader'
 import type { LyricsOutput } from '@shared/lyrics'
 
+type ValidatedLayout = {
+  overflow: boolean
+  output: Pick<LyricsOutput, 'lines' | 'style'>
+  weight: number
+  family: string
+}
+
 export function useLyricsLayout(
   output: Pick<LyricsOutput, 'lines' | 'style'>,
   onOverflow?: (value: boolean) => void
 ): {
-  weight: number
-  family: string
-  key: string
-  validated: { key: string; overflow: boolean } | null
+  validated: ValidatedLayout | null
 } {
-  const [validated, setValidated] = useState<{ key: string; overflow: boolean } | null>(null)
-  const weight = output.style.bold ? 700 : 400
+  const { lines, style } = output
+  const [validated, setValidated] = useState<ValidatedLayout | null>(null)
+  if (!lines.length && validated?.output.lines.length) setValidated(null)
+  const weight = style.bold ? 700 : 400
   const family =
-    output.style.font === 'sans-serif'
+    style.font === 'sans-serif'
       ? 'sans-serif'
-      : `${JSON.stringify(output.style.font)}, "Noto Sans TC Variable", sans-serif`
-  const key = JSON.stringify({ lines: output.lines, style: output.style })
+      : `${JSON.stringify(style.font)}, "Noto Sans TC Variable", sans-serif`
   useEffect(() => {
     let active = true
     void (async () => {
       try {
-        await loadPresentationFont(output.style.font)
-        if (output.style.font !== 'sans-serif') await loadPresentationFont('Noto Sans TC Variable')
-        await document.fonts?.load(
-          `${weight} ${output.style.fontSize}px ${family}`,
-          output.lines.join('')
-        )
+        await loadPresentationFont(style.font)
+        if (style.font !== 'sans-serif') await loadPresentationFont('Noto Sans TC Variable')
+        await document.fonts?.load(`${weight} ${style.fontSize}px ${family}`, lines.join(''))
         if (!active) return
         const context = document.createElement('canvas').getContext('2d')
         if (!context) throw new Error('Text measurement unavailable')
-        context.font = `${weight} ${output.style.fontSize}px ${family}`
+        context.font = `${weight} ${style.fontSize}px ${family}`
         const overflow =
-          output.lines.some((line) => {
+          lines.some((line) => {
             const text = context.measureText(line)
             return (
               Math.max(
@@ -42,13 +44,12 @@ export function useLyricsLayout(
               ) > 1728
             )
           }) ||
-          output.lines.length * output.style.fontSize * output.style.lineHeight >
-            1080 * (0.95 - output.style.bottom / 100)
-        setValidated({ key, overflow })
+          lines.length * style.fontSize * style.lineHeight > 1080 * (0.95 - style.bottom / 100)
+        setValidated({ overflow, output: { lines, style }, weight, family })
         onOverflow?.(overflow)
       } catch {
         if (active) {
-          setValidated({ key, overflow: true })
+          setValidated({ overflow: true, output: { lines, style }, weight, family })
           onOverflow?.(true)
         }
       }
@@ -56,6 +57,6 @@ export function useLyricsLayout(
     return () => {
       active = false
     }
-  }, [key, output.lines, output.style, onOverflow, family, weight])
-  return { weight, family, key, validated }
+  }, [lines, style, onOverflow, family, weight])
+  return { validated }
 }

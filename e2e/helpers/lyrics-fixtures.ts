@@ -1,19 +1,25 @@
 import { expect, type Page, type TestInfo } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 const allLines = ['祂從災難中保護我們', '堅定腳步走過每一天', '在樹蔭邊彼此扶持']
-export async function setFixture(page: Page, background: string, lines: string[]): Promise<void> {
+export async function setFixture(
+  page: Page,
+  background: string,
+  lines: string[],
+  fontSize = 76
+): Promise<void> {
   await page.waitForFunction(() =>
     Array.from(document.fonts).some((font) => font.family.includes('Noto Sans TC'))
   )
   await page.evaluate(
-    async ({ background, lines }) => {
+    async ({ background, lines, fontSize }) => {
       const draw = Reflect.get(window, '__drawLyricsFixture') as (
         background: string,
-        lines: string[]
+        lines: string[],
+        fontSize: number
       ) => Promise<void>
-      await draw(background, lines)
+      await draw(background, lines, fontSize)
     },
-    { background, lines }
+    { background, lines, fontSize }
   )
 }
 
@@ -31,22 +37,26 @@ export async function installLyricsFixture(page: Page): Promise<void> {
       const ctx = canvas.getContext('2d')!
       setInterval(() => ctx.drawImage(canvas, 0, 0), 100)
       const original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
-      Reflect.set(window, '__drawLyricsFixture', async (background: string, lines: string[]) => {
-        await document.fonts.load('600 76px "Noto Sans TC Variable"', lines.join(''))
-        ctx.fillStyle = '#000'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-        if (photos[background]) {
-          const image = new Image()
-          image.src = photos[background]
-          await image.decode()
-          ctx.drawImage(image, 0, 0, 1600, 900)
+      Reflect.set(
+        window,
+        '__drawLyricsFixture',
+        async (background: string, lines: string[], fontSize: number) => {
+          await document.fonts.load(`600 ${fontSize}px "Noto Sans TC Variable"`, lines.join(''))
+          ctx.fillStyle = '#000'
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+          if (photos[background]) {
+            const image = new Image()
+            image.src = photos[background]
+            await image.decode()
+            ctx.drawImage(image, 0, 0, 1600, 900)
+          }
+          ctx.font = `600 ${fontSize}px "Noto Sans TC Variable"`
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'top'
+          ctx.fillStyle = background === 'bright' ? '#000' : '#fff'
+          lines.forEach((line, index) => ctx.fillText(line, 800, 32 + index * 130))
         }
-        ctx.font = '600 76px "Noto Sans TC Variable"'
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'top'
-        ctx.fillStyle = background === 'bright' ? '#000' : '#fff'
-        lines.forEach((line, index) => ctx.fillText(line, 800, 32 + index * 130))
-      })
+      )
       navigator.mediaDevices.getUserMedia = async (constraints) =>
         constraints?.audio ? original(constraints) : canvas.captureStream(10)
     },
@@ -109,12 +119,28 @@ export async function verifyLyricsWorkflow(
       }
     }
   }
+  const spaced = ['耶穌 耶穌 無人能像祢']
+  await setFixture(page, 'black', spaced)
+  await expect(projection.getByTestId('lyrics-line')).toHaveText([/^耶穌\s*耶穌\s*無人能像祢$/], {
+    timeout: 40000
+  })
+  await setFixture(page, 'bright', allLines)
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 40000 })
+  await setFixture(page, 'black', ['耶稣 耶稣 无人能像祢'])
+  await expect(projection.getByTestId('lyrics-line')).toHaveText([/^耶穌\s*耶穌\s*無人能像祢$/], {
+    timeout: 40000
+  })
+  await setFixture(page, 'bright', allLines)
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 40000 })
   const initializations = runtimeMessages.length
   await height.focus()
   await height.press('Home')
   for (let step = 5; step < 60; step++) await height.press('ArrowRight')
   await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 15000 })
+  await page.getByRole('button', { name: 'Apply lyrics area', exact: true }).click()
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 15000 })
   await page.getByRole('spinbutton', { name: 'Height', exact: true }).fill('40')
+  await page.getByRole('button', { name: 'Apply lyrics area', exact: true }).click()
   await expect(height).toHaveValue('40')
   await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 15000 })
   expect(runtimeMessages).toHaveLength(initializations)
@@ -152,11 +178,13 @@ export async function verifyLyricsWorkflow(
     contentType: 'image/png'
   })
   const font = page.getByRole('combobox', { name: 'Font', exact: true })
+  await font.scrollIntoViewIfNeeded()
+  await font.click()
   await font.fill('Roboto')
   const fontPopover = page.locator('.combo-box__popover')
   await expect(fontPopover).toBeVisible()
   await expect(fontPopover).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
-  await page.getByRole('option', { name: 'Roboto', exact: true }).click()
+  await page.getByRole('option', { name: 'Roboto', exact: true }).click({ timeout: 10000 })
   await page.getByRole('button', { name: 'Bold', exact: true }).click()
   await expect(projection.getByTestId('lyrics-lines')).toHaveCSS('font-weight', '400')
   await expect(projection.getByTestId('lyrics-lines')).toHaveCSS('font-family', /Roboto Variable/)
@@ -177,6 +205,7 @@ export async function verifyLyricsWorkflow(
     body: await page.screenshot(),
     contentType: 'image/png'
   })
+  await font.click()
   await font.fill('Noto Sans TC')
   await page.getByRole('option', { name: 'Noto Sans TC', exact: true }).click()
   await page.getByRole('button', { name: 'Bold', exact: true }).click()
@@ -184,7 +213,6 @@ export async function verifyLyricsWorkflow(
   await page.getByRole('spinbutton', { name: 'Font size', exact: true }).fill('160')
   await page.getByRole('spinbutton', { name: 'Line height', exact: true }).fill('2')
   await page.getByRole('spinbutton', { name: 'Bottom distance (%)', exact: true }).fill('50')
-  await expect(projection.getByTestId('lyrics-output')).toHaveAttribute('data-overflow', 'true')
   await expect(page.getByRole('alert')).toBeVisible()
   await expect(projection.getByTestId('lyrics-line')).toHaveCount(0)
   await page.evaluate(() => {
@@ -213,7 +241,19 @@ export async function verifyLyricsWorkflow(
         .evaluate((node) => parseFloat(getComputedStyle(node).bottom))
     )
     .toBeCloseTo(86.4, 1)
-  await expect(page.getByRole('button', { name: 'Hide subtitles', exact: true })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Hide subtitles', exact: true }).click()
+  await expect(projection.getByTestId('lyrics-line')).toHaveCount(0)
+  await expect(projection.locator('video')).toHaveCount(0)
+  await setFixture(page, 'black', allLines.slice(0, 1))
+  await expect(
+    page.getByText('Subtitles hidden; recognition continues', { exact: true })
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Show subtitles', exact: true }).click()
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines.slice(0, 1), {
+    timeout: 40000
+  })
+  await setFixture(page, 'bright', allLines)
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 40000 })
   await expect(page.getByRole('button', { name: 'Correct text', exact: true })).toHaveCount(0)
   if (await page.evaluate(() => !!navigator.serviceWorker?.controller)) {
     await page.context().setOffline(true)

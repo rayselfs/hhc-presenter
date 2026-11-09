@@ -41,7 +41,7 @@ export function CameraSessionProvider({
       session.current?.dispose()
       session.current = null
       setStream(null)
-      useCameraLyricsStore.getState().setEnabled(false)
+      useCameraLyricsStore.setState({ lines: [], acceptedAt: 0, status: 'idle', error: null })
       useCameraStore.setState({
         capturing: false,
         busy: false,
@@ -218,8 +218,9 @@ export function CameraSessionProvider({
         lyrics: {
           lines: lyrics.lines,
           style: lyrics.style,
-          visible: lyrics.error !== 'overflow',
-          expiresAt: lyrics.acceptedAt + 1000
+          visible: !lyrics.hidden && lyrics.error !== 'overflow',
+          // The lease tracks the live controller, not the last successful OCR frame.
+          expiresAt: Date.now() + 1000
         }
       })
     }
