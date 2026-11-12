@@ -30,6 +30,7 @@ import type {
 import type { BibleVersion, BibleBook } from './types/bible'
 import type { HhcPendingSignIn, HhcSession, PresenterAccountLabel } from './hhc-auth'
 import type {
+  HhcSourceControl,
   HhcAssetCollectionChangePage,
   HhcAssetCollectionItem,
   HhcAssetCollectionPage,
@@ -401,6 +402,7 @@ export interface IpcInvokeMap {
     args: Parameters<PersonalNativeApi['cancel']>
     result: Awaited<ReturnType<PersonalNativeApi['cancel']>>
   }
+  'hhc-assets:get-collection-control': { args: [string]; result: HhcSourceControl }
   'hhc-assets:list-collections': { args: [string?]; result: HhcAssetCollectionPage }
   'hhc-assets:get-collection-changes': {
     args: [HhcAssetCollectionRequest]

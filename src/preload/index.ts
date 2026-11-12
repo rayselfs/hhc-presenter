@@ -224,6 +224,8 @@ const personalCloudApi: PersonalNativeApi = {
 }
 
 const hhcAssetsApi = {
+  getCollectionControl: (collectionId: string) =>
+    typedInvoke('hhc-assets:get-collection-control', collectionId),
   listCollections: (cursor?: string) => typedInvoke('hhc-assets:list-collections', cursor),
   getCollectionChanges: (request: IpcInvokeMap['hhc-assets:get-collection-changes']['args'][0]) =>
     typedInvoke('hhc-assets:get-collection-changes', request),

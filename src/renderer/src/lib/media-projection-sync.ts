@@ -1,3 +1,5 @@
+import { releaseHhcBrowserLease } from './hhc-content-lease'
+import { watchHhcSourceDeadline } from '@shared/hhc-assets'
 import { useCallback, useEffect, useRef } from 'react'
 import { useProjection } from '@renderer/contexts/ProjectionContext'
 import { usePresentationSessionRegistry } from '@renderer/contexts/PresentationSessionRegistryContext'
@@ -84,6 +86,7 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
     remoteItemId: string
     rootRemoteFolderId: string
     leaseId?: string
+    browserLeaseUrl?: string
   } | null>(null)
   const { auth, onAccessRevoked } = options
   const sessionUserId = auth?.getSession()?.userId ?? null
@@ -161,6 +164,7 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
     if (renewalTimerRef.current) clearTimeout(renewalTimerRef.current)
     renewalTimerRef.current = null
     const active = activeRemoteRef.current
+    if (active?.browserLeaseUrl) releaseHhcBrowserLease(active.browserLeaseUrl)
     const leaseId = active?.leaseId
     activeRemoteRef.current = null
     if (active) {
@@ -262,6 +266,8 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
               await import('@renderer/lib/hhc-line-connect')
             const prepared = await prepareHhcLinePresentationSource(auth, item)
             if (!isCurrent()) {
+              if (prepared?.source.kind === 'browser-lease')
+                releaseHhcBrowserLease(prepared.source.url)
               if (prepared?.source.kind === 'native-lease') releaseLease(prepared.source.leaseId)
               return
             }
@@ -271,6 +277,7 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
             }
             if (prepared && isCurrent()) {
               const previous = activeRemoteRef.current
+              if (previous?.browserLeaseUrl) releaseHhcBrowserLease(previous.browserLeaseUrl)
               const leaseId =
                 prepared.source.kind === 'native-lease' ? prepared.source.leaseId : undefined
               if (previous?.leaseId && previous.leaseId !== leaseId) {
@@ -303,7 +310,10 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
                 providerConnectionId: prepared.providerConnectionId,
                 remoteItemId: prepared.remoteItemId,
                 rootRemoteFolderId: prepared.rootRemoteFolderId,
-                ...(leaseId ? { leaseId } : {})
+                ...(leaseId ? { leaseId } : {}),
+                ...(prepared.source.kind === 'browser-lease'
+                  ? { browserLeaseUrl: prepared.source.url }
+                  : {})
               }
               if (renewalTimerRef.current) clearTimeout(renewalTimerRef.current)
               renewalTimerRef.current = null
@@ -484,6 +494,21 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
 
   useEffect(() => {
     const unsubscribe = useFileExplorerStore.subscribe((state) => {
+      const playback = useMediaProjectionStore.getState()
+      const item = playback.currentItem()
+      if (item?.sourceExpiresAt !== undefined) {
+        const root = state.folders[item.parentId]
+        if (
+          !state.items[item.id] ||
+          root?.syncLink?.sourceControl?.state === 'paused' ||
+          root?.syncLink?.status === 'access-revoked'
+        ) {
+          projectSequenceRef.current += 1
+          clearRemoteSource()
+          void stopProjection()
+          return
+        }
+      }
       const active = activeRemoteRef.current
       if (!active) return
       const root = Object.values(state.folders).find(
@@ -492,12 +517,43 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
           folder.syncLink.providerConnectionId === active.providerConnectionId &&
           folder.syncLink.remoteFolderId === active.rootRemoteFolderId
       )
-      if (root && root.syncLink?.status !== 'access-revoked') return
+      if (
+        root &&
+        root.syncLink?.status !== 'access-revoked' &&
+        (!root.syncLink?.sourceControl || root.syncLink.sourceControl.state === 'active')
+      )
+        return
       projectSequenceRef.current += 1
       clearRemoteSource()
       void stopProjection()
     })
     return unsubscribe
+  }, [clearRemoteSource, stopProjection])
+
+  useEffect(() => {
+    let cancel = (): void => undefined
+    const schedule = (): void => {
+      cancel()
+      const item = useMediaProjectionStore.getState().currentItem()
+      if (item?.sourceExpiresAt !== undefined)
+        cancel = watchHhcSourceDeadline(item.sourceExpiresAt, () => {
+          projectSequenceRef.current += 1
+          clearRemoteSource()
+          void stopProjection()
+        })
+    }
+    schedule()
+    const unsubscribe = useMediaProjectionStore.subscribe((state, previous) => {
+      if (
+        state.currentItem()?.id !== previous.currentItem()?.id ||
+        state.isPresenting !== previous.isPresenting
+      )
+        schedule()
+    })
+    return () => {
+      cancel()
+      unsubscribe()
+    }
   }, [clearRemoteSource, stopProjection])
 
   const previousSessionUserIdRef = useRef(sessionUserId)

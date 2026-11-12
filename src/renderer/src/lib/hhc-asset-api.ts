@@ -1,5 +1,7 @@
 import type { HhcAuthAdapter } from '@shared/hhc-auth'
 import type {
+  HhcSourceControl,
+  HhcSourceOutcome,
   HhcAssetCollectionChangePage,
   HhcAssetCollectionItem,
   HhcAssetCollectionPage,
@@ -15,13 +17,15 @@ export type HhcAssetErrorClassification = 'retryable' | 'auth-required' | 'acces
 export class HhcAssetApiError extends Error {
   constructor(
     readonly classification: HhcAssetErrorClassification,
-    readonly status?: number
+    readonly status?: number,
+    readonly outcome?: HhcSourceOutcome
   ) {
     super('HHC Asset request failed')
   }
 }
 
 export interface HhcAssetApi {
+  getCollectionControl(collectionId: string): Promise<HhcSourceControl>
   listCollections(cursor?: string): Promise<HhcAssetCollectionPage>
   getCollectionChanges(collectionId: string, cursor?: string): Promise<HhcAssetCollectionChangePage>
   getCollectionItem(collectionId: string, itemId: string): Promise<HhcAssetCollectionItem>

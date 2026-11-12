@@ -8,9 +8,10 @@ import {
 } from './file-resource-cleanup'
 import { openFileExplorerDB } from './file-explorer-db'
 import { removeCleanedEntriesFromStore } from '@renderer/stores/file-explorer'
-import { cancelSyncDownloadsAndWait } from './sync-download-queue'
+import { cancelSyncDownloads, cancelSyncDownloadsAndWait } from './sync-download-queue'
 import { cancelVideoPosterJobsAndWait, fenceVideoPosterScope } from './video-poster-jobs'
 import {
+  getSyncEntryByRemoteItem,
   deleteProviderConnection,
   deleteSyncCursor,
   deleteSyncCursorsByProviderConnection,
@@ -336,4 +337,25 @@ export async function recoverPendingSyncResourceCleanups(): Promise<SyncResource
   } finally {
     releaseFences.forEach((release) => release())
   }
+}
+
+export async function removeRevokedSyncItem(
+  connectionId: string,
+  remoteItemId: string
+): Promise<void> {
+  const entry = await getSyncEntryByRemoteItem(connectionId, remoteItemId)
+  if (!entry?.itemId) return
+  const tombstone = await putSyncTombstone({
+    providerConnectionId: connectionId,
+    remoteItemId,
+    itemId: entry.itemId,
+    blobId: entry.blobId,
+    reason: 'remote-delete'
+  })
+  // A download may report its own revocation; abort without waiting on that same task.
+  cancelSyncDownloads({ providerConnectionId: connectionId, remoteItemId })
+  const result = await cleanupSyncFileResources({ folderIds: [], itemIds: [entry.itemId] })
+  removeCleanedEntriesFromStore(result)
+  await deleteSyncEntries([entry.id])
+  await deleteSyncTombstones([tombstone.id])
 }

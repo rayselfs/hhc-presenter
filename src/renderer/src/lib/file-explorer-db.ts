@@ -1,3 +1,4 @@
+import { watchHhcSourceDeadline } from '@shared/hhc-assets'
 import type { PresentationDraftRecord } from './presentation-drafts'
 import type { DBSchema, IDBPDatabase } from 'idb'
 import { openDB, unwrap } from 'idb'
@@ -6,6 +7,7 @@ import { isElectron } from './env'
 import type { PersonalOutboxRecord, PersonalSyncNode, PersonalSyncState } from './personal-sync-db'
 
 export interface FileBlobRecord {
+  sourceExpiresAt?: number
   id: string
   blob?: Blob
   storage?: 'indexed-db' | 'native-fs'
@@ -148,7 +150,12 @@ export async function getFileBlobRecord(id: string): Promise<FileBlobRecord | un
 export async function isFileBlobRecordAvailable(
   record: FileBlobRecord | undefined
 ): Promise<boolean> {
-  if (!record) return false
+  if (
+    !record ||
+    (record.sourceExpiresAt !== undefined &&
+      (!Number.isFinite(record.sourceExpiresAt) || record.sourceExpiresAt <= Date.now()))
+  )
+    return false
   if (record.storage === 'native-fs') {
     if (!isElectron()) return false
     return window.api.nativeFs.exists(record.id)
@@ -197,6 +204,11 @@ export async function getFileBlob(
   id: string
 ): Promise<Blob | null> {
   const record = await db.get('file-blobs', id)
+  if (
+    record?.sourceExpiresAt !== undefined &&
+    (!Number.isFinite(record.sourceExpiresAt) || record.sourceExpiresAt <= Date.now())
+  )
+    return null
   return record?.blob ?? null
 }
 
@@ -216,7 +228,12 @@ export async function getFileSource(
   options: GetFileSourceOptions = {}
 ): Promise<FileSource | null> {
   const record = await db.get('file-blobs', id)
-  if (!record) return null
+  if (
+    !record ||
+    (record.sourceExpiresAt !== undefined &&
+      (!Number.isFinite(record.sourceExpiresAt) || record.sourceExpiresAt <= Date.now()))
+  )
+    return null
 
   if (record.storage !== 'native-fs' || options.verifyNativeFile !== false) {
     if (!(await isFileBlobRecordAvailable(record))) return null
@@ -231,9 +248,16 @@ export async function getFileSource(
 
   if (!record.blob) return null
   const url = URL.createObjectURL(record.blob)
+  const stop =
+    record.sourceExpiresAt === undefined
+      ? () => undefined
+      : watchHhcSourceDeadline(record.sourceExpiresAt, () => URL.revokeObjectURL(url))
   return {
     url,
-    revoke: () => URL.revokeObjectURL(url)
+    revoke: () => {
+      stop()
+      URL.revokeObjectURL(url)
+    }
   }
 }
 
@@ -242,7 +266,12 @@ export async function deleteFileBlob(
   id: string
 ): Promise<boolean> {
   const record = await db.get('file-blobs', id)
-  if (!record) return false
+  if (
+    !record ||
+    (record.sourceExpiresAt !== undefined &&
+      (!Number.isFinite(record.sourceExpiresAt) || record.sourceExpiresAt <= Date.now()))
+  )
+    return false
 
   if (record.refCount === undefined || record.refCount <= 1) {
     if (record.storage === 'native-fs' && isElectron()) {

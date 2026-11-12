@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import 'fake-indexeddb/auto'
-import type { HhcAssetApi } from '../hhc-asset-api'
+import { HhcAssetApiError, type HhcAssetApi } from '../hhc-asset-api'
 import { HhcLineReadonlyProvider } from '../hhc-line-provider'
 import { openFileExplorerDB, resetFileExplorerDBForTests } from '../file-explorer-db'
 import { getProviderConnection, getSyncEntryByRemoteItem, resetSyncDBForTests } from '../sync-db'
@@ -31,6 +31,9 @@ const item = {
 
 function api(): HhcAssetApi {
   return {
+    getCollectionControl: vi.fn(async () => {
+      throw new HhcAssetApiError('access-revoked', 404)
+    }),
     listCollections: vi.fn(),
     getCollectionChanges: vi.fn(async () => ({
       collection,
@@ -534,5 +537,44 @@ describe('HHC LINE read-only provider', () => {
     expect(failure).toBeInstanceOf(Error)
     expect((failure as Error).message).toBe('Sync download cancelled')
     expect(recoveryScan).toHaveBeenCalledOnce()
+  })
+})
+
+describe('source control fencing', () => {
+  const control = {
+    version: 1 as const,
+    collectionId: collection.id,
+    state: 'active' as const,
+    policyRevision: 1,
+    aclRevision: 1,
+    bindingGeneration: 1
+  }
+  it('preserves a paused collection without reading changes', async () => {
+    const client = api()
+    vi.mocked(client.getCollectionControl).mockResolvedValue({ ...control, state: 'paused' })
+    const provider = new HhcLineReadonlyProvider({ api: client, getSession: vi.fn() })
+    await expect(provider.initialScan('hhc-line:user_1', collection.id)).rejects.toMatchObject({
+      outcome: 'collection-paused',
+      classification: 'retryable'
+    })
+    expect(client.getCollectionChanges).not.toHaveBeenCalled()
+  })
+  it('discards a page when its control revision changes during the read', async () => {
+    const client = api()
+    vi.mocked(client.getCollectionControl)
+      .mockResolvedValueOnce(control)
+      .mockResolvedValueOnce({ ...control, policyRevision: 2 })
+    vi.mocked(client.getCollectionChanges).mockResolvedValue({
+      collection: { ...collection, sourcePolicyVersion: 1, aclRevision: 1, bindingGeneration: 1 },
+      items: [{ ...item, sourceExpiresAt: '2027-01-01T00:00:00Z' }],
+      tombstones: [],
+      cursor: 'revision_9',
+      hasMore: false,
+      reset: false
+    })
+    const provider = new HhcLineReadonlyProvider({ api: client, getSession: vi.fn() })
+    await expect(provider.initialScan('hhc-line:user_1', collection.id)).rejects.toMatchObject({
+      classification: 'retryable'
+    })
   })
 })

@@ -94,3 +94,24 @@ it('propagates a failed body and leaves caller-owned staging cleanup possible', 
   await writeFile(destination, 'recovered', { flag: 'wx' })
   expect(await readFile(destination, 'utf8')).toBe('recovered')
 })
+
+it('rejects an expired source header before opening its staging destination', async () => {
+  await expect(
+    saveAssetContent(
+      new Response('x', { headers: { 'X-HHC-Source-Expires-At': '2000-01-01T00:00:00Z' } }),
+      destination
+    )
+  ).rejects.toThrow('HHC_SOURCE_FAILURE:410:item-expired')
+  await expect(access(destination)).rejects.toMatchObject({ code: 'ENOENT' })
+})
+it('retains the exact source deadline with completed native content', async () => {
+  const sourceExpiresAt = Date.now() + 60000
+  await expect(
+    saveAssetContent(
+      new Response('x', {
+        headers: { 'X-HHC-Source-Expires-At': new Date(sourceExpiresAt).toISOString() }
+      }),
+      destination
+    )
+  ).resolves.toMatchObject({ sourceExpiresAt })
+})

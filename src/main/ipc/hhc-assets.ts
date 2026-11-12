@@ -1,3 +1,7 @@
+import {
+  persistNativeSourceDeadline,
+  persistNativeSourceControl
+} from '../lib/native-source-policy'
 import { saveAssetContent } from '../lib/asset-stream-writer'
 import { getNativeFilePath } from '../lib/native-storage'
 import { app, ipcMain, net } from 'electron'
@@ -6,6 +10,8 @@ import { promises as fs } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { APP_CONFIG } from '@shared/app-config'
 import {
+  projectHhcSourceControl,
+  readHhcAssetFailure,
   projectHhcAssetChangePage,
   projectHhcAssetCollectionPage,
   projectHhcAssetItem,
@@ -98,16 +104,6 @@ function boundedText(value: unknown, maxBytes: number): string {
   return value
 }
 
-function codeForStatus(status: number): string {
-  if (status === 401) return 'HHC_ASSET_AUTH_REQUIRED'
-  if (status === 403) return 'HHC_ASSET_ACCESS_REVOKED'
-  if (status === 404) return 'HHC_ASSET_ACCESS_REVOKED:404'
-  if (status === 408 || status === 409 || status === 423 || status === 429 || status >= 500) {
-    return 'HHC_ASSET_RETRYABLE'
-  }
-  return 'HHC_ASSET_FATAL'
-}
-
 async function fetchAsset(
   service: HhcAuthService,
   path: string,
@@ -117,6 +113,7 @@ async function fetchAsset(
     const headers = new Headers(init.headers)
     headers.set('accept', headers.get('accept') ?? 'application/json')
     headers.set('authorization', `Bearer ${token}`)
+    headers.set('X-HHC-Source-Policy-Version', '1')
     try {
       return await net.fetch(`${HHC_ASSET_ORIGIN}${path}`, { ...init, headers })
     } catch {
@@ -133,7 +130,14 @@ async function fetchAsset(
     if (!refreshed) throw requestError('HHC_ASSET_AUTH_REQUIRED')
     response = await send(refreshed)
   }
-  if (!response.ok) throw requestError(codeForStatus(response.status))
+  if (!response.ok) {
+    const failure = await readHhcAssetFailure(response)
+    if (failure.outcome)
+      throw requestError(`HHC_SOURCE_FAILURE:${failure.status}:${failure.outcome}`)
+    throw requestError(
+      `HHC_ASSET_${failure.classification.toUpperCase().replaceAll('-', '_')}${failure.status === 404 ? ':404' : ''}`
+    )
+  }
   return response
 }
 
@@ -165,7 +169,11 @@ async function readBoundedJson(response: Response): Promise<unknown> {
     }
   } catch (error) {
     await reader.cancel().catch(() => undefined)
-    if (error instanceof Error && error.message.startsWith('HHC_ASSET_')) throw error
+    if (
+      error instanceof Error &&
+      (error.message.startsWith('HHC_ASSET_') || error.message.startsWith('HHC_SOURCE_FAILURE:'))
+    )
+      throw error
     throw requestError(INVALID_BODY)
   }
   if (size === 0) throw requestError(INVALID_BODY)
@@ -192,7 +200,11 @@ async function json<T>(
   try {
     value = await readBoundedJson(await fetchAsset(service, path, init))
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith('HHC_ASSET_')) throw error
+    if (
+      error instanceof Error &&
+      (error.message.startsWith('HHC_ASSET_') || error.message.startsWith('HHC_SOURCE_FAILURE:'))
+    )
+      throw error
     throw requestError()
   }
   try {
@@ -208,7 +220,7 @@ async function downloadContent(
   itemId: string,
   destinationPath: string,
   signal?: AbortSignal
-): Promise<{ size: number; mimeType: string; etag: string }> {
+): Promise<{ size: number; mimeType: string; etag: string; sourceExpiresAt?: number }> {
   if (signal?.aborted) throw requestError('HHC_ASSET_DOWNLOAD_CANCELLED')
   const response = await fetchAsset(
     auth,
@@ -229,6 +241,19 @@ export function registerHhcAssetHandlers(wm: WindowManager, auth: HhcAuthService
       if (!isMainWindow(wm, event)) throw new Error('Unauthorized HHC Asset access')
       return handler(...args)
     }
+
+  ipcMain.handle(
+    'hhc-assets:get-collection-control',
+    authorized(async (rawId: unknown) => {
+      const control = await json(
+        auth,
+        `/api/assets/collections/${opaqueId(rawId)}/control`,
+        projectHhcSourceControl
+      )
+      await persistNativeSourceControl(control)
+      return control
+    })
+  )
 
   ipcMain.handle(
     'hhc-assets:list-collections',
@@ -355,6 +380,12 @@ export function registerHhcAssetHandlers(wm: WindowManager, auth: HhcAuthService
           if (controller.signal.aborted) throw requestError('HHC_ASSET_DOWNLOAD_CANCELLED')
           await fs.mkdir(dirname(destinationPath), { recursive: true })
           if (controller.signal.aborted) throw requestError('HHC_ASSET_DOWNLOAD_CANCELLED')
+          if (downloaded.sourceExpiresAt !== undefined)
+            await persistNativeSourceDeadline(
+              targetFileId,
+              downloaded.sourceExpiresAt,
+              collectionId
+            )
           await fs.rename(temporaryPath, destinationPath)
           return {
             fileId: targetFileId,
@@ -388,7 +419,12 @@ export function registerHhcAssetHandlers(wm: WindowManager, auth: HhcAuthService
       const leasePath = join(leaseDir, `${randomUUID()}.bin`)
       try {
         const downloaded = await downloadContent(auth, collectionId, itemId, leasePath)
-        return registerNativeMediaLease(leasePath, downloaded.mimeType, downloaded.etag)
+        return registerNativeMediaLease(
+          leasePath,
+          downloaded.mimeType,
+          downloaded.etag,
+          downloaded.sourceExpiresAt
+        )
       } catch (error) {
         await fs.rm(leasePath, { force: true }).catch(() => undefined)
         throw error

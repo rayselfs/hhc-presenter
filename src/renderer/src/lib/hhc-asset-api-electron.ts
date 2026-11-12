@@ -1,4 +1,5 @@
 import { HhcAssetApiError, type HhcAssetApi } from './hhc-asset-api'
+import { projectHhcSourceControl, type HhcSourceOutcome } from '@shared/hhc-assets'
 import { APP_CONFIG } from '@shared/app-config'
 import {
   parseHhcAssetChangePage,
@@ -13,6 +14,19 @@ async function invoke<T>(request: Promise<T>): Promise<T> {
     return await request
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
+    const source =
+      /HHC_SOURCE_FAILURE:(\d{3}):(item-expired|item-revoked|collection-paused|item-paused|collection-revoked|dependency-unavailable|upgrade-required)(?![a-z-])/.exec(
+        message
+      )
+    if (source) {
+      const outcome = source[2] as HhcSourceOutcome
+      const permanent = ['item-expired', 'item-revoked', 'collection-revoked'].includes(outcome)
+      throw new HhcAssetApiError(
+        permanent ? 'access-revoked' : 'retryable',
+        Number(source[1]),
+        outcome
+      )
+    }
     if (message.includes('HHC_ASSET_AUTH_REQUIRED')) {
       throw new HhcAssetApiError('auth-required', 401)
     }
@@ -29,6 +43,10 @@ async function invoke<T>(request: Promise<T>): Promise<T> {
 
 export function createElectronHhcAssetApi(): HhcAssetApi {
   return {
+    getCollectionControl: async (collectionId) =>
+      projectHhcSourceControl(
+        await invoke(window.api.hhcAssets.getCollectionControl(collectionId))
+      ),
     listCollections: async (cursor) =>
       parseHhcAssetCollectionPage(await invoke(window.api.hhcAssets.listCollections(cursor))),
     getCollectionChanges: async (collectionId, cursor) =>

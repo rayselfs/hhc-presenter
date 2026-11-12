@@ -609,7 +609,8 @@ describe('HHC Asset IPC', () => {
     expect(mockRegisterLease).toHaveBeenCalledWith(
       expect.stringContaining('/tmp/hhc-user-data/hhc-asset-leases/'),
       'video/mp4',
-      '"etag-1"'
+      '"etag-1"',
+      undefined
     )
 
     await handler('hhc-assets:release-content-lease')(

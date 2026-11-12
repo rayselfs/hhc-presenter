@@ -15,6 +15,7 @@ vi.mock('@renderer/lib/env', () => ({
 }))
 
 interface StoredFileBlobRecord {
+  sourceExpiresAt?: number
   id: string
   blob?: Blob
   storage?: 'indexed-db' | 'native-fs'
@@ -297,4 +298,15 @@ describe('copyItem blob sharing', () => {
     })
     expect(await db.get('file-blobs', copiedId!)).toBeUndefined()
   })
+})
+
+it('denies expired cached source A while retaining valid offline B without a network call', async () => {
+  const { getFileBlob, getFileSource } = await import('../file-explorer-db')
+  const db = new FakeFileExplorerDB()
+  db.records.set('a', { id: 'a', blob: new Blob(['a']), sourceExpiresAt: Date.now() - 1 })
+  db.records.set('b', { id: 'b', blob: new Blob(['b']), sourceExpiresAt: Date.now() + 60000 })
+  await expect(getFileBlob(db as never, 'a')).resolves.toBeNull()
+  await expect(getFileSource(db as never, 'a', 'text/plain')).resolves.toBeNull()
+  await expect(getFileBlob(db as never, 'b')).resolves.toBeInstanceOf(Blob)
+  expect(db.records.has('b')).toBe(true)
 })

@@ -133,7 +133,7 @@ describe('browser HHC Asset API', () => {
     })
 
     expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual([
-      `${ORIGIN}/api/assets/collections?limit=500&cursor=page+%2F+one`,
+      `${ORIGIN}/api/assets/collections?limit=100&cursor=page+%2F+one`,
       `${ORIGIN}/api/assets/collections/collection%20%2F%20one/changes?cursor=revision+%2F+7`,
       `${ORIGIN}/api/assets/collections/collection%20%2F%20one/items/item%20%2F%20one`,
       `${ORIGIN}/api/assets/sync-receipts`
@@ -345,4 +345,93 @@ describe('Electron HHC Asset API', () => {
       status
     })
   })
+})
+
+describe('source-aware HHC Asset transport', () => {
+  it('advertises the supported protocol and preserves scoped failure', async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        jsonResponse({ error: { version: 1, code: 'AST_SOURCE_EXPIRED', scope: 'item' } }, 410)
+      )
+    const api = createBrowserHhcAssetApi({
+      getAccessToken: async () => 'token',
+      refreshAfterUnauthorized: async () => null,
+      fetcher
+    })
+    await expect(api.getCollectionItem('collection', 'item')).rejects.toMatchObject({
+      classification: 'access-revoked',
+      outcome: 'item-expired',
+      status: 410
+    })
+    expect(
+      new Headers(fetcher.mock.calls[0]?.[1]?.headers).get('X-HHC-Source-Policy-Version')
+    ).toBe('1')
+  })
+  it('reads paused control without treating it as collection removal', async () => {
+    const control = {
+      version: 1,
+      collectionId: 'collection',
+      state: 'paused',
+      policyRevision: 2,
+      aclRevision: 3,
+      bindingGeneration: 4
+    }
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(control))
+    const api = createBrowserHhcAssetApi({
+      getAccessToken: async () => 'token',
+      refreshAfterUnauthorized: async () => null,
+      fetcher
+    })
+    await expect(api.getCollectionControl('collection')).resolves.toEqual(control)
+    expect(fetcher.mock.calls[0]?.[0]).toBe(`${ORIGIN}/api/assets/collections/collection/control`)
+  })
+})
+
+it('uses authenticated bounded content for a user-bound source, never an anonymous ticket', async () => {
+  const expiresAt = new Date(Date.now() + 60000).toISOString()
+  const item = {
+    id: 'a',
+    collectionId: 'c',
+    remoteItemId: 'source',
+    displayName: 'a.pdf',
+    sourceRevision: 'r',
+    createdRevision: 1,
+    createdAt: '2026-08-17T00:00:00Z',
+    sourceExpiresAt: expiresAt,
+    etag: 'etag'
+  }
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(jsonResponse(item))
+    .mockResolvedValueOnce(
+      new Response('data', { headers: { etag: 'etag', 'X-HHC-Source-Expires-At': expiresAt } })
+    )
+  const create = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:protected-source')
+  const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+  try {
+    const api = createBrowserHhcAssetApi({
+      getAccessToken: async () => 'private-token',
+      refreshAfterUnauthorized: async () => null,
+      fetcher
+    })
+    await expect(api.getRemoteContentSource('c', 'a')).resolves.toMatchObject({
+      kind: 'browser-lease',
+      url: 'blob:protected-source',
+      sourceExpiresAt: Date.parse(expiresAt)
+    })
+    expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual([
+      `${ORIGIN}/api/assets/collections/c/items/a`,
+      `${ORIGIN}/api/assets/collections/c/items/a/content`
+    ])
+    expect(new Headers(fetcher.mock.calls[1]?.[1]?.headers).get('authorization')).toBe(
+      'Bearer private-token'
+    )
+    const { releaseHhcBrowserLease } = await import('../hhc-content-lease')
+    releaseHhcBrowserLease('blob:protected-source')
+    expect(revoke).toHaveBeenCalledWith('blob:protected-source')
+  } finally {
+    create.mockRestore()
+    revoke.mockRestore()
+  }
 })

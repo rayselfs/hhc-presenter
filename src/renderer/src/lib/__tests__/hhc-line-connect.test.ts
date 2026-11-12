@@ -1,7 +1,7 @@
 import { useFileExplorerStore } from '@renderer/stores/file-explorer'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import 'fake-indexeddb/auto'
-import type { HhcAssetApi } from '../hhc-asset-api'
+import { HhcAssetApiError, type HhcAssetApi } from '../hhc-asset-api'
 import type { HhcSession } from '@shared/hhc-auth'
 import type {
   HhcAssetCollection,
@@ -43,11 +43,13 @@ vi.mock('../env', () => ({
   isWeb: () => !mocks.electron
 }))
 
-vi.mock('../hhc-asset-api', () => ({
+vi.mock('../hhc-asset-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../hhc-asset-api')>()),
   createHhcAssetApi: vi.fn(async () => mocks.api)
 }))
 
 vi.mock('../hhc-line-access', () => ({
+  updateHhcSourceControl: vi.fn(async () => undefined),
   handleHhcLineAccessError: mocks.handleAccessError,
   isHhcLineRootAuthorized: vi.fn(async () => true)
 }))
@@ -93,6 +95,9 @@ function resetChanges(items: HhcAssetCollectionItem[] = []): HhcAssetApi['getCol
 
 function api(overrides: Partial<HhcAssetApi> = {}): HhcAssetApi {
   return {
+    getCollectionControl: vi.fn(async () => {
+      throw new HhcAssetApiError('access-revoked', 404)
+    }),
     listCollections: vi.fn(async () => ({ collections: [], hasMore: false })),
     getCollectionChanges: resetChanges(),
     getCollectionItem: vi.fn(),
@@ -1547,4 +1552,93 @@ describe('HHC LINE collection connection', () => {
     }
     await Promise.all([first, duplicate, independent])
   })
+})
+
+it('keeps paused data and cursor, then resets after resume without redownloading valid B', async () => {
+  const currentAuth = auth({ current: { userId: 'user-1', displayName: 'Ada', roles: [] } })
+  const control: import('@shared/hhc-assets').HhcSourceControl = {
+    version: 1,
+    collectionId: 'collection-1',
+    state: 'active' as const,
+    policyRevision: 1,
+    aclRevision: 1,
+    bindingGeneration: 1
+  }
+  const sourceCollection = {
+    ...collection('collection-1', 'Sunday'),
+    sourcePolicyVersion: 1 as const,
+    aclRevision: 1,
+    bindingGeneration: 1
+  }
+  const sourceItem = {
+    id: 'B',
+    collectionId: 'collection-1',
+    remoteItemId: 'original-B',
+    displayName: 'B.jpg',
+    sourceRevision: 'checksum',
+    createdRevision: 1,
+    createdAt: '2026-08-17T00:00:00Z',
+    sourceExpiresAt: new Date(Date.now() + 60000).toISOString(),
+    etag: 'etag',
+    mimeType: 'image/jpeg',
+    sizeBytes: 1
+  }
+  const changes = vi.fn(async (_id: string, cursor?: string) => ({
+    collection: sourceCollection,
+    items: cursor ? [] : [sourceItem],
+    tombstones: [],
+    cursor: cursor ? 'revision_1' : 'barrier',
+    hasMore: !cursor,
+    reset: !cursor
+  }))
+  const getControl = vi.fn(async () => control)
+  mocks.api = api({ getCollectionChanges: changes, getCollectionControl: getControl })
+  await importHhcLineCollection(currentAuth, {
+    remoteItemId: 'collection-1',
+    name: 'Sunday',
+    parentRemoteItemId: null
+  })
+  const db = await openFileExplorerDB()
+  const [root] = await db.getAll('folder-records')
+  const entry = (await getSyncEntryByRemoteItem('hhc-line:user-1', 'B'))!
+  await putSyncEntry({ ...entry, blobId: entry.itemId, status: 'available-offline' })
+  await db.put('file-blobs', {
+    id: entry.itemId!,
+    blob: new Blob(['B']),
+    sourceExpiresAt: Date.parse(sourceItem.sourceExpiresAt)
+  })
+  getControl.mockResolvedValue({ ...control, state: 'paused', policyRevision: 2 })
+  await expect(refreshHhcLineFolder(currentAuth, root.id)).rejects.toMatchObject({
+    outcome: 'collection-paused'
+  })
+  await expect(syncDB.getSyncCursor('hhc-line:user-1', 'collection-1')).resolves.toMatchObject({
+    cursor: 'revision_1',
+    sourceControl: control
+  })
+  expect(await getSyncEntryByRemoteItem('hhc-line:user-1', 'B')).toMatchObject({
+    itemId: entry.itemId,
+    status: 'available-offline'
+  })
+  getControl.mockResolvedValue({ ...control, policyRevision: 3 })
+  changes.mockClear()
+  const enqueue = vi.spyOn(syncDownloadQueue, 'enqueueSyncDownload').mockResolvedValue(null)
+  mocks.offlinePolicy = 'always-offline'
+  await refreshHhcLineFolder(currentAuth, root.id)
+  expect(changes.mock.calls.some((args) => args.length === 1)).toBe(true)
+  expect(enqueue).not.toHaveBeenCalled()
+  await expect(getSyncEntryByRemoteItem('hhc-line:user-1', 'B')).resolves.toMatchObject({
+    itemId: entry.itemId,
+    blobId: entry.itemId,
+    status: 'available-offline'
+  })
+  await expect(syncDB.getSyncCursor('hhc-line:user-1', 'collection-1')).resolves.toMatchObject({
+    sourceControl: { policyRevision: 3 }
+  })
+  const local = (await db.get(
+    'folder-items',
+    entry.itemId!
+  )) as import('@shared/types/folder').FileItemRecord
+  const before = getControl.mock.calls.length
+  await expect(prepareHhcLinePresentationSource(currentAuth, local)).resolves.toBeNull()
+  expect(getControl.mock.calls.length).toBe(before)
 })

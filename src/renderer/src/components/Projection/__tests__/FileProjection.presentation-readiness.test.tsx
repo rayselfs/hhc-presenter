@@ -294,3 +294,18 @@ it('validates source-backed projection as render data without requiring the opaq
   render(<FileProjection {...props} initialEditablePresentation={payload} />)
   await waitFor(() => expect(send).toHaveBeenCalledWith(...status(1, 'ready')))
 })
+
+it('unmounts projected source content exactly at its immutable offline deadline', async () => {
+  vi.useFakeTimers()
+  try {
+    const result = render(<FileProjection sourceExpiresAt={Date.now() + 1000} />)
+    expect(result.queryByTestId('source-expired')).toBeNull()
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000)
+    })
+    expect(result.getByTestId('source-expired')).toBeInTheDocument()
+    result.unmount()
+  } finally {
+    vi.useRealTimers()
+  }
+})
