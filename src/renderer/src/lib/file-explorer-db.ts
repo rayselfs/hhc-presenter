@@ -266,12 +266,7 @@ export async function deleteFileBlob(
   id: string
 ): Promise<boolean> {
   const record = await db.get('file-blobs', id)
-  if (
-    !record ||
-    (record.sourceExpiresAt !== undefined &&
-      (!Number.isFinite(record.sourceExpiresAt) || record.sourceExpiresAt <= Date.now()))
-  )
-    return false
+  if (!record) return false
 
   if (record.refCount === undefined || record.refCount <= 1) {
     if (record.storage === 'native-fs' && isElectron()) {

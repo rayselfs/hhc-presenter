@@ -238,6 +238,36 @@ describe('file-explorer-db blob refCount', () => {
     expect(db.records.has('file-1')).toBe(false)
   })
 
+  it.each([Date.now() - 1, Number.NaN])(
+    'expired or invalid deadline still permits reference-safe cleanup (%s)',
+    async (sourceExpiresAt) => {
+      envState.isElectron = true
+      const { deleteFileBlob, getFileSource } = await import('../file-explorer-db')
+      db.records.set('expired-native', {
+        id: 'expired-native',
+        storage: 'native-fs',
+        size: 5,
+        refCount: 2,
+        sourceExpiresAt
+      })
+      expect(await getFileSource(db as never, 'expired-native', 'image/png')).toBeNull()
+      expect(await deleteFileBlob(db as never, 'expired-native')).toBe(false)
+      expect(db.records.get('expired-native')?.refCount).toBe(1)
+      expect(mockDeleteNativeFile).not.toHaveBeenCalled()
+      expect(await deleteFileBlob(db as never, 'expired-native')).toBe(true)
+      expect(mockDeleteNativeFile).toHaveBeenCalledWith('expired-native')
+      expect(db.records.has('expired-native')).toBe(false)
+      db.records.set('expired-browser', {
+        id: 'expired-browser',
+        blob: new Blob(['expired']),
+        refCount: 1,
+        sourceExpiresAt
+      })
+      expect(await deleteFileBlob(db as never, 'expired-browser')).toBe(true)
+      expect(db.records.has('expired-browser')).toBe(false)
+    }
+  )
+
   it('deleteFileBlob deletes legacy blob records without refCount', async () => {
     const { deleteFileBlob } = await import('../file-explorer-db')
     db.records.set('legacy-file', { id: 'legacy-file', blob: new Blob(['legacy']) })
