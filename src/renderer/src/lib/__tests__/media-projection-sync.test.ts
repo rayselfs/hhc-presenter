@@ -37,7 +37,10 @@ vi.mock('@renderer/contexts/ProjectionContext', () => ({
     startProjection: mockStartProjection,
     stopProjection: mockStopProjection,
     getProjectionIntentRevision: () => projectionState.intentRevision,
-    getProjectionSnapshot: () => ({ owner: projectionState.activeOwner }),
+    getProjectionSnapshot: () => ({
+      owner: projectionState.activeOwner,
+      media: { show: { itemId: useMediaProjectionStore.getState().currentItem()?.id } }
+    }),
     activeOwner: projectionState.activeOwner
   })
 }))
@@ -1858,3 +1861,24 @@ it('finishes current source acquisition when a queue insertion shifts its index'
     ['file:show', expect.objectContaining({ itemId: item.id })]
   ])
 })
+
+for (const owner of ['media', 'bible', 'timer'] as const) {
+  for (const cause of ['expiry', 'removal'] as const) {
+    it(`source ${cause} only stops its media projection, preserving ${owner} ownership`, async () => {
+      vi.useFakeTimers()
+      const item = {
+        ...makeFile('deadline-source', 'file.png'),
+        sourceExpiresAt: Date.now() + 1000
+      }
+      useMediaProjectionStore.setState({ playlist: [item], currentIndex: 0, isPresenting: true })
+      useFileExplorerStore.setState({ items: { [item.id]: item }, folders: {} })
+      renderSync()
+      await act(async () => Promise.resolve())
+      projectionState.activeOwner = owner
+      mockStopProjection.mockClear()
+      if (cause === 'expiry') await act(async () => vi.advanceTimersByTimeAsync(1001))
+      else act(() => useFileExplorerStore.setState({ items: {} }))
+      expect(mockStopProjection).toHaveBeenCalledTimes(owner === 'media' ? 1 : 0)
+    })
+  }
+}

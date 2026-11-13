@@ -492,6 +492,15 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
     return unsub
   }, [clearRemoteSource])
 
+  const stopCurrentMedia = useCallback(
+    (itemId: string): void => {
+      const snapshot = getProjectionSnapshot()
+      if (snapshot?.owner === 'media' && snapshot.media.show?.itemId === itemId)
+        void stopProjection()
+    },
+    [getProjectionSnapshot, stopProjection]
+  )
+
   useEffect(() => {
     const unsubscribe = useFileExplorerStore.subscribe((state) => {
       const playback = useMediaProjectionStore.getState()
@@ -505,7 +514,7 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
         ) {
           projectSequenceRef.current += 1
           clearRemoteSource()
-          void stopProjection()
+          stopCurrentMedia(item.id)
           return
         }
       }
@@ -525,10 +534,10 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
         return
       projectSequenceRef.current += 1
       clearRemoteSource()
-      void stopProjection()
+      stopCurrentMedia(active.itemId)
     })
     return unsubscribe
-  }, [clearRemoteSource, stopProjection])
+  }, [clearRemoteSource, stopCurrentMedia])
 
   useEffect(() => {
     let cancel = (): void => undefined
@@ -539,7 +548,7 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
         cancel = watchHhcSourceDeadline(item.sourceExpiresAt, () => {
           projectSequenceRef.current += 1
           clearRemoteSource()
-          void stopProjection()
+          stopCurrentMedia(item.id)
         })
     }
     schedule()
@@ -554,7 +563,7 @@ export function useMediaProjectionSync(options: MediaProjectionSyncOptions = {})
       cancel()
       unsubscribe()
     }
-  }, [clearRemoteSource, stopProjection])
+  }, [clearRemoteSource, stopCurrentMedia])
 
   const previousSessionUserIdRef = useRef(sessionUserId)
   useEffect(() => {
