@@ -119,14 +119,13 @@ it('joins English word boxes across gaps narrower than a Chinese phrase gap', ()
   expect(readLyricsLines([box('Wor', 0, 0), box('thy', 101, 0)])).toEqual(['Worthy'])
 })
 
-function glyphImage(widths: number[], gaps: number[], lightInk: boolean): ImageData {
+function glyphImage(widths: number[], gaps: number[], lightInk: boolean, height = 40): ImageData {
   const width = 100
-  const height = 40
   const data = new Uint8ClampedArray(width * height * 4)
   data.fill(lightInk ? 16 : 227)
   let left = 2
   for (const [index, glyph] of widths.entries()) {
-    for (let y = 3; y < 37; y++) {
+    for (let y = 3; y < height - 3; y++) {
       for (let x = left; x < left + glyph; x++) {
         data.fill(lightInk ? 240 : 27, (y * width + x) * 4, (y * width + x) * 4 + 3)
       }
@@ -176,4 +175,21 @@ it('finds the visible word gap when padded OCR boxes overlap', () => {
   ]
   expect(readLyricsLines(blocks, glyphImage([34, 36], [12], true))).toEqual(['Our God'])
   expect(readLyricsLines(blocks, glyphImage([34, 36], [1], true))).toEqual(['OurGod'])
+})
+
+it('does not infer Han phrase breaks from small glyphs', () => {
+  const { text, score } = box('恩典无限', 0, 0)
+  const block = {
+    text,
+    score,
+    poly: [
+      [0, 0],
+      [100, 0],
+      [100, 21],
+      [0, 21]
+    ]
+  }
+  const image = glyphImage([15, 15, 15, 15], [2, 7, 2], true, 21)
+  expect(readLyricsLines([block], image)).toEqual(['恩典無限'])
+  expect(readLyricsLines([{ ...block, text: '恩典 无限' }], image)).toEqual(['恩典 無限'])
 })
