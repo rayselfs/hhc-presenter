@@ -108,8 +108,11 @@ export function createBrowserHhcAssetApi(options: BrowserHhcAssetApiOptions): Hh
         await json(`/api/assets/collections/${encodeURIComponent(collectionId)}/control`)
       )
     },
-    async listCollections(cursor) {
-      const params = new URLSearchParams({ limit: '100' })
+    async listCollections(cursor, sourcePolicyVersion = 0) {
+      const params = new URLSearchParams({
+        limit: '100',
+        sourcePolicyVersion: String(sourcePolicyVersion)
+      })
       if (cursor) params.set('cursor', cursor)
       return parseHhcAssetCollectionPage(await json(`/api/assets/collections?${params}`))
     },

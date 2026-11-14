@@ -26,6 +26,7 @@ import {
   importHhcLineCollection,
   ensureHhcLineDesktopItemAvailableForPresentation,
   listHhcLineCollections,
+  listHhcLineCollectionChoices,
   prepareHhcLinePresentationSource,
   refreshHhcLineFolder
 } from '../hhc-line-connect'
@@ -660,7 +661,7 @@ describe('HHC LINE collection connection', () => {
         parentRemoteItemId: null
       }
     ])
-    expect(mocks.api.listCollections).toHaveBeenNthCalledWith(2, 'page-2')
+    expect(mocks.api.listCollections).toHaveBeenNthCalledWith(2, 'page-2', 0)
   })
 
   it('deduplicates concurrent imports and persists an active browser online-only root', async () => {
@@ -1641,4 +1642,47 @@ it('keeps paused data and cursor, then resets after resume without redownloading
   const before = getControl.mock.calls.length
   await expect(prepareHhcLinePresentationSource(currentAuth, local)).resolves.toBeNull()
   expect(getControl.mock.calls.length).toBe(before)
+})
+
+it('keeps legacy choices when source discovery fails and retries from the first source page', async () => {
+  const sessionRef = { current: { userId: 'user-1', displayName: 'Ada', roles: [] } }
+  const list = vi
+    .fn()
+    .mockResolvedValueOnce({ collections: [collection('legacy', 'Legacy')], hasMore: false })
+    .mockResolvedValueOnce({
+      collections: [collection('source-partial', 'Partial')],
+      hasMore: true,
+      cursor: 'source-next'
+    })
+    .mockRejectedValueOnce(new HhcAssetApiError('retryable', 503))
+  mocks.api = api({ listCollections: list })
+  await expect(listHhcLineCollectionChoices(auth(sessionRef))).resolves.toEqual({
+    folders: [{ remoteItemId: 'legacy', name: 'Legacy', parentRemoteItemId: null }],
+    incomplete: true
+  })
+  expect(list.mock.calls).toEqual([
+    [undefined, 0],
+    [undefined, 1],
+    ['source-next', 1]
+  ])
+  list
+    .mockResolvedValueOnce({ collections: [collection('legacy', 'Legacy')], hasMore: false })
+    .mockResolvedValueOnce({ collections: [collection('source', 'Source')], hasMore: false })
+  await expect(listHhcLineCollectionChoices(auth(sessionRef))).resolves.toHaveLength(2)
+  expect(list.mock.calls.slice(3)).toEqual([
+    [undefined, 0],
+    [undefined, 1]
+  ])
+})
+
+it('does not hide account authorization loss behind partial source results', async () => {
+  const sessionRef = { current: { userId: 'user-1', displayName: 'Ada', roles: [] } }
+  const failure = new HhcAssetApiError('auth-required', 401)
+  mocks.api = api({
+    listCollections: vi
+      .fn()
+      .mockResolvedValueOnce({ collections: [collection('legacy', 'Legacy')], hasMore: false })
+      .mockRejectedValueOnce(failure)
+  })
+  await expect(listHhcLineCollectionChoices(auth(sessionRef))).rejects.toBe(failure)
 })

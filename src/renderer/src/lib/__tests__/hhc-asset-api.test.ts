@@ -133,7 +133,7 @@ describe('browser HHC Asset API', () => {
     })
 
     expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual([
-      `${ORIGIN}/api/assets/collections?limit=100&cursor=page+%2F+one`,
+      `${ORIGIN}/api/assets/collections?limit=100&sourcePolicyVersion=0&cursor=page+%2F+one`,
       `${ORIGIN}/api/assets/collections/collection%20%2F%20one/changes?cursor=revision+%2F+7`,
       `${ORIGIN}/api/assets/collections/collection%20%2F%20one/items/item%20%2F%20one`,
       `${ORIGIN}/api/assets/sync-receipts`
@@ -305,7 +305,7 @@ describe('Electron HHC Asset API', () => {
       appVersion: '2.4.0'
     })
 
-    expect(hhcAssets.listCollections).toHaveBeenCalledWith('cursor_1')
+    expect(hhcAssets.listCollections).toHaveBeenCalledWith('cursor_1', 0)
     expect(hhcAssets.downloadFile).toHaveBeenCalledWith({
       collectionId: 'collection_1',
       itemId: 'item_1',
@@ -434,4 +434,18 @@ it('uses authenticated bounded content for a user-bound source, never an anonymo
     create.mockRestore()
     revoke.mockRestore()
   }
+})
+
+it('selects source discovery independently in the browser', async () => {
+  const fetcher = vi.fn<typeof fetch>(
+    async () => new Response(JSON.stringify({ collections: [], hasMore: false }), { status: 200 })
+  )
+  const api = createBrowserHhcAssetApi({
+    origin: ORIGIN,
+    getAccessToken: async () => 'fixture',
+    refreshAfterUnauthorized: async () => null,
+    fetcher
+  })
+  await api.listCollections(undefined, 1)
+  expect(String(fetcher.mock.calls[0]?.[0])).toContain('sourcePolicyVersion=1')
 })

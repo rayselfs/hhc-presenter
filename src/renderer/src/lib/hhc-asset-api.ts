@@ -26,7 +26,7 @@ export class HhcAssetApiError extends Error {
 
 export interface HhcAssetApi {
   getCollectionControl(collectionId: string): Promise<HhcSourceControl>
-  listCollections(cursor?: string): Promise<HhcAssetCollectionPage>
+  listCollections(cursor?: string, sourcePolicyVersion?: 0 | 1): Promise<HhcAssetCollectionPage>
   getCollectionChanges(collectionId: string, cursor?: string): Promise<HhcAssetCollectionChangePage>
   getCollectionItem(collectionId: string, itemId: string): Promise<HhcAssetCollectionItem>
   issueContentTicket(collectionId: string, itemId: string): Promise<HhcAssetContentTicket>

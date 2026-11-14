@@ -19,7 +19,7 @@ vi.mock('../onedrive-connect', () => ({
 vi.mock('../hhc-line-connect', () => ({
   getConnectedHhcLineAccount: hhcLineMocks.getConnectedAccount,
   importHhcLineCollection: hhcLineMocks.importCollection,
-  listHhcLineCollections: hhcLineMocks.listCollections,
+  listHhcLineCollectionChoices: hhcLineMocks.listCollections,
   refreshHhcLineFolder: hhcLineMocks.refreshFolder
 }))
 

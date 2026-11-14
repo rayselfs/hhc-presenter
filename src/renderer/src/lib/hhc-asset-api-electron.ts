@@ -47,8 +47,10 @@ export function createElectronHhcAssetApi(): HhcAssetApi {
       projectHhcSourceControl(
         await invoke(window.api.hhcAssets.getCollectionControl(collectionId))
       ),
-    listCollections: async (cursor) =>
-      parseHhcAssetCollectionPage(await invoke(window.api.hhcAssets.listCollections(cursor))),
+    listCollections: async (cursor, sourcePolicyVersion = 0) =>
+      parseHhcAssetCollectionPage(
+        await invoke(window.api.hhcAssets.listCollections(cursor, sourcePolicyVersion))
+      ),
     getCollectionChanges: async (collectionId, cursor) =>
       parseHhcAssetChangePage(
         await invoke(window.api.hhcAssets.getCollectionChanges({ collectionId, cursor }))

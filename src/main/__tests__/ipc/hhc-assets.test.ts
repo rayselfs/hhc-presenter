@@ -172,7 +172,7 @@ describe('HHC Asset IPC', () => {
     })
 
     expect(mockFetch.mock.calls.map(([url]) => String(url))).toEqual([
-      'https://www.alive.org.tw/api/assets/collections?limit=100&cursor=cursor+%2F+1',
+      'https://www.alive.org.tw/api/assets/collections?limit=100&sourcePolicyVersion=0&cursor=cursor+%2F+1',
       'https://www.alive.org.tw/api/assets/collections/collection_1/changes?cursor=revision+%2F+1'
     ])
     for (const [, init] of mockFetch.mock.calls) {
@@ -640,4 +640,16 @@ describe('HHC Asset IPC', () => {
       'Unauthorized'
     )
   })
+})
+
+it('isolates source discovery selectors at the IPC boundary', async () => {
+  mockFetch.mockResolvedValueOnce(json({ collections: [], hasMore: false }))
+  await handler('hhc-assets:list-collections')(event(), undefined, 1)
+  expect(String(mockFetch.mock.calls[0][0])).toContain('sourcePolicyVersion=1')
+  for (const invalid of [2, '1', null, {}]) {
+    await expect(
+      handler('hhc-assets:list-collections')(event(), undefined, invalid)
+    ).rejects.toThrow('Invalid source policy version')
+  }
+  expect(mockFetch).toHaveBeenCalledTimes(1)
 })

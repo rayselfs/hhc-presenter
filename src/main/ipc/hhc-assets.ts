@@ -257,12 +257,22 @@ export function registerHhcAssetHandlers(wm: WindowManager, auth: HhcAuthService
 
   ipcMain.handle(
     'hhc-assets:list-collections',
-    authorized(async (rawCursor?: unknown): Promise<HhcAssetCollectionPage> => {
-      const params = new URLSearchParams({ limit: '100' })
-      const validatedCursor = cursor(rawCursor)
-      if (validatedCursor) params.set('cursor', validatedCursor)
-      return json(auth, `/api/assets/collections?${params}`, projectHhcAssetCollectionPage)
-    })
+    authorized(
+      async (
+        rawCursor?: unknown,
+        sourcePolicyVersion: unknown = 0
+      ): Promise<HhcAssetCollectionPage> => {
+        if (sourcePolicyVersion !== 0 && sourcePolicyVersion !== 1)
+          throw new Error('Invalid source policy version')
+        const params = new URLSearchParams({
+          limit: '100',
+          sourcePolicyVersion: String(sourcePolicyVersion)
+        })
+        const validatedCursor = cursor(rawCursor)
+        if (validatedCursor) params.set('cursor', validatedCursor)
+        return json(auth, `/api/assets/collections?${params}`, projectHhcAssetCollectionPage)
+      }
+    )
   )
 
   ipcMain.handle(

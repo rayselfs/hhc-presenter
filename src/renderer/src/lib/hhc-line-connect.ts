@@ -13,6 +13,7 @@ import { HhcLineReadonlyProvider } from './hhc-line-provider'
 import { isElectron } from './env'
 import { collectAvailableFileBlobIds, openFileExplorerDB } from './file-explorer-db'
 import type {
+  CloudFolderListing,
   CloudImportResult,
   CloudRefreshSummary,
   CloudRemoteFolder,
@@ -290,7 +291,10 @@ export async function getConnectedHhcLineAccount(
   return connection ?? null
 }
 
-export async function listHhcLineCollections(auth: HhcLineCloudAuth): Promise<CloudRemoteFolder[]> {
+export async function listHhcLineCollections(
+  auth: HhcLineCloudAuth,
+  sourcePolicyVersion: 0 | 1 = 0
+): Promise<CloudRemoteFolder[]> {
   const authGeneration = auth.getAuthGeneration?.() ?? 0
   const session = requireSession(auth)
   try {
@@ -302,7 +306,7 @@ export async function listHhcLineCollections(auth: HhcLineCloudAuth): Promise<Cl
     let pageCount = 0
 
     while (hasMore) {
-      const page = await api.listCollections(cursor)
+      const page = await api.listCollections(cursor, sourcePolicyVersion)
       pageCount += 1
       assertCurrentAccount(auth, session.userId)
       for (const collection of page.collections) {
@@ -334,6 +338,25 @@ export async function listHhcLineCollections(auth: HhcLineCloudAuth): Promise<Cl
       error,
       { accountUserId: session.userId, authGeneration }
     )
+    throw error
+  }
+}
+
+export async function listHhcLineCollectionChoices(
+  auth: HhcLineCloudAuth
+): Promise<CloudFolderListing> {
+  const session = requireSession(auth)
+  const generation = auth.getAuthGeneration?.() ?? 0
+  const legacy = await listHhcLineCollections(auth, 0)
+  try {
+    const source = await listHhcLineCollections(auth, 1)
+    return [...legacy, ...source]
+  } catch (error) {
+    assertCurrentAccount(auth, session.userId)
+    if ((auth.getAuthGeneration?.() ?? 0) !== generation) throw error
+    if (error instanceof HhcAssetApiError && error.classification === 'retryable') {
+      return { folders: legacy, incomplete: true }
+    }
     throw error
   }
 }
