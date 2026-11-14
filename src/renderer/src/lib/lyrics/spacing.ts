@@ -57,7 +57,7 @@ export function restoreLyricsSpaces(box: TextBox, image: ImageData): string {
 
   // shortcut: use clear ink gaps until the OCR runtime exposes character positions.
   const height = box.bottom - box.top
-  const spaceGap = height * (han ? 0.22 : 0.19)
+  const spaceGap = han ? Math.max(6, height * 0.25) : height * 0.19
   const candidates = inkColumns(box, image).flatMap((ink) => {
     const starts: number[] = []
     const widths: number[] = []

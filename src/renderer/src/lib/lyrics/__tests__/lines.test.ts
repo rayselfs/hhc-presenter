@@ -147,6 +147,8 @@ it.each([true, false])(
     expect(readLyricsLines([box('恩典无限', 0, 0)], tracked)).toEqual(['恩典無限'])
     const partlySpaced = glyphImage([16, 16, 16, 16], [12, 3, 13], lightInk)
     expect(readLyricsLines([box('主 恩满盈', 0, 0)], partlySpaced)).toEqual(['主 恩滿 盈'])
+    const unevenInk = glyphImage([16, 16, 16, 16], [3, 9, 3], lightInk)
+    expect(readLyricsLines([box('恩典无限', 0, 0)], unevenInk)).toEqual(['恩典無限'])
     const splitStroke = glyphImage([8, 8, 18, 18, 18], [12, 3, 3, 3], lightInk)
     expect(readLyricsLines([box('恩典无限', 0, 0)], splitStroke)).toEqual(['恩典無限'])
   }
