@@ -121,15 +121,20 @@ export async function verifyLyricsWorkflow(
   }
   const spaced = ['耶穌 耶穌 無人能像祢']
   await setFixture(page, 'black', spaced)
-  await expect(projection.getByTestId('lyrics-line')).toHaveText([/^耶穌\s*耶穌\s*無人能像祢$/], {
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(spaced, { timeout: 40000 })
+  await setFixture(page, 'black', ['Worthy   is   the   Lamb', 'Amazing grace'])
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(
+    ['Worthy is the Lamb', 'Amazing grace'],
+    { timeout: 40000 }
+  )
+  await setFixture(page, 'bright', ['Jesus loves me', ...spaced])
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(['Jesus loves me', ...spaced], {
     timeout: 40000
   })
   await setFixture(page, 'bright', allLines)
   await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 40000 })
   await setFixture(page, 'black', ['耶稣 耶稣 无人能像祢'])
-  await expect(projection.getByTestId('lyrics-line')).toHaveText([/^耶穌\s*耶穌\s*無人能像祢$/], {
-    timeout: 40000
-  })
+  await expect(projection.getByTestId('lyrics-line')).toHaveText(spaced, { timeout: 40000 })
   await setFixture(page, 'bright', allLines)
   await expect(projection.getByTestId('lyrics-line')).toHaveText(allLines, { timeout: 40000 })
   const initializations = runtimeMessages.length
