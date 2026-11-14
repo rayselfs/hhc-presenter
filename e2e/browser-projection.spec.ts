@@ -140,6 +140,8 @@ test('restores the HHC account session without storing the access token', async 
     etag: `"etag-${index + 1}"`,
     createdAt: '2026-08-17T00:00:00Z'
   }))
+  let sourceDiscoveryUnavailable = true
+  const discoveryScopes = new Set<string>()
   const ticketRequests: string[] = []
   const contentRequests: Array<{
     range: string | undefined
@@ -251,7 +253,8 @@ test('restores the HHC account session without storing the access token', async 
     const url = new URL(request.url())
     const corsHeaders = {
       'access-control-allow-origin': clientOrigin,
-      'access-control-allow-headers': 'authorization,content-type,range',
+      'access-control-allow-headers':
+        'authorization,content-type,range,x-hhc-source-policy-version',
       'access-control-allow-methods': 'GET,POST,OPTIONS',
       'access-control-expose-headers': 'content-range,etag',
       'cache-control': 'no-store',
@@ -263,10 +266,25 @@ test('restores the HHC account session without storing the access token', async 
       return
     }
     if (url.pathname === '/api/assets/collections') {
+      const scope = url.searchParams.get('sourcePolicyVersion')
+      expect(['0', '1']).toContain(scope)
+      discoveryScopes.add(scope!)
+      const unavailable = scope === '1' && sourceDiscoveryUnavailable
       await route.fulfill({
-        status: 200,
+        status: unavailable ? 503 : 200,
         headers: { ...corsHeaders, 'content-type': 'application/json' },
-        body: JSON.stringify({ collections: [collection], hasMore: false })
+        body: JSON.stringify(
+          unavailable
+            ? {
+                error: {
+                  version: 1,
+                  code: 'AST_SOURCE_UNAVAILABLE',
+                  scope: 'dependency',
+                  message: 'Temporarily unavailable'
+                }
+              }
+            : { collections: scope === '0' ? [collection] : [], hasMore: false }
+        )
       })
       return
     }
@@ -412,8 +430,31 @@ test('restores the HHC account session without storing the access token', async 
   await page.getByRole('link', { name: /files/i }).click()
   await page.getByLabel('New').click()
   await page.getByRole('menuitem', { name: 'Sync LINE group' }).click()
-  await page.getByRole('button', { name: collection.name }).click()
-  await page.getByRole('button', { name: 'Add Folder' }).click()
+  const picker = page.getByRole('dialog')
+  await expect(picker.getByRole('status')).toContainText(
+    'Some collections are temporarily unavailable'
+  )
+  await expect(picker.getByRole('button', { name: collection.name })).toHaveCount(1)
+  sourceDiscoveryUnavailable = false
+  const recoveredSource = page.waitForResponse(
+    (response) => {
+      const url = new URL(response.url())
+      return (
+        url.origin === assetOrigin &&
+        url.pathname === '/api/assets/collections' &&
+        url.searchParams.get('sourcePolicyVersion') === '1' &&
+        response.status() === 200
+      )
+    },
+    { timeout: 5000 }
+  )
+  await picker.getByRole('button', { name: 'Retry', exact: true }).click()
+  await recoveredSource
+  await expect(picker.getByRole('button', { name: collection.name })).toBeVisible()
+  await expect(picker.getByRole('status')).toHaveCount(0)
+  expect([...discoveryScopes].sort()).toEqual(['0', '1'])
+  await picker.getByRole('button', { name: collection.name }).click()
+  await picker.getByRole('button', { name: 'Add Folder' }).click()
   const importedCollection = page.locator(`span[title="${collection.name}"]`)
   await expect(importedCollection).toBeVisible()
   await importedCollection.dblclick()
