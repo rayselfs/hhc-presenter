@@ -146,6 +146,7 @@ export default function ProjectionPage(): React.JSX.Element {
   if (visible === 'file' && state.fileData) {
     return (
       <FileProjection
+        sourceExpiresAt={state.fileData.sourceExpiresAt}
         generation={state.generation}
         projectionSessionId={browserSession.sessionId}
         initialReplayState={state.mediaReplayState}

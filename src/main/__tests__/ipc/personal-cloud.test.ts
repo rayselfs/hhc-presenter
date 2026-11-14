@@ -1,4 +1,5 @@
 vi.mock('../../lib/native-storage', () => ({
+  getReadableNativeFilePath: async (id: string) => `${mocks.root}/${id}`,
   getNativeFilePath: (id: string) => `${mocks.root}/${id}`
 }))
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'

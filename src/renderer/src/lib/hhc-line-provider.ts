@@ -1,7 +1,7 @@
 import { lockMediaResources } from './media-resource-locks'
 import type { HhcSession } from '@shared/hhc-auth'
-import type { HhcAssetCollectionItem } from '@shared/hhc-assets'
-import type { HhcAssetApi } from './hhc-asset-api'
+import type { HhcAssetCollectionItem, HhcSourceControl } from '@shared/hhc-assets'
+import { HhcAssetApiError, type HhcAssetApi } from './hhc-asset-api'
 import {
   createHhcLineProviderConnectionId,
   deleteSyncEntries,
@@ -43,6 +43,7 @@ type HhcLineProviderOptions = {
     metadata: RemoteSyncItem,
     canCommit: SyncDownloadCommitGuard
   ) => Promise<SyncDownloadResult>
+  onSourceControl?: (connectionId: string, control: HhcSourceControl) => Promise<void>
   onAccessError?: (
     scope: {
       providerConnectionId: string
@@ -57,6 +58,7 @@ type HhcLineProviderOptions = {
 function mapItem(item: HhcAssetCollectionItem): RemoteSyncItem {
   const sourceCreatedAt = parseSourceCreatedAt(item.createdAt)
   return {
+    ...(item.sourceExpiresAt ? { sourceExpiresAt: Date.parse(item.sourceExpiresAt) } : {}),
     remoteItemId: item.id,
     parentRemoteItemId: item.collectionId,
     kind: 'file',
@@ -86,6 +88,9 @@ async function saveNativeDownloadedContent(
     let entryId: string | undefined
     try {
       await db.put('file-blobs', {
+        ...(metadata.sourceExpiresAt === undefined
+          ? {}
+          : { sourceExpiresAt: metadata.sourceExpiresAt }),
         id: request.targetBlobId,
         storage: 'native-fs',
         size: content.size,
@@ -104,6 +109,7 @@ async function saveNativeDownloadedContent(
         size: content.size,
         etag: metadata.etag,
         contentHash: metadata.contentHash,
+        sourceExpiresAt: metadata.sourceExpiresAt,
         status: 'available-offline',
         syncReceipt: pendingHhcSyncReceipt(request, metadata),
         downloadedBytes: content.size,
@@ -226,7 +232,10 @@ export class HhcLineReadonlyProvider implements ReadOnlySyncProvider {
       },
       signal
     )
-    const result = await this.save(request, content, metadata, canCommit)
+    const guardedCommit = async (): Promise<boolean> =>
+      (metadata.sourceExpiresAt === undefined || metadata.sourceExpiresAt > Date.now()) &&
+      (await canCommit())
+    const result = await this.save(request, content, metadata, guardedCommit)
     if (request.offlinePolicy === 'always-offline') {
       void this.retryReceipt(request.providerConnectionId, request.remoteItemId, canCommit)
     }
@@ -262,12 +271,29 @@ export class HhcLineReadonlyProvider implements ReadOnlySyncProvider {
     remoteFolderId: string,
     cursor?: string
   ): Promise<SyncChangePage> {
+    let control: HhcSourceControl | null = null
     const page = await this.withAccessBoundary(
       { providerConnectionId, rootRemoteFolderId: remoteFolderId },
-      () =>
-        cursor
-          ? this.options.api.getCollectionChanges(remoteFolderId, cursor)
-          : this.options.api.getCollectionChanges(remoteFolderId)
+      async () => {
+        control = await this.control(providerConnectionId, remoteFolderId)
+        const result = cursor
+          ? await this.options.api.getCollectionChanges(remoteFolderId, cursor)
+          : await this.options.api.getCollectionChanges(remoteFolderId)
+        if (control || result.collection.sourcePolicyVersion === 1) {
+          const after = await this.control(providerConnectionId, remoteFolderId)
+          if (
+            !control ||
+            !after ||
+            JSON.stringify(control) !== JSON.stringify(after) ||
+            result.collection.sourcePolicyVersion !== 1 ||
+            result.collection.aclRevision !== after.aclRevision ||
+            result.collection.bindingGeneration !== after.bindingGeneration
+          ) {
+            throw new HhcAssetApiError('retryable', 503, 'dependency-unavailable')
+          }
+        }
+        return result
+      }
     )
     for (const item of page.items) this.collectionsByItem.set(item.id, item.collectionId)
     return {
@@ -283,8 +309,30 @@ export class HhcLineReadonlyProvider implements ReadOnlySyncProvider {
       ],
       nextCursor: page.cursor,
       hasMore: page.hasMore,
-      reset: page.reset
+      reset: page.reset,
+      ...(control ? { sourceControl: control } : {})
     }
+  }
+
+  private async control(
+    connectionId: string,
+    collectionId: string
+  ): Promise<HhcSourceControl | null> {
+    let control: HhcSourceControl
+    try {
+      control = await this.options.api.getCollectionControl(collectionId)
+    } catch (error) {
+      if (error instanceof HhcAssetApiError && error.status === 404 && !error.outcome) return null
+      throw error
+    }
+    if (control.collectionId !== collectionId)
+      throw new HhcAssetApiError('retryable', 503, 'dependency-unavailable')
+    await this.options.onSourceControl?.(connectionId, control)
+    if (control.state === 'paused')
+      throw new HhcAssetApiError('retryable', 423, 'collection-paused')
+    if (control.state !== 'active')
+      throw new HhcAssetApiError('access-revoked', 410, 'collection-revoked')
+    return control
   }
 
   private async withAccessBoundary<T>(

@@ -383,3 +383,21 @@ describe('native media protocol', () => {
     expect(response.status).toBe(404)
   })
 })
+
+it('denies expired native lease Range reads without opening bytes', async () => {
+  const deadline = Date.now() + 1000
+  const lease = registerNativeMediaLease('/tmp/protected-source', 'video/mp4', 'etag', deadline)
+  registerNativeMediaProtocol()
+  vi.useFakeTimers()
+  try {
+    vi.setSystemTime(deadline)
+    const response = await protocolHandlers.get('hhc-media')!(
+      new Request(lease.url, { headers: { range: 'bytes=0-1' } })
+    )
+    expect(response.status).toBe(410)
+    expect(mockCreateReadStream).not.toHaveBeenCalled()
+  } finally {
+    vi.useRealTimers()
+    await releaseNativeMediaLease(lease.leaseId)
+  }
+})

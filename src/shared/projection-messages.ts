@@ -183,6 +183,7 @@ export interface AppMessages {
   }
   /** File item to display on projection */
   'file:show': {
+    sourceExpiresAt?: number
     itemId: string
     blobId: string
     fileName: string

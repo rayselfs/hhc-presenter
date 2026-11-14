@@ -1,3 +1,4 @@
+import { readNativeSourceDeadline } from '../lib/native-source-policy'
 import { app } from 'electron'
 import type { VideoCacheUsage } from '../../shared/ipc-channels'
 import { createHash, randomUUID } from 'crypto'
@@ -6,7 +7,7 @@ import { join, resolve } from 'path'
 import { isValidNativeFileId } from '../../shared/native-media'
 import { resolveFfmpegRuntime } from '../video-engine-runtime'
 import { runFfmpegProcess } from './ffmpeg-process'
-import { getNativeFilePath } from '../lib/native-storage'
+import { getReadableNativeFilePath } from '../lib/native-storage'
 
 export type VideoPlaybackVariant = 'source' | 'matroska-remux'
 
@@ -126,7 +127,7 @@ async function fingerprint(path: string): Promise<string> {
 }
 
 async function sourceIdentity(sourceFileId: string): Promise<SourceIdentity> {
-  const sourcePath = getNativeFilePath(sourceFileId)
+  const sourcePath = await getReadableNativeFilePath(sourceFileId)
   const stat = await fs.stat(sourcePath)
   if (!stat.isFile()) throw new Error('source-replaced')
   return {
@@ -179,7 +180,7 @@ async function ensureRemux(
   onPhase?: (phase: 'inspection' | 'remux') => void
 ): Promise<string> {
   onPhase?.('inspection')
-  const sourcePath = getNativeFilePath(sourceFileId)
+  const sourcePath = await getReadableNativeFilePath(sourceFileId)
   const identity = await sourceIdentity(sourceFileId)
   await fs.mkdir(cacheDir(), { recursive: true })
   const reusable = await readReusableCache(sourceFileId, identity)
@@ -282,13 +283,14 @@ async function ensureRemux(
   }
 }
 
-export function resolveVideoPlaybackPath(
+export async function resolveVideoPlaybackPath(
   sourceFileId: string,
   variant: VideoPlaybackVariant,
   onPhase?: (phase: 'inspection' | 'remux') => void
 ): Promise<string> {
   if (!isValidNativeFileId(sourceFileId)) return Promise.reject(new Error('Invalid native file id'))
-  if (variant === 'source') return Promise.resolve(getNativeFilePath(sourceFileId))
+  await readNativeSourceDeadline(sourceFileId)
+  if (variant === 'source') return getReadableNativeFilePath(sourceFileId)
   const state = stateFor(sourceFileId)
   if (state.ensure) {
     onPhase?.('remux')

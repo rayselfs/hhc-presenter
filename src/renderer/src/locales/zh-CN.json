@@ -564,6 +564,8 @@
       "back": "返回上一层",
       "empty": "这里没有可加入的文件夹。",
       "import": "加入文件夹",
+      "incomplete": "部分收藏暂时无法加载，仍可导入下方可用的收藏。",
+      "retry": "重试",
       "loadFailed": "无法加载 {{provider}} 文件夹。"
     },
     "syncHealth": {

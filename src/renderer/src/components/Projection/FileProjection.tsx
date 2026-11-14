@@ -1,5 +1,6 @@
+import { watchHhcSourceDeadline } from '@shared/hhc-assets'
 import { validatePortablePresentation } from '@renderer/lib/portable-presentation'
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from 'react'
 import { createProjectionAdapter } from '@renderer/lib/projection-adapter'
 import { getFileSource, openFileExplorerDB } from '@renderer/lib/file-explorer-db'
 import { loadPresentationFont } from '@renderer/lib/font-loader'
@@ -27,6 +28,7 @@ import {
 } from '@renderer/hooks/useProjectionPdfOwner'
 
 type FileProjectionProps = {
+  sourceExpiresAt?: number
   generation?: number
   projectionSessionId?: string
   initialReplayState?: ProjectionMediaReplayState | null
@@ -59,7 +61,25 @@ type LoadFileOptions = {
 
 export { PDF_CONTINUOUS_CANVAS_RADIUS } from '@renderer/hooks/useProjectionPdfOwner'
 
-export default function FileProjection({
+export default function FileProjection(props: FileProjectionProps): React.JSX.Element {
+  const subscribe = useCallback(
+    (changed: () => void) => {
+      if (props.sourceExpiresAt === undefined) return () => undefined
+      return watchHhcSourceDeadline(props.sourceExpiresAt, changed)
+    },
+    [props.sourceExpiresAt]
+  )
+  const expired = useSyncExternalStore(
+    subscribe,
+    () =>
+      props.sourceExpiresAt !== undefined &&
+      (!Number.isFinite(props.sourceExpiresAt) || props.sourceExpiresAt <= Date.now())
+  )
+  if (expired) return <div className="h-screen w-screen bg-black" data-testid="source-expired" />
+  return <FileProjectionContent {...props} />
+}
+
+function FileProjectionContent({
   generation = 0,
   projectionSessionId,
   initialReplayState,

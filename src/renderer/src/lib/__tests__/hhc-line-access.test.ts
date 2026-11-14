@@ -14,7 +14,8 @@ const mocks = vi.hoisted(() => ({
   getEntry: vi.fn(),
   putFolder: vi.fn(),
   unlinkAccount: vi.fn(),
-  unlinkRoot: vi.fn()
+  unlinkRoot: vi.fn(),
+  removeItem: vi.fn()
 }))
 
 vi.mock('../sync-download-queue', () => ({
@@ -28,7 +29,8 @@ vi.mock('../file-explorer-db', () => ({
 }))
 vi.mock('../sync-unlink', () => ({
   unlinkHhcLineAccountFromApp: mocks.unlinkAccount,
-  unlinkSyncRootFolderFromApp: mocks.unlinkRoot
+  unlinkSyncRootFolderFromApp: mocks.unlinkRoot,
+  removeRevokedSyncItem: mocks.removeItem
 }))
 
 function root(
@@ -259,4 +261,20 @@ describe('HHC LINE access owner', () => {
       isHhcLineRootAuthorized(auth('user-b'), 'hhc-line:user-a', 'collection-a1')
     ).resolves.toBe(false)
   })
+})
+
+it('removes expired item A without unlinking its collection or item B', async () => {
+  await handleHhcLineAccessError(
+    auth(),
+    {
+      kind: 'root',
+      providerConnectionId: 'hhc-line:user-a',
+      rootRemoteFolderId: 'collection-a1',
+      remoteItemId: 'item-a1'
+    },
+    new HhcAssetApiError('access-revoked', 410, 'item-expired')
+  )
+  expect(mocks.removeItem).toHaveBeenCalledWith('hhc-line:user-a', 'item-a1')
+  expect(mocks.unlinkRoot).not.toHaveBeenCalled()
+  expect(useFileExplorerStore.getState().folders['root-a1'].syncLink?.status).toBe('active')
 })

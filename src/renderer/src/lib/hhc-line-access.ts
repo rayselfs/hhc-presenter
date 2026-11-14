@@ -1,10 +1,15 @@
+import type { HhcSourceControl } from '@shared/hhc-assets'
 import type { FolderRecord } from '@shared/types/folder'
 import { useFileExplorerStore } from '@renderer/stores/file-explorer'
 import type { HhcLineCloudAuth } from './cloud-provider'
 import { openFileExplorerDB } from './file-explorer-db'
 import { cancelSyncDownloadsAndWait } from './sync-download-queue'
 import { getSyncEntryByRemoteItem, listSyncTombstones } from './sync-db'
-import { unlinkHhcLineAccountFromApp, unlinkSyncRootFolderFromApp } from './sync-unlink'
+import {
+  unlinkHhcLineAccountFromApp,
+  unlinkSyncRootFolderFromApp,
+  removeRevokedSyncItem
+} from './sync-unlink'
 import { getCurrentHhcSession } from './hhc-auth'
 
 type HhcLineAccessScope =
@@ -20,6 +25,7 @@ type HhcLineAccessScope =
 type HhcLineAccessError = {
   classification?: unknown
   status?: unknown
+  outcome?: unknown
 }
 
 export interface HhcLineAccessRequestAuth {
@@ -130,6 +136,18 @@ export async function handleHhcLineAccessError(
     await auth.endSession()
     return
   }
+  if (
+    scope.kind === 'root' &&
+    (classified.outcome === 'item-expired' || classified.outcome === 'item-revoked')
+  ) {
+    if (scope.remoteItemId)
+      await removeRevokedSyncItem(scope.providerConnectionId, scope.remoteItemId)
+    return
+  }
+  if (scope.kind === 'root' && classified.outcome === 'collection-revoked') {
+    await revokeHhcLineRootAccess(scope)
+    return
+  }
   if (classified.classification !== 'access-revoked') return
   if (scope.kind === 'account') {
     if (classified.status === 403) await cleanupHhcLineAccountAccess(scope.accountUserId)
@@ -146,7 +164,8 @@ export async function isHhcLineRootAuthorized(
 ): Promise<boolean> {
   const session = auth.getSession()
   if (!session || providerConnectionId !== `hhc-line:${session.userId}`) return false
-  return findRoot(providerConnectionId, rootRemoteFolderId)?.syncLink?.status === 'active'
+  const link = findRoot(providerConnectionId, rootRemoteFolderId)?.syncLink
+  return link?.status === 'active' && (!link.sourceControl || link.sourceControl.state === 'active')
 }
 
 export async function canCommitHhcLinePoster(
@@ -168,4 +187,18 @@ export async function canCommitHhcLinePoster(
       record.remoteItemId === rootRemoteFolderId &&
       record.reason === 'unlink'
   )
+}
+
+export async function updateHhcSourceControl(
+  connectionId: string,
+  control: HhcSourceControl
+): Promise<void> {
+  const root = findRoot(connectionId, control.collectionId)
+  if (!root?.syncLink) return
+  if (JSON.stringify(root.syncLink.sourceControl) === JSON.stringify(control)) return
+  const updated = { ...root, syncLink: { ...root.syncLink, sourceControl: control } }
+  await (await openFileExplorerDB()).put('folder-records', updated)
+  useFileExplorerStore.setState((state) => ({
+    folders: { ...state.folders, [updated.id]: updated }
+  }))
 }

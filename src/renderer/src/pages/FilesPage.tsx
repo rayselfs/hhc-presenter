@@ -227,7 +227,7 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
       try {
         const folders = await hhcLineProvider.listFolders()
         if (active && sessionRef.current?.userId === userId)
-          setClaimsResolvedUserId(folders.length > 0 ? userId : null)
+          setClaimsResolvedUserId(!Array.isArray(folders) || folders.length > 0 ? userId : null)
       } catch {
         if (active) setClaimsResolvedUserId(null)
       } finally {

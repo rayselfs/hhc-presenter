@@ -1,0 +1,13 @@
+# LINE source policy compatibility
+
+This change consumes Asset source policy version 1. Existing collection, item, Account, Asset and ETag identities remain unchanged. Legacy sources, OneDrive/local imports and the existing 2/15/60-second polling and Operations fallback retain their behavior.
+
+New-source reader requests advertise `X-HHC-Source-Policy-Version: 1`. Asset still authenticates the caller and resolves current Account roles/collection ACL. Unsupported clients receive 426 only after the ACL check; this header is compatibility metadata, never authorization.
+
+Source errors have an explicit version, code and scope. Item expiry/revocation removes only that managed item. Confirmed collection revocation unlinks that root. Pause, unknown errors and dependency failure retain data and cursor. Reader control is fetched before and after each page, remains readable while paused, and fences a multi-page result. A changed control revision compared with the committed cursor requires a complete reset before reconciliation. No successful empty page is synthesized for failures.
+
+`sourceExpiresAt` is the immutable UTC source deadline. New-source metadata carries it through sync entries, file records, cached blobs, native file policy, temporary content leases and projection messages. Offline playback performs local checks, with no per-play LINE/Harness call. Expiry cancels native stream reads and active VLC/projection; the projection window has its own deadline timer. Known pause is retained locally until a current active control is read. Valid offline content remains available during a dependency outage. Offline clients cannot learn a new remote revocation until they reconnect.
+
+Browser new-source playback fetches authenticated content into an ephemeral object URL, bounded to 200 MiB and the source deadline, and releases it when replaced/stopped. It does not use anonymous ticket URLs or place a Bearer token in a URL. Desktop native leases and managed offline downloads use Asset's deadline response header; persistent native policy is written before publishing the downloaded file. Malformed policies and stale control revisions fail closed. Source copies exported outside Presenter cannot be recalled.
+
+Deployment order is Asset/Gateway compatibility, then a supported Presenter release, then explicit new-source admission. Ray manages Presenter tags/releases. These commits do not activate a group, deploy a service, migrate historical content or replace a legacy writer. Local synthetic tests/builds are separate from CI, signed desktop packages, real devices and LINE/provider acceptance.

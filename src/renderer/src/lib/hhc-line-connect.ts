@@ -1,3 +1,4 @@
+import { releaseHhcBrowserLease } from './hhc-content-lease'
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 import type { HhcSession } from '@shared/hhc-auth'
 import {
@@ -7,11 +8,12 @@ import {
 } from '@renderer/stores/file-explorer'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { resolveUniqueName } from './file-naming'
-import { createHhcAssetApi } from './hhc-asset-api'
+import { HhcAssetApiError, createHhcAssetApi } from './hhc-asset-api'
 import { HhcLineReadonlyProvider } from './hhc-line-provider'
 import { isElectron } from './env'
 import { collectAvailableFileBlobIds, openFileExplorerDB } from './file-explorer-db'
 import type {
+  CloudFolderListing,
   CloudImportResult,
   CloudRefreshSummary,
   CloudRemoteFolder,
@@ -40,7 +42,11 @@ import {
   collectSyncChangePages
 } from './sync-refresh'
 import { unlinkSyncRootFolderFromApp } from './sync-unlink'
-import { handleHhcLineAccessError, isHhcLineRootAuthorized } from './hhc-line-access'
+import {
+  handleHhcLineAccessError,
+  isHhcLineRootAuthorized,
+  updateHhcSourceControl
+} from './hhc-line-access'
 import { dispatchPlannedSyncDownloads } from './sync-transfer-dispatch'
 
 const importsInFlight = new Map<string, Promise<CloudImportResult>>()
@@ -104,6 +110,7 @@ async function createProvider(
       return !expectedUserId || session?.userId === expectedUserId ? session : null
     },
     getAuthGeneration: auth.getAuthGeneration,
+    onSourceControl: updateHhcSourceControl,
     onAccessError: (scope, error, requestAuth) =>
       handleHhcLineAccessError(auth, { kind: 'root', ...scope }, error, requestAuth)
   })
@@ -122,12 +129,34 @@ async function getHhcPresentationEntry(item: FileItemRecord): Promise<{
   return { connection, entry }
 }
 
+async function assertLocalSourceAvailable(
+  auth: HhcLineCloudAuth,
+  entry: SyncEntryRecord
+): Promise<void> {
+  if (entry.sourceExpiresAt === undefined) return
+  const scope = {
+    kind: 'root' as const,
+    providerConnectionId: entry.providerConnectionId,
+    rootRemoteFolderId: entry.parentRemoteItemId!,
+    remoteItemId: entry.remoteItemId
+  }
+  if (!Number.isFinite(entry.sourceExpiresAt) || entry.sourceExpiresAt <= Date.now()) {
+    const error = new HhcAssetApiError('access-revoked', 410, 'item-expired')
+    await handleHhcLineAccessError(auth, scope, error)
+    throw error
+  }
+  if (!(await isHhcLineRootAuthorized(auth, entry.providerConnectionId, entry.parentRemoteItemId!)))
+    throw new HhcAssetApiError('retryable', 423, 'collection-paused')
+}
+
 export async function prepareHhcLinePresentationSource(
   auth: HhcLineCloudAuth,
   item: FileItemRecord
 ): Promise<HhcLinePresentationSource | null> {
   const found = await getHhcPresentationEntry(item)
-  if (!found || found.entry.status === 'available-offline') return null
+  if (!found) return null
+  await assertLocalSourceAvailable(auth, found.entry)
+  if (found.entry.status === 'available-offline') return null
   const session = requireSession(auth)
   if (found.connection.accountUserId !== session.userId) {
     throw Object.assign(new Error('HHC account changed'), {
@@ -146,6 +175,7 @@ export async function prepareHhcLinePresentationSource(
     try {
       assertCurrentAccount(auth, session.userId)
     } catch (error) {
+      if (source.kind === 'browser-lease') releaseHhcBrowserLease(source.url)
       if (source.kind === 'native-lease') {
         const release = window.api?.hhcAssets?.releaseContentLease
         if (release) {
@@ -177,6 +207,7 @@ export async function ensureHhcLineDesktopItemAvailableForPresentation(
 ): Promise<boolean | null> {
   const found = await getHhcPresentationEntry(item)
   if (!found) return null
+  await assertLocalSourceAvailable(auth, found.entry)
   if (found.entry.status === 'available-offline') return true
   const authGeneration = auth.getAuthGeneration?.() ?? 0
   const session = requireSession(auth)
@@ -260,7 +291,10 @@ export async function getConnectedHhcLineAccount(
   return connection ?? null
 }
 
-export async function listHhcLineCollections(auth: HhcLineCloudAuth): Promise<CloudRemoteFolder[]> {
+export async function listHhcLineCollections(
+  auth: HhcLineCloudAuth,
+  sourcePolicyVersion: 0 | 1 = 0
+): Promise<CloudRemoteFolder[]> {
   const authGeneration = auth.getAuthGeneration?.() ?? 0
   const session = requireSession(auth)
   try {
@@ -272,7 +306,7 @@ export async function listHhcLineCollections(auth: HhcLineCloudAuth): Promise<Cl
     let pageCount = 0
 
     while (hasMore) {
-      const page = await api.listCollections(cursor)
+      const page = await api.listCollections(cursor, sourcePolicyVersion)
       pageCount += 1
       assertCurrentAccount(auth, session.userId)
       for (const collection of page.collections) {
@@ -304,6 +338,25 @@ export async function listHhcLineCollections(auth: HhcLineCloudAuth): Promise<Cl
       error,
       { accountUserId: session.userId, authGeneration }
     )
+    throw error
+  }
+}
+
+export async function listHhcLineCollectionChoices(
+  auth: HhcLineCloudAuth
+): Promise<CloudFolderListing> {
+  const session = requireSession(auth)
+  const generation = auth.getAuthGeneration?.() ?? 0
+  const legacy = await listHhcLineCollections(auth, 0)
+  try {
+    const source = await listHhcLineCollections(auth, 1)
+    return [...legacy, ...source]
+  } catch (error) {
+    assertCurrentAccount(auth, session.userId)
+    if ((auth.getAuthGeneration?.() ?? 0) !== generation) throw error
+    if (error instanceof HhcAssetApiError && error.classification === 'retryable') {
+      return { folders: legacy, incomplete: true }
+    }
     throw error
   }
 }
@@ -400,7 +453,8 @@ async function runImport(
           providerType: 'hhc-line',
           remoteFolderId: collection.remoteItemId,
           offlinePolicy,
-          status: 'active'
+          status: 'active',
+          ...(scan.sourceControl ? { sourceControl: scan.sourceControl } : {})
         }
       }
   const db = await openFileExplorerDB()
@@ -445,6 +499,7 @@ async function runImport(
         providerConnectionId: connectionId,
         remoteFolderId: collection.remoteItemId,
         cursor: scan.nextCursor,
+        ...(scan.sourceControl ? { sourceControl: scan.sourceControl } : {}),
         updatedAt: Date.now()
       })
     }
@@ -537,7 +592,7 @@ async function runHhcLineFolderRefresh(
   ) {
     throw new Error('HHC LINE root folder not found')
   }
-  const refreshedRoot =
+  let refreshedRoot =
     root.syncLink.offlinePolicy === offlinePolicy
       ? root
       : { ...root, syncLink: { ...root.syncLink, offlinePolicy } }
@@ -552,6 +607,18 @@ async function runHhcLineFolderRefresh(
     root.syncLink.remoteFolderId,
     cursor?.cursor
   )
+  if (
+    scan.sourceControl &&
+    cursor?.cursor &&
+    JSON.stringify(cursor.sourceControl) !== JSON.stringify(scan.sourceControl)
+  ) {
+    scan = await collectSyncChangePages(provider, connectionId, root.syncLink.remoteFolderId)
+  }
+  if (scan.sourceControl)
+    refreshedRoot = {
+      ...refreshedRoot,
+      syncLink: { ...refreshedRoot.syncLink!, sourceControl: scan.sourceControl }
+    }
   assertCurrentAccount(auth, session.userId)
   const db = await openFileExplorerDB()
   const [folders, allItems, entries, fileBlobs] = await Promise.all([
@@ -596,6 +663,7 @@ async function runHhcLineFolderRefresh(
       providerConnectionId: connectionId,
       remoteFolderId: root.syncLink.remoteFolderId,
       cursor: scan.nextCursor,
+      ...(scan.sourceControl ? { sourceControl: scan.sourceControl } : {}),
       updatedAt: Date.now()
     })
   }

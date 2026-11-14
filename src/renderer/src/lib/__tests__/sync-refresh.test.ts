@@ -1353,3 +1353,31 @@ it('does not publish refresh data after a real catalog put-success transaction a
   expect(await db.getAll('folder-items')).toEqual([])
   expect(await getSyncEntryByRemoteItem('connection-1', 'new-file')).toBeUndefined()
 })
+
+it('rejects a control revision change across source pages before committing a cursor', async () => {
+  const control = {
+    version: 1 as const,
+    collectionId: 'c',
+    state: 'active' as const,
+    policyRevision: 1,
+    aclRevision: 1,
+    bindingGeneration: 1
+  }
+  const provider = {
+    initialScan: vi.fn(async () => ({
+      items: [],
+      nextCursor: 'page2',
+      hasMore: true,
+      sourceControl: control
+    })),
+    incrementalChanges: vi.fn(async () => ({
+      items: [],
+      nextCursor: 'done',
+      hasMore: false,
+      sourceControl: { ...control, policyRevision: 2 }
+    }))
+  }
+  await expect(collectSyncChangePages(provider, 'hhc-line:user', 'c')).rejects.toMatchObject({
+    classification: 'retryable'
+  })
+})

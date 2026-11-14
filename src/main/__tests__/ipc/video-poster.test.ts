@@ -1,4 +1,4 @@
-vi.mock('../../lib/native-storage', () => ({ getNativeFilePath: mockGetNativeFilePath }))
+vi.mock('../../lib/native-storage', () => ({ getReadableNativeFilePath: mockGetNativeFilePath }))
 import { EventEmitter } from 'events'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

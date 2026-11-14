@@ -156,6 +156,7 @@ interface HhcAuthAPI {
 }
 
 interface HhcAssetsAPI {
+  getCollectionControl: Invoke<'hhc-assets:get-collection-control'>
   listCollections: Invoke<'hhc-assets:list-collections'>
   getCollectionChanges: Invoke<'hhc-assets:get-collection-changes'>
   getCollectionItem: Invoke<'hhc-assets:get-collection-item'>

@@ -1,3 +1,4 @@
+import type { HhcSourceControl } from '@shared/hhc-assets'
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { SyncOfflinePolicy, SyncProviderType } from '@shared/types/folder'
 import type { SyncDownloadCommitGuard, SyncRetryClassification } from './sync-provider'
@@ -36,6 +37,7 @@ export interface ProviderConnectionRecord {
 }
 
 export interface SyncCursorRecord {
+  sourceControl?: HhcSourceControl
   id: string
   providerConnectionId: string
   remoteFolderId: string
@@ -44,6 +46,7 @@ export interface SyncCursorRecord {
 }
 
 export interface SyncEntryRecord {
+  sourceExpiresAt?: number
   id: string
   providerConnectionId: string
   remoteItemId: string

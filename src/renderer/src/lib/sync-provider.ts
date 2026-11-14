@@ -1,3 +1,4 @@
+import type { HhcSourceControl } from '@shared/hhc-assets'
 import type { SyncOfflinePolicy, SyncProviderType } from '@shared/types/folder'
 import type { SyncEntryRecord } from './sync-db'
 
@@ -10,7 +11,8 @@ export type SyncRetryClassification =
 
 export type SyncRemoteContentSource =
   | { kind: 'ticket'; url: string; expiresAt: number; etag: string }
-  | { kind: 'native-lease'; url: string; leaseId: string; etag: string }
+  | { kind: 'native-lease'; url: string; leaseId: string; etag: string; sourceExpiresAt?: number }
+  | { kind: 'browser-lease'; url: string; etag: string; sourceExpiresAt: number }
 
 export type SyncDownloadCommitGuard = () => boolean | Promise<boolean>
 
@@ -28,6 +30,7 @@ export interface SyncProviderConnectionInfo {
 }
 
 export interface RemoteSyncItem {
+  sourceExpiresAt?: number
   remoteItemId: string
   parentRemoteItemId: string | null
   kind: 'folder' | 'file'
@@ -47,6 +50,7 @@ export function parseSourceCreatedAt(value: unknown): number | undefined {
 }
 
 export interface SyncChangePage {
+  sourceControl?: HhcSourceControl
   items: RemoteSyncItem[]
   nextCursor?: string
   hasMore: boolean
