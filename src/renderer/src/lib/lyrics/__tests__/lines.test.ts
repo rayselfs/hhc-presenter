@@ -110,3 +110,86 @@ it('restarts the five-second empty interval after recognition uncertainty', () =
     vi.useRealTimers()
   }
 })
+
+it('joins English word boxes across gaps narrower than a Chinese phrase gap', () => {
+  expect(readLyricsLines([box('Amazing', 0, 0), box('grace', 110, 0)])).toEqual(['Amazing grace'])
+  expect(readLyricsLines([box('grace', 0, 0), box(',', 101, 0)])).toEqual(['grace,'])
+  expect(readLyricsLines([box('grace,', 0, 0), box('how', 110, 0)])).toEqual(['grace, how'])
+  expect(readLyricsLines([box('Psalm', 0, 0), box('23', 110, 0)])).toEqual(['Psalm 23'])
+  expect(readLyricsLines([box('Wor', 0, 0), box('thy', 101, 0)])).toEqual(['Worthy'])
+})
+
+function glyphImage(widths: number[], gaps: number[], lightInk: boolean, height = 40): ImageData {
+  const width = 100
+  const data = new Uint8ClampedArray(width * height * 4)
+  data.fill(lightInk ? 16 : 227)
+  let left = 2
+  for (const [index, glyph] of widths.entries()) {
+    for (let y = 3; y < height - 3; y++) {
+      for (let x = left; x < left + glyph; x++) {
+        data.fill(lightInk ? 240 : 27, (y * width + x) * 4, (y * width + x) * 4 + 3)
+      }
+    }
+    left += glyph + (gaps[index] ?? 0)
+  }
+  return { data, width, height, colorSpace: 'srgb' }
+}
+
+it.each([true, false])(
+  'recovers Chinese phrase spacing inside one OCR box (light ink: %s)',
+  (lightInk) => {
+    const image = glyphImage([18, 18, 18, 18], [3, 13, 3], lightInk)
+    expect(readLyricsLines([box('恩典无限', 0, 0)], image)).toEqual(['恩典 無限'])
+    const condensed = glyphImage([18, 18, 18, 18], [3, 3, 3], lightInk)
+    expect(readLyricsLines([box('恩典无限', 0, 0)], condensed)).toEqual(['恩典無限'])
+    const tracked = glyphImage([16, 16, 16, 16], [9, 9, 9], lightInk)
+    expect(readLyricsLines([box('恩典无限', 0, 0)], tracked)).toEqual(['恩典無限'])
+    const partlySpaced = glyphImage([16, 16, 16, 16], [12, 3, 13], lightInk)
+    expect(readLyricsLines([box('主 恩满盈', 0, 0)], partlySpaced)).toEqual(['主 恩滿 盈'])
+    const unevenInk = glyphImage([16, 16, 16, 16], [3, 9, 3], lightInk)
+    expect(readLyricsLines([box('恩典无限', 0, 0)], unevenInk)).toEqual(['恩典無限'])
+    const splitStroke = glyphImage([8, 8, 18, 18, 18], [12, 3, 3, 3], lightInk)
+    expect(readLyricsLines([box('恩典无限', 0, 0)], splitStroke)).toEqual(['恩典無限'])
+  }
+)
+
+it('recovers missing Latin word spaces only when image columns align to the letters', () => {
+  const image = glyphImage([11, 10, 6, 15, 9], [3, 3, 13, 3], true)
+  expect(readLyricsLines([box('Ourlord', 0, 0)], image)).toEqual(['Ourlord'])
+  expect(readLyricsLines([box('Ourgo', 0, 0)], image)).toEqual(['Our go'])
+  expect(
+    readLyricsLines([box('Ourgo', 0, 0)], glyphImage([11, 10, 6, 15, 9], [3, 3, 4, 3], true))
+  ).toEqual(['Ourgo'])
+})
+
+it('finds the visible word gap when padded OCR boxes overlap', () => {
+  const poly = (left: number, right: number): number[][] => [
+    [left, 0],
+    [right, 0],
+    [right, 40],
+    [left, 40]
+  ]
+  const blocks = [
+    { ...box('Our', 0, 0), poly: poly(0, 54) },
+    { ...box('God', 0, 0), poly: poly(39, 100) }
+  ]
+  expect(readLyricsLines(blocks, glyphImage([34, 36], [12], true))).toEqual(['Our God'])
+  expect(readLyricsLines(blocks, glyphImage([34, 36], [1], true))).toEqual(['OurGod'])
+})
+
+it('does not infer Han phrase breaks from small glyphs', () => {
+  const { text, score } = box('恩典无限', 0, 0)
+  const block = {
+    text,
+    score,
+    poly: [
+      [0, 0],
+      [100, 0],
+      [100, 21],
+      [0, 21]
+    ]
+  }
+  const image = glyphImage([15, 15, 15, 15], [2, 7, 2], true, 21)
+  expect(readLyricsLines([block], image)).toEqual(['恩典無限'])
+  expect(readLyricsLines([{ ...block, text: '恩典 无限' }], image)).toEqual(['恩典 無限'])
+})

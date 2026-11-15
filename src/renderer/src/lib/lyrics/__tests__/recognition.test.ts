@@ -11,7 +11,11 @@ beforeEach(() => {
   vi.spyOn(HTMLVideoElement.prototype, 'videoHeight', 'get').mockReturnValue(1)
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
     drawImage: vi.fn(),
-    getImageData: () => ({ data: new Uint8ClampedArray(8), width: 2, height: 1 })
+    getImageData: () => ({
+      data: new Uint8ClampedArray([0, 0, 0, 255, 255, 255, 255, 255]),
+      width: 2,
+      height: 1
+    })
   } as unknown as CanvasRenderingContext2D)
 })
 afterEach(() => vi.restoreAllMocks())
@@ -114,7 +118,7 @@ for (const uncertain of [false, true]) {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
       drawImage: vi.fn(),
       getImageData: (_x: number, _y: number, width: number, height: number) => ({
-        data: new Uint8ClampedArray(8),
+        data: new Uint8ClampedArray([0, 0, 0, 255, 255, 255, 255, 255]),
         width,
         height
       })
@@ -131,8 +135,9 @@ for (const uncertain of [false, true]) {
     }
     const recognize = vi
       .fn()
-      .mockResolvedValueOnce(uncertain ? [{ ...block, score: 0.5 }] : [])
-      .mockResolvedValue([block])
+      .mockImplementation(async (image: ImageData) =>
+        image.width === 960 ? (uncertain ? [{ ...block, score: 0.5 }] : []) : [block]
+      )
     vi.mocked(createLyricsEngine).mockResolvedValue({ recognize, dispose: vi.fn() })
     const crop = { x: 0, y: 0, width: 1, height: 0.4 }
     const onLines = vi.fn()
@@ -145,7 +150,7 @@ for (const uncertain of [false, true]) {
     })
     try {
       await vi.advanceTimersByTimeAsync(250)
-      expect(recognize.mock.calls.map(([image]) => image.width)).toEqual([960, 1920])
+      expect(recognize.mock.calls.map(([image]) => image.width)).toEqual([960, 1920, 960, 1920])
       expect(onLines).toHaveBeenCalledWith(['耶穌 耶穌'])
     } finally {
       stop()
@@ -188,6 +193,75 @@ it('does not turn uncertain text into blank output when the fallback misses it',
     await vi.advanceTimersByTimeAsync(6000)
     expect(onLines).not.toHaveBeenCalled()
     expect(onError).toHaveBeenCalledWith('recognize')
+  } finally {
+    stop()
+    vi.useRealTimers()
+  }
+})
+
+it('does not confirm a false cue using cached OCR from the same pixels', async () => {
+  vi.useFakeTimers()
+  const recognize = vi
+    .fn()
+    .mockResolvedValueOnce([
+      {
+        text: '一',
+        score: 0.99,
+        poly: [
+          [0, 0],
+          [2, 0],
+          [2, 1],
+          [0, 1]
+        ]
+      }
+    ])
+    .mockResolvedValue([])
+  vi.mocked(createLyricsEngine).mockResolvedValue({ recognize, dispose: vi.fn() })
+  const crop = { x: 0, y: 0, width: 1, height: 1 }
+  const onLines = vi.fn()
+  const stop = startLyricsRecognition({
+    stream: source().stream,
+    getCrop: () => crop,
+    onStatus: vi.fn(),
+    onLines,
+    onError: vi.fn()
+  })
+  try {
+    await vi.advanceTimersByTimeAsync(250)
+    expect(recognize).toHaveBeenCalledTimes(2)
+    expect(onLines).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(4950)
+    expect(onLines).toHaveBeenCalledWith([])
+  } finally {
+    stop()
+    vi.useRealTimers()
+  }
+})
+
+it.each([0, 255])('treats a solid frame with RGB %s as empty without asking OCR', async (value) => {
+  vi.useFakeTimers()
+  vi.spyOn(HTMLVideoElement.prototype, 'videoWidth', 'get').mockReturnValue(1600)
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+    drawImage: vi.fn(),
+    getImageData: () => ({
+      data: new Uint8ClampedArray([value, value, value, 255, value, value, value, 255])
+    })
+  } as unknown as CanvasRenderingContext2D)
+  const recognize = vi.fn().mockResolvedValue([])
+  vi.mocked(createLyricsEngine).mockResolvedValue({ recognize, dispose: vi.fn() })
+  const crop = { x: 0, y: 0, width: 1, height: 1 }
+  const onLines = vi.fn()
+  const stop = startLyricsRecognition({
+    stream: source().stream,
+    getCrop: () => crop,
+    onStatus: vi.fn(),
+    onLines,
+    onError: vi.fn()
+  })
+  try {
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(recognize).not.toHaveBeenCalled()
+    expect(onLines).toHaveBeenCalledWith([])
   } finally {
     stop()
     vi.useRealTimers()

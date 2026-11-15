@@ -1,5 +1,6 @@
 import { ConverterFactory } from 'opencc-js/core'
 import { from } from 'opencc-js/preset/cn2t'
+import { hasOverlappingWordGap, restoreLyricsSpaces } from './spacing'
 
 const traditional = ConverterFactory(...from.cn)
 function normalizeLyrics(text: string): string {
@@ -7,7 +8,7 @@ function normalizeLyrics(text: string): string {
   return text.split('祢').map(traditional).join('祢').replace(/\s+/gu, ' ').trim()
 }
 export type LyricsBlock = { text: string; score: number; poly: number[][] }
-export function readLyricsLines(blocks: LyricsBlock[]): string[] {
+export function readLyricsLines(blocks: LyricsBlock[], image?: ImageData): string[] {
   const boxes = blocks
     .map((block) => {
       if (
@@ -22,15 +23,18 @@ export function readLyricsLines(blocks: LyricsBlock[]): string[] {
       }
       const xs = block.poly.map((p) => p[0]),
         ys = block.poly.map((p) => p[1])
-      return {
-        ...block,
+      const box = {
         text: normalizeLyrics(block.text),
-        leadingSpace: /^\s/u.test(block.text),
-        trailingSpace: /\s$/u.test(block.text),
         left: Math.min(...xs),
         right: Math.max(...xs),
         top: Math.min(...ys),
         bottom: Math.max(...ys)
+      }
+      return {
+        ...box,
+        text: image ? restoreLyricsSpaces(box, image) : box.text,
+        leadingSpace: /^\s/u.test(block.text),
+        trailingSpace: /\s$/u.test(block.text)
       }
     })
     .sort((a, b) => a.top - b.top)
@@ -49,14 +53,17 @@ export function readLyricsLines(blocks: LyricsBlock[]): string[] {
       .sort((a, b) => a.left - b.left)
       .map((box, index, boxes) => {
         const previous = boxes[index - 1]
-        // Preserve phrase gaps, not ordinary spacing between adjacent glyph boxes.
-        const gap =
+        const latinWords =
           previous &&
-          box.left - previous.right >
-            Math.min(box.bottom - box.top, previous.bottom - previous.top) * 0.5
-        return (
-          (previous && (gap || previous.trailingSpace || box.leadingSpace) ? ' ' : '') + box.text
-        )
+          /[\p{Script=Latin}\p{N}][,.;:!?…%)”"]*$/u.test(previous.text) &&
+          /^[("“]*[\p{Script=Latin}\p{N}]/u.test(box.text)
+        if (!previous) return box.text
+        const minGap =
+          Math.min(box.bottom - box.top, previous.bottom - previous.top) * (latinWords ? 0.18 : 0.5)
+        const gap =
+          box.left - previous.right > minGap ||
+          (latinWords && image && hasOverlappingWordGap(previous, box, image, minGap))
+        return (gap || previous.trailingSpace || box.leadingSpace ? ' ' : '') + box.text
       })
       .join('')
   )

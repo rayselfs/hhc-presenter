@@ -8,6 +8,14 @@ type RecognitionOptions = {
   onLines(lines: string[]): void
   onError(error: 'load' | 'recognize' | 'source'): void
 }
+function isSolidFrame(pixels: Uint8ClampedArray): boolean {
+  for (let i = 4; i < pixels.length; i += 4) {
+    if (pixels[i] !== pixels[0] || pixels[i + 1] !== pixels[1] || pixels[i + 2] !== pixels[2])
+      return false
+  }
+  return true
+}
+
 export function startLyricsRecognition(options: RecognitionOptions): () => void {
   const abort = new AbortController()
   const video = document.createElement('video')
@@ -81,10 +89,10 @@ export function startLyricsRecognition(options: RecognitionOptions): () => void 
         if (previousLines && size === previousSize && samePixels(image.data, previousPixels)) {
           lines = previousLines
         } else {
-          const blocks = await engine!.recognize(image)
+          const blocks = isSolidFrame(image.data) ? [] : await engine!.recognize(image)
           let uncertain = false
           try {
-            lines = readLyricsLines(blocks)
+            lines = readLyricsLines(blocks, image)
           } catch (error) {
             if (snapshot.width <= canvas.width) throw error
             uncertain = true
@@ -98,7 +106,9 @@ export function startLyricsRecognition(options: RecognitionOptions): () => void 
             sourceLive()
           ) {
             const detailed = sourceContext.getImageData(0, 0, snapshot.width, snapshot.height)
-            lines = readLyricsLines(await engine!.recognize(detailed))
+            lines = isSolidFrame(detailed.data)
+              ? []
+              : readLyricsLines(await engine!.recognize(detailed), detailed)
             // Missing text on retry cannot turn an uncertain detected word into a blank cue.
             if (uncertain && !lines.length) throw new Error('Uncertain text block')
           }
@@ -115,8 +125,9 @@ export function startLyricsRecognition(options: RecognitionOptions): () => void 
         }
         previousPixels = image.data
         previousSize = size
-        previousLines = lines
         const accepted = gate.observe(lines)
+        // A pending nonempty cue must get a fresh OCR result even on identical pixels.
+        previousLines = accepted || !lines.length ? lines : null
         if (accepted) options.onLines(accepted)
         else options.onStatus('recognizing')
       }
