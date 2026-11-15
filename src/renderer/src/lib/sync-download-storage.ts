@@ -74,6 +74,7 @@ async function markInsufficientStorage(
     size: metadata.size,
     etag: metadata.etag,
     contentHash: metadata.contentHash,
+    sourceExpiresAt: metadata.sourceExpiresAt,
     status: 'insufficient-storage'
   })
   if (!(await canCommit())) {
@@ -200,6 +201,9 @@ async function saveWebDownloadedContent(
       try {
         await ensureCanCommit(canCommit)
         await db.put('file-blobs', {
+          ...(metadata.sourceExpiresAt === undefined
+            ? {}
+            : { sourceExpiresAt: metadata.sourceExpiresAt }),
           id: request.targetBlobId,
           blob,
           storage: 'indexed-db',
@@ -219,6 +223,7 @@ async function saveWebDownloadedContent(
           size: blob.size,
           etag: metadata.etag,
           contentHash: metadata.contentHash,
+          sourceExpiresAt: metadata.sourceExpiresAt,
           status: 'available-offline',
           syncReceipt: recordHhcReceipt ? pendingHhcSyncReceipt(request, metadata) : undefined,
           downloadedBytes: blob.size,
@@ -310,6 +315,9 @@ export async function saveElectronOneDriveDownloadedContent(
     try {
       await ensureCanCommit(canCommit)
       await db.put('file-blobs', {
+        ...(metadata.sourceExpiresAt === undefined
+          ? {}
+          : { sourceExpiresAt: metadata.sourceExpiresAt }),
         id: request.targetBlobId,
         storage: 'native-fs',
         size: downloaded.size,
@@ -328,6 +336,7 @@ export async function saveElectronOneDriveDownloadedContent(
         size: downloaded.size,
         etag: metadata.etag,
         contentHash: metadata.contentHash,
+        sourceExpiresAt: metadata.sourceExpiresAt,
         status: 'available-offline',
         downloadedBytes: downloaded.size,
         downloadTotalBytes: downloaded.size

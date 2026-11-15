@@ -1,3 +1,7 @@
+const mockSourceDeadline = vi.hoisted(() =>
+  vi.fn(async (): Promise<number | undefined> => undefined)
+)
+vi.mock('../../lib/native-source-policy', () => ({ readNativeSourceDeadline: mockSourceDeadline }))
 vi.mock('../../lib/native-storage', () => ({ getNativeFilePath: vi.fn(() => '/media/source') }))
 import { EventEmitter } from 'node:events'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -176,6 +180,7 @@ function readyRuntime(): VlcPlayerRuntimeResult {
 }
 
 beforeEach(() => {
+  mockSourceDeadline.mockResolvedValue(undefined)
   vi.clearAllMocks()
   ;(ipcMain as ExtendedIpcMain)._clearHandlers()
   mockProjectionWindow.removeAllListeners()
@@ -197,6 +202,24 @@ beforeEach(() => {
 })
 
 describe('projection-vlc listener cleanup', () => {
+  it('destroys native playback at the persisted source deadline even without a renderer stop', async () => {
+    vi.useFakeTimers()
+    try {
+      mockSourceDeadline.mockResolvedValue(Date.now() + 1000)
+      await getHandler('projection-vlc:start')(makeEvent(), {
+        itemId: 'source',
+        sourceFileId: '550e8400-e29b-41d4-a716-446655440000',
+        container: '#vlc-player'
+      })
+      const player = mockVlcPlayers.at(-1)!
+      expect(player.destroy).not.toHaveBeenCalled()
+      await vi.advanceTimersByTimeAsync(1000)
+      expect(player.destroy).toHaveBeenCalledOnce()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('rebinds matching VLC content without restarting and leaves queued reports unchanged', async () => {
     const { updateVlcContentRevision } = await import('../../ipc/projection-vlc')
     const sourceFileId = '550e8400-e29b-41d4-a716-446655440000'

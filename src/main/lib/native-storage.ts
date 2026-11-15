@@ -1,3 +1,4 @@
+import { readNativeSourceDeadline } from './native-source-policy'
 import { app } from 'electron'
 import { dirname, resolve } from 'path'
 import { isValidNativeFileId } from '../../shared/native-media'
@@ -13,4 +14,10 @@ export function getNativeFilePath(id: unknown): string {
   const filePath = resolve(baseDir, id)
   if (dirname(filePath) !== baseDir) throw new Error('Native file path escapes storage directory')
   return filePath
+}
+
+export async function getReadableNativeFilePath(id: string): Promise<string> {
+  const file = getNativeFilePath(id)
+  await readNativeSourceDeadline(id)
+  return file
 }

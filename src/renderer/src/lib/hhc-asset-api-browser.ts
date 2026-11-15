@@ -1,5 +1,8 @@
+import { createHhcBrowserLease } from './hhc-content-lease'
 import { APP_CONFIG } from '@shared/app-config'
 import {
+  projectHhcSourceControl,
+  readHhcAssetFailure,
   projectHhcAssetChangePage,
   projectHhcAssetCollectionPage,
   projectHhcAssetItem,
@@ -50,17 +53,6 @@ export function parseHhcAssetChangePage(value: unknown): HhcAssetCollectionChang
   }
 }
 
-function classification(
-  status: number
-): 'retryable' | 'auth-required' | 'access-revoked' | 'fatal' {
-  if (status === 401) return 'auth-required'
-  if (status === 403 || status === 404) return 'access-revoked'
-  if (status === 408 || status === 409 || status === 423 || status === 429 || status >= 500) {
-    return 'retryable'
-  }
-  return 'fatal'
-}
-
 export function createBrowserHhcAssetApi(options: BrowserHhcAssetApiOptions): HhcAssetApi {
   const requestedOrigin = options.origin ?? APP_CONFIG.hhcAssetOrigin
   let configuredOrigin: string
@@ -79,6 +71,7 @@ export function createBrowserHhcAssetApi(options: BrowserHhcAssetApiOptions): Hh
       const headers = new Headers(init.headers)
       headers.set('accept', headers.get('accept') ?? 'application/json')
       headers.set('authorization', `Bearer ${token}`)
+      headers.set('X-HHC-Source-Policy-Version', '1')
       try {
         return await fetcher(`${configuredOrigin}${path}`, { ...init, headers })
       } catch {
@@ -93,7 +86,10 @@ export function createBrowserHhcAssetApi(options: BrowserHhcAssetApiOptions): Hh
       if (!refreshed) throw new HhcAssetApiError('auth-required', 401)
       response = await send(refreshed)
     }
-    if (!response.ok) throw new HhcAssetApiError(classification(response.status), response.status)
+    if (!response.ok) {
+      const failure = await readHhcAssetFailure(response)
+      throw new HhcAssetApiError(failure.classification, failure.status, failure.outcome)
+    }
     return response
   }
 
@@ -107,8 +103,16 @@ export function createBrowserHhcAssetApi(options: BrowserHhcAssetApiOptions): Hh
   }
 
   return {
-    async listCollections(cursor) {
-      const params = new URLSearchParams({ limit: '500' })
+    async getCollectionControl(collectionId) {
+      return projectHhcSourceControl(
+        await json(`/api/assets/collections/${encodeURIComponent(collectionId)}/control`)
+      )
+    },
+    async listCollections(cursor, sourcePolicyVersion = 0) {
+      const params = new URLSearchParams({
+        limit: '100',
+        sourcePolicyVersion: String(sourcePolicyVersion)
+      })
       if (cursor) params.set('cursor', cursor)
       return parseHhcAssetCollectionPage(await json(`/api/assets/collections?${params}`))
     },
@@ -153,6 +157,22 @@ export function createBrowserHhcAssetApi(options: BrowserHhcAssetApiOptions): Hh
       })
     },
     async getRemoteContentSource(collectionId, itemId) {
+      const item = await this.getCollectionItem(collectionId, itemId)
+      if (item.sourceExpiresAt) {
+        const response = await request(
+          `/api/assets/collections/${encodeURIComponent(collectionId)}/items/${encodeURIComponent(itemId)}/content`,
+          { headers: { accept: '*/*' } }
+        )
+        const deadline = Date.parse(item.sourceExpiresAt)
+        if (
+          Date.parse(response.headers.get('X-HHC-Source-Expires-At') ?? '') !== deadline ||
+          response.headers.get('etag') !== item.etag
+        ) {
+          await response.body?.cancel().catch(() => undefined)
+          throw new HhcAssetApiError('retryable', 503, 'dependency-unavailable')
+        }
+        return createHhcBrowserLease(response, deadline, item.etag!)
+      }
       const ticket = await this.issueContentTicket(collectionId, itemId)
       return {
         kind: 'ticket',

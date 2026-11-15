@@ -1,3 +1,5 @@
+import { readNativeSourceDeadline } from '../lib/native-source-policy'
+import { watchHhcSourceDeadline } from '@shared/hhc-assets'
 import { getNativeFilePath, getNativeFsDir } from '../lib/native-storage'
 import { app, ipcMain, protocol } from 'electron'
 import { randomUUID } from 'crypto'
@@ -14,7 +16,10 @@ const NATIVE_MEDIA_HOST = 'file'
 const NATIVE_MEDIA_LEASE_HOST = 'lease'
 const MIME_TYPE_PATTERN = /^[a-z0-9][a-z0-9!#$&^_.+-]*\/[a-z0-9][a-z0-9!#$&^_.+-]*$/i
 const RANGE_PATTERN = /^bytes=(\d*)-(\d*)$/
-const nativeMediaLeases = new Map<string, { filePath: string; mimeType: string }>()
+const nativeMediaLeases = new Map<
+  string,
+  { filePath: string; mimeType: string; sourceExpiresAt?: number }
+>()
 
 function getNativeMediaLeaseDir(): string {
   return resolve(app.getPath('userData'), 'hhc-asset-leases')
@@ -42,13 +47,20 @@ export function parseNativeMediaUrl(requestUrl: string): { id: string; mimeType:
 export function registerNativeMediaLease(
   filePath: string,
   mimeType: string,
-  etag: string
-): { kind: 'native-lease'; url: string; leaseId: string; etag: string } {
+  etag: string,
+  sourceExpiresAt?: number
+): { kind: 'native-lease'; url: string; leaseId: string; etag: string; sourceExpiresAt?: number } {
   if (!isAbsolute(filePath)) throw new Error('Invalid native media lease path')
+  if (
+    sourceExpiresAt !== undefined &&
+    (!Number.isFinite(sourceExpiresAt) || sourceExpiresAt <= Date.now())
+  )
+    throw new Error('HHC_SOURCE_FAILURE:410:item-expired')
   const leaseId = randomUUID()
   const validatedMimeType = MIME_TYPE_PATTERN.test(mimeType) ? mimeType : 'application/octet-stream'
-  nativeMediaLeases.set(leaseId, { filePath, mimeType: validatedMimeType })
+  nativeMediaLeases.set(leaseId, { filePath, mimeType: validatedMimeType, sourceExpiresAt })
   return {
+    ...(sourceExpiresAt === undefined ? {} : { sourceExpiresAt }),
     kind: 'native-lease',
     url: `hhc-media://${NATIVE_MEDIA_LEASE_HOST}/${leaseId}?type=${encodeURIComponent(validatedMimeType)}`,
     leaseId,
@@ -121,8 +133,11 @@ function parseRangeHeader(rangeHeader: string | null, size: number): ByteRange |
 async function createNativeMediaResponse(
   filePath: string,
   mimeType: string,
-  rangeHeader: string | null
+  rangeHeader: string | null,
+  sourceExpiresAt?: number
 ): Promise<Response> {
+  if (sourceExpiresAt !== undefined && sourceExpiresAt <= Date.now())
+    return new Response('Source expired', { status: 410 })
   const stat = await fs.stat(filePath)
   if (!stat.isFile()) return new Response('Media not found', { status: 404 })
 
@@ -141,6 +156,12 @@ async function createNativeMediaResponse(
   const isPartial = rangeHeader !== null
   const contentLength = range.end - range.start + 1
   const stream = createReadStream(filePath, { start: range.start, end: range.end })
+  if (sourceExpiresAt !== undefined) {
+    const stop = watchHhcSourceDeadline(sourceExpiresAt, () =>
+      stream.destroy(new Error('Source expired'))
+    )
+    stream.once('close', stop)
+  }
   const headers = new Headers({
     'Accept-Ranges': 'bytes',
     'Cache-Control': 'no-store',
@@ -203,6 +224,7 @@ export function registerNativeFsHandlers(wm: WindowManager): void {
     if (!isMainWindow(wm, event)) throw new Error('Unauthorized native file stat')
     const filePath = getNativeFilePath(id)
     try {
+      await readNativeSourceDeadline(id as string)
       const stat = await fs.stat(filePath)
       return stat.isFile()
     } catch (error) {
@@ -251,7 +273,8 @@ export function registerNativeMediaProtocol(): void {
         return await createNativeMediaResponse(
           lease.filePath,
           lease.mimeType,
-          request.headers.get('range')
+          request.headers.get('range'),
+          lease.sourceExpiresAt
         )
       } catch {
         return new Response('Media not found', { status: 404 })
@@ -263,7 +286,8 @@ export function registerNativeMediaProtocol(): void {
       return await createNativeMediaResponse(
         filePath,
         parsed.mimeType,
-        request.headers.get('range')
+        request.headers.get('range'),
+        await readNativeSourceDeadline(parsed.id)
       )
     } catch {
       return new Response('Media not found', { status: 404 })

@@ -1,3 +1,5 @@
+import { readNativeSourceDeadline } from '../lib/native-source-policy'
+import { watchHhcSourceDeadline } from '@shared/hhc-assets'
 import { BrowserWindow, ipcMain } from 'electron'
 import { createVlcLivePreview, type VlcLiveFrame } from '../vlc-live-preview'
 import type { VlcPlayer } from 'electron-vlc-player'
@@ -32,6 +34,7 @@ interface OwnedVlcSession {
   sourceFileId: string
   playbackVariant: 'source' | 'matroska-remux'
   contentRevision?: number
+  deadlineCleanup?: () => void
   releaseSource: () => void
   preview: (() => Promise<VlcLiveFrame | null>) | null
   attemptId: string
@@ -420,6 +423,8 @@ function didPlaybackEndPrematurely(session: OwnedVlcSession): boolean {
 }
 
 function destroySessionResources(session: OwnedVlcSession): void {
+  session.deadlineCleanup?.()
+  session.deadlineCleanup = undefined
   if (session.watchdog) clearTimeout(session.watchdog)
   session.watchdog = null
   session.preview = null
@@ -667,6 +672,12 @@ async function startVlc(
   publishPreparing('inspection')
   let playbackPath: string
   try {
+    const deadline = await readNativeSourceDeadline(request.sourceFileId)
+    if (deadline !== undefined)
+      session.deadlineCleanup = watchHhcSourceDeadline(deadline, () => {
+        if (ownsSession(wm, session)) publishFailure(wm, 'media-open-failed', session)
+        invalidateSession(session)
+      })
     playbackPath = await resolveVideoPlaybackPath(
       request.sourceFileId,
       request.playbackVariant ?? 'source',

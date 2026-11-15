@@ -564,6 +564,8 @@
       "back": "Back",
       "empty": "No folders are available here.",
       "import": "Add Folder",
+      "incomplete": "Some collections are temporarily unavailable. Available collections can still be imported.",
+      "retry": "Retry",
       "loadFailed": "Failed to load {{provider}} folders."
     },
     "syncHealth": {

@@ -1,3 +1,4 @@
+import type { HhcSourceControl } from '@shared/hhc-assets'
 import { isSameActiveSyncRoot } from './sync-refresh-lifetime'
 import type {
   FileItemRecord,
@@ -72,6 +73,7 @@ export async function collectSyncChangePages(
   cursor?: string
 ): Promise<{
   remoteItems: RemoteSyncItem[]
+  sourceControl?: HhcSourceControl
   nextCursor?: string
   usedCursor: boolean
   reset: boolean
@@ -104,6 +106,11 @@ export async function collectSyncChangePages(
       remoteFolderId,
       cursor: nextCursor
     })
+    if (JSON.stringify(page.sourceControl) !== JSON.stringify(firstPage.sourceControl)) {
+      throw Object.assign(new Error('Source policy changed during sync'), {
+        classification: 'retryable'
+      })
+    }
     const pageReset = Boolean(page.reset)
     if (phase === 'delta' && pageReset) {
       throw new Error('Invalid sync change pagination')
@@ -122,6 +129,7 @@ export async function collectSyncChangePages(
     remoteItems: reset
       ? [...new Map(remoteItems.map((item) => [item.remoteItemId, item])).values()]
       : remoteItems,
+    ...(firstPage.sourceControl ? { sourceControl: firstPage.sourceControl } : {}),
     nextCursor: page.nextCursor,
     usedCursor: Boolean(cursor) && !reset,
     reset
@@ -320,7 +328,10 @@ function mapSyncFile(
     type: 'file',
     sortIndex,
     createdAt,
-    expiresAt: null,
+    expiresAt: remoteItem.sourceExpiresAt ?? null,
+    ...(remoteItem.sourceExpiresAt === undefined
+      ? {}
+      : { sourceExpiresAt: remoteItem.sourceExpiresAt }),
     name: remoteItem.name,
     url: policy.disabled ? `unsupported:${itemId}` : `blob:${itemId}`,
     size: remoteItem.size ?? 0,
@@ -338,6 +349,9 @@ function mapSyncFile(
     size: remoteItem.size,
     etag: remoteItem.etag,
     contentHash: remoteItem.contentHash,
+    ...(remoteItem.sourceExpiresAt === undefined
+      ? {}
+      : { sourceExpiresAt: remoteItem.sourceExpiresAt }),
     status,
     ...(heldFailure ? failureFields(existing) : {})
   }

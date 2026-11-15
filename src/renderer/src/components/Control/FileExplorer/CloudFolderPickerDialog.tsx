@@ -5,6 +5,7 @@ import { Button } from '@heroui/react/button'
 import { Modal } from '@heroui/react/modal'
 import { ArrowLeft, Folder, Loader2 } from 'lucide-react'
 import type {
+  CloudFolderListing,
   CloudImportResult,
   CloudProviderId,
   CloudRemoteFolder
@@ -16,7 +17,7 @@ export interface CloudFolderPickerProvider {
   displayName: string
   icon: ReactNode
   supportsFolderNavigation?: boolean
-  listFolders(parentRemoteFolderId?: string): Promise<CloudRemoteFolder[]>
+  listFolders(parentRemoteFolderId?: string): Promise<CloudFolderListing>
   importFolder(folder: CloudRemoteFolder): Promise<CloudImportResult>
 }
 
@@ -47,6 +48,7 @@ export default function CloudFolderPickerDialog({
   const [folders, setFolders] = useState<CloudRemoteFolder[]>([])
   const [selectedFolder, setSelectedFolder] = useState<CloudRemoteFolder | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [incomplete, setIncomplete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const loadGenerationRef = useRef(0)
   const currentFolder = folderStack[folderStack.length - 1]
@@ -56,10 +58,13 @@ export default function CloudFolderPickerDialog({
       const generation = ++loadGenerationRef.current
       setIsLoading(true)
       setError(null)
+      setIncomplete(false)
+      setSelectedFolder(null)
       try {
         const nextFolders = await provider.listFolders(remoteFolderId)
         if (generation !== loadGenerationRef.current) return
-        setFolders(nextFolders)
+        setFolders(Array.isArray(nextFolders) ? nextFolders : nextFolders.folders)
+        setIncomplete(!Array.isArray(nextFolders) && nextFolders.incomplete)
       } catch (loadError) {
         if (generation !== loadGenerationRef.current) return
         console.warn('[cloud-sync] Failed to list folders', {
@@ -143,6 +148,19 @@ export default function CloudFolderPickerDialog({
                     <span className="truncate">{currentFolder.name}</span>
                   </div>
 
+                  {incomplete && (
+                    <div role="status" className="text-sm text-muted">
+                      {t('fileExplorer.cloudFolderPicker.incomplete')}
+                      <Button
+                        size="sm"
+                        variant="tertiary"
+                        isDisabled={isLoading || isImporting}
+                        onPress={() => void loadFolders(currentFolder.id)}
+                      >
+                        {t('fileExplorer.cloudFolderPicker.retry')}
+                      </Button>
+                    </div>
+                  )}
                   <div className="min-h-60 rounded-2xl bg-surface-secondary p-2">
                     {isLoading ? (
                       <div className="flex h-56 items-center justify-center text-muted">

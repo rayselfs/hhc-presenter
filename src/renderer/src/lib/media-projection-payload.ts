@@ -76,6 +76,7 @@ export function buildFileProjectionPayload({
       : undefined
 
   const payload: ProjectionPayload<'file:show'> = {
+    ...(item.sourceExpiresAt === undefined ? {} : { sourceExpiresAt: item.sourceExpiresAt }),
     itemId: item.id,
     blobId,
     fileName: item.name,

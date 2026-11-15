@@ -15,7 +15,7 @@ import {
   type PersonalUploadInput
 } from '@shared/personal-cloud'
 import type { WindowManager } from '../windowManager'
-import { getNativeFilePath } from '../lib/native-storage'
+import { getNativeFilePath, getReadableNativeFilePath } from '../lib/native-storage'
 import { saveAssetContent } from '../lib/asset-stream-writer'
 import { isMainWindow } from './validate'
 
@@ -218,9 +218,12 @@ export function registerPersonalCloudHandlers(wm: WindowManager, auth: Auth): vo
   register('personal-cloud:completeUpload', ['uploadId', 'upload'], async (api, input, signal) => {
     const upload = exact(input.upload, ['mimeType', 'sizeBytes', 'blobId'])
     const hash = createHash('sha256')
-    for await (const chunk of createReadStream(getNativeFilePath(fileId(upload.blobId)), {
-      signal
-    })) {
+    for await (const chunk of createReadStream(
+      await getReadableNativeFilePath(fileId(upload.blobId)),
+      {
+        signal
+      }
+    )) {
       hash.update(chunk)
     }
     signal.throwIfAborted()
@@ -294,7 +297,7 @@ export function registerPersonalCloudHandlers(wm: WindowManager, auth: Auth): vo
     }
   )
   register('personal-cloud:uploadSnapshot', ['uploadId', 'blobId'], async (api, input, signal) => {
-    const blob = await openAsBlob(getNativeFilePath(fileId(input.blobId)))
+    const blob = await openAsBlob(await getReadableNativeFilePath(fileId(input.blobId)))
     await api.putUpload(opaque(input.uploadId), blob, signal)
   })
   register(

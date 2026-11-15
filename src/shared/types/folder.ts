@@ -1,7 +1,10 @@
+import type { HhcSourceControl } from '../hhc-assets'
+
 export type SyncProviderType = 'local-fs' | 'onedrive' | 'hhc-line' | 'hhc-share'
 export type SyncOfflinePolicy = 'online-only' | 'on-demand' | 'always-offline'
 
 export interface FolderSyncLink {
+  sourceControl?: HhcSourceControl
   providerConnectionId: string
   remoteFolderId: string
   providerType: SyncProviderType
@@ -47,6 +50,7 @@ export interface VerseItemRecord extends ItemRecord {
 }
 
 export interface FileItemRecord extends ItemRecord {
+  sourceExpiresAt?: number
   type: 'file'
   name: string
   url: string

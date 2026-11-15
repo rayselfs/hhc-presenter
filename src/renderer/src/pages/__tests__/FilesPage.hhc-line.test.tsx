@@ -1,12 +1,12 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CloudRemoteFolder } from '@renderer/lib/cloud-provider'
+import type { CloudFolderListing, CloudRemoteFolder } from '@renderer/lib/cloud-provider'
 import type { AnyItemRecord, FolderRecord } from '@shared/types/folder'
 import type { HhcSession } from '@shared/hhc-auth'
 
 const mocks = vi.hoisted(() => ({
-  listFolders: vi.fn<() => Promise<CloudRemoteFolder[]>>(),
+  listFolders: vi.fn<() => Promise<CloudFolderListing>>(),
   session: null as HhcSession | null,
   getAccessToken: vi.fn<() => Promise<string | null>>(),
   refreshAfterUnauthorized: vi.fn<() => Promise<string | null>>(),
@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
     id: providerId,
     supportsFolderNavigation: providerId === 'hhc-line' ? false : undefined,
     getConnectedAccount: vi.fn(async () => null),
-    listFolders: vi.fn<() => Promise<CloudRemoteFolder[]>>(async () => []),
+    listFolders: vi.fn<() => Promise<CloudFolderListing>>(async () => []),
     importFolder: vi.fn(),
     refreshFolder: vi.fn()
   })),
@@ -287,6 +287,15 @@ describe('FilesPage HHC LINE role resolution', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Sync LINE group' })).toBeEnabled()
     )
+  })
+
+  it('keeps the picker reachable for empty but incomplete source discovery', async () => {
+    mocks.listFolders.mockResolvedValue({ folders: [], incomplete: true })
+    render(<FilesPage />)
+    const action = screen.getByRole('button', { name: 'Sync LINE group' })
+    await waitFor(() => expect(action).toBeEnabled())
+    await userEvent.click(action)
+    expect(screen.getByText('LINE media picker open')).toBeInTheDocument()
   })
 
   it('disables after the only eligible collection is imported and re-enables for a new one', async () => {

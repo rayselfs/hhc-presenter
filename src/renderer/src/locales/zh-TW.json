@@ -564,6 +564,8 @@
       "back": "返回上一層",
       "empty": "這裡沒有可加入的資料夾。",
       "import": "加入資料夾",
+      "incomplete": "部分收藏暫時無法載入，仍可匯入下方可用的收藏。",
+      "retry": "重試",
       "loadFailed": "無法載入 {{provider}} 資料夾。"
     },
     "syncHealth": {

@@ -10,7 +10,7 @@ import type {
 } from '../../shared/ipc-channels'
 import { resolveFfmpegRuntime } from '../video-engine-runtime'
 import type { WindowManager } from '../windowManager'
-import { getNativeFilePath } from '../lib/native-storage'
+import { getReadableNativeFilePath } from '../lib/native-storage'
 import { isMainWindow } from './validate'
 import { runFfmpegProcess } from './ffmpeg-process'
 
@@ -62,7 +62,7 @@ async function generatePoster(input: unknown): Promise<VideoPosterResult> {
   const runtime = resolveFfmpegRuntime()
   if (!runtime.path) throw new Error('FFmpeg poster runtime not found')
 
-  const sourcePath = getNativeFilePath(request.sourceFileId)
+  const sourcePath = await getReadableNativeFilePath(request.sourceFileId)
   const temporaryPath = join(
     dirname(sourcePath),
     `.${request.sourceFileId}.${randomUUID()}.poster.jpg`

@@ -23,6 +23,7 @@ test('real Web Locks serialize a connection across tabs and a durable unlink inv
         "export * from './src/renderer/src/lib/sync-refresh-lifetime'; export { openFileExplorerDB } from './src/renderer/src/lib/file-explorer-db'",
       resolveDir: process.cwd()
     },
+    tsconfig: 'tsconfig.web.json',
     bundle: true,
     write: false,
     platform: 'browser',

@@ -26,6 +26,10 @@ export interface CloudRemoteFolder {
   parentRemoteItemId: string | null
 }
 
+export type CloudFolderListing =
+  | CloudRemoteFolder[]
+  | { folders: CloudRemoteFolder[]; incomplete: true }
+
 export interface CloudImportResult {
   connectionId: string
   displayName: string
@@ -56,7 +60,7 @@ export interface CloudProviderAdapter {
   id: CloudProviderId
   supportsFolderNavigation?: boolean
   getConnectedAccount(): Promise<ProviderConnectionRecord | null>
-  listFolders(parentRemoteFolderId?: string): Promise<CloudRemoteFolder[]>
+  listFolders(parentRemoteFolderId?: string): Promise<CloudFolderListing>
   importFolder(folder: CloudRemoteFolder): Promise<CloudImportResult>
   refreshFolder(
     rootFolderId: string,
@@ -83,7 +87,8 @@ export function getCloudProviderAdapter(
       supportsFolderNavigation: false,
       getConnectedAccount: async () =>
         (await import('./hhc-line-connect')).getConnectedHhcLineAccount(hhcAuth),
-      listFolders: async () => (await import('./hhc-line-connect')).listHhcLineCollections(hhcAuth),
+      listFolders: async () =>
+        (await import('./hhc-line-connect')).listHhcLineCollectionChoices(hhcAuth),
       importFolder: async (folder) =>
         (await import('./hhc-line-connect')).importHhcLineCollection(hhcAuth, folder),
       refreshFolder: async (rootFolderId, options) =>

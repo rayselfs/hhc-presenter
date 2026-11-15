@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FileItemRecord, FolderRecord } from '@shared/types/folder'
 import {
+  removeRevokedSyncItem,
   convertSyncConnectionToNormalFolder,
   recoverPendingSyncResourceCleanups,
   unlinkHhcLineAccountFromApp,
@@ -59,6 +60,7 @@ vi.mock('../file-resource-cleanup', () => ({
 }))
 
 vi.mock('../sync-download-queue', () => ({
+  cancelSyncDownloads: vi.fn(),
   cancelSyncDownloadsAndWait: mockCancelSyncDownloadsAndWait
 }))
 
@@ -93,6 +95,38 @@ describe('sync unlink', () => {
     mockListFileResourceCleanupItemIds.mockImplementation(async (request) => request.itemIds ?? [])
     mockCancelSyncDownloadsAndWait.mockResolvedValue(0)
     mockCancelVideoPosterJobsAndWait.mockResolvedValue(0)
+  })
+
+  it('removes only source A and retains valid B and the committed collection cursor', async () => {
+    const connection = 'hhc-line:user'
+    for (const remoteItemId of ['A', 'B'])
+      await putSyncEntry({
+        providerConnectionId: connection,
+        remoteItemId,
+        parentRemoteItemId: 'collection',
+        kind: 'file',
+        name: remoteItemId,
+        itemId: remoteItemId,
+        blobId: remoteItemId,
+        status: 'available-offline'
+      })
+    await putSyncCursor({
+      providerConnectionId: connection,
+      remoteFolderId: 'collection',
+      cursor: 'revision_9',
+      updatedAt: Date.now()
+    })
+    mockCleanupFileResources.mockResolvedValue({ folderIds: [], itemIds: ['A'] })
+    await removeRevokedSyncItem(connection, 'A')
+    expect(mockCleanupFileResources).toHaveBeenCalledWith({ folderIds: [], itemIds: ['A'] })
+    await expect(getSyncEntryByRemoteItem(connection, 'A')).resolves.toBeUndefined()
+    await expect(getSyncEntryByRemoteItem(connection, 'B')).resolves.toMatchObject({
+      status: 'available-offline',
+      blobId: 'B'
+    })
+    await expect(getSyncCursor(connection, 'collection')).resolves.toMatchObject({
+      cursor: 'revision_9'
+    })
   })
 
   it('waits for active downloads before cleaning a connection', async () => {
