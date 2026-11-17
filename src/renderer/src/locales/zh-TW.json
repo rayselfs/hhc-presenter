@@ -479,7 +479,7 @@
       "createPresentation": "建立簡報",
       "addLocalSyncFolder": "同步本地",
       "addOneDrive": "同步 OneDrive",
-      "addHhcLine": "同步 LINE 群組",
+      "addHhcLine": "LINE 群組資料夾",
       "addFavorite": "加入我的最愛",
       "removeFavorite": "移除我的最愛",
       "refreshSyncFolder": "重新整理同步資料夾",
@@ -534,7 +534,8 @@
     "renameFolder": "重新命名資料夾",
     "blobLoadFailed": "檔案載入失敗，已跳過",
     "syncSources": {
-      "hhcLineName": "LINE 媒體",
+      "hhcLineName": "LINE 群組",
+      "hhcLineLoginRequired": "請先在偏好設定登入 HHC 帳號，再加入 LINE 媒體資料夾。",
       "localSyncConnected": "已連接 {{name}}，匯入 {{count}} 個檔案。",
       "localSyncConnectFailed": "無法連接同步資料夾。",
       "oneDriveFolderImported": "已加入 {{name}}，匯入 {{count}} 個項目。",
@@ -560,6 +561,7 @@
       "loadFailed": "無法載入 OneDrive 資料夾。"
     },
     "cloudFolderPicker": {
+      "hhcLineEmpty": "目前沒有可加入的 LINE 媒體資料夾。請確認使用已獲授權的 HHC 帳號，並請群組管理員在「LINE 群組」設定分享資料夾與讀取權限。已加入的資料夾會繼續同步。",
       "title": "選擇 {{provider}} 資料夾",
       "back": "返回上一層",
       "empty": "這裡沒有可加入的資料夾。",

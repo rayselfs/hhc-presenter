@@ -182,7 +182,6 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   const [isOneDriveImporting, setIsOneDriveImporting] = useState(false)
   const [isHhcLinePickerOpen, setIsHhcLinePickerOpen] = useState(false)
   const [isHhcLineImporting, setIsHhcLineImporting] = useState(false)
-  const [claimsResolvedUserId, setClaimsResolvedUserId] = useState<string | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
@@ -215,40 +214,6 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
     [hhcLineProvider, t]
   )
 
-  useEffect(() => {
-    const userId = session?.userId
-    setClaimsResolvedUserId(null)
-    if (!userId || mode !== 'local') return
-    let active = true
-    let pending = false
-    const refresh = async (): Promise<void> => {
-      if (pending) return
-      pending = true
-      try {
-        const folders = await hhcLineProvider.listFolders()
-        if (active && sessionRef.current?.userId === userId)
-          setClaimsResolvedUserId(!Array.isArray(folders) || folders.length > 0 ? userId : null)
-      } catch {
-        if (active) setClaimsResolvedUserId(null)
-      } finally {
-        pending = false
-      }
-    }
-    void refresh()
-    const timer = setInterval(() => void refresh(), 30_000)
-    const onRefresh = (): void => {
-      void refresh()
-    }
-    window.addEventListener('focus', onRefresh)
-    window.addEventListener('online', onRefresh)
-    return () => {
-      active = false
-      clearInterval(timer)
-      window.removeEventListener('focus', onRefresh)
-      window.removeEventListener('online', onRefresh)
-    }
-  }, [mode, hhcLineProvider, session?.userId, isHhcLineImporting])
-
   const itemCount = useFileExplorerStore(
     useCallback(
       (state) =>
@@ -264,16 +229,19 @@ function FilesWorkspace({ mode }: { mode: FilesMode }): React.JSX.Element {
   const canAddSyncSourceHere = currentFolderId === FILE_EXPLORER_ROOT_ID
   const canAddLocalSyncFolder = isElectron() && canAddSyncSourceHere
   const canAddOneDriveFolder = canAddSyncSourceHere
-  const canAddHhcLineFolder =
-    canAddSyncSourceHere && Boolean(session && claimsResolvedUserId === session.userId)
+  const canAddHhcLineFolder = canAddSyncSourceHere
 
   useEffect(() => {
-    if (!canAddHhcLineFolder) setIsHhcLinePickerOpen(false)
-  }, [canAddHhcLineFolder])
+    setIsHhcLinePickerOpen(false)
+  }, [session?.userId])
   const handleOpenHhcLinePicker = useCallback((): void => {
     if (!canAddHhcLineFolder) return
+    if (!session) {
+      toast.warning(t('fileExplorer.syncSources.hhcLineLoginRequired'))
+      return
+    }
     setIsHhcLinePickerOpen(true)
-  }, [canAddHhcLineFolder])
+  }, [canAddHhcLineFolder, session, t])
   const isCurrentFolderReadOnly = useMemo(
     () => shared || isFolderReadOnlyBySyncLink(currentFolderId, foldersById),
     [currentFolderId, foldersById, shared]
