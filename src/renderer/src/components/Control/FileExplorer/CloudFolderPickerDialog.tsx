@@ -167,12 +167,32 @@ export default function CloudFolderPickerDialog({
                         <Loader2 size={20} className="animate-spin" />
                       </div>
                     ) : error ? (
-                      <div className="flex h-56 items-center justify-center text-sm text-danger">
+                      <div className="flex h-56 flex-col items-center justify-center gap-3 text-sm text-danger">
                         {error}
+                        <Button
+                          variant="tertiary"
+                          onPress={() => void loadFolders(currentFolder.id)}
+                        >
+                          {t('fileExplorer.cloudFolderPicker.retry')}
+                        </Button>
                       </div>
                     ) : folders.length === 0 ? (
-                      <div className="flex h-56 items-center justify-center text-sm text-muted">
-                        {t('fileExplorer.cloudFolderPicker.empty')}
+                      <div className="flex h-56 flex-col items-center justify-center gap-3 px-3 text-sm text-muted">
+                        <p role="status">
+                          {t(
+                            provider.providerType === 'hhc-line'
+                              ? 'fileExplorer.cloudFolderPicker.hhcLineEmpty'
+                              : 'fileExplorer.cloudFolderPicker.empty'
+                          )}
+                        </p>
+                        {provider.providerType === 'hhc-line' && (
+                          <Button
+                            variant="tertiary"
+                            onPress={() => void loadFolders(currentFolder.id)}
+                          >
+                            {t('fileExplorer.cloudFolderPicker.retry')}
+                          </Button>
+                        )}
                       </div>
                     ) : (
                       <div className="space-y-1">

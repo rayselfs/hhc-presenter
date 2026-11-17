@@ -1,12 +1,13 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CloudFolderListing, CloudRemoteFolder } from '@renderer/lib/cloud-provider'
+import type { CloudFolderListing } from '@renderer/lib/cloud-provider'
 import type { AnyItemRecord, FolderRecord } from '@shared/types/folder'
 import type { HhcSession } from '@shared/hhc-auth'
 
 const mocks = vi.hoisted(() => ({
   listFolders: vi.fn<() => Promise<CloudFolderListing>>(),
+  warning: vi.fn(),
   session: null as HhcSession | null,
   getAccessToken: vi.fn<() => Promise<string | null>>(),
   refreshAfterUnauthorized: vi.fn<() => Promise<string | null>>(),
@@ -48,6 +49,10 @@ const mocks = vi.hoisted(() => ({
     retryInitialization: vi.fn(),
     retryPersistence: vi.fn()
   }
+}))
+
+vi.mock('@heroui/react/toast', () => ({
+  toast: { warning: mocks.warning, danger: vi.fn(), success: vi.fn() }
 }))
 
 vi.mock('@renderer/contexts/HhcAuthContext', () => ({
@@ -240,102 +245,43 @@ describe('FilesPage HHC LINE role resolution', () => {
     }))
   })
 
-  it('keeps HHC LINE visible and disabled while folders for the current user resolve', async () => {
-    let resolveToken!: (folders: CloudRemoteFolder[]) => void
-    mocks.listFolders.mockReturnValue(
-      new Promise((resolve) => {
-        resolveToken = resolve
-      })
-    )
-    const view = render(<FilesPage />)
-
-    expect(screen.getByRole('button', { name: 'Sync LINE group' })).toBeDisabled()
-    expect(mocks.listFolders).toHaveBeenCalledTimes(1)
-
-    await act(async () =>
-      resolveToken([{ remoteItemId: 'folder', name: 'Group', parentRemoteItemId: null }])
-    )
-    expect(await screen.findByRole('button', { name: 'Sync LINE group' })).toBeEnabled()
-    view.rerender(<FilesPage />)
-    expect(mocks.listFolders).toHaveBeenCalledTimes(1)
-    expect(mocks.getCloudProviderAdapter).toHaveBeenCalledWith(
-      'hhc-line',
-      expect.objectContaining({
-        getAccessToken: mocks.getAccessToken,
-        refreshAfterUnauthorized: mocks.refreshAfterUnauthorized
-      })
-    )
-  })
-
-  it('allows the Asset API to resolve folder access without a client-side role gate', async () => {
+  it('opens discovery on demand without a role or nonempty-list precondition', async () => {
     mocks.session = { userId: 'user-1', displayName: 'Ada', roles: ['reader'] }
-    mocks.getAccessToken.mockResolvedValue('token')
-    render(<FilesPage />)
-
-    const action = await screen.findByRole('button', { name: 'Sync LINE group' })
-    await waitFor(() => expect(action).toBeEnabled())
-    await userEvent.click(action)
-    expect(screen.getByText('LINE media picker open')).toBeInTheDocument()
-  })
-
-  it('disables an empty ACL result and recovers when a folder becomes available', async () => {
-    mocks.listFolders.mockResolvedValueOnce([])
-    render(<FilesPage />)
-    await waitFor(() => expect(mocks.listFolders).toHaveBeenCalledTimes(1))
-    expect(screen.getByRole('button', { name: 'Sync LINE group' })).toBeDisabled()
-    act(() => window.dispatchEvent(new Event('focus')))
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Sync LINE group' })).toBeEnabled()
-    )
-  })
-
-  it('keeps the picker reachable for empty but incomplete source discovery', async () => {
-    mocks.listFolders.mockResolvedValue({ folders: [], incomplete: true })
+    mocks.listFolders.mockResolvedValue([])
     render(<FilesPage />)
     const action = screen.getByRole('button', { name: 'Sync LINE group' })
-    await waitFor(() => expect(action).toBeEnabled())
+    expect(action).toBeEnabled()
+    expect(mocks.listFolders).not.toHaveBeenCalled()
     await userEvent.click(action)
-    expect(screen.getByText('LINE media picker open')).toBeInTheDocument()
+    expect(screen.getByText('LINE group picker open')).toBeInTheDocument()
   })
 
-  it('disables after the only eligible collection is imported and re-enables for a new one', async () => {
-    mocks.listFolders
-      .mockResolvedValueOnce([{ remoteItemId: 'only', name: 'Only', parentRemoteItemId: null }])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([{ remoteItemId: 'new', name: 'New', parentRemoteItemId: null }])
-    render(<FilesPage />)
-
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Sync LINE group' })).toBeEnabled()
-    )
-
-    act(() => window.dispatchEvent(new Event('focus')))
-    await waitFor(() => expect(mocks.listFolders).toHaveBeenCalledTimes(2))
-    expect(screen.getByRole('button', { name: 'Sync LINE group' })).toBeDisabled()
-
-    act(() => window.dispatchEvent(new Event('focus')))
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Sync LINE group' })).toBeEnabled()
-    )
-    expect(mocks.listFolders).toHaveBeenCalledTimes(3)
-  })
-
-  it('keeps HHC LINE visible and disabled while signed out', () => {
+  it('explains how to sign in without querying folders while signed out', async () => {
     mocks.session = null
     render(<FilesPage />)
-
-    expect(screen.getByRole('button', { name: 'Sync LINE group' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Sync LINE group' }))
+    expect(mocks.warning).toHaveBeenCalledWith(expect.stringContaining('HHC'))
+    expect(mocks.listFolders).not.toHaveBeenCalled()
+    expect(screen.queryByText('LINE group picker open')).not.toBeInTheDocument()
   })
 
-  it('does not open the picker from a disabled folder context action', async () => {
+  it('also explains sign-in for the root context action', async () => {
     mocks.session = null
     render(<FilesPage />)
-
     await userEvent.click(screen.getByRole('button', { name: 'Open file context menu' }))
     const options = mocks.showEmptyAreaMenu.mock.calls[0][0]
     options.onAddHhcLine()
+    expect(mocks.warning).toHaveBeenCalledWith(expect.stringContaining('HHC'))
+    expect(screen.queryByText('LINE group picker open')).not.toBeInTheDocument()
+  })
 
-    expect(screen.queryByText('LINE media picker open')).not.toBeInTheDocument()
+  it('closes the previous account picker when the signed-in user changes', async () => {
+    const view = render(<FilesPage />)
+    await userEvent.click(screen.getByRole('button', { name: 'Sync LINE group' }))
+    expect(screen.getByText('LINE group picker open')).toBeInTheDocument()
+    mocks.session = { userId: 'user-2', displayName: 'Ben', roles: [] }
+    view.rerender(<FilesPage />)
+    expect(screen.queryByText('LINE group picker open')).not.toBeInTheDocument()
   })
 
   it('opens the picker from the authorized root FAB', async () => {
@@ -343,7 +289,7 @@ describe('FilesPage HHC LINE role resolution', () => {
     render(<FilesPage />)
 
     await userEvent.click(await screen.findByRole('button', { name: 'Sync LINE group' }))
-    expect(screen.getByText('LINE media picker open')).toBeInTheDocument()
+    expect(screen.getByText('LINE group picker open')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'LINE' })).toBeInTheDocument()
   })
 })

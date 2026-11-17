@@ -479,7 +479,7 @@
       "createPresentation": "创建演示文稿",
       "addLocalSyncFolder": "同步本地",
       "addOneDrive": "同步 OneDrive",
-      "addHhcLine": "同步 LINE 群组",
+      "addHhcLine": "LINE 群组文件夹",
       "addFavorite": "加入我的收藏",
       "removeFavorite": "移除我的收藏",
       "refreshSyncFolder": "重新整理同步文件夹",
@@ -534,7 +534,8 @@
     "renameFolder": "重命名文件夹",
     "blobLoadFailed": "文件加载失败，已跳过",
     "syncSources": {
-      "hhcLineName": "LINE 媒体",
+      "hhcLineName": "LINE 群组",
+      "hhcLineLoginRequired": "请先在偏好设置登录 HHC 账号，再加入 LINE 媒体文件夹。",
       "localSyncConnected": "已连接 {{name}}，导入 {{count}} 个文件。",
       "localSyncConnectFailed": "无法连接同步文件夹。",
       "oneDriveFolderImported": "已加入 {{name}}，导入 {{count}} 个项目。",
@@ -560,6 +561,7 @@
       "loadFailed": "无法加载 OneDrive 文件夹。"
     },
     "cloudFolderPicker": {
+      "hhcLineEmpty": "目前没有可加入的 LINE 媒体文件夹。请确认使用已获授权的 HHC 账号，并请群组管理员在“LINE 群组”设置共享文件夹与读取权限。已加入的文件夹会继续同步。",
       "title": "选择 {{provider}} 文件夹",
       "back": "返回上一层",
       "empty": "这里没有可加入的文件夹。",

@@ -43,3 +43,60 @@ it('keeps available choices importable and retries an incomplete listing', async
   ).toBeDisabled()
   expect(listFolders.mock.calls).toEqual([['root'], ['root']])
 })
+
+it('explains empty LINE access and discovers a newly authorized folder on retry', async () => {
+  const folder = { remoteItemId: 'source', name: 'Shared folder', parentRemoteItemId: null }
+  const listFolders = vi
+    .fn<CloudFolderPickerProvider['listFolders']>()
+    .mockResolvedValueOnce([])
+    .mockResolvedValueOnce([folder])
+  const provider: CloudFolderPickerProvider = {
+    providerType: 'hhc-line',
+    displayName: 'LINE',
+    icon: null,
+    supportsFolderNavigation: false,
+    listFolders,
+    importFolder: vi.fn()
+  }
+  const onImport = vi.fn()
+  render(
+    <CloudFolderPickerDialog provider={provider} isOpen onClose={vi.fn()} onImport={onImport} />
+  )
+  expect(await screen.findByRole('status')).toHaveTextContent(
+    'fileExplorer.cloudFolderPicker.hhcLineEmpty'
+  )
+  expect(
+    screen.getByRole('button', { name: 'fileExplorer.cloudFolderPicker.import' })
+  ).toBeDisabled()
+  await userEvent.click(
+    screen.getByRole('button', { name: 'fileExplorer.cloudFolderPicker.retry' })
+  )
+  await userEvent.click(await screen.findByRole('button', { name: 'Shared folder' }))
+  await userEvent.click(
+    screen.getByRole('button', { name: 'fileExplorer.cloudFolderPicker.import' })
+  )
+  expect(onImport).toHaveBeenCalledWith(folder)
+})
+
+it('allows retry after discovery fails without importing an unavailable selection', async () => {
+  const provider: CloudFolderPickerProvider = {
+    providerType: 'hhc-line',
+    displayName: 'LINE',
+    icon: null,
+    listFolders: vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce([]),
+    importFolder: vi.fn()
+  }
+  render(
+    <CloudFolderPickerDialog provider={provider} isOpen onClose={vi.fn()} onImport={vi.fn()} />
+  )
+  await screen.findByText('fileExplorer.cloudFolderPicker.loadFailed')
+  expect(
+    screen.getByRole('button', { name: 'fileExplorer.cloudFolderPicker.import' })
+  ).toBeDisabled()
+  await userEvent.click(
+    screen.getByRole('button', { name: 'fileExplorer.cloudFolderPicker.retry' })
+  )
+  expect(await screen.findByRole('status')).toHaveTextContent(
+    'fileExplorer.cloudFolderPicker.hhcLineEmpty'
+  )
+})

@@ -479,7 +479,7 @@
       "createPresentation": "Create Presentation",
       "addLocalSyncFolder": "Sync local folder",
       "addOneDrive": "Sync OneDrive",
-      "addHhcLine": "Sync LINE group",
+      "addHhcLine": "LINE group folders",
       "addFavorite": "Add to Favorites",
       "removeFavorite": "Remove from Favorites",
       "refreshSyncFolder": "Refresh Sync Folder",
@@ -534,7 +534,8 @@
     "renameFolder": "Rename folder",
     "blobLoadFailed": "Failed to load file, skipping",
     "syncSources": {
-      "hhcLineName": "LINE media",
+      "hhcLineName": "LINE group",
+      "hhcLineLoginRequired": "Sign in to your HHC account in Preferences to add a LINE media folder.",
       "localSyncConnected": "Connected {{name}} and imported {{count}} file(s).",
       "localSyncConnectFailed": "Failed to connect sync folder.",
       "oneDriveFolderImported": "Added {{name}} and imported {{count}} item(s).",
@@ -560,6 +561,7 @@
       "loadFailed": "Failed to load OneDrive folders."
     },
     "cloudFolderPicker": {
+      "hhcLineEmpty": "No LINE media folders are available to add. Check that you are using an authorized HHC account, and ask your group administrator to configure a shared folder and reader access in LINE Groups. Folders already added will keep syncing.",
       "title": "Choose {{provider}} Folder",
       "back": "Back",
       "empty": "No folders are available here.",
