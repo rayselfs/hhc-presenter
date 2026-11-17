@@ -429,7 +429,7 @@ test('restores the HHC account session without storing the access token', async 
 
   await page.getByRole('link', { name: /files/i }).click()
   await page.getByLabel('New').click()
-  await page.getByRole('menuitem', { name: 'Sync LINE group' }).click()
+  await page.getByRole('menuitem', { name: 'LINE group folders' }).click()
   const picker = page.getByRole('dialog')
   await expect(picker.getByRole('status')).toContainText(
     'Some collections are temporarily unavailable'
