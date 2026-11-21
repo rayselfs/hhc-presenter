@@ -21,13 +21,12 @@ export function validateGlyphChange(before: string, after: string): string {
   return proposed.join('')
 }
 
-export function createGlyphVerifier(onLateCorrection?: () => void): {
-  verify(image: ImageData, lines: string[]): Promise<string[]>
+export function createGlyphVerifier(): {
+  verify(image: ImageData, lines: string[]): Promise<string[] | null>
   dispose(): void
 } {
   let worker: Worker | undefined
   let pending: ((result?: string[]) => void) | undefined
-  let skippedFrame = false
   let stopped = false
 
   function dispose(): void {
@@ -40,22 +39,12 @@ export function createGlyphVerifier(onLateCorrection?: () => void): {
     verify(image, lines) {
       if (stopped || !lines.some((line) => /^[\p{Script=Han} ]{3,}$/u.test(line)))
         return Promise.resolve(lines)
-      if (pending) {
-        skippedFrame = true
-        return Promise.resolve(lines)
-      }
+      if (pending) return Promise.resolve(null)
       return new Promise((resolve) => {
-        let timedOut = false
-        // A slow atlas can still help later frames after the deadline for this one.
-        const timeout = setTimeout(() => {
-          timedOut = true
-          resolve(lines)
-        }, 10000)
-        const watchdog = setTimeout(() => {
-          worker?.terminate()
-          worker = undefined
-          complete()
-        }, 60000)
+        // A slow local font lookup is still checking these pixels. Leave this cue
+        // unconfirmed and sample the current source again when the worker is ready.
+        const timeout = setTimeout(() => resolve(null), 10000)
+        const watchdog = setTimeout(dispose, 60000)
 
         const complete = (result?: string[]): void => {
           if (pending !== complete) return
@@ -66,12 +55,7 @@ export function createGlyphVerifier(onLateCorrection?: () => void): {
             result?.length === lines.length
               ? result.map((text, i) => validateGlyphChange(lines[i], text))
               : undefined
-          const retry =
-            skippedFrame ||
-            (timedOut && (!verified || verified.some((line, i) => line !== lines[i])))
-          skippedFrame = false
           resolve(verified ?? lines)
-          if (!stopped && retry) onLateCorrection?.()
         }
         pending = complete
         try {

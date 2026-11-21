@@ -26,10 +26,7 @@ export function startLyricsRecognition(options: RecognitionOptions): () => void 
   let previousCrop: LyricsCrop | null = null
   let previousSize = ''
   let previousLines: string[] | null = null
-  const verifier = createGlyphVerifier(() => {
-    previousLines = null
-    gate.reset()
-  })
+  const verifier = createGlyphVerifier()
   const active = (): boolean => !abort.signal.aborted
   const unavailable = (): void => {
     if (active()) {
@@ -90,7 +87,18 @@ export function startLyricsRecognition(options: RecognitionOptions): () => void 
         } else {
           const isCurrent = (): boolean => active() && roi === options.getCrop() && sourceLive()
           lines = await recognizeLyricsFrame(engine!, image, snapshot, compact, isCurrent)
-          if (isCurrent()) lines = await verifier.verify(image, lines)
+          if (isCurrent()) {
+            const verified = await verifier.verify(image, lines)
+            if (!active()) return
+            if (verified === null) {
+              gate.reset()
+              previousLines = null
+              options.onStatus('recognizing')
+              timer = setTimeout(() => void run(), 100)
+              return
+            }
+            lines = verified
+          }
         }
         if (!active()) return
         if (roi !== options.getCrop()) {
