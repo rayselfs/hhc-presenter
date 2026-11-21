@@ -193,3 +193,45 @@ it('does not infer Han phrase breaks from small glyphs', () => {
   expect(readLyricsLines([block], image)).toEqual(['恩典無限'])
   expect(readLyricsLines([{ ...block, text: '恩典 无限' }], image)).toEqual(['恩典 無限'])
 })
+
+it('uses the ink gap between padded word boxes for yellow lyrics on black', () => {
+  const image = glyphImage([32, 36], [12], true)
+  for (let index = 0; index < image.data.length; index += 4) {
+    const ink = image.data[index] > 128
+    image.data[index] = image.data[index + 1] = ink ? 255 : 0
+    image.data[index + 2] = 0
+  }
+  const word = (text: string, left: number, right: number): LyricsBlock => ({
+    text,
+    score: 1,
+    poly: [
+      [left, 0],
+      [right, 0],
+      [right, 40],
+      [left, 40]
+    ]
+  })
+  expect(readLyricsLines([word('sing', 0, 39), word('aloud', 41, 88)], image)).toEqual([
+    'sing aloud'
+  ])
+})
+
+it('measures Han advances when a narrow glyph has extra side bearings', () => {
+  const image = glyphImage([18, 10, 16, 18], [10, 11, 13], true, 28)
+  expect(readLyricsLines([box('主 自己心', 0, 0)], image)).toEqual(['主自己 心'])
+})
+
+it('keeps Taiwan glyphs and does not convert accepted text twice', () => {
+  const lines = readLyricsLines([box('前仆后继 嘴唇 人群 才 祢', 0, 0)])
+  expect(lines).toEqual(['前仆後繼 嘴唇 人群 才 祢'])
+  const gate = createLyricsGate()
+  gate.observe(lines)
+  expect(gate.observe(lines)).toEqual(lines)
+})
+
+it('resolves the I/l ambiguity in a future-tense English contraction', () => {
+  expect(readLyricsLines([box("I'Il go where they'll go", 0, 0)])).toEqual([
+    "I'll go where they'll go"
+  ])
+  expect(readLyricsLines([box("I'LL GO", 0, 0)])).toEqual(["I'LL GO"])
+})

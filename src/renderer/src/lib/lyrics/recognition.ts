@@ -1,5 +1,7 @@
+import { recognizeLyricsFrame } from './frame'
+import { createGlyphVerifier } from './glyph-verifier'
 import { createLyricsEngine, type LyricsEngine } from './engine'
-import { createLyricsGate, readLyricsLines, samePixels } from './lines'
+import { createLyricsGate, samePixels } from './lines'
 import type { LyricsCrop } from '@shared/lyrics'
 type RecognitionOptions = {
   stream: MediaStream
@@ -8,19 +10,12 @@ type RecognitionOptions = {
   onLines(lines: string[]): void
   onError(error: 'load' | 'recognize' | 'source'): void
 }
-function isSolidFrame(pixels: Uint8ClampedArray): boolean {
-  for (let i = 4; i < pixels.length; i += 4) {
-    if (pixels[i] !== pixels[0] || pixels[i + 1] !== pixels[1] || pixels[i + 2] !== pixels[2])
-      return false
-  }
-  return true
-}
-
 export function startLyricsRecognition(options: RecognitionOptions): () => void {
   const abort = new AbortController()
   const video = document.createElement('video')
   const canvas = document.createElement('canvas')
   const snapshot = document.createElement('canvas')
+  const compact = document.createElement('canvas')
   const gate = createLyricsGate()
   video.muted = true
   video.playsInline = true
@@ -31,6 +26,10 @@ export function startLyricsRecognition(options: RecognitionOptions): () => void 
   let previousCrop: LyricsCrop | null = null
   let previousSize = ''
   let previousLines: string[] | null = null
+  const verifier = createGlyphVerifier(() => {
+    previousLines = null
+    gate.reset()
+  })
   const active = (): boolean => !abort.signal.aborted
   const unavailable = (): void => {
     if (active()) {
@@ -89,29 +88,9 @@ export function startLyricsRecognition(options: RecognitionOptions): () => void 
         if (previousLines && size === previousSize && samePixels(image.data, previousPixels)) {
           lines = previousLines
         } else {
-          const blocks = isSolidFrame(image.data) ? [] : await engine!.recognize(image)
-          let uncertain = false
-          try {
-            lines = readLyricsLines(blocks, image)
-          } catch (error) {
-            if (snapshot.width <= canvas.width) throw error
-            uncertain = true
-            lines = []
-          }
-          if (
-            !lines.length &&
-            snapshot.width > canvas.width &&
-            active() &&
-            roi === options.getCrop() &&
-            sourceLive()
-          ) {
-            const detailed = sourceContext.getImageData(0, 0, snapshot.width, snapshot.height)
-            lines = isSolidFrame(detailed.data)
-              ? []
-              : readLyricsLines(await engine!.recognize(detailed), detailed)
-            // Missing text on retry cannot turn an uncertain detected word into a blank cue.
-            if (uncertain && !lines.length) throw new Error('Uncertain text block')
-          }
+          const isCurrent = (): boolean => active() && roi === options.getCrop() && sourceLive()
+          lines = await recognizeLyricsFrame(engine!, image, snapshot, compact, isCurrent)
+          if (isCurrent()) lines = await verifier.verify(image, lines)
         }
         if (!active()) return
         if (roi !== options.getCrop()) {
@@ -162,6 +141,7 @@ export function startLyricsRecognition(options: RecognitionOptions): () => void 
   return () => {
     abort.abort()
     if (timer) clearTimeout(timer)
+    verifier.dispose()
     engine?.dispose()
     video.pause()
     video.srcObject = null
