@@ -26,12 +26,6 @@ vi.mock('@renderer/lib/env', () => ({
   isWeb: vi.fn().mockReturnValue(true)
 }))
 
-vi.mock('@renderer/lib/speech-key-storage', () => ({
-  saveSpeechKey: vi.fn().mockResolvedValue(undefined),
-  loadSpeechKey: vi.fn().mockResolvedValue(null),
-  deleteSpeechKey: vi.fn().mockResolvedValue(undefined)
-}))
-
 vi.mock('@renderer/lib/media-storage-accounting', () => ({
   getMediaStorageAccounting: vi.fn().mockResolvedValue({
     usage: {

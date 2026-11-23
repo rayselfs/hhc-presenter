@@ -79,7 +79,6 @@ export default function BiblePage(): React.JSX.Element {
 
   const projectVerse = useCallback(
     (verseIndex: number, skipHistory = false) => {
-      window.dispatchEvent(new Event('bible:pause-speech'))
       const verses = getCurrentVerses()
       if (!verses || verses.length === 0) return
       const clamped = Math.max(0, Math.min(verseIndex, verses.length - 1))
@@ -123,7 +122,6 @@ export default function BiblePage(): React.JSX.Element {
   )
 
   const restoreCommittedPassage = useCallback((): number => {
-    window.dispatchEvent(new Event('bible:pause-speech'))
     if (isProjectionOpen && activeOwner === 'bible') {
       const chapter = useBibleProjectionStore
         .getState()

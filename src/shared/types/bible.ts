@@ -26,6 +26,7 @@ export interface BibleBook {
 }
 
 export interface BiblePassage {
+  endVerse?: number
   bookNumber: number
   chapter: number
   verse: number

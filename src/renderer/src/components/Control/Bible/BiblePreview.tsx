@@ -156,7 +156,7 @@ export function BiblePreview({
     }
     scrollBehaviorRef.current = 'smooth'
     prevSelectedVerseIndexRef.current = selectedVerseIndex
-  }, [selectedVerseIndex, verses, scrollBehaviorRef])
+  }, [selectedVerseIndex, verses, scrollBehaviorRef, currentPassage])
 
   const searchResultsLength = searchResults.length
   useEffect(() => {
@@ -247,11 +247,13 @@ export function BiblePreview({
       >
         <div className="flex flex-col gap-2 p-2 pt-0">
           {verses.map((verse, index) => {
-            const isSelected =
+            const isOnScreen =
               projectedPassage?.bookNumber === book?.number &&
               projectedPassage?.chapter === chapter?.number &&
               projectedPassage?.verse === verse.number
-            const isProjected = currentPassage?.verse === verse.number
+            const isPreviewTarget =
+              verse.number >= currentPassage.verse &&
+              verse.number <= (currentPassage.endVerse ?? currentPassage.verse)
             return (
               <div key={verse.number} className="group relative">
                 <button
@@ -267,15 +269,15 @@ export function BiblePreview({
                   onContextMenu={onContextMenu}
                   data-verse-number={verse.number}
                   className={`w-full text-left rounded-lg p-3 transition-colors flex items-start ${
-                    isSelected
+                    isOnScreen
                       ? 'bg-accent text-accent-foreground'
-                      : isProjected
+                      : isPreviewTarget
                         ? 'bg-accent-soft'
                         : 'hover:bg-accent-soft'
                   }`}
                 >
                   <span
-                    className={`mr-2 shrink-0 font-[Roboto_Variable,Roboto,sans-serif] ${isSelected ? 'text-accent-foreground/80 dark:text-muted' : 'text-muted'}`}
+                    className={`mr-2 shrink-0 font-[Roboto_Variable,Roboto,sans-serif] ${isOnScreen ? 'text-accent-foreground/80 dark:text-muted' : 'text-muted'}`}
                   >
                     {verse.number}
                   </span>

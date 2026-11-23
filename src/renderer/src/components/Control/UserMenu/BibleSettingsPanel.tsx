@@ -1,3 +1,4 @@
+import { SpeechKeySettings } from './SpeechKeySettings'
 import { Select } from '@heroui/react/select'
 import { ListBox } from '@heroui/react/list-box'
 import { Label } from 'react-aria-components'
@@ -14,6 +15,7 @@ export default function BibleSettingsPanel(): React.JSX.Element {
   const limits = [...new Set([0, 1800, 3600, 7200, limit])].sort((a, b) => a - b)
   return (
     <div className="space-y-3">
+      <SpeechKeySettings />
       <Select
         value={speech.recognitionLanguage}
         onChange={(key) => {
@@ -62,7 +64,6 @@ export default function BibleSettingsPanel(): React.JSX.Element {
           </ListBox>
         </Select.Popover>
       </Select>
-      <p className="text-sm text-muted">{t('localSpeech.settingsHelp')}</p>
     </div>
   )
 }

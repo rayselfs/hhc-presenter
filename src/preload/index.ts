@@ -1,4 +1,3 @@
-import type { RecognitionLanguage } from '../shared/local-speech'
 import type { PresenterApi } from '../shared/presenter-api'
 import type { PersonalNativeApi } from '../shared/personal-cloud'
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
@@ -100,21 +99,10 @@ const updateApi = {
 }
 
 const speechApi = {
-  onInterrupted: (callback: () => void) => typedOn('speech:interrupted', callback),
-  modelStatus: (language: RecognitionLanguage) => typedInvoke('speech:model-status', language),
-  installModel: (language: RecognitionLanguage) => typedInvoke('speech:model-install', language),
-  cancelInstall: () => typedInvoke('speech:model-cancel'),
-  removeModel: (language: RecognitionLanguage) => typedInvoke('speech:model-remove', language),
-  prepare: (session: string, language: RecognitionLanguage) =>
-    typedInvoke('speech:local-prepare', session, language),
-  transcribe: (session: string, pcm: Float32Array) =>
-    typedInvoke('speech:local-transcribe', session, pcm),
-  stop: (session: string) => typedInvoke('speech:local-stop', session),
-  chineseAvailable: () => typedInvoke('speech:chinese-available'),
-  chinesePrepare: (session: string) => typedInvoke('speech:chinese-prepare', session),
-  chineseTranscribe: (session: string, pcm: Float32Array) =>
-    typedInvoke('speech:chinese-transcribe', session, pcm),
-  chineseStop: (session: string) => typedInvoke('speech:chinese-stop', session)
+  configured: () => typedInvoke('speech:configured'),
+  save: (key: string) => typedInvoke('speech:save', key),
+  forget: () => typedInvoke('speech:forget'),
+  token: (language: 'zh' | 'en') => typedInvoke('speech:token', language)
 }
 
 const nativeFsApi = {
