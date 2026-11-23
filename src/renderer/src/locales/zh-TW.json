@@ -1484,7 +1484,10 @@
     "missingKey": "請先在聖經設定綁定有效的 OpenAI API key。",
     "desktopKey": "金鑰由作業系統加密儲存。辨識時音訊會直接傳送至 OpenAI。",
     "tabKey": "金鑰僅保留在本分頁記憶體。重新整理後需再輸入。辨識時音訊會直接傳送至 OpenAI。",
-    "keySaved": "已儲存金鑰。前往聖經頁，點選「開始聆聽」。",
+    "keySaved": "已儲存金鑰",
+    "openBible": "前往經文辨識",
+    "replaceKey": "更換金鑰",
+    "savingKey": "儲存中…",
     "saveKey": "儲存金鑰",
     "forgetKey": "解除綁定",
     "keyFailed": "請檢查金鑰格式與安全儲存是否可用。"
