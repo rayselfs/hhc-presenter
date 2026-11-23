@@ -24,10 +24,12 @@ export async function createSpeechToken(key: string, language: SpeechLanguage): 
       }
     })
   })
-  if (!response.ok)
-    throw new Error(
-      response.status === 401 || response.status === 403 ? 'credential' : 'unavailable'
-    )
+  if (!response.ok) {
+    const body = await response.json().catch(() => null)
+    if (body?.error?.code === 'insufficient_quota') throw new Error('insufficientQuota')
+    if (response.status === 401 || response.status === 403) throw new Error('credential')
+    throw new Error('token HTTP ' + response.status)
+  }
   const payload: unknown = await response.json()
   if (
     !payload ||

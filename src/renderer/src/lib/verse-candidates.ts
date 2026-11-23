@@ -25,7 +25,7 @@ export class VerseCandidates {
     let text = raw
       .trim()
       .replace(/[，,]/g, ' ')
-      .replace(/[。.!！\s]+$/, '')
+      .replace(/[。.:：!！\s]+$/, '')
       .trim()
     text = traditionalTranscript(text).replace(
       /^(?:弟兄姊妹[，, ]*)?(?:我們(?:一起)?(?:來看|來讀|翻到)|請大家(?:翻到|翻開)|請翻到|請翻開|請看)\s*/,

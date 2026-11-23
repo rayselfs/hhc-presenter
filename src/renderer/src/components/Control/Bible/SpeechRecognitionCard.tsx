@@ -15,7 +15,7 @@ export default function SpeechRecognitionCard(): React.JSX.Element {
   const speech = useSettingsStore((s) => s.speech)
   const session = useRef<OpenAITranscription | null>(null)
   const [status, setStatus] = useState<'idle' | 'preparing' | 'listening' | 'finishing'>('idle')
-  const [error, setError] = useState<'' | 'failed' | 'missingKey' | 'deadlineReached'>('')
+  const [error, setError] = useState('')
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const refreshDevices = useCallback(async () => {
@@ -40,7 +40,7 @@ export default function SpeechRecognitionCard(): React.JSX.Element {
     const offline = (): void => {
       if (session.current) {
         stop()
-        setError('failed')
+        setError(t('localSpeech.failed'))
       }
     }
     const keyChanged = (): void => {
@@ -56,15 +56,15 @@ export default function SpeechRecognitionCard(): React.JSX.Element {
       window.removeEventListener('offline', offline)
       window.removeEventListener('speech-key-changed', keyChanged)
     }
-  }, [refreshDevices, stop])
+  }, [refreshDevices, stop, t])
   useEffect(() => {
     if (status !== 'listening' || limit <= 0) return
     const timer = setTimeout(() => {
       stop()
-      setError('deadlineReached')
+      setError(t('localSpeech.deadlineReached'))
     }, limit * 1000)
     return () => clearTimeout(timer)
-  }, [status, limit, stop])
+  }, [status, limit, stop, t])
   const start = async (): Promise<void> => {
     if (session.current || !version) return
     setError('')
@@ -84,7 +84,7 @@ export default function SpeechRecognitionCard(): React.JSX.Element {
       onDisconnect: () => {
         if (session.current === active) {
           stop()
-          setError('failed')
+          setError(t('localSpeech.failed'))
         }
       }
     })
@@ -100,9 +100,25 @@ export default function SpeechRecognitionCard(): React.JSX.Element {
     } catch (reason) {
       if (session.current === active) {
         stop()
-        setError(
-          reason instanceof Error && reason.message.includes('credential') ? 'missingKey' : 'failed'
+        const message = reason instanceof Error ? reason.message : ''
+        const http = /^(token|connection) HTTP ([1-5][0-9]{2})$/.exec(message)
+        if (http)
+          setError(
+            t(http[1] === 'token' ? 'localSpeech.tokenHttp' : 'localSpeech.connectionHttp', {
+              status: http[2]
+            })
+          )
+        else if (
+          reason instanceof DOMException &&
+          ['NotAllowedError', 'NotFoundError', 'NotReadableError', 'OverconstrainedError'].includes(
+            reason.name
+          )
         )
+          setError(t('localSpeech.microphoneFailed'))
+        else if (message === 'credential') setError(t('localSpeech.missingKey'))
+        else if (message === 'tokenFailed' || message === 'insufficientQuota')
+          setError(t(`localSpeech.${message}`))
+        else setError(t('localSpeech.failed'))
       }
     }
   }
@@ -146,7 +162,7 @@ export default function SpeechRecognitionCard(): React.JSX.Element {
       >
         {t(status === 'idle' ? 'localSpeech.start' : 'localSpeech.stop')}
       </button>
-      <span role="status">{error ? t(`localSpeech.${error}`) : t(`localSpeech.${status}`)}</span>
+      <span role="status">{error ? error : t(`localSpeech.${status}`)}</span>
       <div className="min-h-0 overflow-auto">
         {candidates.map((c, i) => (
           <button

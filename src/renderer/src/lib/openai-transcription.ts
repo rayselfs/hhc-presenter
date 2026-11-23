@@ -38,7 +38,11 @@ class TranscriptionConnection {
     this.stream = stream
     const track = stream.getAudioTracks()[0]
     track.onended = this.options.onDisconnect
-    const token = await speechToken(this.options.language)
+    const token = await speechToken(this.options.language).catch((reason: unknown) => {
+      const message = reason instanceof Error ? reason.message : ''
+      const known = message.match(/credential|insufficientQuota|token HTTP [1-5][0-9]{2}/)
+      throw new Error(known?.[0] ?? 'tokenFailed')
+    })
     signal.throwIfAborted()
     const peer = new RTCPeerConnection()
     this.peer = peer
@@ -60,7 +64,7 @@ class TranscriptionConnection {
       signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]),
       redirect: 'error'
     })
-    if (!response.ok) throw new Error('connection')
+    if (!response.ok) throw new Error('connection HTTP ' + response.status)
     await peer.setRemoteDescription({ type: 'answer', sdp: await response.text() })
     if (channel.readyState !== 'open') {
       await new Promise<void>((resolve, reject) => {

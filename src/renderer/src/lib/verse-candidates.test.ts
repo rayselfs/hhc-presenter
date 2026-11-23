@@ -26,3 +26,19 @@ it('rejects an unqualified correction, expired context and negation', () => {
   expect(resolver.accept('抱歉，是後書四章七節', books, 6000)).toBeNull()
   expect(resolver.accept('不要翻到哥林多前書，抱歉，是後書四章七節', books)).toBeNull()
 })
+
+it('accepts a spoken Genesis citation ending with transcription punctuation', () => {
+  const genesis = {
+    name: '創世記',
+    number: 1,
+    code: 'gen',
+    abbreviation: '創',
+    chapters: [{ number: 1, verses: [{ number: 1, id: 1, text: '起初' }] }]
+  }
+  expect(new VerseCandidates().accept('创世纪第一章第一节：', [genesis])).toMatchObject({
+    bookNumber: 1,
+    chapter: 1,
+    verse: 1,
+    text: '起初'
+  })
+})
