@@ -6,6 +6,7 @@ afterEach(() => {
   vi.useRealTimers()
 })
 it('delivers committed items in spoken order exactly once and releases audio on close', async () => {
+  vi.useFakeTimers()
   const stop = vi.fn()
   const channel = {
     readyState: 'open',
@@ -50,11 +51,15 @@ it('delivers committed items in spoken order exactly once and releases audio on 
   send('input_audio_buffer.committed', 'a')
   send('input_audio_buffer.committed', 'b')
   const done = 'conversation.item.input_audio_transcription.completed'
+  const finishing = connection.finish()
+  await vi.advanceTimersByTimeAsync(1800)
+  expect(channel.close).not.toHaveBeenCalled()
   send(done, 'b', '第十六節')
   send(done, 'a', '約翰福音第三章')
   send(done, 'a', '約翰福音第三章')
   expect(onText.mock.calls).toEqual([['約翰福音第三章'], ['第十六節']])
-  connection.close()
+  await finishing
+  expect(channel.close).toHaveBeenCalledOnce()
   connection.close()
   expect(stop).toHaveBeenCalledOnce()
 })

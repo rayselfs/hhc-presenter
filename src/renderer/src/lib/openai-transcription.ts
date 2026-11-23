@@ -16,6 +16,9 @@ class TranscriptionConnection {
   private channel?: RTCDataChannel
   private context?: AudioContext
   private timer?: ReturnType<typeof setInterval>
+  private awaitingCommit = 0
+  private drained?: () => void
+  private finishing?: Promise<void>
   private speaking = false
   private order: string[] = []
   private completed = new Map<string, string>()
@@ -121,7 +124,10 @@ class TranscriptionConnection {
     const id = event?.item_id
     if (typeof id !== 'string' || this.delivered.has(id)) return
     if (event.type === 'input_audio_buffer.committed') {
-      if (!this.order.includes(id)) this.order.push(id)
+      if (!this.order.includes(id)) {
+        this.awaitingCommit = Math.max(0, this.awaitingCommit - 1)
+        this.order.push(id)
+      }
     } else if (
       event.type === 'conversation.item.input_audio_transcription.completed' ||
       event.type === 'conversation.item.input_audio_transcription.failed'
@@ -135,28 +141,44 @@ class TranscriptionConnection {
       this.delivered.add(first)
       if (text) this.options.onText(text)
     }
+    if (this.awaitingCommit === 0 && this.order.length === 0) this.drained?.()
   }
 
   private commit(): void {
-    if (this.channel?.readyState === 'open')
+    if (this.channel?.readyState === 'open') {
       this.channel.send(JSON.stringify({ type: 'input_audio_buffer.commit' }))
+      this.awaitingCommit++
+    }
     this.speaking = false
   }
 
-  async finish(): Promise<void> {
+  finish(): Promise<void> {
+    return (this.finishing ??= this.finishPending())
+  }
+
+  private async finishPending(): Promise<void> {
     clearInterval(this.timer)
     this.stream?.getTracks().forEach((track) => {
       track.enabled = false
     })
     if (this.speaking) this.commit()
-    if (this.channel?.readyState === 'open')
-      await new Promise((resolve) => setTimeout(resolve, 1200))
+    if (this.channel?.readyState === 'open' && (this.awaitingCommit || this.order.length)) {
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(resolve, 5000)
+        this.drained = () => {
+          clearTimeout(timeout)
+          resolve()
+        }
+      })
+      this.drained = undefined
+    }
     this.close()
   }
 
   close(): void {
     if (this.abort.signal.aborted) return
     this.abort.abort()
+    this.drained?.()
     clearInterval(this.timer)
     if (this.channel) {
       this.channel.onclose = null
