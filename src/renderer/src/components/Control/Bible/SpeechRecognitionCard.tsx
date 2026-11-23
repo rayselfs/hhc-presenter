@@ -43,14 +43,18 @@ export default function SpeechRecognitionCard(): React.JSX.Element {
         setError('failed')
       }
     }
+    const keyChanged = (): void => {
+      stop()
+      setError('')
+    }
     refresh()
     navigator.mediaDevices?.addEventListener?.('devicechange', refresh)
     window.addEventListener('offline', offline)
-    window.addEventListener('speech-key-changed', stop)
+    window.addEventListener('speech-key-changed', keyChanged)
     return () => {
       navigator.mediaDevices?.removeEventListener?.('devicechange', refresh)
       window.removeEventListener('offline', offline)
-      window.removeEventListener('speech-key-changed', stop)
+      window.removeEventListener('speech-key-changed', keyChanged)
     }
   }, [refreshDevices, stop])
   useEffect(() => {

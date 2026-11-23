@@ -58,6 +58,7 @@ export function SpeechKeySettings(): React.JSX.Element {
           {t('localSpeech.forgetKey')}
         </button>
       )}
+      {configured && <p role="status">{t('localSpeech.keySaved')}</p>}
       {error && <p role="alert">{t('localSpeech.keyFailed')}</p>}
     </div>
   )

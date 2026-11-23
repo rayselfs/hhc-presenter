@@ -1484,6 +1484,7 @@
     "missingKey": "请先在圣经设置绑定有效的 OpenAI API key。",
     "desktopKey": "密钥由操作系统加密保存。识别时音频会直接发送到 OpenAI。",
     "tabKey": "密钥仅保存在当前标签页内存中。刷新后需要重新输入。识别时音频会直接发送到 OpenAI。",
+    "keySaved": "已保存密钥。前往圣经页，点击「开始聆听」。",
     "saveKey": "保存密钥",
     "forgetKey": "解除绑定",
     "keyFailed": "请检查密钥格式和安全存储是否可用。"
