@@ -155,7 +155,6 @@ export default defineConfig(({ mode }) => {
             '**/lyrics-runtime/**',
             '**/assets/pdf-*.js',
             '**/assets/pdf.worker-*.js',
-            '**/assets/transformers*.js',
             '**/assets/aiden0z-pptx-renderer*.js',
             '**/assets/hhc-asset-api-*.js',
             '**/assets/hhc-line-access-*.js',

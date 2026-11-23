@@ -9,8 +9,7 @@ const MAX_PRECACHE_BYTES = 5.25 * 1024 * 1024
 const MAX_FONT_ASSETS_BYTES = 10 * 1024 * 1024
 const MAX_JS_CHUNK_BYTES = 2.25 * 1024 * 1024
 const MAX_LYRICS_RUNTIME_BYTES = 64 * 1024 * 1024
-const OPTIONAL_CHUNK_PATTERN =
-  /assets\/(pdf|transformers(?:\.web)?|microsoft\.cognitiveservices\.speech\.sdk)-.*\.js$/
+const OPTIONAL_CHUNK_PATTERN = /assets\/pdf-.*\.js$/
 
 async function listFiles(directory) {
   return Promise.all(
