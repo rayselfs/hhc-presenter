@@ -110,10 +110,10 @@ class BroadcastChannelAdapter implements ProjectionAdapter {
   private generation = 0
 
   constructor(role: AdapterRole, sessionId?: string) {
-    this.bc = new BroadcastChannel('hhc-projection')
     this.windowId = crypto.randomUUID()
     this.role = role
     this.sessionId = sessionId || (role === 'main' ? crypto.randomUUID() : '')
+    this.bc = new BroadcastChannel(`hhc-projection-${this.sessionId}`)
 
     this.bc.addEventListener('messageerror', () => {
       console.warn('[projection-adapter] Failed to deserialize BroadcastChannel message')

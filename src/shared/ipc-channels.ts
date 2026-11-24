@@ -1,3 +1,4 @@
+import type { WeeklyEdition, WeeklyList, WeeklyIssue, WeeklyDocument } from './weekly-reader'
 import type { RecognitionLanguage, SpeechModelStatus, LocalTranscript } from './local-speech'
 import type { CameraSource } from './camera'
 import type { ChineseSpeechResult } from './chinese-speech'
@@ -322,6 +323,9 @@ export interface IpcInvokeMap {
   'onedrive:delete-credentials': { args: [string]; result: void }
   'onedrive:get-auth-redirect-uri': { args: []; result: string }
   'onedrive:wait-auth-callback': { args: [string?]; result: string | null }
+  'weekly:editions': { args: [string]; result: WeeklyEdition[] }
+  'weekly:list': { args: [string, WeeklyEdition, number]; result: WeeklyList }
+  'weekly:open': { args: [string, WeeklyIssue, string]; result: WeeklyDocument }
   'hhc-auth:begin': { args: []; result: HhcPendingSignIn }
   'hhc-auth:cancel': { args: []; result: void }
   'hhc-auth:get-access-token': { args: []; result: string | null }

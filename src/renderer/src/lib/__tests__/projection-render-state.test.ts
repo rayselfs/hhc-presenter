@@ -217,3 +217,37 @@ it('does not apply pending play commands over a terminal replay', () => {
   })
   expect(next.mediaReplayState).toEqual(media.media.state)
 })
+
+it('displays an authorized bulletin replay and removes it immediately on clear or handoff', () => {
+  const bulletin = {
+    page: { id: 'p1', label: '1', blocks: [] },
+    traceCode: 'trace',
+    fontScale: 1,
+    position: null,
+    highlights: []
+  }
+  const state = reduceProjectionRenderState(initialProjectionRenderState, {
+    type: 'replay',
+    payload: { generation: 2, snapshot: { ...snapshot('bulletin'), bulletin } }
+  })
+  expect(selectVisibleProjection(state)).toBe('bulletin')
+  const cleared = reduceProjectionRenderState(state, {
+    type: 'message',
+    channel: 'bulletin:view',
+    data: null
+  })
+  expect(selectVisibleProjection(cleared)).toBe('default')
+  const handedOff = reduceProjectionRenderState(state, {
+    type: 'message',
+    channel: '__system:active-owner',
+    data: { owner: 'timer' }
+  })
+  expect(handedOff.bulletin).toBeNull()
+  expect(
+    reduceProjectionRenderState(handedOff, {
+      type: 'message',
+      channel: 'bulletin:view',
+      data: bulletin
+    })
+  ).toBe(handedOff)
+})

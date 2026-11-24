@@ -75,6 +75,25 @@ jobs:
           VITE_BIBLE_API_V2_PREFIX: ${{ vars.VITE_BIBLE_API_V2_PREFIX }}
         run: npm run prepare:lyrics-runtime && npx electron-vite build && npm run check:bundle
 
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Cache Electron download
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/electron
+          key: electron-bulletin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Verify Electron bulletin projection
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y --no-install-recommends libgtk-3-0t64 libxss1 xauth
+          node node_modules/electron/install.js
+          sudo chown root:root node_modules/electron/dist/chrome-sandbox
+          sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+          export HHC_ELECTRON_EXECUTABLE="$(node -p "require('electron')")"
+          xvfb-run -a npx playwright test --config playwright.bulletin-electron.config.ts
+
       - name: Build hosted renderer
         env:
           VITE_HHC_ACCOUNT_ORIGIN: ${{ vars.VITE_HHC_ACCOUNT_ORIGIN }}
@@ -84,9 +103,6 @@ jobs:
           VITE_BIBLE_API_V1_PREFIX: ${{ vars.VITE_BIBLE_API_V1_PREFIX }}
           VITE_BIBLE_API_V2_PREFIX: ${{ vars.VITE_BIBLE_API_V2_PREFIX }}
         run: npx electron-vite build --mode web && npm run check:web-build && npm run check:bundle
-
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
 
       - name: Verify hosted artifact
         run: npx playwright test e2e/hosted-artifact.spec.ts --project=chromium --workers=1 --retries=0

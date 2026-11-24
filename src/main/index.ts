@@ -27,6 +27,7 @@ import { registerOneDriveDownloadHandlers } from './ipc/onedrive-download'
 import { isKnownWindow, validateTheme } from './ipc/validate'
 import { registerUpdateService } from './updateService'
 import { createHhcAuthService, registerHhcAuthIpc } from './ipc/hhc-auth'
+import { registerWeeklyReader } from './ipc/weekly-reader'
 import { registerHhcAssetHandlers } from './ipc/hhc-assets'
 import { registerPersonalCloudHandlers } from './ipc/personal-cloud'
 import { createHhcPresenterProtocolDispatcher } from './protocol-router'
@@ -144,6 +145,7 @@ if (gotSingleInstanceLock) {
     registerOneDriveCredentialHandlers(wm, oneDriveService)
     registerHhcAuthIpc(wm, hhcAuthService)
     registerHhcAssetHandlers(wm, hhcAuthService)
+    registerWeeklyReader(wm, hhcAuthService)
     registerPersonalCloudHandlers(wm, hhcAuthService)
     registerOneDriveDownloadHandlers(wm)
     registerLyricsProtocol(join(__dirname, '../renderer'))

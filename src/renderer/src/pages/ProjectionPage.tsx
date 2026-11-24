@@ -1,3 +1,4 @@
+import BulletinProjection from '@renderer/components/Projection/BulletinProjection'
 import CameraProjection from '@renderer/components/Projection/CameraProjection'
 import { useEffect, useReducer } from 'react'
 import DefaultProjection from '@renderer/components/Projection/DefaultProjection'
@@ -70,6 +71,8 @@ export default function ProjectionPage(): React.JSX.Element {
         'bible:chapter',
         'bible:settings',
         'camera:state',
+        'bulletin:view',
+        'bulletin:scroll',
         'file:show',
         'file:control',
         'settings:timer-ring-color'
@@ -140,6 +143,7 @@ export default function ProjectionPage(): React.JSX.Element {
   if (visible === 'blackout') {
     return <div className="h-screen w-screen bg-black" data-testid="projection-blackout" />
   }
+  if (visible === 'bulletin' && state.bulletin) return <BulletinProjection view={state.bulletin} />
   if (visible === 'bible' && state.bibleChapter) {
     return <BibleProjection data={state.bibleChapter} settings={state.bibleSettings} />
   }

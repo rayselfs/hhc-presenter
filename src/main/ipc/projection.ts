@@ -72,6 +72,7 @@ export function registerProjectionHandlers(windowManager: WindowManager): void {
   ipcMain.on('projection:send-to-main', (event, ...args: unknown[]) => {
     if (!validateProjectionTransportTuple(args)) return
     const [generation, channel, data] = args
+    if (channel === 'bulletin:view' || channel === 'bulletin:scroll') return
     if (!isCameraMessageFrom(channel, data, 'projection')) return
     if (!windowManager.isCurrentProjectionSender(event.sender, generation)) return
     if (channel === '__system:ready' && !windowManager.markProjectionReady(generation)) return

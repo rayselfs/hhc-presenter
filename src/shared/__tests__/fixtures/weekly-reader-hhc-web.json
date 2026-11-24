@@ -1,0 +1,333 @@
+{
+  "document": {
+    "issueId": "00000000-0000-4000-8000-000000000001",
+    "documentId": "00000000-0000-4000-8000-000000000002",
+    "series": "general",
+    "contentLocale": "zh-Hant",
+    "revision": 1,
+    "canonicalMetadata": {
+      "title": "Private weekly",
+      "subtitle": "",
+      "issueNumber": 1739,
+      "date": "2026-09-20"
+    },
+    "metadataSyncPending": false,
+    "pdfPublished": false,
+    "content": {
+      "schemaVersion": "1",
+      "templateVersion": "v1",
+      "printedBodyPageCount": 10,
+      "pages": [
+        {
+          "id": "p0",
+          "width": 595.32,
+          "height": 841.92
+        },
+        {
+          "id": "p1",
+          "width": 595.32,
+          "height": 841.92
+        },
+        {
+          "id": "p2",
+          "width": 595.32,
+          "height": 841.92
+        },
+        {
+          "id": "p3",
+          "width": 595.32,
+          "height": 841.92
+        }
+      ],
+      "layoutManifest": {
+        "templateVersion": "v1",
+        "rendererVersion": "v1",
+        "rendererArtifactSha256": "22f3015ecfdcf197690bb503e9467dc7515ddfd1bdb6af89ff19462a2211059f",
+        "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "layoutValidationHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "assets": [
+          {
+            "url": "/assets/weekly/v1/body-ba497525931c22348ff17863ecd1b49a0d54010145cd2f2adce115505dbde7b0.woff2",
+            "sha256": "ba497525931c22348ff17863ecd1b49a0d54010145cd2f2adce115505dbde7b0",
+            "kind": "font"
+          },
+          {
+            "url": "/assets/weekly/v1/scripture-b330d18e5aee29a4035c7ea34581f4268b9913ce9051cd978218caf51c16ca2d.woff2",
+            "sha256": "b330d18e5aee29a4035c7ea34581f4268b9913ce9051cd978218caf51c16ca2d",
+            "kind": "font"
+          },
+          {
+            "url": "/assets/weekly/v1/emphasis-9c02738cbfdf263d60baceaf5e97dd1dd39230daf64e98bf91be07a8609fb962.woff2",
+            "sha256": "9c02738cbfdf263d60baceaf5e97dd1dd39230daf64e98bf91be07a8609fb962",
+            "kind": "font"
+          },
+          {
+            "url": "/assets/weekly/v1/logo-5dabd62c4acc8761d650410cb9f2ecf53de967fe8609544d7146b86a592584f5.png",
+            "sha256": "5dabd62c4acc8761d650410cb9f2ecf53de967fe8609544d7146b86a592584f5",
+            "kind": "decoration"
+          },
+          {
+            "url": "/assets/weekly/v1/qr-website-fd963a95c1d3e19834aaf4a814795dddd0fc855d312932626c5c5d0f89f9ea9a.svg",
+            "sha256": "fd963a95c1d3e19834aaf4a814795dddd0fc855d312932626c5c5d0f89f9ea9a",
+            "kind": "decoration"
+          },
+          {
+            "url": "/assets/weekly/v1/qr-youtube-9a08ce99ca7d33e0a6a21dea961c0e3626ddabfaa7af5f73ecbc3f807673cef3.svg",
+            "sha256": "9a08ce99ca7d33e0a6a21dea961c0e3626ddabfaa7af5f73ecbc3f807673cef3",
+            "kind": "decoration"
+          },
+          {
+            "url": "/assets/weekly/v1/qr-stream-709ad7995ea45f27898bfbddb62d0bff38f526922e9c3825d561a8195c0974cb.svg",
+            "sha256": "709ad7995ea45f27898bfbddb62d0bff38f526922e9c3825d561a8195c0974cb",
+            "kind": "decoration"
+          },
+          {
+            "url": "/assets/weekly/v1/symbol-89ed6ff28006ceddbfb893fc2812b5868c5b691341c48959a092b25f33ec5bdd.woff2",
+            "sha256": "89ed6ff28006ceddbfb893fc2812b5868c5b691341c48959a092b25f33ec5bdd",
+            "kind": "font"
+          }
+        ],
+        "pages": [
+          {
+            "pageId": "p0",
+            "slots": [
+              {
+                "id": "slot0",
+                "componentId": "c0",
+                "blockId": "b0",
+                "box": {
+                  "x": 0.1,
+                  "y": 0.1,
+                  "width": 0.8,
+                  "height": 0.1
+                },
+                "fragments": [
+                  {
+                    "sentenceId": "s0",
+                    "start": 0,
+                    "end": 4
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "pageId": "p1",
+            "slots": [
+              {
+                "id": "slot1",
+                "componentId": "c1",
+                "blockId": "b1",
+                "box": {
+                  "x": 0.1,
+                  "y": 0.1,
+                  "width": 0.8,
+                  "height": 0.1
+                },
+                "fragments": [
+                  {
+                    "sentenceId": "s1",
+                    "start": 0,
+                    "end": 4
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "pageId": "p2",
+            "slots": [
+              {
+                "id": "slot2",
+                "componentId": "c2",
+                "blockId": "b2",
+                "box": {
+                  "x": 0.1,
+                  "y": 0.1,
+                  "width": 0.8,
+                  "height": 0.1
+                },
+                "fragments": [
+                  {
+                    "sentenceId": "s2",
+                    "start": 0,
+                    "end": 4
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "pageId": "p3",
+            "slots": [
+              {
+                "id": "slot3",
+                "componentId": "c3",
+                "blockId": "b3",
+                "box": {
+                  "x": 0.1,
+                  "y": 0.1,
+                  "width": 0.8,
+                  "height": 0.1
+                },
+                "fragments": [
+                  {
+                    "sentenceId": "s3",
+                    "start": 0,
+                    "end": 4
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "components": [
+        {
+          "id": "c0",
+          "type": "backSummary",
+          "items": [
+            {
+              "id": "i0",
+              "blocks": [
+                {
+                  "id": "b0",
+                  "style": {
+                    "fontSize": 16,
+                    "lineHeight": 24,
+                    "indent": 0,
+                    "firstLineIndent": 0,
+                    "spaceBefore": 0,
+                    "spaceAfter": 0
+                  },
+                  "sentences": [
+                    {
+                      "id": "s0",
+                      "spans": [
+                        {
+                          "text": "內容0。",
+                          "fontRole": "body"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "c1",
+          "type": "backSummary",
+          "items": [
+            {
+              "id": "i1",
+              "blocks": [
+                {
+                  "id": "b1",
+                  "style": {
+                    "fontSize": 16,
+                    "lineHeight": 24,
+                    "indent": 0,
+                    "firstLineIndent": 0,
+                    "spaceBefore": 0,
+                    "spaceAfter": 0
+                  },
+                  "sentences": [
+                    {
+                      "id": "s1",
+                      "spans": [
+                        {
+                          "text": "內容1。",
+                          "fontRole": "body"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "c2",
+          "type": "backSummary",
+          "items": [
+            {
+              "id": "i2",
+              "blocks": [
+                {
+                  "id": "b2",
+                  "style": {
+                    "fontSize": 16,
+                    "lineHeight": 24,
+                    "indent": 0,
+                    "firstLineIndent": 0,
+                    "spaceBefore": 0,
+                    "spaceAfter": 0
+                  },
+                  "sentences": [
+                    {
+                      "id": "s2",
+                      "spans": [
+                        {
+                          "text": "內容2。",
+                          "fontRole": "body"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "c3",
+          "type": "backSummary",
+          "items": [
+            {
+              "id": "i3",
+              "blocks": [
+                {
+                  "id": "b3",
+                  "style": {
+                    "fontSize": 16,
+                    "lineHeight": 24,
+                    "indent": 0,
+                    "firstLineIndent": 0,
+                    "spaceBefore": 0,
+                    "spaceAfter": 0
+                  },
+                  "sentences": [
+                    {
+                      "id": "s3",
+                      "spans": [
+                        {
+                          "text": "內容3。",
+                          "fontRole": "body"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "access": {
+    "accountId": "account-a",
+    "documentId": "00000000-0000-4000-8000-000000000002",
+    "series": "general",
+    "contentLocale": "zh-Hant",
+    "revision": 1,
+    "currentRevision": 1,
+    "receiptId": "receipt-a",
+    "traceCode": "ABCD-EFGH-JKLM",
+    "validatedAt": "2026-10-01T00:00:00Z",
+    "offlineValidUntil": "2026-10-08T00:00:00Z"
+  }
+}

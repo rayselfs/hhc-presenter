@@ -1,3 +1,4 @@
+import type { BulletinProjectionScroll, BulletinProjectionView } from './bulletin-projection'
 import type { CameraSignal, CameraState } from './camera'
 /**
  * Typed projection message contract.
@@ -153,6 +154,8 @@ type EditableProjectionAsset = {
 }
 
 export interface AppMessages {
+  'bulletin:view': BulletinProjectionView | null
+  'bulletin:scroll': BulletinProjectionScroll
   'camera:signal': CameraSignal
   'camera:ready': { sessionId: string }
   'camera:state': CameraState
@@ -261,7 +264,7 @@ export type FileControlPayload =
   | { action: 'zoom'; value: number }
   | { action: 'pan'; value: { x: number; y: number } }
 
-export type ProjectionOwner = 'timer' | 'bible' | 'media' | 'camera'
+export type ProjectionOwner = 'timer' | 'bible' | 'media' | 'camera' | 'bulletin'
 
 export type ProjectionLifecycleStatus = 'closed' | 'opening' | 'ready' | 'recovering' | 'failed'
 
@@ -315,6 +318,7 @@ export interface ProjectionPendingFileControls {
 }
 
 export interface ProjectionSessionSnapshot {
+  bulletin?: BulletinProjectionView | null
   camera?: CameraState | null
   owner: ProjectionOwner
   showDefault: boolean

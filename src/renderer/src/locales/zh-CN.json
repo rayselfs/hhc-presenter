@@ -1,9 +1,19 @@
 {
+  "bulletinPresentation": {
+    "grid": "页面总览",
+    "zoom": "文字大小",
+    "note": "笔记模式",
+    "undo": "撤销标记",
+    "pages": "纸本页面",
+    "previous": "上一页",
+    "next": "下一页"
+  },
   "app": {
     "name": "HHC 投影系统",
     "description": "专为教会聚会设计的投影系统。"
   },
   "nav": {
+    "bulletins": "周报",
     "cloudFiles": "云端文件",
     "sharedFiles": "与我分享",
     "timer": "计时器",
@@ -12,6 +22,21 @@
     "media": "多媒体",
     "favorites": "我的收藏",
     "trash": "回收站"
+  },
+  "bulletins": {
+    "updated": "这一期的发布状态已变更，请从更新后的列表选择。",
+    "search": "搜索期数、主标题或日期",
+    "accessError": "无法确认周报权限。",
+    "restricted": "请使用具有文字事工权限的账号。",
+    "loading": "正在加载周报…",
+    "listError": "无法加载周报列表。",
+    "openError": "无法打开周报或投影视窗。",
+    "retry": "重试",
+    "noMatches": "找不到符合的周报。",
+    "empty": "目前没有可在线阅读的周报。",
+    "opening": "正在打开周报…",
+    "general": "普通版",
+    "children": "儿童版"
   },
   "welcome": {
     "title": "欢迎使用 HHC 投影系统",
