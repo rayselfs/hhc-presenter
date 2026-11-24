@@ -21,6 +21,7 @@ import { AppInitContext } from '@renderer/contexts/AppInitContext'
 import { initializeApp } from '@renderer/lib/app-init'
 import { useFileExplorerStore } from '@renderer/stores/file-explorer'
 import { useBibleFolderStore } from '@renderer/stores/folder'
+import { useRefreshWeeklyAccess } from '@renderer/stores/weekly-access'
 import { useAutoUpdateCheck } from '@renderer/hooks/useAutoUpdateCheck'
 import { useHhcAuth } from '@renderer/contexts/HhcAuthContext'
 import { createMeetingWindowsApi } from '@renderer/lib/meeting-windows-api'
@@ -65,6 +66,9 @@ export default function Layout(): React.JSX.Element {
   const location = useLocation()
   const isPresentationWorkspace = location.pathname.startsWith('/presentations')
   const isMediaWorkspace = location.pathname === '/media'
+  const isBulletinWorkspace = location.pathname === '/bulletins/present'
+  const fullWorkspace = isMediaWorkspace || isBulletinWorkspace
+  useRefreshWeeklyAccess()
   useAutoUpdateCheck()
 
   useEffect(() => {
@@ -110,16 +114,16 @@ export default function Layout(): React.JSX.Element {
               <ContextMenuProvider>
                 <ConfirmDialogProvider>
                   <div className="flex h-screen overflow-hidden bg-background text-foreground">
-                    {!isMediaWorkspace && <Sidebar />}
+                    {!fullWorkspace && <Sidebar />}
                     <div className="flex flex-1 flex-col min-h-0">
                       {isPresentationWorkspace ? (
                         <PresentationWorkspaceHeader />
-                      ) : isMediaWorkspace ? null : (
+                      ) : fullWorkspace ? null : (
                         <Header />
                       )}
                       <main
                         className={
-                          isPresentationWorkspace || isMediaWorkspace
+                          isPresentationWorkspace || fullWorkspace
                             ? 'flex-1 overflow-hidden'
                             : 'flex-1 overflow-y-auto py-4 px-3'
                         }
@@ -127,7 +131,7 @@ export default function Layout(): React.JSX.Element {
                         <Outlet />
                       </main>
                     </div>
-                    {!isMediaWorkspace && <FloatingTimer />}
+                    {!fullWorkspace && <FloatingTimer />}
                   </div>
                   <ConfirmDialog />
 

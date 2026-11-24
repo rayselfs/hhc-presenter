@@ -1,3 +1,4 @@
+import { isBulletinView, isBulletinScroll } from '@shared/bulletin-projection'
 import { isTimerMode, parseTimerCommand, validateTimerSettings } from '@shared/timer-command'
 export { validateTimerSettings } from '@shared/timer-command'
 import { isFilePlaybackError, isFileRenderStatus } from '@shared/projection-messages'
@@ -54,6 +55,8 @@ function validateProjectionPayload(channel: string, data: unknown): boolean {
       validateProjectionReplayPayload(data.generation, data)
     )
   }
+  if (channel === 'bulletin:view') return data === null || isBulletinView(data)
+  if (channel === 'bulletin:scroll') return isBulletinScroll(data)
   if (NULL_PROJECTION_CHANNELS.has(channel)) return data === null
   if (!isRecord(data)) return false
   const obj = data
@@ -224,7 +227,7 @@ function validateProjectionReplayPayload(generation: number, data: unknown): boo
   if (!isRecord(data) || data.generation !== generation || !isRecord(data.snapshot)) return false
   const snapshot = data.snapshot
   if (
-    !['timer', 'bible', 'media', 'camera'].includes(String(snapshot.owner)) ||
+    !['timer', 'bible', 'media', 'camera', 'bulletin'].includes(String(snapshot.owner)) ||
     typeof snapshot.showDefault !== 'boolean' ||
     typeof snapshot.isBlackout !== 'boolean' ||
     !isRecord(snapshot.timer) ||
@@ -238,6 +241,8 @@ function validateProjectionReplayPayload(generation: number, data: unknown): boo
   const bible = snapshot.bible
   const media = snapshot.media
   return (
+    (snapshot.bulletin == null ||
+      (snapshot.owner === 'bulletin' && isBulletinView(snapshot.bulletin))) &&
     (snapshot.camera == null || isCameraState(snapshot.camera)) &&
     validateNullablePayload('timer:tick', timer.tick) &&
     validateNullablePayload('timer:stopwatch', timer.stopwatch) &&

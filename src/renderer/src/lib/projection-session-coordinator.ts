@@ -232,6 +232,14 @@ function reduceReplayableMessage(
     }
     case 'file:control':
       return reduceFileControl(snapshot, data as ProjectionPayload<'file:control'>)
+    case 'bulletin:view':
+      return { ...snapshot, bulletin: data as ProjectionPayload<'bulletin:view'> }
+    case 'bulletin:scroll': {
+      const scroll = data as ProjectionPayload<'bulletin:scroll'>
+      return snapshot.bulletin?.page.id === scroll.pageId
+        ? { ...snapshot, bulletin: { ...snapshot.bulletin, position: scroll.position } }
+        : snapshot
+    }
     case 'camera:state':
       return { ...snapshot, camera: data as ProjectionPayload<'camera:state'> }
     case 'timer:sync':
@@ -387,6 +395,7 @@ export function createProjectionSessionCoordinator(
       snapshot = {
         ...snapshot,
         owner,
+        ...(ownerChanged && snapshot.bulletin ? { bulletin: null } : {}),
         showDefault: unblank ? false : snapshot.showDefault,
         isBlackout: unblank ? false : snapshot.isBlackout
       }
@@ -429,6 +438,7 @@ export function createProjectionSessionCoordinator(
 
     project(channel, data) {
       if (!snapshot) return
+      if (channel.startsWith('bulletin:') && snapshot.owner !== 'bulletin') return
       if (channel === 'file:control' && snapshot.media.state?.playlistEnded) return
       if (channel === 'file:show') {
         data = { ...data, contentRevision: ++contentRevision }

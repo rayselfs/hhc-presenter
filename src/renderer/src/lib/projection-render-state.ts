@@ -1,3 +1,4 @@
+import { isBulletinView, isBulletinScroll } from '@shared/bulletin-projection'
 import { isCameraState, type CameraState } from '@shared/camera'
 import type {
   FileControlPayload,
@@ -7,10 +8,11 @@ import type {
 } from '@shared/projection-messages'
 
 export interface ProjectionRenderState {
+  bulletin: ProjectionPayload<'bulletin:view'>
   camera: CameraState | null
   showDefault: boolean
   isBlackout: boolean
-  activeContent: 'timer' | 'bible' | 'file' | 'camera' | null
+  activeContent: 'timer' | 'bible' | 'file' | 'camera' | 'bulletin' | null
   timerData: ProjectionPayload<'timer:tick'> | null
   stopwatchData: ProjectionPayload<'timer:stopwatch'> | null
   bibleChapter: ProjectionPayload<'bible:chapter'> | null
@@ -32,6 +34,7 @@ export type ProjectionRenderAction =
     }
 
 export const initialProjectionRenderState: ProjectionRenderState = {
+  bulletin: null,
   camera: null,
   showDefault: true,
   isBlackout: false,
@@ -76,6 +79,10 @@ export function reduceProjectionRenderState(
           }
         : confirmedMediaState
     return {
+      bulletin:
+        snapshot.owner === 'bulletin' && isBulletinView(snapshot.bulletin)
+          ? snapshot.bulletin
+          : null,
       camera: isCameraState(snapshot.camera) ? snapshot.camera : null,
       showDefault: snapshot.showDefault,
       isBlackout: snapshot.isBlackout,
@@ -95,6 +102,16 @@ export function reduceProjectionRenderState(
 
   const { channel, data } = action
   switch (channel) {
+    case 'bulletin:view':
+      return state.activeContent === 'bulletin'
+        ? { ...state, bulletin: isBulletinView(data) ? data : null }
+        : state
+    case 'bulletin:scroll':
+      return state.activeContent === 'bulletin' &&
+        isBulletinScroll(data) &&
+        state.bulletin?.page.id === data.pageId
+        ? { ...state, bulletin: { ...state.bulletin, position: data.position } }
+        : state
     case 'camera:state':
       return isCameraState(data) ? { ...state, camera: data } : state
     case '__system:blank':
@@ -111,14 +128,17 @@ export function reduceProjectionRenderState(
       const owner = (data as ProjectionPayload<'__system:active-owner'>).owner
       return {
         ...state,
+        bulletin: owner === 'bulletin' ? state.bulletin : null,
         activeContent:
-          owner === 'media'
-            ? 'file'
-            : owner === 'camera'
-              ? 'camera'
-              : owner === 'bible'
-                ? 'bible'
-                : 'timer'
+          owner === 'bulletin'
+            ? 'bulletin'
+            : owner === 'media'
+              ? 'file'
+              : owner === 'camera'
+                ? 'camera'
+                : owner === 'bible'
+                  ? 'bible'
+                  : 'timer'
       }
     }
     case 'timer:tick':
@@ -205,11 +225,12 @@ export function reduceProjectionRenderState(
 
 export function selectVisibleProjection(
   state: ProjectionRenderState
-): 'blackout' | 'default' | 'timer' | 'bible' | 'file' | 'camera' {
+): 'blackout' | 'default' | 'timer' | 'bible' | 'file' | 'camera' | 'bulletin' {
   if (state.isBlackout) return 'blackout'
   if (state.showDefault) return 'default'
   if (state.activeContent === 'timer' && state.timerData) return 'timer'
   if (state.activeContent === 'bible' && state.bibleChapter) return 'bible'
+  if (state.activeContent === 'bulletin' && state.bulletin) return 'bulletin'
   if (state.activeContent === 'camera' && state.camera) return 'camera'
   if (state.activeContent === 'file' && state.fileData) return 'file'
   return 'default'

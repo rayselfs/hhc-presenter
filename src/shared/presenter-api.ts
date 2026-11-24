@@ -196,6 +196,11 @@ export interface PresenterApi {
   projectionVlc: ProjectionVlcAPI
   localSync: LocalSyncAPI
   oneDrive: OneDriveAPI
+  weekly: {
+    editions: Invoke<'weekly:editions'>
+    list: Invoke<'weekly:list'>
+    open: Invoke<'weekly:open'>
+  }
   hhcAuth: HhcAuthAPI
   hhcAssets: HhcAssetsAPI
   personalCloud: PersonalNativeApi

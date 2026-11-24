@@ -7,6 +7,7 @@ import { isOnboarded } from '@renderer/lib/onboarding'
 import WelcomePage from '@renderer/pages/WelcomePage'
 
 const CameraWorkspacePage = lazy(() => import('@renderer/pages/CameraWorkspacePage'))
+const BulletinsPage = lazy(() => import('@renderer/pages/BulletinsPage'))
 const TimerPage = lazy(() => import('@renderer/pages/TimerPage'))
 const BiblePage = lazy(() => import('@renderer/pages/BiblePage'))
 const FilesPage = lazy(() => import('@renderer/pages/FilesPage'))
@@ -84,6 +85,15 @@ const controlRoutes = [
         element: (
           <Suspense fallback={null}>
             <FilesPage />
+          </Suspense>
+        ),
+        ErrorBoundary: RouteError
+      },
+      {
+        path: 'bulletins/:mode?',
+        element: (
+          <Suspense fallback={null}>
+            <BulletinsPage />
           </Suspense>
         ),
         ErrorBoundary: RouteError

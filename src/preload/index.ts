@@ -277,6 +277,12 @@ const api = {
   projectionVlc: projectionVlcApi,
   localSync: localSyncApi,
   oneDrive: oneDriveApi,
+  weekly: {
+    editions: (accountId) => typedInvoke('weekly:editions', accountId),
+    list: (accountId, edition, offset) => typedInvoke('weekly:list', accountId, edition, offset),
+    open: (accountId, issue, clientRequestId) =>
+      typedInvoke('weekly:open', accountId, issue, clientRequestId)
+  },
   hhcAuth: hhcAuthApi,
   hhcAssets: hhcAssetsApi,
   personalCloud: personalCloudApi,

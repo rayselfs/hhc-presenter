@@ -1,9 +1,19 @@
 {
+  "bulletinPresentation": {
+    "grid": "Page overview",
+    "zoom": "Text size",
+    "note": "Highlight mode",
+    "undo": "Undo highlight",
+    "pages": "Printed pages",
+    "previous": "Previous page",
+    "next": "Next page"
+  },
   "app": {
     "name": "HHC Presenter",
     "description": "A projection system designed for church services."
   },
   "nav": {
+    "bulletins": "Bulletins",
     "cloudFiles": "Cloud documents",
     "sharedFiles": "Shared with me",
     "timer": "TIMER",
@@ -12,6 +22,21 @@
     "media": "MEDIA",
     "favorites": "FAVORITES",
     "trash": "TRASH"
+  },
+  "bulletins": {
+    "updated": "This issue changed. Choose an issue from the refreshed list.",
+    "search": "Search issue, title or date",
+    "accessError": "Checking bulletin access failed.",
+    "restricted": "Bulletins require an authorized ministry account.",
+    "loading": "Loading issues…",
+    "listError": "Unable to load the bulletin archive.",
+    "openError": "Unable to open the bulletin or projection window.",
+    "retry": "Try again",
+    "noMatches": "No matching issues.",
+    "empty": "No online editions available.",
+    "opening": "Opening bulletin…",
+    "general": "General",
+    "children": "Children"
   },
   "welcome": {
     "title": "Welcome to HHC Presenter",

@@ -823,3 +823,39 @@ it('keeps duplicate ready notifications idempotent and permits explicit same-gen
     coordinator.dispose()
   }
 })
+
+it('replays the current bulletin page and scroll anchor and forgets them when another owner takes over', () => {
+  const send = vi.fn()
+  const coordinator = createProjectionSessionCoordinator(send)
+  const bulletin = {
+    page: {
+      id: 'paper-1',
+      label: '1',
+      blocks: [{ id: 'b', fragments: [{ sentenceId: 's', start: 0, text: 'page one' }] }]
+    },
+    highlights: [{ sentenceId: 's', start: 0, end: 4 }],
+    traceCode: 'trace',
+    position: null,
+    fontScale: 1
+  }
+  coordinator.startSession('bulletin', [['bulletin:view', bulletin]])
+  coordinator.beginGeneration({ generation: 1, status: 'opening', reason: 'created' })
+  coordinator.ready(1)
+  const position = { sentenceId: 's', offset: 1, within: 0.15 }
+  coordinator.project('bulletin:scroll', { pageId: 'wrong', position })
+  expect(coordinator.getSnapshot()?.bulletin?.position).toBeNull()
+  coordinator.project('bulletin:scroll', { pageId: 'paper-1', position })
+  coordinator.replay(1)
+  expect(send).toHaveBeenLastCalledWith(
+    '__system:replay',
+    expect.objectContaining({
+      snapshot: expect.objectContaining({ owner: 'bulletin', bulletin: { ...bulletin, position } })
+    })
+  )
+  coordinator.claim('timer')
+  send.mockClear()
+  coordinator.project('bulletin:view', bulletin)
+  expect(coordinator.getSnapshot()?.bulletin).toBeNull()
+  expect(send).not.toHaveBeenCalled()
+  coordinator.dispose()
+})

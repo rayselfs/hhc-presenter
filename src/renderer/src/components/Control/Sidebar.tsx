@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useWeeklyAccess } from '@renderer/stores/weekly-access'
 import { usePersonalSyncStore } from '@renderer/stores/personal-sync'
 import { useTranslation } from 'react-i18next'
 import { useLocation, Link, useNavigate } from 'react-router-dom'
@@ -29,7 +30,13 @@ interface NavItem {
 interface MediaSubItem {
   to: string
   icon: React.ComponentType<{ className?: string; size?: number }>
-  labelKey: 'nav.files' | 'nav.favorites' | 'nav.trash' | 'nav.cloudFiles' | 'nav.sharedFiles'
+  labelKey:
+    | 'nav.files'
+    | 'nav.favorites'
+    | 'nav.trash'
+    | 'nav.cloudFiles'
+    | 'nav.sharedFiles'
+    | 'nav.bulletins'
   disabled: boolean
 }
 
@@ -37,6 +44,7 @@ const MEDIA_SUB_ITEMS: MediaSubItem[] = [
   { to: '/files', icon: Files, labelKey: 'nav.files', disabled: false },
   { to: '/cloud-files', icon: Cloud, labelKey: 'nav.cloudFiles', disabled: true },
   { to: '/shared-files', icon: UsersRound, labelKey: 'nav.sharedFiles', disabled: true },
+  { to: '/bulletins', icon: BookOpen, labelKey: 'nav.bulletins', disabled: true },
   { to: '/favorites', icon: Star, labelKey: 'nav.favorites', disabled: false },
   { to: '/trash', icon: Trash2, labelKey: 'nav.trash', disabled: false }
 ]
@@ -55,10 +63,13 @@ function useIsCollapsed(): boolean {
 export default function Sidebar(): React.JSX.Element {
   const { t } = useTranslation()
   const cloudOwnerId = usePersonalSyncStore((state) => state.activeOwnerId)
+  const weekly = useWeeklyAccess()
   const mediaItems = MEDIA_SUB_ITEMS.map((item) =>
     item.to === '/cloud-files' || item.to === '/shared-files'
       ? { ...item, disabled: !cloudOwnerId }
-      : item
+      : item.to === '/bulletins'
+        ? { ...item, disabled: !weekly.editions.length }
+        : item
   )
   const location = useLocation()
   const navigate = useNavigate()

@@ -63,6 +63,7 @@ describe('BroadcastChannelAdapter', () => {
     const payload = { message: 'hello' }
     adapter.send('timer:overtime-message', payload)
 
+    expect(MockBroadcastChannel).toHaveBeenCalledWith('hhc-projection-session-1')
     expect(mockPostMessage).toHaveBeenCalledOnce()
     const arg = mockPostMessage.mock.calls[0][0]
     expect(arg.channel).toBe('timer:overtime-message')
