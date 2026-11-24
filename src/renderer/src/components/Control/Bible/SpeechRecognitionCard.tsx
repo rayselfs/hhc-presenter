@@ -11,6 +11,7 @@ type Candidate = NonNullable<ReturnType<VerseCandidates['accept']>>
 export default function SpeechRecognitionCard(): React.JSX.Element {
   const { t } = useTranslation()
   const version = useBibleSettingsStore((s) => s.selectedVersionId)
+  const contentReady = useBibleStore((s) => Boolean(s.content.get(version)?.length))
   const limit = useBibleSettingsStore((s) => s.speechMaxSessionSec)
   const speech = useSettingsStore((s) => s.speech)
   const session = useRef<OpenAITranscription | null>(null)
@@ -66,7 +67,7 @@ export default function SpeechRecognitionCard(): React.JSX.Element {
     return () => clearTimeout(timer)
   }, [status, limit, stop, t])
   const start = async (): Promise<void> => {
-    if (session.current || !version) return
+    if (session.current || !contentReady) return
     setError('')
     const resolver = new VerseCandidates()
     const active = new OpenAITranscription({
@@ -157,12 +158,17 @@ export default function SpeechRecognitionCard(): React.JSX.Element {
       <button
         type="button"
         className="rounded bg-accent p-2 text-accent-foreground"
-        disabled={!version || status === 'finishing'}
+        disabled={(status === 'idle' && !contentReady) || status === 'finishing'}
         onClick={() => void (status === 'idle' ? start() : finish())}
       >
         {t(status === 'idle' ? 'localSpeech.start' : 'localSpeech.stop')}
       </button>
-      <span role="status">{error ? error : t(`localSpeech.${status}`)}</span>
+      <span role="status">
+        {error ||
+          (status === 'idle' && !contentReady
+            ? t('bible.preview.noContent')
+            : t(`localSpeech.${status}`))}
+      </span>
       <div className="min-h-0 overflow-auto">
         {candidates.map((c, i) => (
           <button

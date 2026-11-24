@@ -37,8 +37,6 @@ const OFFLINE_POLICIES: SyncOfflinePolicy[] = ['online-only', 'on-demand', 'alwa
 type ReminderMode = 'subtract' | 'add'
 const REMINDER_MODES: ReminderMode[] = ['subtract', 'add']
 
-export type SpeechProvider = 'local' | 'webSpeech'
-
 export interface SpeechSettings {
   recognitionLanguage: 'zh' | 'en'
   microphoneId: string

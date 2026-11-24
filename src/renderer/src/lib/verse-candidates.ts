@@ -16,6 +16,15 @@ const fullBookNames = new Set(
   getAllBookNames().flatMap((book) => [book.zhTW, book.en.toLowerCase()])
 )
 
+// Sermon turns can contain commentary on either side of an explicit reference.
+const embeddedChineseReference = new RegExp(
+  `(?:${getAllBookNames()
+    .map((book) => book.zhTW)
+    .join('|')})` +
+    String.raw`\s*第?\s*\d+\s*[章篇]\s*第?\s*\d+\s*(?:節?\s*[至到]\s*第?\s*\d+\s*)?節`,
+  'gu'
+)
+
 export class VerseCandidates {
   private pending: { text: string; time: number } | null = null
 
@@ -49,7 +58,17 @@ export class VerseCandidates {
     }
     if (recent && /^(第?[零〇一二兩三四五六七八九十百\d]+|(?:chapter|verses?)\s+)/i.test(text))
       text = recent + ' ' + text
-    const normalized = normalizeCitation(text.replace(/(\d)\s*[-–]\s*(\d)/g, '$1到$2')).trim()
+    let normalized = normalizeCitation(text.replace(/(\d)\s*[-–]\s*(\d)/g, '$1到$2')).trim()
+    const embedded = [...normalized.matchAll(embeddedChineseReference)]
+    if (embedded.length > 1) return null
+    if (embedded.length === 1 && embedded[0][0] !== normalized) {
+      const match = embedded[0]
+      const before = normalized.slice(0, match.index).trimEnd()
+      const after = normalized.slice(match.index + match[0].length).trimStart()
+      if (/(?:不是|並非|不要|別讀|別看)$/.test(before) || /^(?:到|至|、|和第)/.test(after))
+        return null
+      normalized = match[0]
+    }
     if (/(?:[章篇]|chapter\s*\d+)$/i.test(normalized)) {
       if (suggestSpokenReference(normalized, books)) this.pending = { text: normalized, time: now }
       return null

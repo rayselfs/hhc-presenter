@@ -16,6 +16,7 @@ async function clearMainProcessUserData(
   for (const entry of [
     'native-files',
     'local-sync-connections.json',
+    'openai-speech-key.enc',
     'speech-api-key-azure.enc',
     'speech-api-key-gcp.enc'
   ]) {

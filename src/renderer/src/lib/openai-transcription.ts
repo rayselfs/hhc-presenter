@@ -16,6 +16,7 @@ class TranscriptionConnection {
   private channel?: RTCDataChannel
   private context?: AudioContext
   private timer?: ReturnType<typeof setInterval>
+  private disconnectTimer?: ReturnType<typeof setTimeout>
   private awaitingCommit = 0
   private drained?: () => void
   private finishing?: Promise<void>
@@ -52,8 +53,13 @@ class TranscriptionConnection {
     channel.onmessage = (event) => this.message(event.data)
     channel.onclose = this.options.onDisconnect
     peer.onconnectionstatechange = () => {
-      if (peer.connectionState === 'failed' || peer.connectionState === 'disconnected')
-        this.options.onDisconnect()
+      clearTimeout(this.disconnectTimer)
+      if (peer.connectionState === 'failed') this.options.onDisconnect()
+      if (peer.connectionState === 'disconnected') {
+        this.disconnectTimer = setTimeout(() => {
+          if (peer.connectionState === 'disconnected') this.options.onDisconnect()
+        }, 5000)
+      }
     }
     const offer = await peer.createOffer()
     await peer.setLocalDescription(offer)
@@ -182,6 +188,7 @@ class TranscriptionConnection {
   close(): void {
     if (this.abort.signal.aborted) return
     this.abort.abort()
+    clearTimeout(this.disconnectTimer)
     this.drained?.()
     clearInterval(this.timer)
     if (this.channel) {

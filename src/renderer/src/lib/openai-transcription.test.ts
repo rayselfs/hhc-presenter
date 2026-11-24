@@ -7,6 +7,10 @@ afterEach(() => {
 })
 describe('live session', () => {
   const stop = vi.fn()
+  const peers: Array<{
+    connectionState: RTCPeerConnectionState
+    onconnectionstatechange: (() => void) | null
+  }> = []
   const channels: Array<{
     readyState: string
     onmessage: ((e: { data: string }) => void) | null
@@ -17,6 +21,7 @@ describe('live session', () => {
     vi.useFakeTimers()
     stop.mockClear()
     channels.length = 0
+    peers.length = 0
     const makeChannel = (): (typeof channels)[number] => {
       const channel = {
         readyState: 'open',
@@ -33,6 +38,11 @@ describe('live session', () => {
     vi.stubGlobal(
       'RTCPeerConnection',
       class {
+        connectionState: RTCPeerConnectionState = 'new'
+        onconnectionstatechange: (() => void) | null = null
+        constructor() {
+          peers.push(this)
+        }
         addTrack = vi.fn()
         createDataChannel = makeChannel
         createOffer = vi.fn().mockResolvedValue({ sdp: 'offer' })
@@ -54,6 +64,29 @@ describe('live session', () => {
       'fetch',
       vi.fn(async () => new Response('answer'))
     )
+  })
+  it('keeps listening after a brief disconnect and reports persistent loss', async () => {
+    const onDisconnect = vi.fn()
+    const session = new OpenAITranscription({
+      language: 'zh',
+      deviceId: '',
+      onText: vi.fn(),
+      onDisconnect
+    })
+    await session.start()
+    const peer = peers[0]
+    peer.connectionState = 'disconnected'
+    peer.onconnectionstatechange?.()
+    await vi.advanceTimersByTimeAsync(1000)
+    peer.connectionState = 'connected'
+    peer.onconnectionstatechange?.()
+    await vi.advanceTimersByTimeAsync(6000)
+    expect(onDisconnect).not.toHaveBeenCalled()
+    peer.connectionState = 'disconnected'
+    peer.onconnectionstatechange?.()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(onDisconnect).toHaveBeenCalledOnce()
+    session.close()
   })
   it('renews the connection during a simulated 90-minute service and stops further renewal', async () => {
     const onDisconnect = vi.fn()

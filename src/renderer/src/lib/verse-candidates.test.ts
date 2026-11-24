@@ -42,3 +42,14 @@ it('accepts a spoken Genesis citation ending with transcription punctuation', ()
     text: '起初'
   })
 })
+
+it('finds a single explicit citation embedded in sermon prose', () => {
+  const resolver = new VerseCandidates()
+  expect(resolver.accept('今天的信息出自哥林多後書四章七節，大家一起讀。', books)).toMatchObject({
+    bookNumber: 47,
+    chapter: 4,
+    verse: 7
+  })
+  expect(resolver.accept('今天讀的不是哥林多後書四章七節。', books)).toBeNull()
+  expect(resolver.accept('哥林多後書四章七節，抱歉，哥林多前書四章七節。', books)).toBeNull()
+})
