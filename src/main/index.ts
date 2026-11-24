@@ -1,4 +1,4 @@
-import { registerLocalSpeech } from './ipc/local-speech'
+import { registerOpenAISpeech } from './ipc/openai-speech'
 import { join } from 'node:path'
 import { registerCaptureHandlers } from './ipc/capture'
 import { registerMediaPermissions } from './media-permissions'
@@ -9,7 +9,6 @@ import { registerProjectionHandlers } from './ipc/projection'
 import { registerTimerHandlers } from './ipc/timer'
 import { registerBibleApiHandlers } from './ipc/bible-api'
 import { registerAppIpc } from './ipc/app'
-import { registerChineseSpeechPilot } from './ipc/chinese-speech'
 import {
   clearNativeMediaLeases,
   clearStaleNativeMediaLeasesOnStartup,
@@ -134,8 +133,7 @@ if (gotSingleInstanceLock) {
     registerTimerHandlers(wm)
     registerBibleApiHandlers(wm)
     registerAppIpc(wm, hhcAuthService, oneDriveService)
-    registerChineseSpeechPilot(wm)
-    registerLocalSpeech(wm)
+    registerOpenAISpeech(wm)
     registerNativeFsHandlers(wm)
     registerProjectionVlcHandlers(wm)
     registerVideoPosterHandlers(wm)

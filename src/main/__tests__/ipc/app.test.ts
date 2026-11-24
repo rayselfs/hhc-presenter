@@ -116,6 +116,13 @@ describe('model IPC security', () => {
       force: true,
       recursive: true
     })
+    expect(mockRmSync).toHaveBeenCalledWith(
+      path.join('/tmp/hhc-user-data', 'openai-speech-key.enc'),
+      {
+        force: true,
+        recursive: true
+      }
+    )
     expect(mockClearData).toHaveBeenCalledWith()
   })
 

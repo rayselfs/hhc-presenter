@@ -27,9 +27,7 @@ new Serwist({
     {
       matcher: ({ url }) =>
         url.pathname.endsWith('.woff2') ||
-        /\/assets\/(pdf(?:\.|-)|transformers(?:\.web)?-|microsoft\.cognitiveservices\.speech\.sdk-)/.test(
-          url.pathname
-        ) ||
+        /\/assets\/pdf(?:\.|-)/.test(url.pathname) ||
         /\/assets\/aiden0z-pptx-renderer/.test(url.pathname) ||
         /^\/assets\/hhc-(?:asset-api|line-access|line-connect)-[^/]+\.js$/.test(url.pathname),
       handler: new CacheFirst({

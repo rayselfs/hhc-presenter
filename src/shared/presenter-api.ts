@@ -83,18 +83,10 @@ interface UpdateAPI {
 }
 
 interface SpeechAPI {
-  onInterrupted: (callback: () => void) => () => void
-  modelStatus: Invoke<'speech:model-status'>
-  installModel: Invoke<'speech:model-install'>
-  cancelInstall: Invoke<'speech:model-cancel'>
-  removeModel: Invoke<'speech:model-remove'>
-  prepare: Invoke<'speech:local-prepare'>
-  transcribe: Invoke<'speech:local-transcribe'>
-  stop: Invoke<'speech:local-stop'>
-  chineseAvailable: Invoke<'speech:chinese-available'>
-  chinesePrepare: Invoke<'speech:chinese-prepare'>
-  chineseTranscribe: Invoke<'speech:chinese-transcribe'>
-  chineseStop: Invoke<'speech:chinese-stop'>
+  configured: Invoke<'speech:configured'>
+  save: Invoke<'speech:save'>
+  forget: Invoke<'speech:forget'>
+  token: Invoke<'speech:token'>
 }
 
 interface NativeFsAPI {

@@ -201,7 +201,7 @@ export default function PreferencesDialog({
                       />
                     )}
                     {activeRoute === 'timer' && <TimerSettings />}
-                    {activeRoute === 'bible' && <BibleSettingsPanel />}
+                    {activeRoute === 'bible' && <BibleSettingsPanel onOpenBible={state.close} />}
                     {activeRoute === 'media.general' && <MediaSettings section="general" />}
                     {activeRoute === 'media.oneDrive' && <MediaSettings section="oneDrive" />}
                     {activeRoute === 'media.lanRemote' && <MediaSettings section="lanRemote" />}

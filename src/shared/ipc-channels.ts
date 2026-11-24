@@ -1,6 +1,4 @@
-import type { RecognitionLanguage, SpeechModelStatus, LocalTranscript } from './local-speech'
 import type { CameraSource } from './camera'
-import type { ChineseSpeechResult } from './chinese-speech'
 /**
  * Typed IPC channel contract.
  *
@@ -278,17 +276,10 @@ export interface IpcInvokeMap {
   'app:clear-user-data': { args: []; result: void }
   'update:install-downloaded': { args: []; result: void }
   'update:download-mac-installer': { args: []; result: void }
-  'speech:model-status': { args: [RecognitionLanguage]; result: SpeechModelStatus }
-  'speech:model-install': { args: [RecognitionLanguage]; result: void }
-  'speech:model-cancel': { args: []; result: void }
-  'speech:model-remove': { args: [RecognitionLanguage]; result: void }
-  'speech:local-prepare': { args: [string, RecognitionLanguage]; result: void }
-  'speech:local-transcribe': { args: [string, Float32Array]; result: LocalTranscript }
-  'speech:local-stop': { args: [string]; result: void }
-  'speech:chinese-available': { args: []; result: boolean }
-  'speech:chinese-prepare': { args: [string]; result: void }
-  'speech:chinese-transcribe': { args: [string, Float32Array]; result: ChineseSpeechResult }
-  'speech:chinese-stop': { args: [string]; result: void }
+  'speech:configured': { args: []; result: boolean }
+  'speech:save': { args: [string]; result: void }
+  'speech:forget': { args: []; result: void }
+  'speech:token': { args: ['zh' | 'en']; result: string }
   'app:select-directory': { args: []; result: string | null }
   'native-fs:import-file': { args: [string, string | Uint8Array]; result: { size: number } }
   'native-fs:file-exists': { args: [string]; result: boolean }
@@ -467,7 +458,6 @@ export interface IpcMainToRendererMap {
   'update:status-changed': [
     { status: UpdateStatus; version?: string; error?: string; percent?: number }
   ]
-  'speech:interrupted': []
   'app:close-requested': []
   'onedrive:download-progress': [OneDriveNativeDownloadProgress]
   'hhc-auth:session-changed': [session: HhcSession | null]

@@ -8,7 +8,6 @@ import { hhcPersistStorage, createKey } from '@renderer/lib/persist-storage'
 import { clearAllSiteData } from '@renderer/lib/site-data'
 import { isElectron } from '@renderer/lib/env'
 import { ThemePreference } from '@renderer/types/theme'
-import type { RecognitionLanguage } from '@shared/local-speech'
 import type { SyncOfflinePolicy } from '@shared/types/folder'
 import { APP_CONFIG } from '@shared/app-config'
 
@@ -38,10 +37,8 @@ const OFFLINE_POLICIES: SyncOfflinePolicy[] = ['online-only', 'on-demand', 'alwa
 type ReminderMode = 'subtract' | 'add'
 const REMINDER_MODES: ReminderMode[] = ['subtract', 'add']
 
-export type SpeechProvider = 'local' | 'webSpeech'
-
 export interface SpeechSettings {
-  recognitionLanguage: RecognitionLanguage
+  recognitionLanguage: 'zh' | 'en'
   microphoneId: string
 }
 

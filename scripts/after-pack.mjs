@@ -1,4 +1,3 @@
-import { spawnSync } from 'node:child_process'
 import { cp } from 'node:fs/promises'
 import { join } from 'node:path'
 import electronBuilder from 'electron-builder'
@@ -12,18 +11,6 @@ const { Arch } = electronBuilder
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type -- JavaScript hook API
 export async function afterPack(context) {
   if (context.electronPlatformName !== 'darwin' && context.electronPlatformName !== 'win32') return
-
-  const speech = join(
-    context.packager.getResourcesDir(context.appOutDir),
-    'speech',
-    `${context.electronPlatformName}-${Arch[context.arch]}`
-  )
-  const check = spawnSync(
-    process.execPath,
-    [join(context.packager.projectDir, 'scripts/check-speech-runtime.mjs'), speech],
-    { encoding: 'utf8' }
-  )
-  if (check.status !== 0) throw new Error('Packaged speech runtime validation failed')
 
   const platformDir = `${context.electronPlatformName}-${Arch[context.arch]}`
   const relativePlugins = join('video-engine', 'vlc', platformDir, 'plugins')
